@@ -11,7 +11,7 @@
 // مستندٍ لم يُعتمد، وإمّا مستندٌ معتمَدٌ يُوسَم مرفوضاً فلا يُطبع رمزُه أبداً.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/einvoice_document_status.dart';
+import 'package:picpos_erp/domain/models/einvoice_document_status.dart';
 
 void main() {
   test('الاعتمادُ بأيّ صيغة', () {

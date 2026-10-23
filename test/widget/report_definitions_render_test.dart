@@ -22,9 +22,9 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/presentation/reports_picpos/screens/report_definitions_picpos.dart';
-import 'package:ural_erp/presentation/reports_picpos/screens/report_view_picpos_screen.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/presentation/reports_picpos/screens/report_definitions_picpos.dart';
+import 'package:picpos_erp/presentation/reports_picpos/screens/report_view_picpos_screen.dart';
 
 void main() {
   late AppDatabase db;

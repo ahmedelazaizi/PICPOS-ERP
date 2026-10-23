@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // ---------------------------------------------------------------------------
 // منطق منسوخ من reports_screen.dart (monolith) — أي إصلاح منطقي يتصلّح في
 // المصدر أولاً ثم يُنقل بـ patch لهذا الملف (مصيدة النسخ §٥.٨). لا يُنسخ أبداً

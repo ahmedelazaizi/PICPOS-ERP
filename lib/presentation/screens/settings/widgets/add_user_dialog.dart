@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/config/brand.dart';
@@ -14,7 +14,7 @@ import '../../../widgets/dialogs/app_form_dialog.dart';
 import '../../../picpos_shell/picpos_dialog.dart';
 import '../../../picpos_shell/picpos_panel_groups.dart';
 import '../../../settings_picpos/widgets/settings_blocks.dart';
-import 'package:ural_erp/l10n/app_localizations.dart';
+import 'package:picpos_erp/l10n/app_localizations.dart';
 import 'add_role_dialog.dart';
 
 class AddUserDialog extends AppFormDialog<bool> {

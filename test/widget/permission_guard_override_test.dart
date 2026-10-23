@@ -16,7 +16,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/widgets/permission_guard.dart';
+import 'package:picpos_erp/presentation/widgets/permission_guard.dart';
 
 void main() {
   VoidCallback marker(List<String> log, String tag) => () => log.add(tag);

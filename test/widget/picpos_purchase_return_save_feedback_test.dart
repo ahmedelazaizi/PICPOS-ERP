@@ -19,14 +19,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/errors/app_exceptions.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/core/theme/app_theme.dart';
-import 'package:ural_erp/data/providers/manufacturing_providers.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/repositories/purchases_repository.dart';
-import 'package:ural_erp/presentation/providers/purchase_return_provider.dart';
-import 'package:ural_erp/presentation/purchase_returns_picpos/screens/purchase_returns_picpos_screen.dart';
+import 'package:picpos_erp/core/errors/app_exceptions.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/theme/app_theme.dart';
+import 'package:picpos_erp/data/providers/manufacturing_providers.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/repositories/purchases_repository.dart';
+import 'package:picpos_erp/presentation/providers/purchase_return_provider.dart';
+import 'package:picpos_erp/presentation/purchase_returns_picpos/screens/purchase_returns_picpos_screen.dart';
 
 final _now = DateTime(2026, 10, 1, 10);
 

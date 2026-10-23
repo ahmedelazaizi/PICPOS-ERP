@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // شاشةُ «سند صرف» — تصميمُ المالك `(11)`.
 //
 // ═══ ⚠️ مسارُ المال **منقولٌ** من الحوار لا مُعادُ كتابته ═══

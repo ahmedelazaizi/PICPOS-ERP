@@ -13,7 +13,7 @@
 // وإلّا نطلب فتحَ شاشة «الطاولات» عبر قناة التنقّل.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 
 import '../../../core/navigation/screen_id.dart';
 import '../../../data/providers/screen_navigation_provider.dart';

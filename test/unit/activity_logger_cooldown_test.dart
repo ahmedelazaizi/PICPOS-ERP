@@ -14,7 +14,7 @@
 // and needs a regression guard.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/activity_logger.dart';
+import 'package:picpos_erp/services/activity_logger.dart';
 
 void main() {
   group('ActivityLogger.parseRateLimitCooldown', () {

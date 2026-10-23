@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // شاشةُ حسم القوالب — تصميمُ `PicPos Template Resolution.dc.html`.
 //
 // ── ما تحلّه ──────────────────────────────────────────────────────────────

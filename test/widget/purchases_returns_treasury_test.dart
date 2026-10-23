@@ -10,10 +10,10 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/presentation/widgets/common_widgets.dart';
-import 'package:ural_erp/presentation/widgets/status_badge.dart';
-import 'package:ural_erp/core/widgets/app_state_view.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/widgets/common_widgets.dart';
+import 'package:picpos_erp/presentation/widgets/status_badge.dart';
+import 'package:picpos_erp/core/widgets/app_state_view.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
 
 void main() {
 // ─────────────────────────────────────────────────────────────────────────────

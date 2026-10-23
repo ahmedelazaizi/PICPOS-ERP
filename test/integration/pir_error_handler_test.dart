@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/utils/app_error_handler.dart';
+import 'package:picpos_erp/core/utils/app_error_handler.dart';
 
 /// PIR Integration Test 3: Error Handler Pattern Matching (PIR-010)
 /// Verifies that all error types produce user-friendly Arabic messages.

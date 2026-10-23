@@ -18,7 +18,7 @@
 // الفاصلُ الذي يلي «هاتف الشركة» يظلّ يليه مهما تحرّكت الأقسام.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/invoice_template_layout.dart';
+import 'package:picpos_erp/domain/models/invoice_template_layout.dart';
 
 typedef _El = ({int id, String? content, int sortOrder});
 

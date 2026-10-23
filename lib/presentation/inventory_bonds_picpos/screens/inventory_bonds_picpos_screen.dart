@@ -1,5 +1,5 @@
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
 // منطق منسوخ من inventory_bonds_screen.dart (monolith) — أي إصلاح منطقي
 // يتصلّح في المصدر أولاً ثم patch (مصيدة النسخ §٥.٨).
 //
@@ -16,7 +16,7 @@ import 'package:ural_erp/core/theme/app_colors.dart';
 // و`allProductsProvider` و`searchProductsProvider` مُعاد استخدامهم من UralCash
 // زي ما هم (import، مش نسخ).
 import 'package:flutter/material.dart';
-import 'package:ural_erp/core/widgets/app_toast.dart';
+import 'package:picpos_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/widgets/shimmer_loading.dart';

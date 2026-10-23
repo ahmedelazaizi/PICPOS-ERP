@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/presentation/screens/parties/party_helpers.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/screens/parties/party_helpers.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
 
 /// Helper to build a Party instance for testing.
 Party _makeParty({

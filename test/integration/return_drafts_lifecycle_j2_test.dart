@@ -13,22 +13,22 @@
 //     كان ينشئ المرتجعات.
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/repositories/drift_accounting_repository.dart';
-import 'package:ural_erp/data/repositories/return_drafts_repository.dart';
-import 'package:ural_erp/data/repositories/returns_repository_impl.dart';
-import 'package:ural_erp/domain/entities/product_entity.dart';
-import 'package:ural_erp/domain/models/return_draft.dart';
-import 'package:ural_erp/domain/repositories/audit_repository_interface.dart';
-import 'package:ural_erp/domain/repositories/i_products_repository.dart';
-import 'package:ural_erp/domain/repositories/inventory_repository.dart';
-import 'package:ural_erp/domain/repositories/parties_repository.dart';
-import 'package:ural_erp/domain/repositories/settings_repository.dart';
-import 'package:ural_erp/domain/repositories/treasury_repository.dart';
-import 'package:ural_erp/services/accounting_service.dart';
-import 'package:ural_erp/services/delta_pull_service.dart';
-import 'package:ural_erp/services/id_namespace_service.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/repositories/drift_accounting_repository.dart';
+import 'package:picpos_erp/data/repositories/return_drafts_repository.dart';
+import 'package:picpos_erp/data/repositories/returns_repository_impl.dart';
+import 'package:picpos_erp/domain/entities/product_entity.dart';
+import 'package:picpos_erp/domain/models/return_draft.dart';
+import 'package:picpos_erp/domain/repositories/audit_repository_interface.dart';
+import 'package:picpos_erp/domain/repositories/i_products_repository.dart';
+import 'package:picpos_erp/domain/repositories/inventory_repository.dart';
+import 'package:picpos_erp/domain/repositories/parties_repository.dart';
+import 'package:picpos_erp/domain/repositories/settings_repository.dart';
+import 'package:picpos_erp/domain/repositories/treasury_repository.dart';
+import 'package:picpos_erp/services/accounting_service.dart';
+import 'package:picpos_erp/services/delta_pull_service.dart';
+import 'package:picpos_erp/services/id_namespace_service.dart';
 
 void main() {
   late AppDatabase db;

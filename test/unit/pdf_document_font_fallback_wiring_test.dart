@@ -23,7 +23,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:ural_erp/services/generators/base_generator.dart';
+import 'package:picpos_erp/services/generators/base_generator.dart';
 
 /// «صبري» — الياءُ فيها **منفصلةٌ** لأن الراءَ حرفٌ غيرُ موصولٍ بما بعده،
 /// فتُرسم U+FEF1 وهي بالضبط ما ينقص Cairo.

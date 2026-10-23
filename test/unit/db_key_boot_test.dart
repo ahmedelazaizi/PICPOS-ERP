@@ -5,14 +5,14 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
-import 'package:ural_erp/data/database/db_key_startup.dart';
-import 'package:ural_erp/services/db_backup_sidecars.dart';
-import 'package:ural_erp/services/db_key_blocked_actions.dart';
-import 'package:ural_erp/services/db_key_boot.dart';
-import 'package:ural_erp/services/db_key_manager.dart';
-import 'package:ural_erp/services/db_key_names.dart';
-import 'package:ural_erp/services/db_key_types.dart';
-import 'package:ural_erp/services/db_keyinfo_file.dart';
+import 'package:picpos_erp/data/database/db_key_startup.dart';
+import 'package:picpos_erp/services/db_backup_sidecars.dart';
+import 'package:picpos_erp/services/db_key_blocked_actions.dart';
+import 'package:picpos_erp/services/db_key_boot.dart';
+import 'package:picpos_erp/services/db_key_manager.dart';
+import 'package:picpos_erp/services/db_key_names.dart';
+import 'package:picpos_erp/services/db_key_types.dart';
+import 'package:picpos_erp/services/db_keyinfo_file.dart';
 
 import '../helpers/db_key_harness.dart';
 

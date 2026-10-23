@@ -8,12 +8,12 @@ import 'package:file_picker/file_picker.dart';
 // ignore: implementation_imports
 import 'package:file_picker/src/platform/file_picker_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/repositories/branch_repository_impl.dart';
-import 'package:ural_erp/data/repositories/drift_product_repository.dart';
-import 'package:ural_erp/data/repositories/parties_repository_impl.dart';
-import 'package:ural_erp/data/services/excel_service.dart';
-import 'package:ural_erp/domain/repositories/purchases_repository.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/repositories/branch_repository_impl.dart';
+import 'package:picpos_erp/data/repositories/drift_product_repository.dart';
+import 'package:picpos_erp/data/repositories/parties_repository_impl.dart';
+import 'package:picpos_erp/data/services/excel_service.dart';
+import 'package:picpos_erp/domain/repositories/purchases_repository.dart';
 
 import 'xlsx_defect_fixture.dart';
 

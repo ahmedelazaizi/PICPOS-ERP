@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // بطاقةُ أصلٍ ثابت — تصميمُ المالك `(9)` و`(8)`.
 //
 // ═══ لماذا بطاقةٌ داخلَ الشاشة لا شاشةٌ سادسة ═══

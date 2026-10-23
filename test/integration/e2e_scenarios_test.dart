@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNotNull;
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
 
 /// Enterprise E2E Verification Scenarios (Phase 4)
 /// Covers core financial and operational flows for production readiness.

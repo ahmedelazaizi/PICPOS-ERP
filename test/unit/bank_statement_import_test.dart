@@ -2,7 +2,7 @@
 // ⚠️ القياسُ على **دالّةِ التجميع** لا على `_pickFile`: اختيارُ الملفّ
 // إضافةٌ من نظام التشغيل لا منطق.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/services/excel_service.dart';
+import 'package:picpos_erp/data/services/excel_service.dart';
 
 void main() {
   test('مرساة: صفوفٌ سليمةٌ كلُّها تُقبَل', () {

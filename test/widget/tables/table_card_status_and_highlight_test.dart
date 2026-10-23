@@ -8,14 +8,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/core/theme/table_status_palette.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/models/table_status.dart';
-import 'package:ural_erp/domain/repositories/restaurant_repository.dart';
-import 'package:ural_erp/presentation/screens/tables/providers/tables_state_provider.dart';
-import 'package:ural_erp/presentation/screens/tables/widgets/table_card.dart';
-import 'package:ural_erp/presentation/tables_picpos/logic/tables_grid_model.dart';
-import 'package:ural_erp/presentation/tables_picpos/widgets/tables_status_rail.dart';
+import 'package:picpos_erp/core/theme/table_status_palette.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/models/table_status.dart';
+import 'package:picpos_erp/domain/repositories/restaurant_repository.dart';
+import 'package:picpos_erp/presentation/screens/tables/providers/tables_state_provider.dart';
+import 'package:picpos_erp/presentation/screens/tables/widgets/table_card.dart';
+import 'package:picpos_erp/presentation/tables_picpos/logic/tables_grid_model.dart';
+import 'package:picpos_erp/presentation/tables_picpos/widgets/tables_status_rail.dart';
 
 final _now = DateTime(2026, 10, 18);
 

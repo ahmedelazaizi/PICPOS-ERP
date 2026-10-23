@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/role_grant_matrix.dart';
-import 'package:ural_erp/core/permissions/web_table_policy.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/core/permissions/role_grant_matrix.dart';
+import 'package:picpos_erp/core/permissions/web_table_policy.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 void main() {
   late AppDatabase db;

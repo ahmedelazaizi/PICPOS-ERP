@@ -15,7 +15,7 @@
 //    يقع عنده، وشاشةُ المشغّل أضيق. ونصٌّ مقصوصٌ إلى حرفٍ واحدٍ بيانةٌ ضائعة.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_bar_list.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_bar_list.dart';
 
 void main() {
   Future<void> mount(

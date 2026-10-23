@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 /// Covers `watchLastInvoiceForUser` (the POS "آخر فاتورة" affordance) and the
 /// return-exclusion fix on `watchTodaySalesForUser`.

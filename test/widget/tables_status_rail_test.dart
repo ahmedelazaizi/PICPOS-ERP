@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/table_status.dart';
-import 'package:ural_erp/presentation/tables_picpos/widgets/tables_status_rail.dart';
+import 'package:picpos_erp/domain/models/table_status.dart';
+import 'package:picpos_erp/presentation/tables_picpos/widgets/tables_status_rail.dart';
 
 void main() {
   test('العدُّ يشمل كلَّ حالةٍ ولو كانت صفراً', () {

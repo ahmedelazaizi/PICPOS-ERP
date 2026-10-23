@@ -5,8 +5,8 @@ import 'package:drift/native.dart';
 import 'package:drift/remote.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stream_channel/stream_channel.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/web_read/drift_json_channel.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/web_read/drift_json_channel.dart';
 
 /// قاعدة خفيفة تعيد استخدام جدول `settings` الحقيقي بلا إقلاع AppDatabase.
 class _ProbeDb extends GeneratedDatabase {

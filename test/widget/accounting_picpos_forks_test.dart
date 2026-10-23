@@ -8,13 +8,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/repositories/accounting_repository.dart';
-import 'package:ural_erp/domain/repositories/branch_repository.dart';
-import 'package:ural_erp/presentation/accounting_picpos/account_mapping_picpos_screen.dart';
-import 'package:ural_erp/presentation/accounting_picpos/cost_centers_picpos_screen.dart';
-import 'package:ural_erp/presentation/accounting_picpos/general_ledger_picpos_screen.dart';
-import 'package:ural_erp/presentation/accounting_picpos/journal_templates_picpos_screen.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/repositories/accounting_repository.dart';
+import 'package:picpos_erp/domain/repositories/branch_repository.dart';
+import 'package:picpos_erp/presentation/accounting_picpos/account_mapping_picpos_screen.dart';
+import 'package:picpos_erp/presentation/accounting_picpos/cost_centers_picpos_screen.dart';
+import 'package:picpos_erp/presentation/accounting_picpos/general_ledger_picpos_screen.dart';
+import 'package:picpos_erp/presentation/accounting_picpos/journal_templates_picpos_screen.dart';
 
 class _FakeAccountingRepo implements IAccountingRepository {
   _FakeAccountingRepo({

@@ -1,6 +1,6 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
-import 'package:ural_erp/core/widgets/app_toast.dart';
+import 'package:picpos_erp/core/widgets/app_toast.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -10,7 +10,7 @@ import '../../../core/design_system/typography.dart';
 import '../../../data/providers/providers.dart';
 import '../../shared_widgets/default_screen_dropdown.dart';
 import '../../../services/client_write_interceptor.dart';
-import 'package:ural_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
 
 /// User Management Dialog - Restored with full logic from original screen
 class UserManagementWidget extends ConsumerStatefulWidget {

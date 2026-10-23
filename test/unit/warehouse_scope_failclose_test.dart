@@ -29,10 +29,10 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ural_erp/data/database/sync_interceptor.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/models/client_scope.dart';
-import 'package:ural_erp/services/network_service.dart';
+import 'package:picpos_erp/data/database/sync_interceptor.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/models/client_scope.dart';
+import 'package:picpos_erp/services/network_service.dart';
 
 class _ClientModeInterceptor implements SyncInterceptor {
   @override

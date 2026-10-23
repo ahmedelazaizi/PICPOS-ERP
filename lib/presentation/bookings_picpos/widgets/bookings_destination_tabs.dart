@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // شريطُ وجهاتِ الحجوزات — ثمانٍ، وبحثٌ سريعٌ بجوارها.
 //
 // ⚠️ **قابلٌ للتمرير أفقيّاً عن قصد**: ثمانِ حبّاتٍ بنصوصٍ عربيّةٍ تتجاوز

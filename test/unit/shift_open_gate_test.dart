@@ -24,7 +24,7 @@
 // ⇒ جاء من طرفٍ آخر.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/shift_open_gate.dart';
+import 'package:picpos_erp/domain/models/shift_open_gate.dart';
 
 void main() {
   group('الجهازُ الذي فتحها يكمّلها', () {

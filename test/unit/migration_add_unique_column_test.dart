@@ -27,7 +27,7 @@
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 void main() {
   late QueryExecutor db;

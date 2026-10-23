@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/presentation/pos_picpos/widgets/picpos_one_time_customer.dart';
-import 'package:ural_erp/presentation/pos_picpos/widgets/picpos_payment_panel.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/presentation/pos_picpos/widgets/picpos_one_time_customer.dart';
+import 'package:picpos_erp/presentation/pos_picpos/widgets/picpos_payment_panel.dart';
 
 void main() {
   for (final showCustomer in [true, false]) {

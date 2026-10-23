@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 /// E2E — S-MFG-GL (Spec 146): manufacturing overhead reaches a balanced GL,
 /// and reversing an in-progress order restores stock + unwinds the WIP entry.

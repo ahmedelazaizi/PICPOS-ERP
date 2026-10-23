@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // شاشةُ **سجلّ مردودات المشتريات** — خ‑٩، ثمّ J2 (قرارُ المالك).
 //
 // ═══ ما كان، وما صار ═══

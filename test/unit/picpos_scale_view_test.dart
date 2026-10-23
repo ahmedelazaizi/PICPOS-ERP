@@ -4,8 +4,8 @@
 // `weightByPiece` الذي **يُعدّ صنفَ ميزانٍ** وإن كان لا يُباع بالوزن في
 // حساب الباركود. خلطُ المفهومَين كان يُسقط نوعاً كاملاً من التصدير.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/entities/product_entity.dart';
-import 'package:ural_erp/domain/models/picpos_scale_view.dart';
+import 'package:picpos_erp/domain/entities/product_entity.dart';
+import 'package:picpos_erp/domain/models/picpos_scale_view.dart';
 
 ProductEntity _p({
   int id = 1,

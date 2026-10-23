@@ -6,7 +6,7 @@
 // behaviour NEEDS ON-DEVICE VERIFICATION on an Arabic-Windows install (R1).
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/aclas_sdk_ffi.dart';
+import 'package:picpos_erp/services/aclas_sdk_ffi.dart';
 
 void main() {
   test('isAsciiPath flags Arabic-username temp paths (F-PLU-3)', () {

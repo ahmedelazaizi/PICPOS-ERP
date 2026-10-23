@@ -2,8 +2,8 @@
 // `to` = END of day (DateRangeFilter.normalizeStart/End). Date-only `to`
 // values hid a bug where the prior period ended at 00:00 of its last day.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/providers/financial_analytics_provider.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/providers/financial_analytics_provider.dart';
 
 import 'analytics_harness.dart';
 

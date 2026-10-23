@@ -16,8 +16,8 @@
 
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/utils/uuid_v7.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/core/utils/uuid_v7.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 void main() {
   group('UuidV7.deriveShiftClosingGlobalId', () {

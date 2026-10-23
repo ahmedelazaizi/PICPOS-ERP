@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // لوحا الخزينة (الصناديق · آخر الحركات) بهويّة PicPos.
 //
 // ═══ ودجتٌ واحدةٌ لثلاثة تبويبات — لا ثلاثُ نسخ ═══
@@ -14,7 +14,7 @@ import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:ural_erp/core/utils/friendly_error.dart';
+import 'package:picpos_erp/core/utils/friendly_error.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';

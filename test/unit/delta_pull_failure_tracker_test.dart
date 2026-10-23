@@ -1,6 +1,6 @@
 // SYNC-002 (audit 2026-10-23): row failures hold the watermark (bounded).
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/delta_pull_failure_tracker.dart';
+import 'package:picpos_erp/services/delta_pull_failure_tracker.dart';
 
 void main() {
   test('a clean cycle advances', () {

@@ -2,7 +2,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/pending_restore.dart';
+import 'package:picpos_erp/data/database/pending_restore.dart';
 
 void main() {
   late Directory dir;

@@ -22,8 +22,8 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/presentation/providers/purchase_return_provider.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/presentation/providers/purchase_return_provider.dart';
 
 PurchaseInvoiceItem _item({
   required int id,

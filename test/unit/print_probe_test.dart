@@ -6,10 +6,10 @@
 // **وأنّه لا يحمرّ على ما لا عيبَ فيه**. فحصٌ متزمّتٌ يقفل الشاشةَ على كلّ
 // قالبٍ سليمٍ فيُطفئه المستخدمُ في ذهنه ويتجاهله — وهو موتُ الحارس.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/printing/print_probe.dart';
-import 'package:ural_erp/domain/printing/template_document.dart';
-import 'package:ural_erp/services/printing/layout_engine.dart';
-import 'package:ural_erp/services/printing/paint_plan.dart';
+import 'package:picpos_erp/domain/printing/print_probe.dart';
+import 'package:picpos_erp/domain/printing/template_document.dart';
+import 'package:picpos_erp/services/printing/layout_engine.dart';
+import 'package:picpos_erp/services/printing/paint_plan.dart';
 
 const _margins = MarginsMm(top: 10, right: 10, bottom: 10, left: 10);
 

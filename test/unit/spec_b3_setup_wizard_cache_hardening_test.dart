@@ -32,11 +32,11 @@ import 'package:flutter_test/flutter_test.dart';
 // `app_config.dart` re-exports `business_profile.dart` — no direct import
 // needed for `BusinessProfile` here (same convention as
 // `setup_wizard_screen.dart`, see the comment at its own import block).
-import 'package:ural_erp/core/config/app_config.dart';
-import 'package:ural_erp/core/config/business_profile_provider.dart';
-import 'package:ural_erp/core/config/runtime_config_snapshot.dart';
-import 'package:ural_erp/core/logging/diagnostic_logger.dart';
-import 'package:ural_erp/data/providers/providers.dart';
+import 'package:picpos_erp/core/config/app_config.dart';
+import 'package:picpos_erp/core/config/business_profile_provider.dart';
+import 'package:picpos_erp/core/config/runtime_config_snapshot.dart';
+import 'package:picpos_erp/core/logging/diagnostic_logger.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
 
 void main() {
   group('ConfigService.rehydrateRuntimeConfigCache (Spec B3)', () {

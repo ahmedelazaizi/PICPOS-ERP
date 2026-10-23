@@ -1,7 +1,7 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../../picpos_shell/picpos_surface.dart';
-import 'package:ural_erp/core/widgets/app_toast.dart';
+import 'package:picpos_erp/core/widgets/app_toast.dart';
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;

@@ -1,8 +1,8 @@
 ﻿// Audit B RPT-005 — sales summary range is half-open and `paid` is filtered.
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/repositories/sales_summary_queries.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/repositories/sales_summary_queries.dart';
 
 void main() {
   late AppDatabase db;

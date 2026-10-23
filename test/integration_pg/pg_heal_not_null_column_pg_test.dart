@@ -29,10 +29,10 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:postgres/postgres.dart' as pg;
-import 'package:ural_erp/core/logging/diagnostic_logger.dart';
-import 'package:ural_erp/data/database/connection_io.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/pg_config.dart';
+import 'package:picpos_erp/core/logging/diagnostic_logger.dart';
+import 'package:picpos_erp/data/database/connection_io.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/pg_config.dart';
 
 import '_support/pg_fixture.dart';
 

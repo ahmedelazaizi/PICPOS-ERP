@@ -1,5 +1,5 @@
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/core/design_system/typography.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/design_system/typography.dart';
 // شاشةُ «التكاليف المحمَّلة» بهويّة PicPos — على تصميم `PicPos Landed Costs.dc.html`.
 //
 // ═══ إعادةُ تنسيقٍ لا بناء ═══

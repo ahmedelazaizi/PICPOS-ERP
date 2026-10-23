@@ -12,7 +12,7 @@
 // ⚠️ **و`null` تعني «بلا حد» لا «صفر»**: الخلطُ بينهما يقلب أكثرَ الإعدادات
 // تساهلاً إلى أشدِّها تقييداً.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/quick_sale_policy.dart';
+import 'package:picpos_erp/domain/models/quick_sale_policy.dart';
 
 QuickSalePolicyValues _v(Map<String, String> m) => QuickSalePolicyValues(m);
 

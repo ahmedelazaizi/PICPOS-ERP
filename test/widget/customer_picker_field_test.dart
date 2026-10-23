@@ -5,12 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/customer_picker_providers.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/models/party_reservation_entry.dart';
-import 'package:ural_erp/presentation/parties_picpos/dialogs/party_phone_dedupe.dart';
-import 'package:ural_erp/presentation/shared_widgets/customer_picker/customer_picker_field.dart';
-import 'package:ural_erp/presentation/shared_widgets/customer_picker/customer_picker_value.dart';
+import 'package:picpos_erp/data/providers/customer_picker_providers.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/models/party_reservation_entry.dart';
+import 'package:picpos_erp/presentation/parties_picpos/dialogs/party_phone_dedupe.dart';
+import 'package:picpos_erp/presentation/shared_widgets/customer_picker/customer_picker_field.dart';
+import 'package:picpos_erp/presentation/shared_widgets/customer_picker/customer_picker_value.dart';
 
 Party _party(int id, String name,
         {String? phone = '01000000000',

@@ -3,7 +3,7 @@
 //
 // استخدم قيم ثابتة لا تعتمد على عشوائية وتحقق من أن الـ verify يمر.
 
-import 'package:ural_erp/services/security_service.dart';
+import 'package:picpos_erp/services/security_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // MUTATION GUARD (data classes) — Feature 004 (Multi-Branch Governance, US3)
 // ═══════════════════════════════════════════════════════════════════════════

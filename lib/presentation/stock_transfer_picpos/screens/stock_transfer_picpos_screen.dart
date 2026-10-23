@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // منطق منسوخ من stock_transfer_screen.dart (monolith) — أي إصلاح منطقي
 // يتصلّح في المصدر أولاً ثم patch (مصيدة النسخ §٥.٨).
 //
@@ -16,10 +16,10 @@ import 'package:ural_erp/core/i18n/tr.dart';
 // `stockTransferControllerProvider` و`TransferItemModel` و`allWarehousesProvider`
 // و`allProductsProvider` و`searchProductsProvider` مُعاد استخدامهم من UralCash
 // زي ما هم (import، مش نسخ).
-import 'package:ural_erp/core/constants/app_constants.dart';
-import 'package:ural_erp/core/utils/friendly_error.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/core/utils/friendly_error.dart';
 import 'package:flutter/material.dart';
-import 'package:ural_erp/core/widgets/app_toast.dart';
+import 'package:picpos_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';

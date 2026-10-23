@@ -8,11 +8,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/constants/app_constants.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/repositories/accounting_repository.dart';
-import 'package:ural_erp/domain/repositories/auth_repository.dart';
-import 'package:ural_erp/presentation/accounting_picpos/journal_entries_picpos_screen.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/repositories/accounting_repository.dart';
+import 'package:picpos_erp/domain/repositories/auth_repository.dart';
+import 'package:picpos_erp/presentation/accounting_picpos/journal_entries_picpos_screen.dart';
 
 /// ⚠️ **حارسُ MJE-3 يقف بين الزرّ والمستودع.** `saveManualEntry` يستدعي
 /// `_requireAccountingJournalPermission` قبل الكتابة، وهو يرتدّ حين لا

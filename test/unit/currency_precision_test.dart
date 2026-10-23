@@ -17,8 +17,8 @@
 //    مبدَّلةً يسرّب إلى ملفّاتٍ أخرى فيُسقطها بترتيبٍ عشوائيّ (نفسُ صنفِ
 //    تسريبِ أدوارِ PostgreSQL المسجَّل).
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/constants/app_constants.dart';
-import 'package:ural_erp/core/utils/financial_utils.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/core/utils/financial_utils.dart';
 
 void main() {
   // الافتراضُ `JOD` — ولا يُبدَّل. سويّةُ الاختبارات كلُّها مبنيّةٌ عليه.

@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/services/server_proxy.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/services/server_proxy.dart';
 
 /// State for the Sync Worker
 class SyncState {

@@ -5,7 +5,7 @@ import '../../../domain/repositories/treasury_repository.dart';
 import 'treasury_safe_card.dart';
 import 'treasury_transactions_list.dart';
 
-import 'package:ural_erp/l10n/app_localizations.dart';
+import 'package:picpos_erp/l10n/app_localizations.dart';
 
 /// Feature 011 / Issue UX-SCROLL — same conversion as TreasuryCashTab.
 class TreasuryBankTab extends StatefulWidget {

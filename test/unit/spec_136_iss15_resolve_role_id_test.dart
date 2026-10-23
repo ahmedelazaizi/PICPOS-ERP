@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNotNull;
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/api/api_data_handler.dart';
-import 'package:ural_erp/services/api/api_handler_base.dart' show WsSubscriberInfo;
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/api/api_data_handler.dart';
+import 'package:picpos_erp/services/api/api_handler_base.dart' show WsSubscriberInfo;
 
 /// Spec 136 ISS-15 — the server must resolve (or placeholder-create) a role by
 /// globalId before writing its permissions, so a role created only on a mirror

@@ -3,9 +3,9 @@
 // و test/unit/security_phase1_gates_test.dart — هنا على مستندات حقيقية كاملة.)
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/usecases/treasury/create_voucher_usecase.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/usecases/treasury/create_voucher_usecase.dart';
 
 import 'scenario_world.dart';
 

@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // U-01: Help Panel Overlay — F1 Keyboard Shortcut Help
 // Shows context-sensitive keyboard shortcuts and help for current screen

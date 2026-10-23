@@ -1,9 +1,9 @@
 import 'package:drift/drift.dart' hide isNotNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/extensions/hr_extensions.dart';
-import 'package:ural_erp/domain/entities/accounting_entities.dart';
-import 'package:ural_erp/services/audit_log_integrity_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/extensions/hr_extensions.dart';
+import 'package:picpos_erp/domain/entities/accounting_entities.dart';
+import 'package:picpos_erp/services/audit_log_integrity_service.dart';
 
 void main() {
   late AppDatabase db;

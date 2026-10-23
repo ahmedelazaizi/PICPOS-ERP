@@ -16,10 +16,10 @@ import 'dart:convert';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf/shelf.dart' as shelf;
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/api/api_purchase_handler.dart';
-import 'package:ural_erp/services/api/api_user_context.dart';
-import 'package:ural_erp/services/sync/strategies/purchase_sync_strategy.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/api/api_purchase_handler.dart';
+import 'package:picpos_erp/services/api/api_user_context.dart';
+import 'package:picpos_erp/services/sync/strategies/purchase_sync_strategy.dart';
 
 void main() {
   late AppDatabase db;

@@ -100,8 +100,8 @@ bool get isManager {
 // `isAdmin || isManager` كتجاوز كامل — فسحب صلاحية من «مدير فرع» ما كانش
 // بيعمل حاجة. ده اللي البلاغ كان عنه.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 AuthState _stateWithRole(String name, {required bool isSystemRole}) {
   final role = Role(
@@ -293,7 +293,7 @@ EOF
 // ٢. `|| permissions.isEmpty` — مستخدم بصفر صلاحيات كان بيعدّي كل الفحوص.
 //    يعني سحب كل صلاحيات الدفع من كاشير كان بيديله كلها.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/pos/widgets/payment_sheet.dart';
+import 'package:picpos_erp/presentation/pos/widgets/payment_sheet.dart';
 
 void main() {
   group('hasPaymentPermission', () {
@@ -499,7 +499,7 @@ EOF
 // محاسب، مدير مالي. فالكاشير كان بيقفل البرنامج بلا كلمة سر، وهي بالظبط
 // الحالة اللي البوابة موجودة عشانها.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/app_main_screen.dart';
+import 'package:picpos_erp/app_main_screen.dart';
 
 void main() {
   group('canCloseAppWithoutPassword', () {
@@ -618,9 +618,9 @@ EOF
 // التحكم كلهم على `pos_access`، ومردودات البيع على `sales_view`. فالمدير
 // يسحب `offers_view` وشاشة العروض تفضل ظاهرة لأنها مش مربوطة بيه أصلاً.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/core/navigation/screen_ids.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/core/navigation/screen_ids.dart';
 
 void main() {
   test('كل كود في الخريطة مسجّل في masterList', () {
@@ -788,7 +788,7 @@ EOF
 // الشاشة — وده أثر جانبي مش قرار. الهدف إن المدير يقدر يسحبها، مش إنها
 // تتسحب لوحدها عند الترقية.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/role_grant_matrix.dart';
+import 'package:picpos_erp/core/permissions/role_grant_matrix.dart';
 
 void main() {
   test('كل دور في المصفوفة عنده dashboard_access', () {
@@ -1115,8 +1115,8 @@ class PermissionEnforcementRegistry {
 // الصلاحيات وهو مالوش مستقبل — وما حدش يكتشف غير من الميدان.
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/core/permissions/permission_enforcement_registry.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/core/permissions/permission_enforcement_registry.dart';
 
 /// الملفات اللي بتعرّف الصلاحية مش اللي بتفحصها — وجود الكود فيها مش إنفاذ.
 const _definitionFiles = [

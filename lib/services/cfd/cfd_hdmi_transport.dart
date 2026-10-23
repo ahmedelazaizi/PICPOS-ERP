@@ -6,7 +6,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
-import 'package:ural_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
 import 'package:flutter/foundation.dart';
 import 'cfd_transport.dart';
 

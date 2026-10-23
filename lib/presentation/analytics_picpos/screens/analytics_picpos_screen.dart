@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // شاشةُ «التحليلات» بهويّة PicPos — على تصميم
 // `PicPos Performance Analytics.dc.html`.
 //

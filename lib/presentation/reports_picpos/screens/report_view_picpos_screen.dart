@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // عارضُ التقرير الواحد — الشكلُ الذي يعمل به التصميم.
 //
 // ═══ لماذا عارضٌ واحدٌ لا سبعُ شاشات ═══

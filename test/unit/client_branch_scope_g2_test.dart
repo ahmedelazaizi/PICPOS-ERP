@@ -18,12 +18,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ural_erp/data/database/sync_interceptor.dart';
+import 'package:picpos_erp/data/database/sync_interceptor.dart';
 // يُصدِّر `database.dart` و`auth_providers.dart` معاً — استيرادهما بجانبه
 // يرفع `unnecessary_import`.
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/services/network_service.dart';
-import 'package:ural_erp/services/server_proxy.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/services/network_service.dart';
+import 'package:picpos_erp/services/server_proxy.dart';
 
 /// دور + مستخدم كما تزرعهما قاعدة البيانات. [isSystemRole] منفصل عن الاسم
 /// عمداً: الاقتران بينهما هو بالضبط ما تفحصه هذه الاختبارات.

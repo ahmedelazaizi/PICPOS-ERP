@@ -15,10 +15,10 @@
 // معلَّقاً في الڤاليديتور، وفتحُ الإضافات وحدَه كان يُشعل قاعدةً صلبة.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/config/brand.dart';
-import 'package:ural_erp/core/config/business_profile.dart';
-import 'package:ural_erp/core/config/feature_policy.dart';
-import 'package:ural_erp/core/config/feature_validator.dart';
+import 'package:picpos_erp/core/config/brand.dart';
+import 'package:picpos_erp/core/config/business_profile.dart';
+import 'package:picpos_erp/core/config/feature_policy.dart';
+import 'package:picpos_erp/core/config/feature_validator.dart';
 
 void main() {
   test('PicPos-lite يفتح المطبخ والإضافات', () {

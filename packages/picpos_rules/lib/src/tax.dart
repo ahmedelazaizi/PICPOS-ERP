@@ -1,5 +1,5 @@
 /// Tax and document totals. `effectiveItemTaxRate` is the desktop rule
-/// `lib/core/tax/effective_item_tax_rate.dart` (ural_erp); `computeTotals`
+/// `lib/core/tax/effective_item_tax_rate.dart` (picpos_erp); `computeTotals`
 /// follows desktop `FinancialUtils.calculateInvoiceTotals`
 /// (lib/core/utils/financial_utils.dart) for line discounts and both pricing
 /// modes.

@@ -1,9 +1,9 @@
 // ignore_for_file: avoid_dynamic_calls
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/sync/sync_strategy.dart';
-import 'package:ural_erp/services/sync_event_bus.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/sync/sync_strategy.dart';
+import 'package:picpos_erp/services/sync_event_bus.dart';
 
 class RolePermissionSyncStrategy extends SyncStrategy {
   RolePermissionSyncStrategy(super.db);

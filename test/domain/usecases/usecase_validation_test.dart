@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/usecases/treasury/close_safe_usecase.dart';
+import 'package:picpos_erp/domain/usecases/treasury/close_safe_usecase.dart';
 
 // ═══════════════════════════════════════════════════════════════════════
 // These tests verify domain-layer validation logic only (no DB required).

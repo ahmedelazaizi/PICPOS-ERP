@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/utils/financial_utils.dart';
-import 'package:ural_erp/domain/entities/cart_item_entity.dart';
-import 'package:ural_erp/domain/usecases/sales/calculate_invoice_totals_usecase.dart';
-import 'package:ural_erp/services/costing_method_service.dart';
+import 'package:picpos_erp/core/utils/financial_utils.dart';
+import 'package:picpos_erp/domain/entities/cart_item_entity.dart';
+import 'package:picpos_erp/domain/usecases/sales/calculate_invoice_totals_usecase.dart';
+import 'package:picpos_erp/services/costing_method_service.dart';
 
 /// Spec 137 — accounting tier (BUG-C02, BUG-H01, BUG-M07, BUG-M04, BUG-L03).
 ///

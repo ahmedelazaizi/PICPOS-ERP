@@ -6,10 +6,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/core/theme/app_theme.dart';
-import 'package:ural_erp/domain/analytics/financial_snapshot.dart';
-import 'package:ural_erp/domain/analytics/ratio_engine.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/theme/app_theme.dart';
+import 'package:picpos_erp/domain/analytics/financial_snapshot.dart';
+import 'package:picpos_erp/domain/analytics/ratio_engine.dart';
 
 /// نسبةٌ مبنيّةٌ يدويّاً.
 Ratio mkRatio({

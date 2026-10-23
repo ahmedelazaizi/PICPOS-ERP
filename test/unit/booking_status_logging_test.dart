@@ -10,8 +10,8 @@
 // وهذا الحارسُ يسقط أحمرَ إن نُودي الـDAO من الشاشة رأساً أو حُذف الغلاف.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/booking_actions_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/booking_actions_service.dart';
 
 void main() {
   late AppDatabase db;

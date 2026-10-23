@@ -24,7 +24,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' show Value;
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 /// القائمةُ البيضاءُ في `TemplatedInvoiceService.layoutSequenceForPrint`.
 const _renderable = {'variable', 'text', 'line', 'image', 'rectangle'};

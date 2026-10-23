@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // شريطُ اليوم — سهمان واسمُ اليوم و«اليوم» للعودة.
 //
 // ⚠️ **والسهمان مقلوبان عن الحدس في RTL**: «التالي» يقع يساراً و«السابق»

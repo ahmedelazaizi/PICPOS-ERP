@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // حوارُ «تحميل مصروف على أمر تصنيع» بهويّة PicPos — فورك `DLGS.allocate`
 // في `PicPos Operating Expenses.dc.html`.
 //

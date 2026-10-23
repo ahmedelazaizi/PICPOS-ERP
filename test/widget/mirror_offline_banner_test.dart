@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/widgets/mirror_offline_banner.dart';
-import 'package:ural_erp/services/network_service.dart';
+import 'package:picpos_erp/presentation/widgets/mirror_offline_banner.dart';
+import 'package:picpos_erp/services/network_service.dart';
 
 /// MM.D unit tests for the offline-banner visibility decision. The
 /// classifier is a pure function of (mode, lastHandshakeAt, now), so we

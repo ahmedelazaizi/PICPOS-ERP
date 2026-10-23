@@ -12,9 +12,9 @@
 // وبينهما ورديةٌ يخرج منها ٣٠٠ نقداً بلا سطرِ تفسيرٍ واحد.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart' show ShiftClosingAggregates;
-import 'package:ural_erp/domain/models/quick_sale_policy.dart';
-import 'package:ural_erp/presentation/pos/providers/pos_closing_controller.dart';
+import 'package:picpos_erp/data/database/database.dart' show ShiftClosingAggregates;
+import 'package:picpos_erp/domain/models/quick_sale_policy.dart';
+import 'package:picpos_erp/presentation/pos/providers/pos_closing_controller.dart';
 
 void main() {
   /// وردية: نقدٌ متوقَّعٌ [cash] وبنكٌ [bank] وكليك [click]، والكاشير

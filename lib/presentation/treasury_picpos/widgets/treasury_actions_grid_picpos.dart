@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // أزرارُ الخزينة الأربعة في شبكة ٢×٢ — يسارَ البطاقة الداكنة كما في التصميم.
 //
 // كانت في `headerActions` (شريطُ الهيدر العلويّ) أزراراً نصّيّةً صغيرة؛

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/widgets/status_badge.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/widgets/status_badge.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
 
 void main() {
   group('StatusBadge', () {

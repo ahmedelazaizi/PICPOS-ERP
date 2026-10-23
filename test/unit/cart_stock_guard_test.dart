@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/entities/product_entity.dart';
-import 'package:ural_erp/presentation/pos/providers/cart_controller.dart';
+import 'package:picpos_erp/domain/entities/product_entity.dart';
+import 'package:picpos_erp/presentation/pos/providers/cart_controller.dart';
 
 /// The POS out-of-stock guard, and the two escape hatches that unlock it.
 ///

@@ -29,7 +29,7 @@ PicPos ERP is an Arabic-first (RTL, with a per-user English UI) ERP + POS for sm
 
 | Component | Path | Notes |
 |---|---|---|
-| Windows desktop app (primary) | root `lib/`, `windows/` | Flutter, Riverpod, Drift. SQLite+SQLCipher locally, or PostgreSQL in server mode. An embedded shelf API/LAN server runs on the host. Dart package `ural_erp` (BRAND-006). |
+| Windows desktop app (primary) | root `lib/`, `windows/` | Flutter, Riverpod, Drift. SQLite+SQLCipher locally, or PostgreSQL in server mode. An embedded shelf API/LAN server runs on the host. Dart package `picpos_erp` (BRAND-006). |
 | Web mirror client | `lib/main_web_entry.dart`, `web/` | Reads over WebSocket (drift remote) and writes via the HTTP API. Built in CI as an artifact only. |
 | PicPos Van (field rep) | `mobile/` | `com.picpos.picpos_van`, offline-first, Bluetooth printing. |
 | PicPos إدارة (Admin) | `mobile_admin/` | `com.picpos.admin`. Pairing, KPIs, approvals. Partially placeholder. |
@@ -103,4 +103,4 @@ PicPos ERP is an Arabic-first (RTL, with a per-user English UI) ERP + POS for sm
   2. In non-demo builds, what should activation gate (watermark only, or limits)? See REL-005.
   3. May UralCash be deleted from this repository outright, or must it remain buildable elsewhere? This decides between delete and move-to-branch (BRAND-007/009/010).
   4. Is the GitHub Release (tag) a distribution channel today? If yes, BRAND-003 and REL-001 are live risks.
-  5. Rename the Dart package `ural_erp` → `picpos_erp` now, or after the feature branches merge (BRAND-006)?
+  5. Rename the Dart package `picpos_erp` → `picpos_erp` now, or after the feature branches merge (BRAND-006)?

@@ -22,17 +22,17 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/app_main_screen.dart';
-import 'package:ural_erp/core/logging/diagnostic_logger.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/data/providers/branch_scope_provider.dart';
-import 'package:ural_erp/data/providers/repository_providers.dart';
-import 'package:ural_erp/domain/repositories/treasury_repository.dart';
-import 'package:ural_erp/presentation/pos/widgets/pos_opening_balance_dialog.dart';
-import 'package:ural_erp/services/network_service.dart';
-import 'package:ural_erp/services/shift_dialog_session_guard.dart';
-import 'package:ural_erp/services/websocket_sync_client.dart';
+import 'package:picpos_erp/app_main_screen.dart';
+import 'package:picpos_erp/core/logging/diagnostic_logger.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/data/providers/branch_scope_provider.dart';
+import 'package:picpos_erp/data/providers/repository_providers.dart';
+import 'package:picpos_erp/domain/repositories/treasury_repository.dart';
+import 'package:picpos_erp/presentation/pos/widgets/pos_opening_balance_dialog.dart';
+import 'package:picpos_erp/services/network_service.dart';
+import 'package:picpos_erp/services/shift_dialog_session_guard.dart';
+import 'package:picpos_erp/services/websocket_sync_client.dart';
 
 /// `getCurrentOpenShift` هي الوحيدة المهمة هنا؛ `openShift` بتتسجّل عشان
 /// نتأكد إن فتح وردية «ب» ما بيلمسش وردية «أ».

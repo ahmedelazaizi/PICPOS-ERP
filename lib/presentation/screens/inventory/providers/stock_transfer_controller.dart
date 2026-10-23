@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../domain/repositories/inventory_repository.dart';
 import '../../../../data/providers/providers.dart';

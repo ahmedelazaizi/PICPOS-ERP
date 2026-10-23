@@ -19,7 +19,7 @@
 //     process mutates the DB underneath us (sync, restore, etc.).
 // ═══════════════════════════════════════════════════════════════════════════
 
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 class SettingsRepositoryCached {
   final AppDatabase _db;

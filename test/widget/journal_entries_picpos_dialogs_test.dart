@@ -19,10 +19,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/repositories/accounting_repository.dart';
-import 'package:ural_erp/presentation/accounting_picpos/journal_entries_picpos_screen.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/repositories/accounting_repository.dart';
+import 'package:picpos_erp/presentation/accounting_picpos/journal_entries_picpos_screen.dart';
 
 class _FakeAccountingRepo implements IAccountingRepository {
   _FakeAccountingRepo({

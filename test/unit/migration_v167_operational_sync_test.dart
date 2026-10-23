@@ -26,7 +26,7 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 /// التسعةَ عشرَ بأسمائها SQL — نفسُ قائمة `phase3Tables` في `epoch_3.dart`.
 const _phase3Tables = <String>[

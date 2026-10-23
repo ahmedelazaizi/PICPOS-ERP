@@ -10,8 +10,8 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/data/providers/treasury_providers.dart';
-import 'package:ural_erp/domain/repositories/treasury_repository.dart';
+import 'package:picpos_erp/data/providers/treasury_providers.dart';
+import 'package:picpos_erp/domain/repositories/treasury_repository.dart';
 
 SafeData _safe({required int id, required double balance, int? branchId}) {
   return SafeData(

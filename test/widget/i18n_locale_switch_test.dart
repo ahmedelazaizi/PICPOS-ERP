@@ -3,15 +3,15 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/core/i18n/locale_provider.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/core/theme/app_theme.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/presentation/pos/providers/cfd_controller.dart';
-import 'package:ural_erp/presentation/shell/app_shell.dart';
-import 'package:ural_erp/presentation/shell/screen_tabs_bar.dart';
-import 'package:ural_erp/presentation/widgets/user_language_selector.dart';
+import 'package:picpos_erp/core/i18n/locale_provider.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/core/theme/app_theme.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/presentation/pos/providers/cfd_controller.dart';
+import 'package:picpos_erp/presentation/shell/app_shell.dart';
+import 'package:picpos_erp/presentation/shell/screen_tabs_bar.dart';
+import 'package:picpos_erp/presentation/widgets/user_language_selector.dart';
 
 class _LocaleHarness extends ConsumerWidget {
   const _LocaleHarness();

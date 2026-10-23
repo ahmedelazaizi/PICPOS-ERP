@@ -1,11 +1,11 @@
 // م3-8 — نطاق شاشات الويب وغلاف التنقّل: القوائم متّسقة، والمستبعد/المؤجّل لا
 // يتسرّب، والقائمة الجانبية تُبنى من صلاحيات الجلسة.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/web/web_screen_registry.dart';
-import 'package:ural_erp/web/web_screen_scope.dart';
-import 'package:ural_erp/web/web_session.dart';
-import 'package:ural_erp/web/web_shell.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/web/web_screen_registry.dart';
+import 'package:picpos_erp/web/web_screen_scope.dart';
+import 'package:picpos_erp/web/web_session.dart';
+import 'package:picpos_erp/web/web_shell.dart';
 
 WebSession _session({
   required List<String> codes,

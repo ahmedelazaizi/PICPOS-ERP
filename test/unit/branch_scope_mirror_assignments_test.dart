@@ -22,11 +22,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // `providers.dart` يعيد تصدير `branch_scope_provider.dart`، ومنه
 // `resolveForeignRowScope` — فاستيراده صراحةً زائد ويكسر خطّ الأساس.
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/services/mirror_state.dart';
-import 'package:ural_erp/services/network_service.dart';
-import 'package:ural_erp/services/sync_service.dart';
-import 'package:ural_erp/services/websocket_sync_client.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/services/mirror_state.dart';
+import 'package:picpos_erp/services/network_service.dart';
+import 'package:picpos_erp/services/sync_service.dart';
+import 'package:picpos_erp/services/websocket_sync_client.dart';
 
 UserWithRole _userWithRole({
   required int userId,

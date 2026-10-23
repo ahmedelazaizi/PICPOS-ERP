@@ -16,12 +16,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/data/database/database.dart' as db;
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/data/providers/repository_providers.dart';
-import 'package:ural_erp/domain/repositories/fixed_assets_repository.dart';
-import 'package:ural_erp/presentation/fixed_assets_picpos/screens/asset_locations_picpos_screen.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_data_table.dart';
+import 'package:picpos_erp/data/database/database.dart' as db;
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/data/providers/repository_providers.dart';
+import 'package:picpos_erp/domain/repositories/fixed_assets_repository.dart';
+import 'package:picpos_erp/presentation/fixed_assets_picpos/screens/asset_locations_picpos_screen.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_data_table.dart';
 
 db.FixedAssetData _asset({
   required int id,

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' as drift;
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 /// Phase 2 — Fixes 2.2 & 2.4: GL Entry Atomicity
 ///

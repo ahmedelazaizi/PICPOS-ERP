@@ -20,7 +20,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import '../helpers/library_source.dart';
-import 'package:ural_erp/services/templated_invoice_service.dart';
+import 'package:picpos_erp/services/templated_invoice_service.dart';
 
 const _servicePath = 'lib/services/templated_invoice_service.dart';
 

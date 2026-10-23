@@ -2,8 +2,8 @@
 // المكرَّر، الطرف المحذوف، وحجوزاتُ الخدمات والطاولات معاً، وتبعيّةُ الحجوزات
 // للطرف الباقي بعد إزالة التكرار، وحفظُ partyId مع اللقطة.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/daos/customer_picker_dao.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/daos/customer_picker_dao.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 import '../helpers/v195_reservations_db.dart';
 

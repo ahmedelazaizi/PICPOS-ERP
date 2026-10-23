@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // منطق منسوخ من dashboard_screen.dart (lib/presentation/screens/,
 // ١٠٩٦ سطر) — أي إصلاح منطقي يتصلّح في المصدر أولاً ثم patch (مصيدة النسخ
 // §٥.٨). الشاشة دي الاستثناء الوحيد في دفعة إعادة التصميم اللي عندها

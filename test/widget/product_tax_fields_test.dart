@@ -4,9 +4,9 @@
 // (one database per test file — see bootTaxTestDb).
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/tax/product_tax_choice.dart';
-import 'package:ural_erp/presentation/widgets/dialogs/add_product_dialog.dart';
-import 'package:ural_erp/presentation/widgets/dialogs/product_tax_fields.dart';
+import 'package:picpos_erp/core/tax/product_tax_choice.dart';
+import 'package:picpos_erp/presentation/widgets/dialogs/add_product_dialog.dart';
+import 'package:picpos_erp/presentation/widgets/dialogs/product_tax_fields.dart';
 
 import 'product_tax_test_support.dart';
 

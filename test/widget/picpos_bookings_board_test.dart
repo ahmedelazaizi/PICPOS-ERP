@@ -14,10 +14,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/models/picpos_booking_view.dart';
-import 'package:ural_erp/presentation/bookings_picpos/screens/bookings_picpos_screen.dart';
-import 'package:ural_erp/presentation/bookings_picpos/widgets/bookings_settings_view.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/models/picpos_booking_view.dart';
+import 'package:picpos_erp/presentation/bookings_picpos/screens/bookings_picpos_screen.dart';
+import 'package:picpos_erp/presentation/bookings_picpos/widgets/bookings_settings_view.dart';
 
 const _allBookingPerms = <String>[
   'bookings_view',

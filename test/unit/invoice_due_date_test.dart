@@ -15,7 +15,7 @@
 // يقرأ الماضيَ خطأً.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/invoice_due_date.dart';
+import 'package:picpos_erp/domain/models/invoice_due_date.dart';
 
 void main() {
   final issued = DateTime(2026, 9, 8);

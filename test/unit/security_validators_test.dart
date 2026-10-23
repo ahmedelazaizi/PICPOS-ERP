@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/security_service.dart';
-import 'package:ural_erp/core/validators/input_validators.dart';
+import 'package:picpos_erp/services/security_service.dart';
+import 'package:picpos_erp/core/validators/input_validators.dart';
 
 /// Unit tests for Security Service and Input Validators
 void main() {

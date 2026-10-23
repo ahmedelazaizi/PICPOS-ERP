@@ -16,9 +16,9 @@
 
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/services/receipt_qr_resolver.dart';
-import 'package:ural_erp/domain/models/receipt_qr_decision.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/services/receipt_qr_resolver.dart';
+import 'package:picpos_erp/domain/models/receipt_qr_decision.dart';
 
 void main() {
   late AppDatabase db;

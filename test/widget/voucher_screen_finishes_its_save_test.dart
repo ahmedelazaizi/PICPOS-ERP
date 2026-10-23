@@ -38,16 +38,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/data/database/database.dart' as db;
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/data/providers/parties_providers.dart';
-import 'package:ural_erp/data/providers/repository_providers.dart';
-import 'package:ural_erp/data/providers/treasury_providers.dart';
-import 'package:ural_erp/domain/repositories/accounting_repository.dart';
-import 'package:ural_erp/domain/repositories/activity_log_repository.dart';
-import 'package:ural_erp/domain/repositories/treasury_repository.dart';
-import 'package:ural_erp/presentation/treasury_picpos/screens/payment_voucher_picpos_screen.dart';
-import 'package:ural_erp/presentation/treasury_picpos/screens/receipt_voucher_picpos_screen.dart';
+import 'package:picpos_erp/data/database/database.dart' as db;
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/data/providers/parties_providers.dart';
+import 'package:picpos_erp/data/providers/repository_providers.dart';
+import 'package:picpos_erp/data/providers/treasury_providers.dart';
+import 'package:picpos_erp/domain/repositories/accounting_repository.dart';
+import 'package:picpos_erp/domain/repositories/activity_log_repository.dart';
+import 'package:picpos_erp/domain/repositories/treasury_repository.dart';
+import 'package:picpos_erp/presentation/treasury_picpos/screens/payment_voucher_picpos_screen.dart';
+import 'package:picpos_erp/presentation/treasury_picpos/screens/receipt_voucher_picpos_screen.dart';
 
 // ═══════════════════════════════════════════════════════════════════════
 // أطرافٌ ومستودعاتٌ وهميّة — أخفُّ ما يُكمل مسارَ الحفظ

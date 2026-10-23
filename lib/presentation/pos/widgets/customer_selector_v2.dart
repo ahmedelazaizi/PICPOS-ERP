@@ -1,6 +1,6 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
-import 'package:ural_erp/core/widgets/app_toast.dart';
+import 'package:picpos_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:drift/drift.dart' show Value;
@@ -10,7 +10,7 @@ import '../../../core/permissions/permission_codes.dart';
 import '../../../data/providers/providers.dart';
 import '../../../services/client_write_interceptor.dart';
 import '../../widgets/permission_guard.dart';
-import 'package:ural_erp/presentation/pos/providers/cart_controller.dart';
+import 'package:picpos_erp/presentation/pos/providers/cart_controller.dart';
 
 /// زرار «إضافة عميل سريع» بجانب حقل البحث — مستخرج كودجت مستقل عن
 /// `_CustomerSelectorV2State` عشان يتعمله اختبار widget من غير ما نركّب

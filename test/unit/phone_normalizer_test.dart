@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/utils/phone_normalizer.dart';
+import 'package:picpos_erp/core/utils/phone_normalizer.dart';
 
 void main() {
   group('normalizePhone', () {

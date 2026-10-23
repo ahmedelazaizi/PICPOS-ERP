@@ -1,5 +1,5 @@
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';

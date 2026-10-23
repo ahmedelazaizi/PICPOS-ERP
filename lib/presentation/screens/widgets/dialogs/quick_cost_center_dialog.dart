@@ -1,9 +1,9 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../data/providers/providers.dart';
 import '../../../widgets/dialogs/app_form_dialog.dart';
-import 'package:ural_erp/l10n/app_localizations.dart';
+import 'package:picpos_erp/l10n/app_localizations.dart';
 
 class QuickCostCenterDialog extends AppFormDialog<int?> {
   const QuickCostCenterDialog({super.key});

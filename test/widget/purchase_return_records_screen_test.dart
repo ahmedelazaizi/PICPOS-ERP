@@ -26,13 +26,13 @@ import 'package:flutter_test/flutter_test.dart';
 import '../helpers/attachments_test_overrides.dart';
 import '../helpers/library_source.dart';
 
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/data/providers/document_record_providers.dart';
-import 'package:ural_erp/data/providers/return_records_providers.dart';
-import 'package:ural_erp/domain/models/document_record.dart';
-import 'package:ural_erp/domain/models/return_draft.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_attachments_panel.dart';
-import 'package:ural_erp/presentation/purchase_returns_picpos/screens/purchase_return_records_picpos_screen.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/data/providers/document_record_providers.dart';
+import 'package:picpos_erp/data/providers/return_records_providers.dart';
+import 'package:picpos_erp/domain/models/document_record.dart';
+import 'package:picpos_erp/domain/models/return_draft.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_attachments_panel.dart';
+import 'package:picpos_erp/presentation/purchase_returns_picpos/screens/purchase_return_records_picpos_screen.dart';
 
 PurchaseReturnRecord _rec({
   required int id,

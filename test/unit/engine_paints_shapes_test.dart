@@ -13,10 +13,10 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/printing/template_document.dart';
-import 'package:ural_erp/services/printing/layout_engine.dart';
-import 'package:ural_erp/services/printing/paint_plan.dart';
-import 'package:ural_erp/services/printing/pdf_painter.dart';
+import 'package:picpos_erp/domain/printing/template_document.dart';
+import 'package:picpos_erp/services/printing/layout_engine.dart';
+import 'package:picpos_erp/services/printing/paint_plan.dart';
+import 'package:picpos_erp/services/printing/pdf_painter.dart';
 
 import '../helpers/pdf_probe.dart';
 

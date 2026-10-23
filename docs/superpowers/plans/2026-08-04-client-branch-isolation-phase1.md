@@ -133,9 +133,9 @@ import 'dart:convert';
 import 'package:drift/drift.dart' as d;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf/shelf.dart' as shelf;
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/api/api_handler.dart';
-import 'package:ural_erp/services/api/api_user_context.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/api/api_handler.dart';
+import 'package:picpos_erp/services/api/api_user_context.dart';
 
 import '_support/pg_fixture.dart';
 
@@ -644,8 +644,8 @@ Create `test/unit/client_branch_scope_g2_test.dart`:
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ural_erp/data/database/sync_interceptor.dart';
-import 'package:ural_erp/services/server_proxy.dart';
+import 'package:picpos_erp/data/database/sync_interceptor.dart';
+import 'package:picpos_erp/services/server_proxy.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized(); // لازم لقناة SharedPreferences
@@ -873,8 +873,8 @@ Create `test/unit/branch_scope_cleanup_test.dart`:
 import 'package:drift/drift.dart' as d;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/extensions/branch_scope_cleanup_extension.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/extensions/branch_scope_cleanup_extension.dart';
 
 void main() {
   late AppDatabase db;

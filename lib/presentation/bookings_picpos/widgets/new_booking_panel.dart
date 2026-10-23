@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // لوحُ «حجز جديد».
 //
 // ⚠️ **والمدّةُ تُعرَض ولا تُكتب**: التصميمُ يرسمها حقلَ إدخال، لكنّ

@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // تعريفاتُ التقارير السبعةِ التي كانت على شاشاتٍ نائبة.
 //
 // ═══ القاعدةُ الحاكمةُ لهذا الملفّ ═══

@@ -24,9 +24,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_surface.dart';
-import 'package:ural_erp/presentation/pos_picpos/widgets/picpos_pos_text.dart';
-import 'package:ural_erp/presentation/widgets/enhanced_components.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
+import 'package:picpos_erp/presentation/pos_picpos/widgets/picpos_pos_text.dart';
+import 'package:picpos_erp/presentation/widgets/enhanced_components.dart';
 
 /// نسبةُ تباين WCAG بين لونَين — الأفتحُ في البسط دائماً.
 double _contrast(Color a, Color b) {

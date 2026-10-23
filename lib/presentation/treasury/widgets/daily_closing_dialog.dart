@@ -1,6 +1,6 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
-import 'package:ural_erp/core/widgets/app_toast.dart';
+import 'package:picpos_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:intl/intl.dart';
@@ -9,11 +9,11 @@ import '../../picpos_shell/picpos_surface.dart';
 
 import '../../../core/permissions/permission_codes.dart';
 import '../../widgets/permission_guard.dart';
-import 'package:ural_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
 
 import '../../../data/providers/providers.dart';
 
-import 'package:ural_erp/l10n/app_localizations.dart';
+import 'package:picpos_erp/l10n/app_localizations.dart';
 
 class DailyClosingDialog extends ConsumerStatefulWidget {
   final SafeData safe;

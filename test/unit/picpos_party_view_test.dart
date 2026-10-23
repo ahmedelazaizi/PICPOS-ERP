@@ -4,8 +4,8 @@
 // (نفسُها قبل إعادة التصميم وبعدها)، وحدُّ الائتمان الصفريُّ الذي يعني «بلا
 // حدّ» لا «حدَّ صفر»، وجمعُ الأرصدة بالوحدات الصغرى.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/constants/app_constants.dart';
-import 'package:ural_erp/domain/models/picpos_party_view.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/domain/models/picpos_party_view.dart';
 
 PicPosPartyCard _party({
   int id = 1,

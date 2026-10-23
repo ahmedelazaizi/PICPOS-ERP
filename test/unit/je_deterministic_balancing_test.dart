@@ -23,12 +23,12 @@ import 'dart:io';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import '../helpers/library_source.dart';
-import 'package:ural_erp/core/utils/financial_utils.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/sync_interceptor.dart';
-import 'package:ural_erp/domain/entities/accounting_entities.dart';
-import 'package:ural_erp/services/journal_entry_diagnostics.dart';
-import 'package:ural_erp/services/network_service.dart';
+import 'package:picpos_erp/core/utils/financial_utils.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/sync_interceptor.dart';
+import 'package:picpos_erp/domain/entities/accounting_entities.dart';
+import 'package:picpos_erp/services/journal_entry_diagnostics.dart';
+import 'package:picpos_erp/services/network_service.dart';
 
 void main() {
   late AppDatabase db;

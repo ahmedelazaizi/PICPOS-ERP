@@ -5,7 +5,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/stock_shortage_policy_service.dart';
+import 'package:picpos_erp/services/stock_shortage_policy_service.dart';
 
 Future<String?> Function(String) _settings(Map<String, String> values) =>
     (key) async => values[key];

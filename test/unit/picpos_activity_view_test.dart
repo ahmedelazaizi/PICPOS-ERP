@@ -4,8 +4,8 @@
 // التصميمَ لا يرسم له عموداً، والحقولُ التي **تغيب بحقّ** (فرعٌ قبل v138،
 // دورٌ غيرُ مسنَد) فلا يُكتب مكانها نصٌّ يوهم بمعلومة.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/constants/app_constants.dart';
-import 'package:ural_erp/domain/models/picpos_activity_view.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/domain/models/picpos_activity_view.dart';
 
 PicPosActivityRow _row({
   int id = 1,

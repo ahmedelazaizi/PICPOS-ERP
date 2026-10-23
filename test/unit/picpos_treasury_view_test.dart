@@ -4,8 +4,8 @@
 // طبقة الرسم بعيداً عن سببها)، والمجموعُ السالب (‏صندوقٌ مسحوبٌ عليه)، وأن
 // نوعاً مجهولاً يُعدُّ نقداً فلا يختفي رصيدُه من المجموع.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/constants/app_constants.dart';
-import 'package:ural_erp/domain/models/picpos_treasury_view.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/domain/models/picpos_treasury_view.dart';
 
 ({String kind, double balance}) _safe(String kind, double balance) =>
     (kind: kind, balance: balance);

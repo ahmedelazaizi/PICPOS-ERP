@@ -13,7 +13,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/label_scale_service.dart';
+import 'package:picpos_erp/services/label_scale_service.dart';
 
 void main() {
   group('scaleItemIsSoldByWeight', () {

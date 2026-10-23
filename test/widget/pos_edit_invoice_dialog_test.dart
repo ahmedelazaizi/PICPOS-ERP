@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/presentation/pos/widgets/pos_edit_invoice_dialog.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/presentation/pos/widgets/pos_edit_invoice_dialog.dart';
 
 /// `PosEditInvoiceDialog` must open for EVERY payment method the POS can write.
 ///

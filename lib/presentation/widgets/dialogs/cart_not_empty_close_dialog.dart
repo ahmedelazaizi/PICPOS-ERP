@@ -1,7 +1,7 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
 
 /// يعرض حواراً يمنع إغلاقَ البرنامج بسبب أصنافٍ في سلة البيع.
 ///

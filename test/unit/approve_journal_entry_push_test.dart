@@ -6,10 +6,10 @@
 // `isAutoPosted ?? true`، فإن لم تُرسَل الحقول خُزّن القيد اليدوي بلا مرجع
 // وبوسم «آلي». هذا الاختبار يلتقط ما يُسلَّم للمعترض ويقارنه بصفّ القيد.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/sync_interceptor.dart';
-import 'package:ural_erp/data/repositories/drift_accounting_repository.dart';
-import 'package:ural_erp/domain/repositories/accounting_repository.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/sync_interceptor.dart';
+import 'package:picpos_erp/data/repositories/drift_accounting_repository.dart';
+import 'package:picpos_erp/domain/repositories/accounting_repository.dart';
 
 /// معترض يلتقط وسائط `submitJournalEntry` ويزعم وضع العميل/المضيف.
 class _CapturingInterceptor implements SyncInterceptor {

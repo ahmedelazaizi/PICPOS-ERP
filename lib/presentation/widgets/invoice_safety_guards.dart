@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // Invoice Safety Guards (U-06, U-08, U-09)
 // Pre-checkout validation utilities for POS and Sales Invoices

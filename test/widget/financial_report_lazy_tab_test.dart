@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/accounting_picpos/financial_report_lazy_tab.dart';
+import 'package:picpos_erp/presentation/accounting_picpos/financial_report_lazy_tab.dart';
 
 void main() {
   testWidgets('يعرض حالة التحميل ثم محتوى التبويب النشط فقط', (tester) async {

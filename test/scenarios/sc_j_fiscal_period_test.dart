@@ -2,8 +2,8 @@
 // (لا مخزون ولا خزينة ولا قيد) لأن العملية تتراجع كاملة.
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/repositories/purchases_repository.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/repositories/purchases_repository.dart';
 
 import 'scenario_world.dart';
 

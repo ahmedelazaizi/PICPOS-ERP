@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // حوارُ تحويل الحجز إلى فاتورة.
 //
 // ═══ ⚠️ لا يُنشئ فاتورةً — يُسلِّم الحجزَ لنقطة البيع ═══

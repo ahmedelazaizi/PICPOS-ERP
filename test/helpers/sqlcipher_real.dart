@@ -9,7 +9,7 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/db_key_types.dart';
+import 'package:picpos_erp/services/db_key_types.dart';
 
 class _User extends QueryExecutorUser {
   _User([this.version = 0]);

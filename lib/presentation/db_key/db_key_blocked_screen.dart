@@ -3,11 +3,11 @@ import 'dart:async' show unawaited;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:ural_erp/core/config/brand.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
-import 'package:ural_erp/services/db_key_blocked_actions.dart';
-import 'package:ural_erp/services/db_key_types.dart';
+import 'package:picpos_erp/core/config/brand.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/services/db_key_blocked_actions.dart';
+import 'package:picpos_erp/services/db_key_types.dart';
 
 /// تطبيقٌ أدنى يعرض شاشةَ الحجب وحدَها (كما `FatalSetupErrorApp`): يُشغَّل من
 /// `main` قبل إنشاء أيّ قاعدة، فلا تُنشأ قاعدةٌ فارغةٌ فوق بيانات المستخدم.

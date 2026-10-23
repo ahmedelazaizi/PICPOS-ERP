@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // الوجهاتُ الأربعُ الباقية: العملاءُ والتذكيراتُ والتقاريرُ والإعدادات.
 import '../../../data/providers/feature_settings_providers.dart';
 import 'package:flutter/material.dart';

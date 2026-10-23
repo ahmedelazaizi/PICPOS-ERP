@@ -4,9 +4,9 @@
 // توصيل، ومتبقٍّ موجب، وصنفٌ باسمٍ عربيٍّ طويلٍ يلتفّ، وآخرُ بلاتينيٍّ
 // وأرقام، وثالثٌ بملاحظةٍ وإضافات. فما لا يظهر في البصمة لم يكن ليظهر.
 
-import 'package:ural_erp/domain/entities/shift_closing_snapshot.dart';
-import 'package:ural_erp/services/printing/printing_models.dart';
-import 'package:ural_erp/services/printing/template_pdf_renderer.dart';
+import 'package:picpos_erp/domain/entities/shift_closing_snapshot.dart';
+import 'package:picpos_erp/services/printing/printing_models.dart';
+import 'package:picpos_erp/services/printing/template_pdf_renderer.dart';
 
 /// تاريخٌ **ثابت** — لا `DateTime.now()`: البصمةُ تتغيّر كلَّ يومٍ فتفقد معناها.
 final kFixtureDate = DateTime.utc(2026, 3, 14, 9, 26, 53);

@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // شاشةُ «فئات الأصول» — مدخلٌ جانبيٌّ مستقلٌّ بقرار المالك 2026-09-18.
 //
 // ═══ 🔴 ولماذا ليست نسخةً من التبويبة التي خرجت منها ═══

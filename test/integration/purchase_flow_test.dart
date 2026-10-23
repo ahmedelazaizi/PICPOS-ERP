@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/entities/purchases_state.dart';
+import 'package:picpos_erp/domain/entities/purchases_state.dart';
 
 /// Integration test for complete purchase flow
 /// Tests the business logic for purchase operations

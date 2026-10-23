@@ -15,8 +15,8 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNotNull;
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/booking_actions_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/booking_actions_service.dart';
 
 void main() {
   late AppDatabase db;

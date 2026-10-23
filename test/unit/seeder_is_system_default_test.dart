@@ -17,7 +17,7 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 void main() {
   group('Spec 129 F6 — is_system_default seeder contract', () {

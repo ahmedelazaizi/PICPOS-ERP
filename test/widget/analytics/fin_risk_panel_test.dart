@@ -1,8 +1,8 @@
 // اختبار لوحة المخاطر: العدّاد لكلّ مجموعة، ترتيب الخطر قبل التحذير، RTL/EN.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/analytics/ratio_engine.dart';
-import 'package:ural_erp/presentation/analytics_picpos/fin_risk_panel.dart';
+import 'package:picpos_erp/domain/analytics/ratio_engine.dart';
+import 'package:picpos_erp/presentation/analytics_picpos/fin_risk_panel.dart';
 
 import 'fin_test_support.dart';
 

@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 /// Input validators for form validation and data sanitization
 /// Provides consistent validation across all screens
 class InputValidators {

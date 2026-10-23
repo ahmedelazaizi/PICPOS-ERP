@@ -2,9 +2,9 @@
 // سيناريو (ط): إلغاء/عكس فاتورة مرحّلة (القيد المعاكس والمخزون يعودان).
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/entities/product_entity.dart';
-import 'package:ural_erp/domain/models/return_original_link.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/entities/product_entity.dart';
+import 'package:picpos_erp/domain/models/return_original_link.dart';
 
 import 'scenario_world.dart';
 

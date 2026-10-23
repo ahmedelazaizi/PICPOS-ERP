@@ -17,22 +17,22 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/screens/reports/ar_aging_report_screen.dart';
-import 'package:ural_erp/presentation/screens/reports/category_profit_report_screen.dart';
-import 'package:ural_erp/presentation/screens/reports/consumption_report_screen.dart';
-import 'package:ural_erp/presentation/screens/reports/delivery_report_screen.dart';
-import 'package:ural_erp/presentation/screens/reports/expenses_report_screen.dart';
-import 'package:ural_erp/presentation/screens/reports/inventory_report_screen.dart';
-import 'package:ural_erp/presentation/screens/reports/purchase_returns_report_screen.dart';
-import 'package:ural_erp/presentation/screens/reports/purchases_report_screen.dart';
-import 'package:ural_erp/presentation/screens/reports/sales_report_screen.dart';
-import 'package:ural_erp/presentation/screens/reports/sales_returns_report_screen.dart';
-import 'package:ural_erp/presentation/screens/reports/shifts_report_screen.dart';
-import 'package:ural_erp/presentation/screens/reports/tables_report_screen.dart';
-import 'package:ural_erp/presentation/screens/reports/tax_report_screen.dart';
-import 'package:ural_erp/presentation/screens/reports/top_products_report_screen.dart';
-import 'package:ural_erp/presentation/screens/reports/treasury_report_screen.dart';
-import 'package:ural_erp/presentation/screens/reports/vat_reconciliation_screen.dart';
+import 'package:picpos_erp/presentation/screens/reports/ar_aging_report_screen.dart';
+import 'package:picpos_erp/presentation/screens/reports/category_profit_report_screen.dart';
+import 'package:picpos_erp/presentation/screens/reports/consumption_report_screen.dart';
+import 'package:picpos_erp/presentation/screens/reports/delivery_report_screen.dart';
+import 'package:picpos_erp/presentation/screens/reports/expenses_report_screen.dart';
+import 'package:picpos_erp/presentation/screens/reports/inventory_report_screen.dart';
+import 'package:picpos_erp/presentation/screens/reports/purchase_returns_report_screen.dart';
+import 'package:picpos_erp/presentation/screens/reports/purchases_report_screen.dart';
+import 'package:picpos_erp/presentation/screens/reports/sales_report_screen.dart';
+import 'package:picpos_erp/presentation/screens/reports/sales_returns_report_screen.dart';
+import 'package:picpos_erp/presentation/screens/reports/shifts_report_screen.dart';
+import 'package:picpos_erp/presentation/screens/reports/tables_report_screen.dart';
+import 'package:picpos_erp/presentation/screens/reports/tax_report_screen.dart';
+import 'package:picpos_erp/presentation/screens/reports/top_products_report_screen.dart';
+import 'package:picpos_erp/presentation/screens/reports/treasury_report_screen.dart';
+import 'package:picpos_erp/presentation/screens/reports/vat_reconciliation_screen.dart';
 
 import '_support/screen_smoke.dart';
 

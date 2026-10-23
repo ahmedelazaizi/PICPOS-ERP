@@ -2,12 +2,12 @@
 // الافتراضية» تقرّر كلُّها بنفس الدالّة (`screenVisibleToUser`) — هذا الاختبارُ
 // يقيس أنّها لا تتباعد لأيّ مستخدمٍ ولأيّ `ScreenId`.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/core/permissions/screen_access_resolver.dart';
-import 'package:ural_erp/core/permissions/screen_visibility.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/data/providers/screen_access_selectors.dart';
-import 'package:ural_erp/presentation/shared_widgets/default_screen_dropdown.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/permissions/screen_access_resolver.dart';
+import 'package:picpos_erp/core/permissions/screen_visibility.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/data/providers/screen_access_selectors.dart';
+import 'package:picpos_erp/presentation/shared_widgets/default_screen_dropdown.dart';
 
 /// شاشاتُ أدواتٍ تُستثنى من قائمة «الشاشة الافتراضية» وحدَها (لا من الفتح).
 const _notLanding = {

@@ -2,10 +2,10 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/api/api_session_token.dart';
-import 'package:ural_erp/services/api/server_secrets.dart';
-import 'package:ural_erp/services/api/table_bill_token.dart';
-import 'package:ural_erp/services/secret_store.dart';
+import 'package:picpos_erp/services/api/api_session_token.dart';
+import 'package:picpos_erp/services/api/server_secrets.dart';
+import 'package:picpos_erp/services/api/table_bill_token.dart';
+import 'package:picpos_erp/services/secret_store.dart';
 
 class _FailingStore extends MemorySecretStore {
   _FailingStore({this.failRead = false, this.failWrite = false, this.dropWrites = false});

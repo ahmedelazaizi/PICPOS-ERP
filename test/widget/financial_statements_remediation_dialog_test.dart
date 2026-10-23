@@ -19,15 +19,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/repositories/accounting_repository.dart';
-import 'package:ural_erp/domain/repositories/audit_repository_interface.dart';
-import 'package:ural_erp/domain/repositories/i_products_repository.dart';
-import 'package:ural_erp/domain/repositories/inventory_repository.dart';
-import 'package:ural_erp/domain/repositories/parties_repository.dart';
-import 'package:ural_erp/domain/repositories/settings_repository.dart';
-import 'package:ural_erp/presentation/accounting_picpos/financial_statements_picpos_screen.dart';
-import 'package:ural_erp/services/accounting_service.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/repositories/accounting_repository.dart';
+import 'package:picpos_erp/domain/repositories/audit_repository_interface.dart';
+import 'package:picpos_erp/domain/repositories/i_products_repository.dart';
+import 'package:picpos_erp/domain/repositories/inventory_repository.dart';
+import 'package:picpos_erp/domain/repositories/parties_repository.dart';
+import 'package:picpos_erp/domain/repositories/settings_repository.dart';
+import 'package:picpos_erp/presentation/accounting_picpos/financial_statements_picpos_screen.dart';
+import 'package:picpos_erp/services/accounting_service.dart';
 
 // ⚠️ فاكٌّ لكلِّ واجهةٍ على حدة، لا صنفٌ يجمع السبعَ: `IProductRepository`
 //    و`InventoryRepository` تعلنان `getExpiredBatches` بنوعَي إرجاعٍ

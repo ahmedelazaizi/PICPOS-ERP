@@ -4,14 +4,14 @@
 // (٣) أنّ فتحَ الشاشة لا يمنح فعلاً فيها (الأمان)، (٤) أنّ المجموعات متّسقة مع
 // `masterList` و`screenPermissionMap`، (٥) نقلَ الحجوزات إلى `bookings_view`.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/core/permissions/screen_access_resolver.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/domain/models/table_actions.dart';
-import 'package:ural_erp/presentation/bookings_picpos/widgets/booking_permission_gates.dart';
-import 'package:ural_erp/domain/models/picpos_booking_view.dart';
-import 'package:ural_erp/presentation/widgets/permission_guard.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/core/permissions/screen_access_resolver.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/domain/models/table_actions.dart';
+import 'package:picpos_erp/presentation/bookings_picpos/widgets/booking_permission_gates.dart';
+import 'package:picpos_erp/domain/models/picpos_booking_view.dart';
+import 'package:picpos_erp/presentation/widgets/permission_guard.dart';
 
 bool _opens(Iterable<String> perms, ScreenId id, {bool bypass = false}) =>
     canOpenScreen(perms, id,

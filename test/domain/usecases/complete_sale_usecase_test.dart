@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/usecases/sales/complete_sale_usecase.dart';
-import 'package:ural_erp/domain/usecases/sales/calculate_invoice_totals_usecase.dart';
-import 'package:ural_erp/domain/entities/cart_item_entity.dart';
-import 'package:ural_erp/domain/repositories/sales_repository.dart';
-import 'package:ural_erp/domain/entities/invoice_entity.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/usecases/sales/complete_sale_usecase.dart';
+import 'package:picpos_erp/domain/usecases/sales/calculate_invoice_totals_usecase.dart';
+import 'package:picpos_erp/domain/entities/cart_item_entity.dart';
+import 'package:picpos_erp/domain/repositories/sales_repository.dart';
+import 'package:picpos_erp/domain/entities/invoice_entity.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 /// Manual Mock for SalesRepository to avoid build_runner dependency
 class MockSalesRepository implements SalesRepository {

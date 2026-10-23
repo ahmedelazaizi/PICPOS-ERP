@@ -21,7 +21,7 @@ All of these are read-only. No product file was modified by any audit author.
 | E6 | A | Classification scan of `picpos_login_log_server.txt` (counts only, values redacted) | Usernames and shift amounts; no hashes, tokens or IPs → SEC-012. |
 | E7 | B | Read drift 2.32.1 package source (`engines.dart`, `db_base.dart`, `migration.dart`) | Confirms MIG-001 and MIG-002. |
 | E8 | B | File and test counts | 167 tables, 134 DAOs, 12 epoch files; test files: unit 691, integration 160, integration_pg 26, scenarios 14, structural 117, widget 264, data 33. |
-| E9 | C | Artifact brand scan of `FlavorBuilds\PicPos` (Latin-1 + UTF-16LE) — T-C-03 | **FAIL**: `app.so` has `UralCash-ERP-Integrity-v1`, `UralCash-API-v1`, 1,503 `package:ural_erp/` URIs and `ural_*` storage keys; `en.json` / `catalog_ar.json` contain "Ural Technology", "URAL-ERP", "Ural Cash" → BRAND-002, BRAND-005. |
+| E9 | C | Artifact brand scan of `FlavorBuilds\PicPos` (Latin-1 + UTF-16LE) — T-C-03 | **FAIL**: `app.so` has `UralCash-ERP-Integrity-v1`, `UralCash-API-v1`, 1,503 `package:picpos_erp/` URIs and `ural_*` storage keys; `en.json` / `catalog_ar.json` contain "Ural Technology", "URAL-ERP", "Ural Cash" → BRAND-002, BRAND-005. |
 | E10 | C | SHA-256 + visual check of shipped images — T-C-04 | **FAIL**: `flutter_assets\logo.PNG` = the UralCash company logo → BRAND-001. |
 | E11 | C | `(Get-Item PicPos.exe).VersionInfo` — T-C-05 | **PASS**: CompanyName / ProductName / FileDescription `PicPos`, FileVersion `3.9.2+277`. |
 | E12 | C | `Get-AuthenticodeSignature` (setup exe, `PicPos.exe`, `sqlite3.dll`) — T-C-06 | **FAIL** (public-release requirement): all NotSigned → REL-002. |

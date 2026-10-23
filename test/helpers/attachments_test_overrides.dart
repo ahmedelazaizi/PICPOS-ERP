@@ -19,9 +19,9 @@
 
 import 'dart:typed_data';
 
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/models/attachment_policy.dart';
-import 'package:ural_erp/domain/repositories/attachments_repository.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/models/attachment_policy.dart';
+import 'package:picpos_erp/domain/repositories/attachments_repository.dart';
 
 /// مستودعُ مرفقاتٍ بلا قاعدة — يردّ فراغاً ويسجّل ما طُلب منه.
 class FakeAttachmentsRepository implements IAttachmentsRepository {

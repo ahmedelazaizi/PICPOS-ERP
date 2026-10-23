@@ -3,7 +3,7 @@
 // company-wide parties.balance.
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 void main() {
   late AppDatabase db;

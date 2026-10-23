@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 /// Base exception class for UralCash application
 abstract class AppException implements Exception {
   final String message;

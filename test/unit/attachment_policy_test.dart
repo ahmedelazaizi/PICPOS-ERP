@@ -7,7 +7,7 @@
 // يترك الخادمَ بلا برهان، وعميلٌ مُعدَّلٌ يتجاوز الودجتَ أصلاً.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/attachment_policy.dart';
+import 'package:picpos_erp/domain/models/attachment_policy.dart';
 
 String _ok({
   String entityType = 'purchase_invoice',

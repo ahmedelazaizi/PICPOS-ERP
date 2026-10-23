@@ -27,9 +27,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/repositories/parties_repository.dart';
-import 'package:ural_erp/presentation/party_statement_picpos/screens/party_statement_picpos_screen.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/repositories/parties_repository.dart';
+import 'package:picpos_erp/presentation/party_statement_picpos/screens/party_statement_picpos_screen.dart';
 
 Party _party(int id, String name) => Party(
   id: id,

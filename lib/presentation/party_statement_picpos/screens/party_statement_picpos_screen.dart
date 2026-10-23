@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // كشفُ حساب العميل والمورد على هويّة PicPos.
 //
 // المصدر: «PicPos Customer Statement.dc.html» (١٤٨٢ سطراً) و«PicPos Supplier

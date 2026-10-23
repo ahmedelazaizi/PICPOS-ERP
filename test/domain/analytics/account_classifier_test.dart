@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/analytics/account_classifier.dart';
-import 'package:ural_erp/domain/analytics/budget_targets.dart';
-import 'package:ural_erp/domain/analytics/financial_snapshot.dart';
+import 'package:picpos_erp/domain/analytics/account_classifier.dart';
+import 'package:picpos_erp/domain/analytics/budget_targets.dart';
+import 'package:picpos_erp/domain/analytics/financial_snapshot.dart';
 
 AccountRecord acc(int id, String code, String type,
         {int? parent, double bal = 0, String name = 'x'}) =>

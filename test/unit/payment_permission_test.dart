@@ -9,7 +9,7 @@
 // ٢. `|| permissions.isEmpty` — مستخدم بصفر صلاحيات كان بيعدّي كل الفحوص.
 //    يعني سحب كل صلاحيات الدفع من كاشير كان بيديله كلها.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/pos/widgets/payment_sheet.dart';
+import 'package:picpos_erp/presentation/pos/widgets/payment_sheet.dart';
 
 void main() {
   group('hasPaymentPermission', () {

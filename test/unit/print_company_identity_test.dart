@@ -13,12 +13,12 @@
 // وإيصالٍ حراريٍّ — من القالب المبذور ومن المولِّد الاحتياطيّ — بلغتَي المستند.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/printing/company_identity.dart';
-import 'package:ural_erp/services/printing/printing_models.dart';
-import 'package:ural_erp/services/printing/report_pdf_generator.dart';
-import 'package:ural_erp/services/printing/thermal_receipt_generator.dart';
-import 'package:ural_erp/services/templated_invoice_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/printing/company_identity.dart';
+import 'package:picpos_erp/services/printing/printing_models.dart';
+import 'package:picpos_erp/services/printing/report_pdf_generator.dart';
+import 'package:picpos_erp/services/printing/thermal_receipt_generator.dart';
+import 'package:picpos_erp/services/templated_invoice_service.dart';
 
 import '../helpers/arabic_pdf_text.dart';
 import '../helpers/pdf_probe.dart';

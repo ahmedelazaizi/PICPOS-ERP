@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 void main() {
   late AppDatabase database;

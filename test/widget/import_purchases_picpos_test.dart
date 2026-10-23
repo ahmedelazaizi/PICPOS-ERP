@@ -17,9 +17,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/data/database/database.dart' show Currency;
-import 'package:ural_erp/domain/models/import_purchase_plan.dart';
-import 'package:ural_erp/presentation/import_purchases_picpos/screens/import_purchases_picpos_screen.dart';
+import 'package:picpos_erp/data/database/database.dart' show Currency;
+import 'package:picpos_erp/domain/models/import_purchase_plan.dart';
+import 'package:picpos_erp/presentation/import_purchases_picpos/screens/import_purchases_picpos_screen.dart';
 
 const _usd = (
   id: 3,

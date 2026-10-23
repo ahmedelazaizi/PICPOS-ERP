@@ -17,7 +17,7 @@
 // تُقاس بلا شجرةٍ ولا `pumpWidget`.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/screen_tabs.dart';
+import 'package:picpos_erp/domain/models/screen_tabs.dart';
 
 void main() {
   group('الفتحُ والتنشيط', () {

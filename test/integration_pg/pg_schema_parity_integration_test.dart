@@ -30,11 +30,11 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:postgres/postgres.dart' as pg;
-import 'package:ural_erp/core/logging/diagnostic_logger.dart';
-import 'package:ural_erp/data/database/connection_io.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/pg_config.dart';
-import 'package:ural_erp/main.dart' show isPostgresInsufficientPrivilege;
+import 'package:picpos_erp/core/logging/diagnostic_logger.dart';
+import 'package:picpos_erp/data/database/connection_io.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/pg_config.dart';
+import 'package:picpos_erp/main.dart' show isPostgresInsufficientPrivilege;
 
 import '_support/pg_fixture.dart';
 
@@ -365,7 +365,7 @@ END \$\$;''');
       // cannot raise the exception this test was waiting for — no matter how
       // the pass is written. (The restricted user CAN read `__schema`, so this
       // is not an onCreate-vs-onUpgrade question; the throw carries no
-      // `ural_erp` stack frames at all.)
+      // `picpos_erp` stack frames at all.)
       //
       // What the system actually guarantees — and what this now pins — is that
       // the failure is a hard, classifiable one that `main.dart` routes to the

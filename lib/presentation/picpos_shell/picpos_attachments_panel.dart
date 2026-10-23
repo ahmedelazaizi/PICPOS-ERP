@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';

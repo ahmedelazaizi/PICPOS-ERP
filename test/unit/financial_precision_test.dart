@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/utils/financial_utils.dart';
+import 'package:picpos_erp/core/utils/financial_utils.dart';
 
 /// Phase 2+3: Financial precision and journal balance integration tests
 void main() {

@@ -13,7 +13,7 @@
 //   ٣. مدّةُ الجلوس بالدقائق من `openedAt` إلى `closedAt` — للمغلقة وحدَها.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/tables_report_row.dart';
+import 'package:picpos_erp/domain/models/tables_report_row.dart';
 
 /// مُنشئٌ مختصرٌ للاختبار — `id` مطلوبٌ لأن `mergedToId` يشير إلى **طلب**.
 TableOrderInput order({

@@ -19,7 +19,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/config/runtime_config_snapshot.dart';
+import 'package:picpos_erp/core/config/runtime_config_snapshot.dart';
 
 void main() {
   group('Spec 097 — DeploymentMode enum has mirror', () {

@@ -10,10 +10,10 @@
 //     يُقال إلّا بقياس.
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/picpos_invoice_draft.dart';
-import 'package:ural_erp/presentation/invoice_form_picpos/picpos_invoice_form.dart';
+import 'package:picpos_erp/domain/models/picpos_invoice_draft.dart';
+import 'package:picpos_erp/presentation/invoice_form_picpos/picpos_invoice_form.dart';
 
 void main() {
   const products = [

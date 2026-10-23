@@ -1,6 +1,6 @@
 // حمولةُ مزامنة الاستبدال — واحدةٌ لا اثنتان.
 //
-import 'package:ural_erp/services/client_write_interceptor.dart';
+import 'package:picpos_erp/services/client_write_interceptor.dart';
 // **قرارُ المالك ٥:** حمولةٌ واحدةٌ يفكّها الخادمُ إلى مستندَين في معاملةٍ
 // واحدة. وحمولتان مرتبطتان تفتحان نافذةَ انفصالٍ طرفاً لطرف: يصل المردودُ
 // ويسقط البيعُ فيبقى العميلُ دائناً ببضاعةٍ أخذها.
@@ -11,7 +11,7 @@ import 'package:ural_erp/services/client_write_interceptor.dart';
 // سنداً واحداً. فحمولةٌ تحمل مردوداً واحداً تُسقط الشقَّ الثاني صامتاً.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/exchange_sync_payload.dart';
+import 'package:picpos_erp/domain/models/exchange_sync_payload.dart';
 
 Map<String, dynamic> _returnLeg({
   required bool damaged,

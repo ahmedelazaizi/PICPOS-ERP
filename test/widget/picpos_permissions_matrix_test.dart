@@ -18,10 +18,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/repositories/auth_repository.dart';
-import 'package:ural_erp/presentation/settings_picpos/widgets/permissions_matrix_picpos.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/repositories/auth_repository.dart';
+import 'package:picpos_erp/presentation/settings_picpos/widgets/permissions_matrix_picpos.dart';
 
 /// مستودعٌ زائفٌ ينفّذ الأربعَ التي تستعملها المصفوفةُ وحدَها.
 ///

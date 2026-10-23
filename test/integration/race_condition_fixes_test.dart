@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' as drift;
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/sync/strategies/sales_sync_strategy.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/sync/strategies/sales_sync_strategy.dart';
 
 /// Integration Tests: Race Condition Fixes (Phase 1)
 ///

@@ -24,7 +24,7 @@ import 'dart:io';
 import 'package:drift/drift.dart' hide isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import '../helpers/library_source.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 import '../helpers/api_data_handler_source.dart';
 
 void main() {

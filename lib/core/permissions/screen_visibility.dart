@@ -11,7 +11,7 @@
 //
 // الآن كلُّها تنادي هذه الدالّةَ بنفس المدخلات، ويقيس
 // `screen_visibility_parity_test` أنّها لا تتباعد.
-import 'package:ural_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
 
 import 'screen_access_resolver.dart';
 

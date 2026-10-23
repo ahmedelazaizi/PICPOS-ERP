@@ -80,7 +80,7 @@
 ```dart
 // test/unit/booking_overlap_test.dart
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/booking_overlap.dart';
+import 'package:picpos_erp/domain/models/booking_overlap.dart';
 
 BookingSlot slot(int startHour, int endHour) => BookingSlot(
       startsAt: DateTime(2026, 8, 20, startHour),
@@ -439,7 +439,7 @@ git commit -m "feat(bookings): ثلاثةُ جداولَ للحجز — والم
 ```dart
 // test/unit/bookings_dao_test.dart
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 void main() {
   late AppDatabase db;
@@ -797,7 +797,7 @@ git commit -m "feat(bookings): DAO الحجز — منعُ التعارض ومن
 ```dart
 // test/unit/bookings_reschedule_test.dart
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 void main() {
   late AppDatabase db;
@@ -1384,9 +1384,9 @@ git commit -m "feat(bookings): السجلُّ من الخدمة، والتصني
 ```dart
 // test/unit/bookings_feature_flag_test.dart
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/config/feature_dependency_graph.dart';
-import 'package:ural_erp/core/config/feature_key.dart';
-import 'package:ural_erp/core/config/feature_policy.dart';
+import 'package:picpos_erp/core/config/feature_dependency_graph.dart';
+import 'package:picpos_erp/core/config/feature_key.dart';
+import 'package:picpos_erp/core/config/feature_policy.dart';
 
 void main() {
   test('الحجوزاتُ لا تُجبر على وحدة الطاولات', () {

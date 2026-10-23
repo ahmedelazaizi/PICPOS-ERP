@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -9,7 +9,7 @@ import 'receipt_voucher_dialog.dart';
 import 'payment_voucher_dialog.dart';
 import '../../widgets/permission_guard.dart';
 
-import 'package:ural_erp/l10n/app_localizations.dart';
+import 'package:picpos_erp/l10n/app_localizations.dart';
 import '../../../data/providers/providers.dart';
 import '../../../core/constants/app_constants.dart';
 

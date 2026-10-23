@@ -11,7 +11,7 @@
 // ومخارجُ الإغلاق الأخرى تحتاج `BuildContext`/`Ref`. القرارُ نفسُه — امنع
 // أم لا — مُستخرَجٌ هنا بلا أيٍّ منها، فهو قابلٌ للاختبار مباشرةً.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/app_close_cart_gate.dart';
+import 'package:picpos_erp/domain/models/app_close_cart_gate.dart';
 
 void main() {
   group('shouldBlockAppCloseForCart', () {

@@ -13,7 +13,7 @@
 المكوّنات المشتركة في `picpos_shell/` هي PicPos-only (بلا فرع UralCash) → صفر مخاطرة على UralCash.
 
 **التقنيات:** Flutter · Riverpod 3 · drift (SQLite) · phosphor_flutter · google_fonts · Cairo.
-الحزمة الداخلية اسمها `ural_erp` (اسم مقبول، لا يُغيَّر).
+الحزمة الداخلية اسمها `picpos_erp` (اسم مقبول، لا يُغيَّر).
 
 ## قيود عامة (تنطبق على كل مهمة)
 
@@ -60,11 +60,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
-import 'package:ural_erp/core/theme/picpos_theme.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_page_header.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_content_card.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_screen_scaffold.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/core/theme/picpos_theme.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_page_header.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_content_card.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_screen_scaffold.dart';
 
 void main() {
   Widget wrap(Widget child) =>
@@ -381,10 +381,10 @@ fork نظيف: الشاشة الأصلية تكوين رفيع، وكل منطق
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ural_erp/core/theme/picpos_theme.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/presentation/products_picpos/screens/products_picpos_screen.dart';
+import 'package:picpos_erp/core/theme/picpos_theme.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/presentation/products_picpos/screens/products_picpos_screen.dart';
 
 void main() {
   testWidgets('شاشة أصناف PicPos تركّب وتعرض هيدر العلامة', (tester) async {
@@ -406,7 +406,7 @@ void main() {
 ```
 > **ملاحظة على مسار `database.dart`:** تحقق من مسار استيراد `AppDatabase` الفعلي
 > (`grep -rn "class AppDatabase" lib/data/database`) واستخدمه. المتوقّع
-> `package:ural_erp/data/database/database.dart`.
+> `package:picpos_erp/data/database/database.dart`.
 
 - [ ] **الخطوة ٢: شغّل الاختبار وتأكد إنه فاشل**
 
@@ -787,7 +787,7 @@ fork متوسط: يعيد استخدام `InventorySummaryRow`, `StockBalancesTa
 
 `test/widget/inventory_picpos_screen_test.dart` — نفس بنية اختبار الأصناف، مع:
 ```dart
-import 'package:ural_erp/presentation/inventory_picpos/screens/inventory_picpos_screen.dart';
+import 'package:picpos_erp/presentation/inventory_picpos/screens/inventory_picpos_screen.dart';
 // ... نفس imports قاعدة الاختبار (AppDatabase, databaseProvider, PicPosTheme, ProviderScope)
 void main() {
   testWidgets('شاشة مخزون PicPos تركّب وتعرض هيدر العلامة', (tester) async {
@@ -939,7 +939,7 @@ fork ثقيل: منطق الحفظ (`_handleSavePurchaseSimple` + `createNewInvo
 
 `test/widget/purchases_picpos_screen_test.dart` — نفس بنية اختبار الأصناف، مع:
 ```dart
-import 'package:ural_erp/presentation/purchases_picpos/screens/purchases_picpos_screen.dart';
+import 'package:picpos_erp/presentation/purchases_picpos/screens/purchases_picpos_screen.dart';
 // ... نفس imports قاعدة الاختبار
 void main() {
   testWidgets('شاشة مشتريات PicPos تركّب وتعرض هيدر العلامة', (tester) async {
@@ -1047,7 +1047,7 @@ Widget build(BuildContext context) {
 > `_buildFilters`, `_buildInvoicesTable`) داخل نفس الملف. حافِظ على `_confirmEditInvoice`
 > (السطور 63–103) لأنه يستدعي `editInvoice` من الـ mixin. **مصيدة الاستيراد:**
 > `purchase_invoices_screen.dart` يستورد `AppToast` عبر
-> `package:ural_erp/core/widgets/app_toast.dart` و`InvoiceStatus` مخفي من `app_constants` —
+> `package:picpos_erp/core/widgets/app_toast.dart` و`InvoiceStatus` مخفي من `app_constants` —
 > انسخ كتلة الاستيراد كما هي وأضِف استيراد `picpos_shell`.
 
 - [ ] **الخطوة ٥: وصّل الاختيار في `app_main_screen.dart`**
@@ -1127,7 +1127,7 @@ foreach ($s in @('monexia','cashier_market','avalon')) {
 ```
 **المقبول الوحيد:** الملاح الأربعة فقط (`UralCash-API-v1`, `UralCash-Session-v1`,
 `UralCash-ERP-Integrity-v1`, `<REDACTED-SALT>`) + المُعرّفات الداخلية المقبولة
-(قسم ٥.٥ في HANDOFF: `ural_erp`, `URAL_RESET_*`, `ural_api_token`, ...) · **UTF-16 = ٠** ·
+(قسم ٥.٥ في HANDOFF: `picpos_erp`, `URAL_RESET_*`, `ural_api_token`, ...) · **UTF-16 = ٠** ·
 **monexia/cashier_market/avalon = ٠** في الترميزين.
 
 - [ ] **الخطوة ٦: كوميت التوثيق (تحديث HANDOFF)**

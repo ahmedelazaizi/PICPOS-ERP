@@ -14,10 +14,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/repositories/offers_repository.dart';
-import 'package:ural_erp/presentation/offers_picpos/offers_picpos_screen.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_dialog.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/repositories/offers_repository.dart';
+import 'package:picpos_erp/presentation/offers_picpos/offers_picpos_screen.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_dialog.dart';
 
 class _FakeOffersRepo implements IOffersRepository {
   _FakeOffersRepo(this._offers);

@@ -4,9 +4,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/screens/fatal_setup_error_screen.dart';
-import 'package:ural_erp/services/deployment/reconcile_result.dart';
-import 'package:ural_erp/services/network_service.dart';
+import 'package:picpos_erp/presentation/screens/fatal_setup_error_screen.dart';
+import 'package:picpos_erp/services/deployment/reconcile_result.dart';
+import 'package:picpos_erp/services/network_service.dart';
 
 void main() {
   group('FatalSetupErrorScreen', () {

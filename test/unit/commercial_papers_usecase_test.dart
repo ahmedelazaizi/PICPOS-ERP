@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/usecases/commercial_papers/manage_paper_usecase.dart';
+import 'package:picpos_erp/domain/usecases/commercial_papers/manage_paper_usecase.dart';
 
 void main() {
   group('ManagePaperUseCase — CreatePaperInput Validation', () {

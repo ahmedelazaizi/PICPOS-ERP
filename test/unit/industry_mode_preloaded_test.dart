@@ -23,7 +23,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/config/industry_tables_policy.dart';
+import 'package:picpos_erp/core/config/industry_tables_policy.dart';
 
 void main() {
   test('`industry_mode` مُحمَّلٌ مسبقاً في `main.dart`', () {

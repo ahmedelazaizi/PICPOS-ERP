@@ -17,7 +17,7 @@ import 'services/license_service.dart';
 import 'services/permission_sync_bridge.dart';
 import 'presentation/shell/app_shell.dart';
 import 'core/config/brand.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'presentation/pos/screens/pos_main_screen.dart';
 import 'presentation/pos_picpos/screens/picpos_pos_screen.dart';
 import 'presentation/offers_picpos/offers_picpos_screen.dart';

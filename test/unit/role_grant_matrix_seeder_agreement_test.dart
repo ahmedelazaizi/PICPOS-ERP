@@ -20,8 +20,8 @@
 // الاعتماد ده يبقى صريح تحت الاسم اللي المطوّرين بيدوروا عليه لما يعدّلوا
 // المصفوفة أو يضيفوا دور جديد.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/role_grant_preflight_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/role_grant_preflight_service.dart';
 
 void main() {
   test(

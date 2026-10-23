@@ -9,8 +9,8 @@
 // هنا بنفحص الدالة الحقيقية نفسها (`canCancelEInvoice`) — مش إعادة كتابة
 // الشرط جوه الاختبار.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/presentation/screens/e_invoice_dashboard_screen.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/presentation/screens/e_invoice_dashboard_screen.dart';
 
 void main() {
   group('canCancelEInvoice — einvoice_cancel', () {

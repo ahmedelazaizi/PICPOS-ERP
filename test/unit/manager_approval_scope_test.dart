@@ -22,7 +22,7 @@
 // الأصليُّ من الذاكرة — ولا يعبر إلى بابٍ آخر.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/manager_approval_cache.dart';
+import 'package:picpos_erp/services/manager_approval_cache.dart';
 
 const _perm = 'pos_discount';
 

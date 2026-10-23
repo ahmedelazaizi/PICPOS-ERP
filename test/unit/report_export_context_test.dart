@@ -17,7 +17,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/services/excel_service.dart';
+import 'package:picpos_erp/data/services/excel_service.dart';
 
 void main() {
   const names = {1: 'فرع المعادي', 2: 'فرع مدينة نصر', 3: 'فرع طنطا'};

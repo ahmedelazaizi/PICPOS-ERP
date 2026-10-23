@@ -39,10 +39,10 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/entities/product_entity.dart';
-import 'package:ural_erp/domain/repositories/offers_repository.dart';
-import 'package:ural_erp/presentation/pos/providers/cart_controller.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/entities/product_entity.dart';
+import 'package:picpos_erp/domain/repositories/offers_repository.dart';
+import 'package:picpos_erp/presentation/pos/providers/cart_controller.dart';
 
 /// يفرّغ طابور الأحداث — نفس أسلوب pos_offers_known_defects_repro_test.dart.
 /// الجولة بتقرا الأصناف من القاعدة فعلاً، فمحتاجة دورات أكتر من مجرد تكملة

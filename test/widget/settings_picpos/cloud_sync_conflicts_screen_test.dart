@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/settings_picpos/screens/cloud_sync_conflicts_screen.dart';
-import 'package:ural_erp/services/cloud_sync/cloud_link_controller.dart';
-import 'package:ural_erp/services/cloud_sync/cloud_sync_service.dart';
+import 'package:picpos_erp/presentation/settings_picpos/screens/cloud_sync_conflicts_screen.dart';
+import 'package:picpos_erp/services/cloud_sync/cloud_link_controller.dart';
+import 'package:picpos_erp/services/cloud_sync/cloud_sync_service.dart';
 
 class _CloudFake implements CloudLinkController {
   _CloudFake(this.conflicts);

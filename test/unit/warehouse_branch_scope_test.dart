@@ -8,7 +8,7 @@
 // الشاشات.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/warehouse_branch_scope.dart';
+import 'package:picpos_erp/domain/models/warehouse_branch_scope.dart';
 
 class _Wh {
   const _Wh(this.id, this.branchId);

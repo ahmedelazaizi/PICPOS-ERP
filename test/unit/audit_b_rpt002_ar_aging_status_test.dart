@@ -1,7 +1,7 @@
 // Audit B RPT-002 (b/c) on SQLite — same fixture as the PG test.
 import 'package:drift/drift.dart' as d;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 void main() {
   late AppDatabase db;

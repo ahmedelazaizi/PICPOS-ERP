@@ -16,8 +16,8 @@
 // فالـglobalId بيتختم على سطر الصرف (الخزنة المصدر) وهو هدف الـdedup.
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/client_write_interceptor.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/client_write_interceptor.dart';
 
 void main() {
   group('safeTransferPayload — العميل بيولّد globalId', () {

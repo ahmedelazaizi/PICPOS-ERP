@@ -5,13 +5,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/core/theme/app_theme.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/models/hr_employee_file.dart';
-import 'package:ural_erp/presentation/hr_picpos/hr_picpos_providers.dart';
-import 'package:ural_erp/presentation/hr_picpos/screens/ef_rep_panel.dart';
-import 'package:ural_erp/services/cloud_sync/cloud_link_controller.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/theme/app_theme.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/models/hr_employee_file.dart';
+import 'package:picpos_erp/presentation/hr_picpos/hr_picpos_providers.dart';
+import 'package:picpos_erp/presentation/hr_picpos/screens/ef_rep_panel.dart';
+import 'package:picpos_erp/services/cloud_sync/cloud_link_controller.dart';
 
 class _PairingController implements CloudLinkController {
   final issuedPins = <String?>[];

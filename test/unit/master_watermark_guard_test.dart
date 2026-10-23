@@ -10,7 +10,7 @@
 // البناء بدل أن يصمت.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/delta_pull_service.dart';
+import 'package:picpos_erp/services/delta_pull_service.dart';
 
 void main() {
   test('الجداول الأساسية الأربعة محروسة من تقديم الـwatermark', () {

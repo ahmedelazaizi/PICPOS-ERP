@@ -20,8 +20,8 @@
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/presentation/screens/providers/distribution_controller.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/presentation/screens/providers/distribution_controller.dart';
 
 void main() {
   late AppDatabase db;

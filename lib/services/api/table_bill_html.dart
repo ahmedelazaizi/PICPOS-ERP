@@ -12,7 +12,7 @@
 // ⚠️ **ولا زرَّ دفعٍ.** «يسدّد» في طلب المالك = `bill_requested` أي مناداةُ
 // النادل. والدفعُ الإلكترونيُّ قرارٌ آخرُ له تبعاتُ تسويةٍ ومحاسبة.
 
-import 'package:ural_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
 
 /// صفحةُ حسابِ الطاولة — تُبنى مرّةً ويُستبدَل فيها رمزُ العملة وخاناتُ الكسر.
 ///

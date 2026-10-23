@@ -20,9 +20,9 @@
 // لاحقة. والبصمةُ تفرّق بين الحالتين: تتغيّر مع المصفوفة وحدَها.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/role_grant_matrix.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/role_grant_preflight_service.dart';
+import 'package:picpos_erp/core/permissions/role_grant_matrix.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/role_grant_preflight_service.dart';
 
 void main() {
   late AppDatabase db;

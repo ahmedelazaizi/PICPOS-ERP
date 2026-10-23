@@ -4,8 +4,8 @@
 // تحكّمٍ لا يملكها). الآن تُعرض رسالةٌ صريحةٌ مع زرّ تسجيل الخروج.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/data/providers/providers.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
 
 class NoScreensAvailableView extends ConsumerWidget {
   const NoScreensAvailableView({super.key});

@@ -12,7 +12,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/screen_navigation_provider.dart';
+import 'package:picpos_erp/data/providers/screen_navigation_provider.dart';
 
 void main() {
   late ProviderContainer container;

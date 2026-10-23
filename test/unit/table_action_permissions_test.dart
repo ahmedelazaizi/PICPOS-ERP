@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/domain/models/table_actions.dart';
-import 'package:ural_erp/presentation/screens/role_management/data/permission_categories.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/domain/models/table_actions.dart';
+import 'package:picpos_erp/presentation/screens/role_management/data/permission_categories.dart';
 
 void main() {
   test('كلُّ فعلٍ يحرّك مالاً أو حالةً له كودُ صلاحيّة', () {

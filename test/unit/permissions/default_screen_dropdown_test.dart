@@ -2,10 +2,10 @@
 // ومن ما يفتحه الدورُ المختار؛ لا أربعة خياراتٍ يدويّة ولا خيارٌ ميّت.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/core/permissions/screen_access_resolver.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/presentation/shared_widgets/default_screen_dropdown.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/permissions/screen_access_resolver.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/presentation/shared_widgets/default_screen_dropdown.dart';
 
 List<DefaultScreenOption> _options(
   Iterable<String> perms, {

@@ -11,7 +11,7 @@
 // القيود خضراءُ طوالَ الوقت.
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 void main() {
   /// شكلُ `booking_resources` عند v160 **بحرفه** — منقولٌ من `sqlite_master`

@@ -23,12 +23,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/data/database/database.dart' as db;
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/data/providers/repository_providers.dart';
-import 'package:ural_erp/domain/repositories/accounting_repository.dart';
-import 'package:ural_erp/domain/repositories/auth_repository.dart';
-import 'package:ural_erp/presentation/accounting_picpos/journal_voucher_picpos_screen.dart';
+import 'package:picpos_erp/data/database/database.dart' as db;
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/data/providers/repository_providers.dart';
+import 'package:picpos_erp/domain/repositories/accounting_repository.dart';
+import 'package:picpos_erp/domain/repositories/auth_repository.dart';
+import 'package:picpos_erp/presentation/accounting_picpos/journal_voucher_picpos_screen.dart';
 
 db.Account _account(int id, String code, String name) => db.Account(
       id: id,

@@ -6,8 +6,8 @@
 //   • renders in RTL + LTR, light + dark at 1366×768 with no overflow.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/picpos_invoice_draft.dart';
-import 'package:ural_erp/presentation/invoice_form_picpos/picpos_invoice_form.dart';
+import 'package:picpos_erp/domain/models/picpos_invoice_draft.dart';
+import 'package:picpos_erp/presentation/invoice_form_picpos/picpos_invoice_form.dart';
 
 const _accounts = [
   PicPosNamedOption(id: 51, name: '1136 — مخزون البضاعة للبيع'),

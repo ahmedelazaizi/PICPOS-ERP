@@ -1,5 +1,5 @@
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/core/design_system/typography.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/design_system/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

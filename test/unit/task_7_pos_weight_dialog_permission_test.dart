@@ -13,10 +13,10 @@
 // `einvoice_cancel`/`modify_closed_period` في Task 6a (فحص منطقي بحت،
 // مش اختبار wiring كامل، لنفس قيد "مفيش حدود ودجت طبيعية للفّه").
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/presentation/pos/screens/pos_main_screen.dart'
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/presentation/pos/screens/pos_main_screen.dart'
     as uralcash;
-import 'package:ural_erp/presentation/pos_picpos/screens/picpos_pos_screen.dart'
+import 'package:picpos_erp/presentation/pos_picpos/screens/picpos_pos_screen.dart'
     as picpos;
 
 void main() {

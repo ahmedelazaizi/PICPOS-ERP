@@ -17,7 +17,7 @@
 // وفي `offline_sync_worker.dart:412` النداء `unawaited` فالاستثناء بيروح
 // لـzone handler من غير ما حد يشوفه.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 void main() {
   late AppDatabase db;

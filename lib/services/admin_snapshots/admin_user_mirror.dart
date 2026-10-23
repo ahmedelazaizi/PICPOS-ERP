@@ -1,5 +1,5 @@
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/data/database/database.dart';
 import 'package:picpos_api_client/picpos_api_client.dart';
 
 import '../cloud_sync/cloud_link_api.dart';

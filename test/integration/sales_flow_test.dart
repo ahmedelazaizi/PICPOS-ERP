@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/entities/cart_item_entity.dart';
-import 'package:ural_erp/domain/usecases/sales/add_to_cart_usecase.dart';
-import 'package:ural_erp/domain/usecases/sales/calculate_invoice_totals_usecase.dart';
-import 'package:ural_erp/domain/usecases/sales/cart_operations_usecase.dart';
+import 'package:picpos_erp/domain/entities/cart_item_entity.dart';
+import 'package:picpos_erp/domain/usecases/sales/add_to_cart_usecase.dart';
+import 'package:picpos_erp/domain/usecases/sales/calculate_invoice_totals_usecase.dart';
+import 'package:picpos_erp/domain/usecases/sales/cart_operations_usecase.dart';
 
 /// Integration test for complete sales flow
 /// Tests the business logic from adding items to calculating totals

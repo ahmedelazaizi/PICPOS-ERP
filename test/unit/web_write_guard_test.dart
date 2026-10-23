@@ -1,8 +1,8 @@
 // م3-9 — WebWriteGuard: الديسكتوب لا يتأثر، والويب يمنع الكتابة برسالة عربية.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/web/web_session.dart';
-import 'package:ural_erp/web/web_write_guard.dart';
+import 'package:picpos_erp/web/web_session.dart';
+import 'package:picpos_erp/web/web_write_guard.dart';
 
 WebSession _session() => WebSession(
       baseUrl: 'https://erp.example.com',

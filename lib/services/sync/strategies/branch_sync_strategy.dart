@@ -1,11 +1,11 @@
 // ignore_for_file: avoid_dynamic_calls
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
-import 'package:ural_erp/core/logging/diagnostic_logger.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/extensions/branch_dedup_extension.dart';
-import 'package:ural_erp/data/database/sync_interceptor.dart';
-import 'package:ural_erp/services/sync/sync_strategy.dart';
+import 'package:picpos_erp/core/logging/diagnostic_logger.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/extensions/branch_dedup_extension.dart';
+import 'package:picpos_erp/data/database/sync_interceptor.dart';
+import 'package:picpos_erp/services/sync/sync_strategy.dart';
 
 class BranchSyncStrategy extends SyncStrategy {
   BranchSyncStrategy(super.db);

@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // لوحةُ مصمّم القاعة — نسخةٌ مستقلّةٌ عن `screens/tables/floor_plan_designer.dart`.
 //
 // ═══ ⚠️ نسخةٌ لا مشاركة (ح‑٣) ═══

@@ -28,7 +28,7 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/tls_trust.dart';
+import 'package:picpos_erp/services/tls_trust.dart';
 
 /// شهادةٌ صغيرةٌ حقيقيّةُ الترميز (DER) — لا نحتاج صلاحيّتَها، بل بايتاتِها:
 /// الدالّةُ المقيسةُ تُجزّئ الـDER ولا تحلّله.

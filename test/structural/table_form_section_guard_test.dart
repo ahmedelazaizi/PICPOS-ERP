@@ -6,7 +6,7 @@
 //
 //   [PLATFORM_ERROR] error=Null check operator used on a null value
 //   #0 _TableSectionsMixin._showTableFormDialog…
-//      (package:ural_erp/presentation/screens/tables/table_sections_crud.dart:439)
+//      (package:picpos_erp/presentation/screens/tables/table_sections_crud.dart:439)
 //
 // والسطرُ كان `sectionId: selectedSectionId!`. و`selectedSectionId` يُهيَّأ
 // بـ`sectionId ?? existingTable?.sectionId` (سطر ٣٢٩) — فهو `null` لطاولةٍ

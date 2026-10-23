@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // PRODUCT FORM HELPERS — ISS-13 Shared UI Building Blocks
 // ═══════════════════════════════════════════════════════════════════════════

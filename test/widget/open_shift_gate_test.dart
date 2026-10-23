@@ -22,13 +22,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/data/providers/repository_providers.dart';
-import 'package:ural_erp/domain/repositories/treasury_repository.dart';
-import 'package:ural_erp/presentation/pos/logic/open_shift_gate.dart';
-import 'package:ural_erp/services/network_service.dart';
-import 'package:ural_erp/services/websocket_sync_client.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/data/providers/repository_providers.dart';
+import 'package:picpos_erp/domain/repositories/treasury_repository.dart';
+import 'package:picpos_erp/presentation/pos/logic/open_shift_gate.dart';
+import 'package:picpos_erp/services/network_service.dart';
+import 'package:picpos_erp/services/websocket_sync_client.dart';
 
 /// Only `getCurrentOpenShift` matters here; `noSuchMethod` absorbs the rest of
 /// the 30-plus member interface so this fake doesn't rot every time it grows.

@@ -23,9 +23,9 @@ import 'dart:typed_data';
 
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/printing/printing_models.dart';
-import 'package:ural_erp/services/printing/template_pdf_renderer.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/printing/printing_models.dart';
+import 'package:picpos_erp/services/printing/template_pdf_renderer.dart';
 
 import '../helpers/pdf_probe.dart';
 

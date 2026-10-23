@@ -15,8 +15,8 @@
 // `shift_template_wired_test`.)
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/entities/shift_closing_snapshot.dart';
-import 'package:ural_erp/services/templated_invoice_service.dart';
+import 'package:picpos_erp/domain/entities/shift_closing_snapshot.dart';
+import 'package:picpos_erp/services/templated_invoice_service.dart';
 
 /// لقطةٌ بأرقامٍ **مميَّزةٍ لكلّ حقل** — لو تبادل حقلان مكانَيهما ظهر ذلك.
 const _snap = ShiftClosingSnapshot(

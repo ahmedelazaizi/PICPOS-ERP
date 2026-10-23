@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/branch_assignment_scope.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/core/permissions/financial_figures_access.dart';
-import 'package:ural_erp/core/permissions/screen_access_resolver.dart';
+import 'package:picpos_erp/domain/models/branch_assignment_scope.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/permissions/financial_figures_access.dart';
+import 'package:picpos_erp/core/permissions/screen_access_resolver.dart';
 
 void main() {
   test('action-only access does not expose figures without a figure code', () {

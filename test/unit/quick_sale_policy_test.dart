@@ -15,7 +15,7 @@
 // وقائمةُ غيرِ المنفَّذ **تتقلّص ولا تكبر** — على نفس عقد
 // `PermissionEnforcementRegistry.picposParityGaps`.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/quick_sale_policy.dart';
+import 'package:picpos_erp/domain/models/quick_sale_policy.dart';
 
 void main() {
   group('بنيةُ سياسة البيع السريع', () {

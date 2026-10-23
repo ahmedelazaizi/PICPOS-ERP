@@ -15,8 +15,8 @@
 // This test fails loudly on any drift.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/api/api_handler.dart';
-import 'package:ural_erp/services/delta_pull_service.dart';
+import 'package:picpos_erp/services/api/api_handler.dart';
+import 'package:picpos_erp/services/delta_pull_service.dart';
 
 void main() {
   test('client branchScopedPullTables == server _transactionalPullTables', () {

@@ -15,7 +15,7 @@
 // ⚠️ **والقسطُ المتناقصُ مضاعفٌ** (`2/(n×12)`) لا ٢٠٪ كما يفترض نصُّ
 // التصميم. وهذا الملفُّ يثبّت الصيغةَ التي في المحرّك لا التي في النصّ.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/depreciation_math.dart';
+import 'package:picpos_erp/domain/models/depreciation_math.dart';
 
 void main() {
   group('القسط الثابت', () {

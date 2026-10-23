@@ -18,7 +18,7 @@
 // الخاطئ** فلا فحصَ اتّزانٍ يمسكه.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/depreciation_math.dart';
+import 'package:picpos_erp/domain/models/depreciation_math.dart';
 
 void main() {
   group('🔴 العمرُ: شهورٌ للعرض وسنواتٌ للتخزين', () {

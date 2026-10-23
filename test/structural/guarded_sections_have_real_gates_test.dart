@@ -15,7 +15,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/settings_picpos/guarded_sections.dart';
+import 'package:picpos_erp/presentation/settings_picpos/guarded_sections.dart';
 
 /// ملفُّ السجلِّ نفسُه — **يُستثنى من المسح**.
 ///

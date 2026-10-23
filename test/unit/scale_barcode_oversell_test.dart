@@ -16,9 +16,9 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/entities/product_entity.dart';
-import 'package:ural_erp/presentation/pos/providers/cart_controller.dart';
-import 'package:ural_erp/presentation/pos/services/scale_barcode_handler.dart';
+import 'package:picpos_erp/domain/entities/product_entity.dart';
+import 'package:picpos_erp/presentation/pos/providers/cart_controller.dart';
+import 'package:picpos_erp/presentation/pos/services/scale_barcode_handler.dart';
 
 class _MockDataSource implements ScaleBarcodeDataSource {
   final Map<String, String> settings;

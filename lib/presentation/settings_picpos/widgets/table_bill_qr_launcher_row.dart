@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // صفُّ «طباعة أكواد الحساب» في الإعدادات — نُقل من رأس شاشة الطاولات.
 //
 // ═══ 🔴 لماذا نُقل (قرارُ الخطّة ٢، قسمُ ٧) ═══

@@ -18,8 +18,8 @@
 //    المعرِّف.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/models/floor_plan_layout.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/models/floor_plan_layout.dart';
 
 void main() {
   late AppDatabase db;

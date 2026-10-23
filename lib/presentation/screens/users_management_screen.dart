@@ -1,8 +1,8 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
-import 'package:ural_erp/core/widgets/app_toast.dart';
+import 'package:picpos_erp/core/widgets/app_toast.dart';
 // 063 (D1-005): dual-approval gate for user-role changes.
-import 'package:ural_erp/services/dual_approval_service.dart';
+import 'package:picpos_erp/services/dual_approval_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/auth/bootstrap_admin.dart';

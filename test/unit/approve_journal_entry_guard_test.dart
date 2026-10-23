@@ -2,10 +2,10 @@
 // (inside its transaction, before anything is posted) and still post a valid
 // draft exactly as before.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/daos/journal_approval_guard.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/repositories/drift_accounting_repository.dart';
-import 'package:ural_erp/domain/repositories/accounting_repository.dart';
+import 'package:picpos_erp/data/database/daos/journal_approval_guard.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/repositories/drift_accounting_repository.dart';
+import 'package:picpos_erp/domain/repositories/accounting_repository.dart';
 
 void main() {
   late AppDatabase db;

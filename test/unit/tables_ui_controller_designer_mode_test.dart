@@ -6,7 +6,7 @@
 // فتح شاشة.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/screens/tables/providers/tables_state_provider.dart';
+import 'package:picpos_erp/presentation/screens/tables/providers/tables_state_provider.dart';
 
 void main() {
   test('تفعيلُ التصميم ثم مغادرةُ الخريطة يُطفئه', () {

@@ -15,18 +15,18 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
-import 'package:ural_erp/core/theme/picpos_theme.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_dialog.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_empty_state.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_form_action_bar.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_option_picker.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_page_header.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_section_header.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_stat_tile.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_surface.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_totals_bar.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/core/theme/picpos_theme.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_dialog.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_empty_state.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_form_action_bar.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_option_picker.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_page_header.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_section_header.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_stat_tile.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_totals_bar.dart';
 
 Widget _app(Widget home, {bool english = false, bool dark = false}) =>
     MaterialApp(

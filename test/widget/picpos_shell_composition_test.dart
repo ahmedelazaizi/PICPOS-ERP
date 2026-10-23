@@ -19,9 +19,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_document_header.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_form_action_bar.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_totals_bar.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_document_header.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_form_action_bar.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_totals_bar.dart';
 
 /// يرسم [child] بعرضٍ محدَّدٍ ويعيد ارتفاعَه، ويجمع كلَّ خطأِ تخطيطٍ وقع.
 Future<({double height, List<String> layoutErrors})> _measure(

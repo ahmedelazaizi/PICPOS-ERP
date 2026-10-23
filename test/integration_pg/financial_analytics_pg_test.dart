@@ -8,8 +8,8 @@ library;
 
 import 'package:drift/drift.dart' as d;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/providers/financial_analytics_provider.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/providers/financial_analytics_provider.dart';
 
 import '../data/analytics/analytics_harness.dart';
 import '_support/pg_fixture.dart';

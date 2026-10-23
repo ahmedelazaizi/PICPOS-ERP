@@ -12,9 +12,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:ural_erp/core/logging/diagnostic_logger.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/network_service.dart';
+import 'package:picpos_erp/core/logging/diagnostic_logger.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/network_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

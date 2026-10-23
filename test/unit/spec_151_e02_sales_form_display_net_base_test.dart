@@ -22,9 +22,9 @@
 // path, so grandTotal/calculatedTax == CalculateInvoiceTotalsUseCase for the
 // same inputs. These assertions FAIL on the pre-fix code (1040 / 140).
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/entities/cart_item_entity.dart';
-import 'package:ural_erp/domain/usecases/sales/calculate_invoice_totals_usecase.dart';
-import 'package:ural_erp/presentation/screens/sales_invoices/sales_invoices_notifier.dart';
+import 'package:picpos_erp/domain/entities/cart_item_entity.dart';
+import 'package:picpos_erp/domain/usecases/sales/calculate_invoice_totals_usecase.dart';
+import 'package:picpos_erp/presentation/screens/sales_invoices/sales_invoices_notifier.dart';
 
 void main() {
   group('E-02 — sales-invoices form display is net-base (display == saved)', () {

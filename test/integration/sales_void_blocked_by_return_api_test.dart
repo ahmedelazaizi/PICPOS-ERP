@@ -11,11 +11,11 @@ import 'package:drift/drift.dart' as drift;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf/shelf.dart';
 import 'package:uuid/uuid.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/models/return_original_link.dart';
-import 'package:ural_erp/services/api/api_sales_handler.dart';
-import 'package:ural_erp/services/api/api_user_context.dart';
-import 'package:ural_erp/services/offline_sync_worker.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/models/return_original_link.dart';
+import 'package:picpos_erp/services/api/api_sales_handler.dart';
+import 'package:picpos_erp/services/api/api_user_context.dart';
+import 'package:picpos_erp/services/offline_sync_worker.dart';
 
 void main() {
   late AppDatabase db;

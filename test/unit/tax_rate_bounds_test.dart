@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/tax_rate_bounds.dart';
+import 'package:picpos_erp/domain/models/tax_rate_bounds.dart';
 
 /// حدودُ نسبةِ الضريبة — مصدرُ الحقيقة الذي تنطق به الحُرّاسُ الثلاثةُ معاً.
 ///

@@ -14,11 +14,11 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/models/floor_plan_layout.dart';
-import 'package:ural_erp/domain/repositories/restaurant_repository.dart';
-import 'package:ural_erp/presentation/floor_plan_picpos/screens/floor_plan_designer_picpos_screen.dart';
-import 'package:ural_erp/presentation/floor_plan_picpos/widgets/floor_plan_canvas_picpos.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/models/floor_plan_layout.dart';
+import 'package:picpos_erp/domain/repositories/restaurant_repository.dart';
+import 'package:picpos_erp/presentation/floor_plan_picpos/screens/floor_plan_designer_picpos_screen.dart';
+import 'package:picpos_erp/presentation/floor_plan_picpos/widgets/floor_plan_canvas_picpos.dart';
 
 final _now = DateTime(2026, 9, 20);
 

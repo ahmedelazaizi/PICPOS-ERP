@@ -21,7 +21,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 Uint8List _bytes(String s) => Uint8List.fromList(s.codeUnits);
 

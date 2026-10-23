@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import '../helpers/library_source.dart';
-import 'package:ural_erp/services/api/session_key_watch.dart';
+import 'package:picpos_erp/services/api/session_key_watch.dart';
 
 void main() {
   test('الأسلاك: _probeHealth يغذّي SessionKeyWatch ويستدعي invalidateAllSessionTokens',

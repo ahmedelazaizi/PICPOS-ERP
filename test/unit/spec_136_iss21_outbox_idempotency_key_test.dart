@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/offline_sync_worker.dart';
+import 'package:picpos_erp/services/offline_sync_worker.dart';
 
 /// Spec 136 ISS-21 — the offline outbox drain must reuse the globally-unique
 /// UUIDv7 idempotency key minted by ClientWriteInterceptor._tryOrQueue

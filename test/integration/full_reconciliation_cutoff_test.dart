@@ -45,7 +45,7 @@
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 /// تاريخُ القطع — نهايةُ السنة الماليّة، وهو **بعد** لحظةِ التشغيل.
 final kCutoff = DateTime(2026, 12, 31, 23, 59, 59);

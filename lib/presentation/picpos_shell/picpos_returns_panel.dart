@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // لوحُ المرتجعات المشترك — عدّاداتٌ فوق، وقائمةُ فواتيرَ في بطاقةٍ واحدةٍ
 // تحمل رأسَها وترشيحَها، على تصميم `isReturns`.
 //

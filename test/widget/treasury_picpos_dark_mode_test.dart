@@ -17,7 +17,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/presentation/treasury_picpos/widgets/treasury_tab_bar_picpos.dart';
+import 'package:picpos_erp/presentation/treasury_picpos/widgets/treasury_tab_bar_picpos.dart';
 
 /// يضخُّ الشريطَ بوضعٍ واحدٍ ويُرجع لونَ كرتِه الخارجيّ.
 ///

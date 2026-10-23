@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // «الفروع والمنشآت» — نسخةُ PicPos على تصميم `PicPos Branches.dc.html`.
 //
 // ═══ ما قِيس قبل الكتابة ═══
@@ -45,7 +45,7 @@ import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/core/widgets/app_toast.dart';
+import 'package:picpos_erp/core/widgets/app_toast.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/permissions/permission_codes.dart';

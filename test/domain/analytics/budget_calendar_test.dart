@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/analytics/budget_calendar.dart';
+import 'package:picpos_erp/domain/analytics/budget_calendar.dart';
 
 void main() {
   group('addMonthsClamped', () {

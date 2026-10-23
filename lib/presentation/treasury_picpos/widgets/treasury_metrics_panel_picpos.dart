@@ -22,7 +22,7 @@ import '../../../domain/models/picpos_treasury_view.dart';
 import '../../../core/theme/app_colors.dart';
 import 'treasury_picpos_tokens.dart';
 
-import 'package:ural_erp/l10n/app_localizations.dart';
+import 'package:picpos_erp/l10n/app_localizations.dart';
 import '../../../data/providers/providers.dart';
 import '../../../core/constants/app_constants.dart';
 

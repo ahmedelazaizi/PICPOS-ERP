@@ -9,7 +9,7 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/audit_log_integrity_service.dart';
+import 'package:picpos_erp/services/audit_log_integrity_service.dart';
 
 void main() {
   // ── 1. JE Description Hash Pattern ──────────────────────────────────────

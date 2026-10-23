@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/entities/safe_entity.dart';
-import 'package:ural_erp/domain/entities/user_entity.dart';
-import 'package:ural_erp/domain/entities/branch_entity.dart';
-import 'package:ural_erp/domain/entities/category_entity.dart';
-import 'package:ural_erp/domain/entities/warehouse_entity.dart';
-import 'package:ural_erp/domain/entities/transaction_entity.dart';
+import 'package:picpos_erp/domain/entities/safe_entity.dart';
+import 'package:picpos_erp/domain/entities/user_entity.dart';
+import 'package:picpos_erp/domain/entities/branch_entity.dart';
+import 'package:picpos_erp/domain/entities/category_entity.dart';
+import 'package:picpos_erp/domain/entities/warehouse_entity.dart';
+import 'package:picpos_erp/domain/entities/transaction_entity.dart';
 
 void main() {
   group('SafeEntity', () {

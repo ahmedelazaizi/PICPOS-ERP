@@ -12,8 +12,8 @@
 // بـ`@visibleForTesting` بدل أن يُعاد بناؤها هنا.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
-import 'package:ural_erp/presentation/inventory_picpos/widgets/stock_balances_table_picpos.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/inventory_picpos/widgets/stock_balances_table_picpos.dart';
 
 void main() {
   Future<void> show(

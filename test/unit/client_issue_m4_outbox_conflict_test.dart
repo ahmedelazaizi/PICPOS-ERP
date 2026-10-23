@@ -11,7 +11,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/offline_sync_worker.dart';
+import 'package:picpos_erp/services/offline_sync_worker.dart';
 
 void main() {
   test('تعارض العمل يُصنَّف نهائياً — لا "ناجح" ولا إعادة محاولة', () {

@@ -1,5 +1,5 @@
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,7 +14,7 @@ import '../treasury/widgets/treasury_bank_tab.dart';
 import '../treasury/widgets/daily_closing_dialog.dart';
 import '../treasury/widgets/receipt_voucher_dialog.dart';
 import '../treasury/widgets/payment_voucher_dialog.dart';
-import 'package:ural_erp/l10n/app_localizations.dart';
+import 'package:picpos_erp/l10n/app_localizations.dart';
 import '../treasury/widgets/treasury_transactions_list.dart';
 import '../treasury/widgets/treasury_safe_card.dart';
 import '../treasury/widgets/safe_management_dialog.dart';

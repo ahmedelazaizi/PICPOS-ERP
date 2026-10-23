@@ -12,7 +12,7 @@
 // مصدرُه **هاتفٌ غيرُ مصادَقٍ** على شبكة المحلّ. فبلا سقفٍ يملؤه من يكرّر
 // الإرسال حتى تختنق الذاكرة — وهو أرخصُ هجومٍ على الإطلاق: زرٌّ يُضغط.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/guest_order_requests.dart';
+import 'package:picpos_erp/services/guest_order_requests.dart';
 
 void main() {
   late GuestOrderRequests queue;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/widgets/shimmer_loading.dart';
+import 'package:picpos_erp/core/widgets/shimmer_loading.dart';
 
 void main() {
   group('ShimmerLoading', () {

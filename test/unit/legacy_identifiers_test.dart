@@ -14,11 +14,11 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/api/api_auth_middleware.dart';
-import 'package:ural_erp/services/api/api_session_token.dart';
-import 'package:ural_erp/services/invoice_integrity_service.dart';
-import 'package:ural_erp/services/legacy_device_seed.dart';
-import 'package:ural_erp/services/legacy_identifiers.dart';
+import 'package:picpos_erp/services/api/api_auth_middleware.dart';
+import 'package:picpos_erp/services/api/api_session_token.dart';
+import 'package:picpos_erp/services/invoice_integrity_service.dart';
+import 'package:picpos_erp/services/legacy_device_seed.dart';
+import 'package:picpos_erp/services/legacy_identifiers.dart';
 
 String _sha(String s) => sha256.convert(utf8.encode(s)).toString();
 

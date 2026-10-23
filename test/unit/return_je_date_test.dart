@@ -24,7 +24,7 @@
 // > أصلاً**: بيمرّر فاتورة المرتجع نفسها (تاريخ النهاردة). المشكلة كانت في
 // > ديالوج المرتجعات العادي بس.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 void main() {
   group('resolveReturnPostingDate — تاريخ قيد المرتجع', () {

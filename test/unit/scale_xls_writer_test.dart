@@ -23,7 +23,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/services/scale_xls_writer.dart';
+import 'package:picpos_erp/services/scale_xls_writer.dart';
 
 // ═══════════════════════════════════════════════════════════════════
 // قارئ OLE2 + BIFF8 مصغّر — أداة تحقّق، ليست جزءاً من التطبيق

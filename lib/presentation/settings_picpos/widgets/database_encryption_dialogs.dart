@@ -5,7 +5,7 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../services/db_encryption_actions.dart';

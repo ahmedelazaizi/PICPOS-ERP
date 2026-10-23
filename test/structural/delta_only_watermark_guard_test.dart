@@ -21,7 +21,7 @@
 // يستحقّه فدفع تفريغاً كاملاً كلَّ إقلاع).
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/delta_pull_service.dart';
+import 'package:picpos_erp/services/delta_pull_service.dart';
 import 'dart:io';
 
 /// جداولٌ نعلم يقيناً أنّ لها استراتيجيّةً في `fullSync` — **مرساةُ الحارس**.

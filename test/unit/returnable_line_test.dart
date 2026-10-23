@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/returnable_line.dart';
+import 'package:picpos_erp/domain/models/returnable_line.dart';
 
 ReturnableLine line({double sold = 10, double returned = 0}) => ReturnableLine(
       invoiceItemId: 1,

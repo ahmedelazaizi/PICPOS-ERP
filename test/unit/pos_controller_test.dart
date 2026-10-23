@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/pos/providers/pos_controller.dart';
-import 'package:ural_erp/domain/entities/cart_item_entity.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/presentation/pos/providers/pos_controller.dart';
+import 'package:picpos_erp/domain/entities/cart_item_entity.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 /// POS Controller Unit Tests
 ///

@@ -7,10 +7,10 @@
 // **وهي غائبةٌ عن القائمة الجانبيّة**، لأنّ `kAllNavItemDefs` مصدرٌ سادسٌ
 // مستقلٌّ لا يُشتقّ من الخمسة قبله. فحارسٌ يقيس خمسةً يُعطي طمأنينةً كاذبة.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/enums/app_screen.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/core/navigation/screen_registry.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/core/enums/app_screen.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/navigation/screen_registry.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
 
 void main() {
   group('القوائمُ المالية موصولةٌ في المواضع الستّة', () {

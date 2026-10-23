@@ -29,11 +29,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ural_erp/core/logging/diagnostic_logger.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/presentation/screens/purchase_invoices/widgets/purchase_invoice_form.dart';
-import 'package:ural_erp/services/mirror_state.dart';
-import 'package:ural_erp/services/network_service.dart';
+import 'package:picpos_erp/core/logging/diagnostic_logger.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/presentation/screens/purchase_invoices/widgets/purchase_invoice_form.dart';
+import 'package:picpos_erp/services/mirror_state.dart';
+import 'package:picpos_erp/services/network_service.dart';
 
 UserWithRole _cashier({required int userId, required int roleId}) {
   final role = Role(

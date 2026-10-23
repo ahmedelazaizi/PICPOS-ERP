@@ -16,7 +16,7 @@ Evidence read for this plan (read-only): `PRODUCT.md`, `DESIGN.md`, `docs/mobile
 
 | # | Fact (verified by reading) | Source |
 |---|---|---|
-| F1 | The repo has **no `android/` folder** for the desktop app `ural_erp`; the desktop pulls Windows-only plugins (`serial_port_win32`, `window_manager`), a Win32 FFI scale SDK (`lib/services/aclas_sdk_ffi.dart`), Win32 CFD transports, a Windows cash-drawer path (`lib/services/cash_drawer_service_io.dart`) and 16 `Platform.isWindows` branches in 10 files (licensing `license_service.dart`, `security_service.dart` machine seed, touch keyboard, login). | root `pubspec.yaml`, grep |
+| F1 | The repo has **no `android/` folder** for the desktop app `picpos_erp`; the desktop pulls Windows-only plugins (`serial_port_win32`, `window_manager`), a Win32 FFI scale SDK (`lib/services/aclas_sdk_ffi.dart`), Win32 CFD transports, a Windows cash-drawer path (`lib/services/cash_drawer_service_io.dart`) and 16 `Platform.isWindows` branches in 10 files (licensing `license_service.dart`, `security_service.dart` machine seed, touch keyboard, login). | root `pubspec.yaml`, grep |
 | F2 | A desktop LAN client is a **full Drift mirror** (schema v194, `lib/data/database/database.dart:1209`) kept by `DeltaPullService` (per-table watermarks, keyset `(last_modified_at, id)`) + WebSocket `data_changed` (`/ws`) + an adaptive poll; writes go through `ClientWriteInterceptor` (`lib/services/interceptor/cwi_core.dart`) to the LAN API, offline writes are queued in `sync_outbox` (`cwi_core_support.dart::tryOrQueue`). | LAN survey |
 | F3 | LAN API (`lib/services/api/api_handler.dart`): flat `/api/...` routes (~150), device auth = `Bearer HMAC(installSecret, deviceId)` + `X-Device-Id` (`api_auth_middleware.dart`, `lan_pairing_service.dart`), user session = HMAC token from `POST /api/auth/session {username,password|cardCode}` verified against desktop `Users` (`api_auth_handler.dart`), per-route `ApiUserCtx.requirePermission` (`api_user_context.dart:47`), idempotency via `x-idempotency-key` + `processed_messages` and `globalId` dedup (`api_handler_base.dart:77-147`, `api_sales_handler.dart:116-169`). Plain HTTP unless TLS is configured; TLS cert fingerprint pinning exists (`TlsTrust`). Pairing QR = `{serverHost, port, pairingCode, serverFingerprint}`. | LAN survey |
 | F4 | LAN sale numbering: the client numbers locally; the server keeps a number that already starts with `<branchCode>-`, otherwise prefixes it (`<BRANCH>-POS-1` / `CLT<ip>-POS-1`) (`api_sales_handler.dart:85-108`). `POST /api/sales` posts through `db.createSalesInvoice` with `sales_create` (`api_sales_handler.dart:34, 282`). | code |
@@ -34,7 +34,7 @@ Evidence read for this plan (read-only): `PRODUCT.md`, `DESIGN.md`, `docs/mobile
 
 ## 1. Decision records
 
-### ADR-M1 — Code sharing: two new lightweight Flutter apps + shared packages (not `ural_erp` on Android)
+### ADR-M1 — Code sharing: two new lightweight Flutter apps + shared packages (not `picpos_erp` on Android)
 
 **Decision.** Two new Flutter apps in the monorepo, `mobile_admin/` (package `picpos_admin`) and `mobile_pos/` (package `picpos_pos`), sharing:
 
@@ -49,7 +49,7 @@ The rep app keeps its own copies until a separate, opt-in migration (owner decis
 
 State management: `ChangeNotifier` + `InheritedNotifier` as in `picpos_van` (proven, zero extra deps). Local DB: `sqflite_sqlcipher` as in `picpos_van` — one SQLCipher build per APK, the same key handling, and a known-good migration path. (Drift + `sqlcipher_flutter_libs` would also run on Android, but mixing both SQLCipher stacks in shared packages risks two native libs; not needed for the M-B schema of ~15 tables.)
 
-**Rejected: compile `ural_erp` for Android with a tablet POS shell.** Justification:
+**Rejected: compile `picpos_erp` for Android with a tablet POS shell.** Justification:
 1. **Platform debt (F1):** no Android project; Windows-only plugins and FFI must be conditionally removed; licensing and DB-key derivation use a Windows machine seed (`license_service.dart:108`, `security_service.dart:438`); every one of these is a change inside the desktop that ships to both brands (risk to Principle 5 and to UralCash).
 2. **Wrong client model (F2):** a desktop LAN client is a full 194-version Drift mirror with dozens of delta-pulled tables, a WebSocket, a `sync_outbox` and server-side re-numbering. On a tablet this means a large DB, long first sync, the full migration chain on every app update, and the same `ClientWriteInterceptor` surface (sales, purchases, parties, users, settings…) a cashier never needs.
 3. **Size and startup:** the desktop bundles all editions, PDF templates, audio, Supabase, Postgres drivers and hundreds of screens; the tablet POS needs one flow. Expected release APK: ~20–30 MB (M-B) vs. far larger for the whole desktop, with slower cold start.

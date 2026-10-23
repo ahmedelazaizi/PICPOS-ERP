@@ -26,7 +26,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/activity_log_picpos/screens/activity_log_picpos_screen.dart';
+import 'package:picpos_erp/presentation/activity_log_picpos/screens/activity_log_picpos_screen.dart';
 
 const _screen =
     'lib/presentation/activity_log_picpos/screens/activity_log_picpos_screen.dart';

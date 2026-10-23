@@ -7,7 +7,7 @@
 //
 // الأمان الفعلي (الصلاحيات) على الخادم؛ هذه واجهةٌ فقط.
 import 'package:flutter/material.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 
 import '../core/navigation/screen_id.dart';
 import '../presentation/settings_picpos/widgets/permissions_matrix_picpos.dart';

@@ -24,7 +24,7 @@
 // الدفتر أسوأ من الباج الأصلي. (المحاولة الأولى في الجلسة دي وجّهت الكاش
 // لحساب درج منفصل وكسرت `sales_payment_idempotency_c05_test` بالظبط لده.)
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 void main() {
   group('kSafeTypeAccountCode', () {

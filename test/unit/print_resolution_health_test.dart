@@ -10,8 +10,8 @@
 // ⚠️ وتصنيفٌ واحدٌ لا مجموعة — فالترتيبُ جوهرُ الدالّة، وهو ما تقيسه
 // المجموعةُ الأخيرة: كلُّ زوجٍ متعارضٍ يُثبَّت أيُّهما يفوز.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/print_resolution_row.dart';
-import 'package:ural_erp/services/printing/paper_compatibility.dart';
+import 'package:picpos_erp/domain/models/print_resolution_row.dart';
+import 'package:picpos_erp/services/printing/paper_compatibility.dart';
 
 void main() {
   ResolutionHealth call({

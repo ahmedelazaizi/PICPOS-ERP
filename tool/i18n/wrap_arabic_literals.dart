@@ -561,7 +561,7 @@ bool _isPartFile(String source) =>
     RegExp(r'^\s*part of ', multiLine: true).hasMatch(source);
 
 String _addImport(String source) {
-  const importLine = "import 'package:ural_erp/core/i18n/tr.dart';";
+  const importLine = "import 'package:picpos_erp/core/i18n/tr.dart';";
   if (source.contains(importLine)) return source;
   final lines = source.split('\n');
   if (_isPartFile(source)) return source;
@@ -635,7 +635,7 @@ Future<void> _rebuildTrackedFilesFromHead(Directory root) async {
       if (libraryPath != null && File(libraryPath).existsSync()) {
         final library = File(libraryPath);
         final librarySource = await library.readAsString();
-        if (!librarySource.contains("package:ural_erp/core/i18n/tr.dart")) {
+        if (!librarySource.contains("package:picpos_erp/core/i18n/tr.dart")) {
           await library.writeAsString(_addImport(librarySource));
         }
       }
@@ -713,7 +713,7 @@ Future<void> main([List<String> arguments = const []]) async {
       if (libraryPath != null && File(libraryPath).existsSync()) {
         final library = File(libraryPath);
         final librarySource = await library.readAsString();
-        if (!librarySource.contains("package:ural_erp/core/i18n/tr.dart")) {
+        if (!librarySource.contains("package:picpos_erp/core/i18n/tr.dart")) {
           await library.writeAsString(_addImport(librarySource));
         }
       }

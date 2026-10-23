@@ -8,7 +8,7 @@
 //   — وإلّا عاد المستخدمُ إلى الخريطة فوجد نفسَه في وضعِ تحريرٍ لا يذكر أنه
 //   فتحه (البند ٥ في `task-6b-brief.md`).
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/table_designer_mode.dart';
+import 'package:picpos_erp/domain/models/table_designer_mode.dart';
 
 void main() {
   group('designerModeAfterViewToggle', () {

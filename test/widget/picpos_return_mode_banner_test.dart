@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/pos_picpos/widgets/picpos_return_mode_banner.dart';
+import 'package:picpos_erp/presentation/pos_picpos/widgets/picpos_return_mode_banner.dart';
 
 void main() {
   testWidgets('الترويسةُ تُظهر رقمَ الفاتورة وتُميَّز بلونٍ تحذيريّ',

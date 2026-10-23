@@ -12,9 +12,9 @@
 // الفوركَين، وحذفُ المدخل منها يسحب الشاشةَ من الفورك الآخر أيضاً. فالطريقةُ
 // هي نفسُ عقدِ `kPicPosFoldedIntoAccountingHub` القائم: إخفاءٌ بالفهرس.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/core/navigation/screen_registry.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/navigation/screen_registry.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
 
 /// مدخلُ القائمة صاحبُ التسمية — أو فشلٌ واضحٌ إن غاب.
 NavItemDef _byLabel(String label) => kAllNavItemDefs.firstWhere(

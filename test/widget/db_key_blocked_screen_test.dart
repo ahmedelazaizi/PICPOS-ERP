@@ -2,9 +2,9 @@
 // برمز، وإعادةَ المحاولة، والرجوعَ بتأكيد، وتصديرَ تشخيص. لا تتجاوز 1366×768.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/db_key/db_key_blocked_screen.dart';
-import 'package:ural_erp/services/db_key_blocked_actions.dart';
-import 'package:ural_erp/services/db_key_types.dart';
+import 'package:picpos_erp/presentation/db_key/db_key_blocked_screen.dart';
+import 'package:picpos_erp/services/db_key_blocked_actions.dart';
+import 'package:picpos_erp/services/db_key_types.dart';
 
 class _Actions implements DbKeyBlockedActions {
   DbKeyResolution retryResult = const DbKeyUnavailable(

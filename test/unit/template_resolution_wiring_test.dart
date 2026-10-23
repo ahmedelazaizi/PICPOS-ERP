@@ -14,11 +14,11 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/library_source.dart';
-import 'package:ural_erp/core/enums/app_screen.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/core/navigation/screen_registry.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/core/enums/app_screen.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/navigation/screen_registry.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
 
 void main() {
   group('الشاشةُ موصولةٌ في المواضع الستّة', () {

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/logging/app_logger.dart';
+import 'package:picpos_erp/core/logging/app_logger.dart';
 
 /// Core layer tests
 void main() {

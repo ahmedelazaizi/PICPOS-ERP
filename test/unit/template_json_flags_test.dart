@@ -17,7 +17,7 @@
 // الثالثةُ في هذا المستودع، فالعلاجُ مِقبضٌ واحدٌ لا رقعةٌ ثالثة.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/utils/template_json_flags.dart';
+import 'package:picpos_erp/core/utils/template_json_flags.dart';
 
 void main() {
   group('readJsonFlag — متسامحةٌ مع ما يصل فعلاً', () {

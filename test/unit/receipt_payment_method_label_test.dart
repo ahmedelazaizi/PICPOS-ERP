@@ -13,7 +13,7 @@
 // `test/structural/receipt_no_dangling_labels_test.dart`.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/templated_invoice_service.dart';
+import 'package:picpos_erp/services/templated_invoice_service.dart';
 
 void main() {
   String label(String code) =>

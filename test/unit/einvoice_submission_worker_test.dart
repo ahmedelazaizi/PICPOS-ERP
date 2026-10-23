@@ -9,7 +9,7 @@
 // ولا يظهر للمستخدم سببٌ لأنّ الإخفاقَ يُسجَّل على ذلك المستند وحدَه.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/e_invoicing/e_invoice_submission_worker.dart';
+import 'package:picpos_erp/services/e_invoicing/e_invoice_submission_worker.dart';
 
 void main() {
   test('لا يعمل حين الميزةُ موقوفة — ولا يمسح أصلاً', () async {

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/usecases/fixed_assets/manage_asset_usecase.dart';
-import 'package:ural_erp/domain/usecases/fixed_assets/run_depreciation_usecase.dart';
+import 'package:picpos_erp/domain/usecases/fixed_assets/manage_asset_usecase.dart';
+import 'package:picpos_erp/domain/usecases/fixed_assets/run_depreciation_usecase.dart';
 
 void main() {
   group('ManageAssetUseCase — AssetInput Validation', () {

@@ -1,5 +1,5 @@
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/data/providers/financial_figures_providers.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/data/providers/financial_figures_providers.dart';
 // ═══ ⚠️ والمرفقاتُ ليست هنا — بسببٍ بنيويٍّ لا تأجيل ═══
 //
 // بُنيت المرفقاتُ في v176 (§٨)، و`purchase_return` من الأنواع التسعة

@@ -3,8 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/presentation/widgets/dialogs/product_tax_fields.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/presentation/widgets/dialogs/product_tax_fields.dart';
 
 Widget taxTestHost(Widget child, {AppDatabase? db}) {
   final app = MaterialApp(

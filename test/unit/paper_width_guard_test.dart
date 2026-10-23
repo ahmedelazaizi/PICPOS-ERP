@@ -12,7 +12,7 @@
 // ولا يُمنع، وإلا مُنع مستخدمٌ يطبع إيصالَ ٥٨مم على طابعةِ ٨٠ عن قصد.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/printing/paper_compatibility.dart';
+import 'package:picpos_erp/services/printing/paper_compatibility.dart';
 
 void main() {
   group('الأعرضُ من الطابعة يُرفض', () {

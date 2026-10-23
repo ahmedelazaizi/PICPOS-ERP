@@ -13,7 +13,7 @@
 // إعادةُ بناءِ الأب، العودةُ من تقرير). وطلبٌ يبقى مكتوباً يُعيد فتحَ نفس
 // التقرير في كلّ بناء — فيُحبَس المستخدمُ فيه ولا يرى مركزَ التقارير.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/providers/pending_picpos_report.dart';
+import 'package:picpos_erp/presentation/providers/pending_picpos_report.dart';
 
 void main() {
   setUp(pendingPicposReport.clear);

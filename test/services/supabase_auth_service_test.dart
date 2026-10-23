@@ -1,4 +1,4 @@
-import 'package:ural_erp/services/auth/supabase_auth_service.dart';
+import 'package:picpos_erp/services/auth/supabase_auth_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

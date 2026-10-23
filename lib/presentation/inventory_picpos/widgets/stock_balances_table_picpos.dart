@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // جدولُ أرصدة المخزون بهويّة PicPos — **فوركٌ بقرار المالك 2026-08-22**
 // («انسخه إلى PicPos ولا تشارك تعديلاتِ PicPos على UralCash»).
 //

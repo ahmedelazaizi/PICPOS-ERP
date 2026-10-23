@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../../picpos_shell/picpos_danger_confirm.dart';
 import '../../picpos_shell/picpos_surface.dart';

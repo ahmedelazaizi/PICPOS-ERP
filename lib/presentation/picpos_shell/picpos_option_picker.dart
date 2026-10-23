@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // منتقي خيارٍ واحدٍ بهويّة PicPos — بديلُ `SimpleDialog`.
 //
 // ═══ العطبُ المُبلَّغ عنه ═══

@@ -3,14 +3,14 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:ural_erp/data/database/pg_config.dart';
-import 'package:ural_erp/data/repositories/drift_accounting_repository.dart';
-import 'package:ural_erp/data/repositories/treasury_repository_impl.dart';
-import 'package:ural_erp/services/accounting_service.dart';
-import 'package:ural_erp/domain/entities/accounting_entities.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/usecases/treasury/create_voucher_usecase.dart';
+import 'package:picpos_erp/data/database/pg_config.dart';
+import 'package:picpos_erp/data/repositories/drift_accounting_repository.dart';
+import 'package:picpos_erp/data/repositories/treasury_repository_impl.dart';
+import 'package:picpos_erp/services/accounting_service.dart';
+import 'package:picpos_erp/domain/entities/accounting_entities.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/usecases/treasury/create_voucher_usecase.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/analytics/financial_snapshot.dart';
-import 'package:ural_erp/domain/analytics/kpi_comparison.dart';
-import 'package:ural_erp/domain/analytics/ratio_engine.dart';
+import 'package:picpos_erp/domain/analytics/financial_snapshot.dart';
+import 'package:picpos_erp/domain/analytics/kpi_comparison.dart';
+import 'package:picpos_erp/domain/analytics/ratio_engine.dart';
 
 // Hand-computed fixture: 30-day period.
 const snap = FinancialSnapshot(

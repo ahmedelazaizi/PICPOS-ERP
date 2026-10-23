@@ -20,10 +20,10 @@
 // يمرّ بلا كودٍ صريحٍ لأن هذه ليست عملياتٍ ماليةً حرجة.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/presentation/pos_picpos/screens/picpos_pos_screen.dart'
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/presentation/pos_picpos/screens/picpos_pos_screen.dart'
     as picpos;
-import 'package:ural_erp/presentation/pos_picpos/widgets/picpos_cart_permissions.dart'
+import 'package:picpos_erp/presentation/pos_picpos/widgets/picpos_cart_permissions.dart'
     as shared;
 
 void main() {

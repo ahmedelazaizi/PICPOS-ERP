@@ -2,8 +2,8 @@
 // يُختار مسبقاً، ويبقى المنتقي احتياطاً لمن ليس مندوباً.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/distribution_model.dart';
-import 'package:ural_erp/presentation/sales_invoices_picpos/screens/permanent_customer_dialog.dart';
+import 'package:picpos_erp/domain/models/distribution_model.dart';
+import 'package:picpos_erp/presentation/sales_invoices_picpos/screens/permanent_customer_dialog.dart';
 
 void main() {
   const routes = [

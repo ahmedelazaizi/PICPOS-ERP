@@ -36,8 +36,8 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/models/document_record.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/models/document_record.dart';
 import '../helpers/dao_source.dart';
 
 void main() {

@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 /// Business profile describes the operational behavior of the application.
 /// Unlike [AppFlavor], this layer is intended to drive modules and policies.
 enum BusinessProfile {

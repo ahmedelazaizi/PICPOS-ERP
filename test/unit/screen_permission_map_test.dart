@@ -6,9 +6,9 @@
 // التحكم كلهم على `pos_access`، ومردودات البيع على `sales_view`. فالمدير
 // يسحب `offers_view` وشاشة العروض تفضل ظاهرة لأنها مش مربوطة بيه أصلاً.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
 
 void main() {
   test('كل كود في الخريطة مسجّل في masterList', () {

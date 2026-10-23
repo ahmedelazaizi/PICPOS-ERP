@@ -14,10 +14,10 @@
 // ⚠️ **المقارنةُ بالتسلسل الكامل لا بمجموعة مفاتيح**: الترتيبُ جزءٌ من الأمان
 //    (‏`setup_completed` آخرُ ما يُكتَب)، ونقلُ سطرٍ قبله يمرّ بفحص مجموعة.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/config/app_config.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/presentation/screens/setup_wizard/setup_finish_runner.dart';
-import 'package:ural_erp/services/network_service.dart';
+import 'package:picpos_erp/core/config/app_config.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/presentation/screens/setup_wizard/setup_finish_runner.dart';
+import 'package:picpos_erp/services/network_service.dart';
 
 /// منفذٌ يسجّل كلَّ نداءٍ نصّاً — ويحاكي صفوفَ القاعدة المزروعة.
 class RecordingPersistence implements SetupPersistence {

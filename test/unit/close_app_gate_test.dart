@@ -8,9 +8,9 @@
 // محاسب، مدير مالي. فالكاشير كان بيقفل البرنامج بلا كلمة سر، وهي بالظبط
 // الحالة اللي البوابة موجودة عشانها.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/app_main_screen.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/app_main_screen.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 // نفس مُساعِد بناء `AuthState` من test/unit/role_name_bypass_test.dart
 // (Task 1) — منقول هنا بالحرف بدل اختراع واحد جديد، لأنه بيتعامل مع

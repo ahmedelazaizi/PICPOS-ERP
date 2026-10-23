@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // SECURITY ALERTS PANEL — Feature 004 (US2 — Cross-branch password collision)
 // ═══════════════════════════════════════════════════════════════════════════

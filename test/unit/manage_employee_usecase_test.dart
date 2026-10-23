@@ -3,9 +3,9 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/usecases/hr/manage_employee_usecase.dart';
-import 'package:ural_erp/domain/repositories/hr_repository_interface.dart';
-import 'package:ural_erp/data/database/database_barrel.dart';
+import 'package:picpos_erp/domain/usecases/hr/manage_employee_usecase.dart';
+import 'package:picpos_erp/domain/repositories/hr_repository_interface.dart';
+import 'package:picpos_erp/data/database/database_barrel.dart';
 
 class _MockHRRepository implements IHRRepository {
   bool shouldFail = false;

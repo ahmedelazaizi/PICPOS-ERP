@@ -26,7 +26,7 @@
 // كل نوع صنف له حساب واحد بس، وحسابات المخزون التلاتة **متمايزة** — لو
 // اتنين منهم اتساووا، الحركة بين المخزنين بتختفي من الدفاتر.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 void main() {
   group('inventoryAccountPurposeForProduct — التوجيه بنوع الصنف', () {

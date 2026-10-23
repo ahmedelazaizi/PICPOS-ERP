@@ -19,11 +19,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_data_table.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_hub_kpi.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_report_chart.dart';
-import 'package:ural_erp/presentation/reports_picpos/screens/report_view_picpos_screen.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_data_table.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_hub_kpi.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_report_chart.dart';
+import 'package:picpos_erp/presentation/reports_picpos/screens/report_view_picpos_screen.dart';
 
 void main() {
   Future<void> show(

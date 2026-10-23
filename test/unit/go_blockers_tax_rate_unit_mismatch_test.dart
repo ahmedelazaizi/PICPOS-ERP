@@ -36,9 +36,9 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/utils/financial_utils.dart';
+import 'package:picpos_erp/core/utils/financial_utils.dart';
 // `providers.dart` يصدّر `database.dart` و`settings_providers.dart` معاً.
-import 'package:ural_erp/data/providers/providers.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

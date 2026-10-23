@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import '../helpers/library_source.dart';
-import 'package:ural_erp/presentation/widgets/settings/company_info_widget.dart';
+import 'package:picpos_erp/presentation/widgets/settings/company_info_widget.dart';
 
 /// يُسقط أسطرَ التعليق قبل الفحص — حارسُ نصٍّ يقرأ التعليقاتِ يقيس كلاماً لا
 /// واجهة. (وقع ذلك فعلاً في `settings_unified_header_test`.)

@@ -17,10 +17,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/data/providers/repository_providers.dart';
-import 'package:ural_erp/domain/repositories/e_invoice_repository.dart';
-import 'package:ural_erp/presentation/e_invoicing_picpos/screens/e_invoicing_picpos_screen.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/data/providers/repository_providers.dart';
+import 'package:picpos_erp/domain/repositories/e_invoice_repository.dart';
+import 'package:picpos_erp/presentation/e_invoicing_picpos/screens/e_invoicing_picpos_screen.dart';
 
 Map<String, dynamic> _row({
   required int id,

@@ -22,10 +22,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/entities/invoice_entity.dart';
-import 'package:ural_erp/domain/models/purchase_doc.dart';
-import 'package:ural_erp/presentation/purchases_picpos/screens/purchases_picpos_screen.dart';
-import 'package:ural_erp/presentation/screens/purchases/purchase_invoices_controller.dart';
+import 'package:picpos_erp/domain/entities/invoice_entity.dart';
+import 'package:picpos_erp/domain/models/purchase_doc.dart';
+import 'package:picpos_erp/presentation/purchases_picpos/screens/purchases_picpos_screen.dart';
+import 'package:picpos_erp/presentation/screens/purchases/purchase_invoices_controller.dart';
 
 InvoiceEntity _inv(int id, String number) => InvoiceEntity(
       id: id,

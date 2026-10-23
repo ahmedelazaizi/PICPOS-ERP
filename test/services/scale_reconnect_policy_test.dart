@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/scale_reconnect_policy.dart';
+import 'package:picpos_erp/services/scale_reconnect_policy.dart';
 
 /// Cover for the scale reconnection schedule.
 ///

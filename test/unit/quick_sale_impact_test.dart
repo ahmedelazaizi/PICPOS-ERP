@@ -15,7 +15,7 @@
 // ⚠️ ولا `Color` هنا ولا في النموذج: النبرةُ رمزٌ، وترجمتُها إلى لونٍ تقع في
 // طبقة العرض. وإلّا صار `domain/models` يستورد `material`.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/quick_sale_policy.dart';
+import 'package:picpos_erp/domain/models/quick_sale_policy.dart';
 
 void main() {
   group('كلُّ خطوةٍ تعطي ثلاثةَ أسطرِ أثر', () {

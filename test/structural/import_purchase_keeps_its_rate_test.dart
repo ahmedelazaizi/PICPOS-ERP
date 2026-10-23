@@ -27,9 +27,9 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/delta_pull_service.dart';
-import 'package:ural_erp/services/id_namespace_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/delta_pull_service.dart';
+import 'package:picpos_erp/services/id_namespace_service.dart';
 import '../helpers/dao_source.dart';
 
 String _code(String path) => [

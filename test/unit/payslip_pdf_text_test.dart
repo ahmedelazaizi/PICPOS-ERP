@@ -6,11 +6,11 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/domain/models/hr_payroll.dart';
-import 'package:ural_erp/presentation/hr_picpos/hr_payroll_labels.dart';
-import 'package:ural_erp/presentation/hr_picpos/payslip_pdf.dart';
-import 'package:ural_erp/services/printing/printing_models.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/domain/models/hr_payroll.dart';
+import 'package:picpos_erp/presentation/hr_picpos/hr_payroll_labels.dart';
+import 'package:picpos_erp/presentation/hr_picpos/payslip_pdf.dart';
+import 'package:picpos_erp/services/printing/printing_models.dart';
 
 import '../helpers/arabic_pdf_text.dart';
 import '../helpers/pdf_probe.dart';

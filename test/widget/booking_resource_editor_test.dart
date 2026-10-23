@@ -9,9 +9,9 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/config/app_config.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/presentation/bookings_picpos/widgets/booking_catalog_editors.dart';
+import 'package:picpos_erp/core/config/app_config.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/presentation/bookings_picpos/widgets/booking_catalog_editors.dart';
 
 void main() {
   late AppDatabase db;

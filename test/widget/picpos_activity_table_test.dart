@@ -9,9 +9,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
-import 'package:ural_erp/domain/models/picpos_activity_view.dart';
-import 'package:ural_erp/presentation/activity_log_picpos/screens/activity_log_picpos_screen.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/domain/models/picpos_activity_view.dart';
+import 'package:picpos_erp/presentation/activity_log_picpos/screens/activity_log_picpos_screen.dart';
 
 PicPosActivityRow _row({
   int id = 1,

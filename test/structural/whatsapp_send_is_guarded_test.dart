@@ -20,8 +20,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/domain/models/whatsapp_message.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/domain/models/whatsapp_message.dart';
 
 const _dialogPath =
     'lib/presentation/shared_widgets/whatsapp_send_dialog.dart';

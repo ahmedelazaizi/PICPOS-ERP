@@ -16,7 +16,7 @@
 //   مشتركٌ يجعل تفضيلَ آخرِ من فتح الشاشةَ يحكم الجميعَ على نفس الجهاز.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/party_statement_picpos/screens/party_statement_picpos_screen.dart';
+import 'package:picpos_erp/presentation/party_statement_picpos/screens/party_statement_picpos_screen.dart';
 
 void main() {
   group('كتالوجُ الأعمدة', () {

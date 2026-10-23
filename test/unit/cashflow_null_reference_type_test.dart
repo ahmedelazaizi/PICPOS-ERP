@@ -6,8 +6,8 @@
 // الافتتاحيّ لا يرشّح على النوع أصلاً — فالقائمةُ تناقض نفسَها بين فترتين.
 import 'package:drift/drift.dart' show Variable;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/entities/accounting_entities.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/entities/accounting_entities.dart';
 
 void main() {
   late AppDatabase db;

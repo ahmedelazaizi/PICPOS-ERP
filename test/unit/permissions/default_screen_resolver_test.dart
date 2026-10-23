@@ -1,7 +1,7 @@
 // P2 (2026-10-18) — محلِّل «الشاشة الافتراضية» عند الدخول.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/navigation/default_screen_resolver.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/navigation/default_screen_resolver.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
 
 void main() {
   const allowed = [0, 1, 3, 4, 8, 17, 61];

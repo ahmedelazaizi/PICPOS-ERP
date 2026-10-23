@@ -11,7 +11,7 @@
 // من فواتيرِ شهرٍ كاملٍ ولا يشكو أحد.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/printing/condition_evaluator.dart';
+import 'package:picpos_erp/domain/printing/condition_evaluator.dart';
 
 void main() {
   const values = {

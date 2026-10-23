@@ -15,9 +15,9 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/models/quick_sale_policy.dart';
-import 'package:ural_erp/domain/usecases/sales/add_to_cart_usecase.dart'
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/models/quick_sale_policy.dart';
+import 'package:picpos_erp/domain/usecases/sales/add_to_cart_usecase.dart'
     show resolveStackingFlags;
 
 void main() {

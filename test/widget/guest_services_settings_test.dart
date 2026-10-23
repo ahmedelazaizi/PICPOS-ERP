@@ -23,10 +23,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/feature_settings_providers.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/presentation/settings_picpos/screens/guest_services_settings_picpos.dart';
-import 'package:ural_erp/services/api/table_bill_token.dart';
+import 'package:picpos_erp/data/providers/feature_settings_providers.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/presentation/settings_picpos/screens/guest_services_settings_picpos.dart';
+import 'package:picpos_erp/services/api/table_bill_token.dart';
 
 late AppDatabase _db;
 

@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/usecases/inventory/adjust_stock_usecase.dart';
-import 'package:ural_erp/domain/repositories/inventory_repository.dart';
-import 'package:ural_erp/domain/entities/stock_requisition_entity.dart';
-import 'package:ural_erp/domain/entities/stock_requisition_item_entity.dart';
-import 'package:ural_erp/data/database/database.dart' as db;
+import 'package:picpos_erp/domain/usecases/inventory/adjust_stock_usecase.dart';
+import 'package:picpos_erp/domain/repositories/inventory_repository.dart';
+import 'package:picpos_erp/domain/entities/stock_requisition_entity.dart';
+import 'package:picpos_erp/domain/entities/stock_requisition_item_entity.dart';
+import 'package:picpos_erp/data/database/database.dart' as db;
 
 /// Minimal mock for InventoryRepository — only adjustStock and getProductStock
 /// are used by AdjustStockUseCase.

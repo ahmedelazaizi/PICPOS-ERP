@@ -18,7 +18,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/sync/mirror_settings_keys.dart';
+import 'package:picpos_erp/services/sync/mirror_settings_keys.dart';
 
 void main() {
   group('Spec 131 — mirror_cache_integrity_v1_applied flag literal', () {

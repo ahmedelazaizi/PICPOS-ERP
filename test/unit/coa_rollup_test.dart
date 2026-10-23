@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/screens/coa/coa_rollup.dart';
+import 'package:picpos_erp/presentation/screens/coa/coa_rollup.dart';
 
 // Spec 135 BUG-E — pure roll-up of Chart-of-Accounts balances.
 // leaf = own; parent = own + every descendant; grand total over roots only.

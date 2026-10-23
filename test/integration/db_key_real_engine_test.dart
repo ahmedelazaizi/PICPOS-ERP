@@ -12,13 +12,13 @@ import 'package:drift/drift.dart' show OpeningDetails, QueryExecutor, QueryExecu
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/db_key_manager.dart';
-import 'package:ural_erp/services/db_key_migration_service.dart';
-import 'package:ural_erp/services/db_key_types.dart';
-import 'package:ural_erp/services/db_keyinfo_file.dart';
-import 'package:ural_erp/services/secret_store.dart';
-import 'package:ural_erp/services/sqlcipher_engine.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/db_key_manager.dart';
+import 'package:picpos_erp/services/db_key_migration_service.dart';
+import 'package:picpos_erp/services/db_key_types.dart';
+import 'package:picpos_erp/services/db_keyinfo_file.dart';
+import 'package:picpos_erp/services/secret_store.dart';
+import 'package:picpos_erp/services/sqlcipher_engine.dart';
 
 import '../helpers/db_key_harness.dart' show SimulatedCrash;
 import '../helpers/sqlcipher_real.dart';

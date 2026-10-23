@@ -19,12 +19,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/models/table_actions.dart';
-import 'package:ural_erp/domain/models/table_status.dart';
-import 'package:ural_erp/presentation/screens/tables/widgets/table_actions_menu.dart';
-import 'package:ural_erp/presentation/tables_picpos/widgets/tables_action_rail.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/models/table_actions.dart';
+import 'package:picpos_erp/domain/models/table_status.dart';
+import 'package:picpos_erp/presentation/screens/tables/widgets/table_actions_menu.dart';
+import 'package:picpos_erp/presentation/tables_picpos/widgets/tables_action_rail.dart';
 
 /// كلُّ الأكواد التي تحرس أفعال الشريط الثمانية — منح كاملٍ يجعل
 /// `PermissionGuard` يمرّر الابنَ كما هو، فالتعطيلُ الظاهرُ في اختبارات

@@ -21,13 +21,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/data/database/database.dart' as db;
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/data/providers/repository_providers.dart';
-import 'package:ural_erp/domain/entities/invoice_entity.dart';
-import 'package:ural_erp/domain/repositories/landed_cost_repository.dart';
-import 'package:ural_erp/domain/repositories/purchases_repository.dart';
-import 'package:ural_erp/presentation/landed_cost_picpos/screens/landed_cost_picpos_screen.dart';
+import 'package:picpos_erp/data/database/database.dart' as db;
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/data/providers/repository_providers.dart';
+import 'package:picpos_erp/domain/entities/invoice_entity.dart';
+import 'package:picpos_erp/domain/repositories/landed_cost_repository.dart';
+import 'package:picpos_erp/domain/repositories/purchases_repository.dart';
+import 'package:picpos_erp/presentation/landed_cost_picpos/screens/landed_cost_picpos_screen.dart';
 
 final _sheet = db.LandedCostSheetData(
   id: 1,

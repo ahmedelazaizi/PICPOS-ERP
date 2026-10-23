@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart' show Category;
-import 'package:ural_erp/presentation/products_picpos/widgets/picpos_category_picker.dart';
+import 'package:picpos_erp/data/providers/providers.dart' show Category;
+import 'package:picpos_erp/presentation/products_picpos/widgets/picpos_category_picker.dart';
 
 /// Task 2 tests the ONE genuinely-new pure widget in the products PicPos fork:
 /// the category picker. Everything else the screen shows (the products table,

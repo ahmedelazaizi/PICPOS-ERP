@@ -18,7 +18,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/widgets/common/app_data_table.dart';
+import 'package:picpos_erp/presentation/widgets/common/app_data_table.dart';
 
 void main() {
   // ── المحاكاةُ المطابقةُ للشاشة الحقيقيّة ────────────────────────────────

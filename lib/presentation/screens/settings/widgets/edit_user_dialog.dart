@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/permissions/permission_codes.dart';
@@ -6,7 +6,7 @@ import '../../../../services/network_service.dart';
 import '../../../../services/client_write_interceptor.dart';
 import '../../../../data/providers/providers.dart';
 import '../../../widgets/dialogs/app_form_dialog.dart';
-import 'package:ural_erp/l10n/app_localizations.dart';
+import 'package:picpos_erp/l10n/app_localizations.dart';
 
 /// Issue 7 (Feature 018): edit an existing user's identity (display_name +
 /// username + MSR card code). The role / branch / discount editors live in

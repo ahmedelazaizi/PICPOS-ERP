@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/tax_rate_bounds.dart';
-import 'package:ural_erp/presentation/widgets/settings/pos_settings_widget.dart';
+import 'package:picpos_erp/domain/models/tax_rate_bounds.dart';
+import 'package:picpos_erp/presentation/widgets/settings/pos_settings_widget.dart';
 
 /// الحدُّ الأدنى للنسبة **حيث يُكتَب الإعداد** — لا حيث يُقرأ.
 ///

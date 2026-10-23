@@ -71,7 +71,7 @@
 
 ```dart
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/shift_drawer_resolver.dart';
+import 'package:picpos_erp/domain/models/shift_drawer_resolver.dart';
 
 void main() {
   group('resolveShiftDrawer', () {
@@ -125,7 +125,7 @@ void main() {
 rm -rf build/native_assets && flutter test test/unit/shift_drawer_resolver_test.dart
 ```
 
-المتوقَّع: فشلٌ بـ`Target of URI doesn't exist: 'package:ural_erp/domain/models/shift_drawer_resolver.dart'`.
+المتوقَّع: فشلٌ بـ`Target of URI doesn't exist: 'package:picpos_erp/domain/models/shift_drawer_resolver.dart'`.
 
 - [ ] **خطوة ٣: اكتب أقلَّ تنفيذٍ يُنجحه**
 
@@ -267,7 +267,7 @@ git commit -m "refactor(treasury): الإقفالُ يستعمل حاسبَ ال
 ```dart
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNotNull;
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 void main() {
   late AppDatabase db;
@@ -425,7 +425,7 @@ git commit -m "fix(returns): الصرفُ من درج وردية الفرع لا
 
 ```dart
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/returnable_line.dart';
+import 'package:picpos_erp/domain/models/returnable_line.dart';
 
 ReturnableLine line({double sold = 10, double returned = 0}) => ReturnableLine(
       invoiceItemId: 1,
@@ -632,8 +632,8 @@ git commit -m "feat(returns): بحثُ الفواتير بلا سقفٍ زمني
 
 ```dart
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/returnable_line.dart';
-import 'package:ural_erp/presentation/pos_picpos/state/pos_return_mode.dart';
+import 'package:picpos_erp/domain/models/returnable_line.dart';
+import 'package:picpos_erp/presentation/pos_picpos/state/pos_return_mode.dart';
 
 void main() {
   final l = ReturnableLine(
@@ -725,7 +725,7 @@ git commit -m "feat(pos): حالةُ وضع المرتجع بأقفالها ال
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/pos_picpos/widgets/picpos_return_mode_banner.dart';
+import 'package:picpos_erp/presentation/pos_picpos/widgets/picpos_return_mode_banner.dart';
 
 void main() {
   testWidgets('الترويسةُ تُظهر رقمَ الفاتورة وتُميَّز بلونٍ تحذيريّ',

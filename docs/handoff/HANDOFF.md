@@ -362,7 +362,7 @@ e9e2776  بروفايل lite
   ForEach-Object { "x$($_.Count)  $($_.Name)" }
 ```
 
-**المقبول:** `ural_erp` (اسم حزمة Dart، داخلي) · الـ٤ ملاح · `URAL_RESET_*`
+**المقبول:** `picpos_erp` (اسم حزمة Dart، داخلي) · الـ٤ ملاح · `URAL_RESET_*`
 و`URAL_PURGE_USERS` (أعلام CLI) · `ural_api_token` و`ural_db_fallback_enc_key`
 و`ural-key *` (مفاتيح إعدادات — تغييرها يكسر تركيبات قائمة) · `uralRules`
 و`uralLogic` و`uralCase` و`ural_rules.dart` (مُعرّفات كود) · `URAL-ERP*`.

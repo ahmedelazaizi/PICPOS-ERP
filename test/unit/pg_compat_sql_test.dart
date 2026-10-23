@@ -7,7 +7,7 @@
 // guarantees" and catch regressions when DAOs add new raw SQL.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/pg_compat_sql.dart';
+import 'package:picpos_erp/data/database/pg_compat_sql.dart';
 
 void main() {
   // ─────────────────────────────────────────────────────────────────────────

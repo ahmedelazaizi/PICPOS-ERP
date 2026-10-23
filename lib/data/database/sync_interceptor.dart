@@ -1,4 +1,4 @@
-// import 'package:ural_erp/data/database/database.dart';
+// import 'package:picpos_erp/data/database/database.dart';
 // Removed database.dart import to break circular dependency during build_runner analysis.
 
 /// Abstract sync interceptor for database → network decoupling.

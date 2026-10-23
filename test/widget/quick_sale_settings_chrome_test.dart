@@ -16,8 +16,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_surface.dart';
-import 'package:ural_erp/presentation/settings_picpos/widgets/quick_sale_settings_chrome.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
+import 'package:picpos_erp/presentation/settings_picpos/widgets/quick_sale_settings_chrome.dart';
 
 double _contrast(Color a, Color b) {
   final la = a.computeLuminance();

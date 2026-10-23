@@ -1,9 +1,9 @@
 // E-01 المرحلة ب: DbKeyManager — التوليد/التخزين/القراءة وحالة «لا توليد».
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/db_key_names.dart';
-import 'package:ural_erp/services/db_key_types.dart';
-import 'package:ural_erp/services/db_keyinfo_file.dart';
+import 'package:picpos_erp/services/db_key_names.dart';
+import 'package:picpos_erp/services/db_key_types.dart';
+import 'package:picpos_erp/services/db_keyinfo_file.dart';
 
 import '../helpers/db_key_harness.dart';
 

@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // «المناطق ومسارات التوزيع» — نسخةُ PicPos على وحدة `regions` من التصميم.
 //
 // ═══ ⚠️ تصحيحُ خريطةٍ خاطئةٍ في تسليمٍ سابق ═══

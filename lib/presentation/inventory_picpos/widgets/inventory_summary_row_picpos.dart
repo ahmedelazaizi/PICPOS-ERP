@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // صفُّ ملخّص المخزون بهويّة PicPos — **فوركٌ بقرار المالك 2026-08-22**.
 //
 // المصدر: `screens/inventory/widgets/inventory_summary_row.dart`، ويبقى بلا

@@ -5,10 +5,10 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf/shelf.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/api/api_display_handler.dart';
-import 'package:ural_erp/services/api/api_html_templates.dart';
-import 'package:ural_erp/services/api/web_static_handler.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/api/api_display_handler.dart';
+import 'package:picpos_erp/services/api/api_html_templates.dart';
+import 'package:picpos_erp/services/api/web_static_handler.dart';
 
 void main() {
   group('XSS: القوالب لا تُدرج نصّاً خاماً في innerHTML', () {

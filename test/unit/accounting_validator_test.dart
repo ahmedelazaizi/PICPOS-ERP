@@ -7,13 +7,13 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/accounting_validator.dart';
-import 'package:ural_erp/domain/repositories/accounting_repository.dart';
-import 'package:ural_erp/domain/repositories/treasury_repository.dart';
-import 'package:ural_erp/domain/repositories/parties_repository.dart';
-import 'package:ural_erp/domain/repositories/i_products_repository.dart';
-import 'package:ural_erp/domain/repositories/inventory_repository.dart';
-import 'package:ural_erp/domain/repositories/settings_repository.dart';
+import 'package:picpos_erp/services/accounting_validator.dart';
+import 'package:picpos_erp/domain/repositories/accounting_repository.dart';
+import 'package:picpos_erp/domain/repositories/treasury_repository.dart';
+import 'package:picpos_erp/domain/repositories/parties_repository.dart';
+import 'package:picpos_erp/domain/repositories/i_products_repository.dart';
+import 'package:picpos_erp/domain/repositories/inventory_repository.dart';
+import 'package:picpos_erp/domain/repositories/settings_repository.dart';
 
 // Minimal stubs
 class _StubAcctRepo implements IAccountingRepository {

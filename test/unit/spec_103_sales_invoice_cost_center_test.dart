@@ -8,10 +8,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/repositories/inventory_repository.dart'
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/repositories/inventory_repository.dart'
     show WarehouseData;
-import 'package:ural_erp/presentation/screens/widgets/sales_invoices/sales_invoice_form.dart';
+import 'package:picpos_erp/presentation/screens/widgets/sales_invoices/sales_invoice_form.dart';
 
 CostCenter _costCenter(int id, String name) => CostCenter(
       id: id,

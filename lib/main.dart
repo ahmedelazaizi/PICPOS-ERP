@@ -14,7 +14,7 @@ import 'services/client_write_interceptor.dart';
 import 'services/id_namespace_service.dart';
 import 'services/offline_sync_worker.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:ural_erp/l10n/app_localizations.dart';
+import 'package:picpos_erp/l10n/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/config/app_config.dart';
 import 'core/i18n/locale_provider.dart';

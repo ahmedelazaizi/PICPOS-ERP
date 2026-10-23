@@ -16,7 +16,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/library_source.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
 
 /// نصُّ الملفّ بلا أسطر التعليق وبلا `\r` — أغلبُ الملفّات هنا CRLF.
 String _code(String path) => [

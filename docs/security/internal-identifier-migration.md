@@ -1,7 +1,7 @@
 # Internal identifier migration — removing the old product name from the PicPos binary
 
 Owner decision 2026-10-23 (BRAND-005 / step B5): the PicPos build must contain no
-`ural` text except the Dart package name `ural_erp` (until the mechanical rename) and
+`ural` text except the Dart package name `picpos_erp` (until the mechanical rename) and
 ICU's `Uralsk` time-zone entry — **without locking anyone out**. Existing encrypted
 databases (e.g. `Documents\picpos_unified.db` + `.keyinfo.json`), sessions, bearer tokens,
 invoice hashes and stored secrets must keep working.
@@ -47,7 +47,7 @@ Tests: `test/unit/legacy_identifiers_test.dart`, `test/unit/internal_identifier_
 | 10 | `ural_api_token` | `picpos_api_token` | (a) secure storage | client's stored bearer (`ServerProxy`); also mirrored in prefs under `network_api_token` | migration on `restoreToken`; `setApiToken` writes new/drops old; clear deletes both names (no resurrection) |
 | 11 | `ural_lan_device_name` | `picpos_lan_device_name` | (c) label | `LanPairingClient.deviceNameKey`: nothing reads or writes it (device name = hostname) | simply renamed; no stored value exists to migrate |
 
-Not part of this migration: the Dart package name `ural_erp` (later rename);
+Not part of this migration: the Dart package name `picpos_erp` (later rename);
 `lib/data/database/daos/api_key_dao.dart` generates API-key strings with an `ural_` prefix in a
 dead method (no callers, tree-shaken — verified by the bundle scan). It is data-access code
 owned by another stream and is left for them (remains the single entry of `_libLiteralAllowList`

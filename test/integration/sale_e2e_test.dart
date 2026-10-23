@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNotNull;
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 /// E2E Test: Complete Sale Flow (Sprint 17)
 /// POS → Invoice → Stock Deduction → Treasury Receipt

@@ -22,16 +22,16 @@
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/core/utils/financial_utils.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/extensions/distribution_dao.dart';
-import 'package:ural_erp/data/database/sync_interceptor.dart';
-import 'package:ural_erp/domain/models/hr_attendance.dart';
-import 'package:ural_erp/domain/models/hr_employee_file.dart';
-import 'package:ural_erp/domain/models/hr_payroll.dart';
-import 'package:ural_erp/services/delta_pull_service.dart';
-import 'package:ural_erp/services/id_namespace_service.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/core/utils/financial_utils.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/extensions/distribution_dao.dart';
+import 'package:picpos_erp/data/database/sync_interceptor.dart';
+import 'package:picpos_erp/domain/models/hr_attendance.dart';
+import 'package:picpos_erp/domain/models/hr_employee_file.dart';
+import 'package:picpos_erp/domain/models/hr_payroll.dart';
+import 'package:picpos_erp/services/delta_pull_service.dart';
+import 'package:picpos_erp/services/id_namespace_service.dart';
 
 const _newTables = [
   'hr_payroll_settings',

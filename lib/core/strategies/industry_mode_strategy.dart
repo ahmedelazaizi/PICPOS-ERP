@@ -3,7 +3,7 @@
 /// Encapsulates mode-specific POS behavior for Supermarket, Restaurant, and Cafe modes.
 /// This reduces conditional logic scattered across POS components.
 library;
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';

@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // =======================================================================
 // JOURNAL ENTRY HELPER WIDGETS — Phase 7 God File Splitting
 // Extracted from journal_entries_screen.dart (lines 1032-1340)

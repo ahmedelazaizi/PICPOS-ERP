@@ -1,6 +1,6 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
-import 'package:ural_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../../domain/models/journal_balance.dart';

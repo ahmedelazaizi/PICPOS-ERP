@@ -21,7 +21,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/widgets/dialogs/product_form_helpers.dart';
+import 'package:picpos_erp/presentation/widgets/dialogs/product_form_helpers.dart';
 
 void main() {
   double resolve(double? typed, double base, double factor) =>

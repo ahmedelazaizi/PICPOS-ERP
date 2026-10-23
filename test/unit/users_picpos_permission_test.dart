@@ -23,8 +23,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/presentation/users_picpos/screens/users_management_picpos_screen.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/presentation/users_picpos/screens/users_management_picpos_screen.dart';
 
 const _screenPath =
     'lib/presentation/users_picpos/screens/users_management_picpos_screen.dart';

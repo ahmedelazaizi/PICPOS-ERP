@@ -3,17 +3,17 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf/shelf.dart';
-import 'package:ural_erp/core/logging/diagnostic_logger.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/api/api_auth_middleware.dart';
-import 'package:ural_erp/services/api/api_handler.dart';
-import 'package:ural_erp/services/api/api_session_token.dart';
-import 'package:ural_erp/services/api/lan_pairing_service.dart';
-import 'package:ural_erp/services/api/server_secrets.dart';
-import 'package:ural_erp/services/api/session_key_watch.dart';
-import 'package:ural_erp/services/api/table_bill_legacy_acceptance.dart';
-import 'package:ural_erp/services/api/table_bill_token.dart';
-import 'package:ural_erp/services/secret_store.dart';
+import 'package:picpos_erp/core/logging/diagnostic_logger.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/api/api_auth_middleware.dart';
+import 'package:picpos_erp/services/api/api_handler.dart';
+import 'package:picpos_erp/services/api/api_session_token.dart';
+import 'package:picpos_erp/services/api/lan_pairing_service.dart';
+import 'package:picpos_erp/services/api/server_secrets.dart';
+import 'package:picpos_erp/services/api/session_key_watch.dart';
+import 'package:picpos_erp/services/api/table_bill_legacy_acceptance.dart';
+import 'package:picpos_erp/services/api/table_bill_token.dart';
+import 'package:picpos_erp/services/secret_store.dart';
 
 Future<void> _noLog(String tag, String msg) async {}
 

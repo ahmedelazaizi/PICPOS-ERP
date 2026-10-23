@@ -11,10 +11,10 @@
 // `findReturnableLineForProduct` — نقطةُ القرار وراء حقل الباركود/البحث في
 // المحرِّر: هل الصنفُ المقروء جزءٌ من الفاتورة، وأيُّ سطرٍ منها لسه له مكان.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/returnable_line.dart';
-import 'package:ural_erp/presentation/pos_picpos/screens/picpos_pos_screen.dart'
+import 'package:picpos_erp/domain/models/returnable_line.dart';
+import 'package:picpos_erp/presentation/pos_picpos/screens/picpos_pos_screen.dart'
     as picpos;
-import 'package:ural_erp/presentation/pos_picpos/state/pos_return_mode.dart';
+import 'package:picpos_erp/presentation/pos_picpos/state/pos_return_mode.dart';
 
 void main() {
   const lineA = ReturnableLine(

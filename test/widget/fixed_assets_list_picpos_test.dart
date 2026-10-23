@@ -20,13 +20,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/data/database/database.dart' as db;
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/repositories/accounting_repository.dart';
-import 'package:ural_erp/domain/repositories/auth_repository.dart';
-import 'package:ural_erp/domain/repositories/fixed_assets_repository.dart';
-import 'package:ural_erp/presentation/fixed_assets_picpos/screens/fixed_assets_picpos_screen.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/data/database/database.dart' as db;
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/repositories/accounting_repository.dart';
+import 'package:picpos_erp/domain/repositories/auth_repository.dart';
+import 'package:picpos_erp/domain/repositories/fixed_assets_repository.dart';
+import 'package:picpos_erp/presentation/fixed_assets_picpos/screens/fixed_assets_picpos_screen.dart';
 import '../helpers/attachments_test_overrides.dart';
 
 db.FixedAssetData _asset({

@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/usecases/purchases/create_purchase_usecase.dart';
-import 'package:ural_erp/domain/repositories/purchases_repository.dart';
-import 'package:ural_erp/domain/entities/invoice_entity.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/usecases/purchases/create_purchase_usecase.dart';
+import 'package:picpos_erp/domain/repositories/purchases_repository.dart';
+import 'package:picpos_erp/domain/entities/invoice_entity.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 /// Mock repository for testing
 class MockPurchasesRepository implements PurchasesRepository {

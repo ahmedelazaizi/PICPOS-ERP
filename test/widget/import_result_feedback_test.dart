@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/widgets/app_toast.dart';
-import 'package:ural_erp/data/services/excel_import_result.dart';
-import 'package:ural_erp/presentation/widgets/dialogs/import_result_feedback.dart';
+import 'package:picpos_erp/core/widgets/app_toast.dart';
+import 'package:picpos_erp/data/services/excel_import_result.dart';
+import 'package:picpos_erp/presentation/widgets/dialogs/import_result_feedback.dart';
 
 ImportResult _result({int errors = 60, bool success = true}) => ImportResult(
       success: success,

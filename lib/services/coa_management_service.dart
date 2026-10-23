@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/core/utils/uuid_v7.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/core/utils/uuid_v7.dart';
 
 /// Service for exporting and importing Chart of Accounts (COA) via CSV/Excel.
 class CoaManagementService {

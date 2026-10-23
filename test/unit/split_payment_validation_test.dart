@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/accounting_service.dart';
+import 'package:picpos_erp/services/accounting_service.dart';
 
 // Mock-free test: validateSplitPayment is a pure function on AccountingService.
 // We need a minimal AccountingService, but since it requires AppDatabase,

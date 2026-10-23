@@ -18,9 +18,9 @@
 //    **صفراً**، واعتمادُها يحرّكه. و«حالةٌ صحيحةٌ ورصيدٌ متحرّك» هو عينُ
 //    العطب الذي تمنعه المسودّة.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/repositories/drift_accounting_repository.dart';
-import 'package:ural_erp/domain/repositories/accounting_repository.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/repositories/drift_accounting_repository.dart';
+import 'package:picpos_erp/domain/repositories/accounting_repository.dart';
 
 void main() {
   late AppDatabase db;

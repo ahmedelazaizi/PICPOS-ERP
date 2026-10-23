@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // منطق منسوخ من users_management_screen.dart (monolith) — أي إصلاح منطقي
 // يتصلّح في المصدر أولاً ثم يُنقل بـ patch لهذا الملف (مصيدة النسخ §٥.٨). لا
 // يُنسخ أبداً من D:\URAL-ERP.
@@ -31,9 +31,9 @@ import 'package:ural_erp/core/i18n/tr.dart';
 // راجع lib/presentation/screens/users_management_screen.dart (الأصل).
 
 import 'package:flutter/material.dart';
-import 'package:ural_erp/core/widgets/app_toast.dart';
+import 'package:picpos_erp/core/widgets/app_toast.dart';
 // 063 (D1-005): dual-approval gate for user-role changes.
-import 'package:ural_erp/services/dual_approval_service.dart';
+import 'package:picpos_erp/services/dual_approval_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/auth/bootstrap_admin.dart';

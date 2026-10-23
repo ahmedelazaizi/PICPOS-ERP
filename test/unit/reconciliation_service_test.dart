@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/reconciliation_service.dart';
+import 'package:picpos_erp/services/reconciliation_service.dart';
 
 /// Tests for ReconciliationService data models and logic.
 ///

@@ -17,7 +17,7 @@
 // tearDown so no static state leaks between tests.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/api/api_session_token.dart';
+import 'package:picpos_erp/services/api/api_session_token.dart';
 
 void main() {
   // A fixed, arbitrary epoch-ms anchor. Every mint/verify pins its clock to

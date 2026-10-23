@@ -12,10 +12,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/presentation/pos/widgets/customer_selector_v2.dart';
-import 'package:ural_erp/presentation/widgets/permission_guard.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/presentation/pos/widgets/customer_selector_v2.dart';
+import 'package:picpos_erp/presentation/widgets/permission_guard.dart';
 
 void main() {
   Future<void> pumpButton(

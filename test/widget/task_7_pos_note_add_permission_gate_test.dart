@@ -17,10 +17,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/presentation/pos/widgets/cart_item_tile.dart';
-import 'package:ural_erp/presentation/widgets/permission_guard.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/presentation/pos/widgets/cart_item_tile.dart';
+import 'package:picpos_erp/presentation/widgets/permission_guard.dart';
 
 void main() {
   Future<void> pumpField(

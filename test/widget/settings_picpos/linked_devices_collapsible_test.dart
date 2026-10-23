@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/presentation/settings_picpos/screens/linked_devices_section.dart';
-import 'package:ural_erp/services/api/lan_paired_devices_provider.dart';
-import 'package:ural_erp/services/api/lan_pairing_service.dart';
-import 'package:ural_erp/services/cloud_sync/cloud_link_controller.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/presentation/settings_picpos/screens/linked_devices_section.dart';
+import 'package:picpos_erp/services/api/lan_paired_devices_provider.dart';
+import 'package:picpos_erp/services/api/lan_pairing_service.dart';
+import 'package:picpos_erp/services/cloud_sync/cloud_link_controller.dart';
 
 class _LanFake implements LanPairingService {
   @override

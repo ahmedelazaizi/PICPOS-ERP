@@ -12,12 +12,12 @@ import 'dart:convert';
 import 'package:drift/drift.dart' show InsertMode, Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf/shelf.dart' as shelf;
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/api/api_auth_middleware.dart';
-import 'package:ural_erp/services/api/api_handler.dart';
-import 'package:ural_erp/services/api/api_session_token.dart';
-import 'package:ural_erp/services/api/api_web_session_handler.dart';
-import 'package:ural_erp/services/api/web_session_guard.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/api/api_auth_middleware.dart';
+import 'package:picpos_erp/services/api/api_handler.dart';
+import 'package:picpos_erp/services/api/api_session_token.dart';
+import 'package:picpos_erp/services/api/api_web_session_handler.dart';
+import 'package:picpos_erp/services/api/web_session_guard.dart';
 
 void main() {
   late AppDatabase db;

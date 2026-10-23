@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/presentation/shared_widgets/dashboard_widgets.dart';
+import 'package:picpos_erp/presentation/shared_widgets/dashboard_widgets.dart';
 
 void main() {
   group('SummaryCard', () {

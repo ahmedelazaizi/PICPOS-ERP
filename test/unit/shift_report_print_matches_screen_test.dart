@@ -15,8 +15,8 @@
 // عجزاً وهمياً. يُعرض للتوضيح ويبقى خارج `shift_total_system`.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/entities/shift_closing_snapshot.dart';
-import 'package:ural_erp/services/templated_invoice_service.dart';
+import 'package:picpos_erp/domain/entities/shift_closing_snapshot.dart';
+import 'package:picpos_erp/services/templated_invoice_service.dart';
 
 void main() {
   final snapshot = ShiftClosingSnapshot(

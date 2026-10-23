@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
-import 'package:ural_erp/core/logging/diagnostic_logger.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/core/logging/diagnostic_logger.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 /// How conflicts are resolved during bi-directional sync.
 ///

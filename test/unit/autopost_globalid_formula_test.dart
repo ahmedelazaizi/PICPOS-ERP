@@ -9,7 +9,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/core/utils/journal_entry_gid.dart';
+import 'package:picpos_erp/core/utils/journal_entry_gid.dart';
 
 void main() {
   group('Spec 129 F5 — JournalEntryGid.compute', () {

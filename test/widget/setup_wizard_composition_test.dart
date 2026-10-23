@@ -32,8 +32,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/setup_step_order.dart';
-import 'package:ural_erp/presentation/screens/setup_wizard_screen.dart';
+import 'package:picpos_erp/domain/models/setup_step_order.dart';
+import 'package:picpos_erp/presentation/screens/setup_wizard_screen.dart';
 
 Future<void> _pump(
   WidgetTester tester,

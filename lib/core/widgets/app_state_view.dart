@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // AppStateView — Day 11 PIR: Unified Loading / Error / Empty / Content states
 // ═══════════════════════════════════════════════════════════════════════════

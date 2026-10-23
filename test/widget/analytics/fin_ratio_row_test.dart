@@ -1,10 +1,10 @@
 // اختبار صفّ النسبة: «—» للمجهول، الشارةُ، التفصيلُ القابلُ للفتح، RTL/EN.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
-import 'package:ural_erp/domain/analytics/ratio_engine.dart';
-import 'package:ural_erp/presentation/analytics_picpos/fin_ratio_group_section.dart';
-import 'package:ural_erp/presentation/analytics_picpos/fin_ratio_row.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/domain/analytics/ratio_engine.dart';
+import 'package:picpos_erp/presentation/analytics_picpos/fin_ratio_group_section.dart';
+import 'package:picpos_erp/presentation/analytics_picpos/fin_ratio_row.dart';
 
 import 'fin_test_support.dart';
 

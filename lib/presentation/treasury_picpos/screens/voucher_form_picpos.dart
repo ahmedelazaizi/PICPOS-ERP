@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // نموذجُ سندِ القبض والصرف — تصميمُ المالك `(11)` و`(12)` و`(13)`.
 //
 // ═══ ⚠️ ودجتٌ واحدةٌ للسندَين ═══

@@ -21,16 +21,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/i18n/locale_provider.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/core/theme/app_theme.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/models/setup_step_order.dart';
-import 'package:ural_erp/presentation/screens/setup_wizard/setup_finish_runner.dart';
-import 'package:ural_erp/presentation/screens/setup_wizard/setup_persistence_riverpod.dart';
-import 'package:ural_erp/presentation/screens/setup_wizard/setup_step_meta.dart';
-import 'package:ural_erp/presentation/screens/setup_wizard_screen.dart';
-import 'package:ural_erp/services/network_service.dart';
+import 'package:picpos_erp/core/i18n/locale_provider.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/theme/app_theme.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/models/setup_step_order.dart';
+import 'package:picpos_erp/presentation/screens/setup_wizard/setup_finish_runner.dart';
+import 'package:picpos_erp/presentation/screens/setup_wizard/setup_persistence_riverpod.dart';
+import 'package:picpos_erp/presentation/screens/setup_wizard/setup_step_meta.dart';
+import 'package:picpos_erp/presentation/screens/setup_wizard_screen.dart';
+import 'package:picpos_erp/services/network_service.dart';
 
 class _LocaleNotifier extends UserLocaleNotifier {
   @override

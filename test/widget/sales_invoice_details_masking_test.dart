@@ -7,11 +7,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/constants/app_constants.dart' hide InvoiceStatus;
-import 'package:ural_erp/data/database/database.dart' as db;
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/entities/invoice_entity.dart';
-import 'package:ural_erp/presentation/widgets/sales_invoice_figures.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart' hide InvoiceStatus;
+import 'package:picpos_erp/data/database/database.dart' as db;
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/entities/invoice_entity.dart';
+import 'package:picpos_erp/presentation/widgets/sales_invoice_figures.dart';
 
 InvoiceEntity _invoice() => InvoiceEntity(
       id: 1,

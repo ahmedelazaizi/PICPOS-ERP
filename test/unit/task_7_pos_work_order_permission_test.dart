@@ -16,10 +16,10 @@
 // (`task_7_held_orders_work_order_permission_gate_test.dart`) لأنه شكل
 // مختلف (widget-level guard، مش inline check).
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/presentation/pos/screens/pos_main_screen.dart'
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/presentation/pos/screens/pos_main_screen.dart'
     as uralcash;
-import 'package:ural_erp/presentation/screens/tables_screen.dart' as tables;
+import 'package:picpos_erp/presentation/screens/tables_screen.dart' as tables;
 
 void main() {
   group('canPrintPosWorkOrder — إعادة طباعة من فاتورة سابقة (pos_main_operations.dart)',

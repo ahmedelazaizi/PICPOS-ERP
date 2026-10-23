@@ -9,8 +9,8 @@
 // على الشريحة الأولى — وحارسٌ لا يُختبَر على الحالتين يمرّ على ثابتٍ مكتوب.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/printing/template_document.dart';
-import 'package:ural_erp/services/printing/layout_engine.dart';
+import 'package:picpos_erp/domain/printing/template_document.dart';
+import 'package:picpos_erp/services/printing/layout_engine.dart';
 
 const _a4 = PaperSpec(
   widthMm: 210,

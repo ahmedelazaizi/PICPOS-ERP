@@ -2,10 +2,10 @@
 import 'dart:async';
 
 import 'package:drift/drift.dart';
-import 'package:ural_erp/core/logging/diagnostic_logger.dart';
-import 'package:ural_erp/core/utils/financial_utils.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/sync/sync_strategy.dart';
+import 'package:picpos_erp/core/logging/diagnostic_logger.dart';
+import 'package:picpos_erp/core/utils/financial_utils.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/sync/sync_strategy.dart';
 import 'package:flutter/foundation.dart';
 
 class JournalSyncStrategy extends SyncStrategy {

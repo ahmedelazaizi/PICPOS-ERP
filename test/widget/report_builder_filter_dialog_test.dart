@@ -16,9 +16,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 // ‏`providers.dart` يُصدّر `database.dart` — واستيرادُه صراحةً ملاحظةُ تحليل.
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/data/repositories/reporting_repository_impl.dart';
-import 'package:ural_erp/presentation/screens/report_builder_screen.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/data/repositories/reporting_repository_impl.dart';
+import 'package:picpos_erp/presentation/screens/report_builder_screen.dart';
 
 void main() {
   late AppDatabase db;

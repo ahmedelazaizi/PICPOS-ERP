@@ -12,9 +12,9 @@
 // المنطقة الوهميّة — فلا قاعدةَ هنا ولا `ProviderScope` أصلاً.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/table_actions.dart';
-import 'package:ural_erp/domain/models/table_status.dart';
-import 'package:ural_erp/presentation/screens/tables/widgets/table_actions_menu.dart';
+import 'package:picpos_erp/domain/models/table_actions.dart';
+import 'package:picpos_erp/domain/models/table_status.dart';
+import 'package:picpos_erp/presentation/screens/tables/widgets/table_actions_menu.dart';
 
 Widget _wrap(Widget child) => MaterialApp(
       home: Directionality(

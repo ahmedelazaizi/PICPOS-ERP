@@ -14,10 +14,10 @@
 // فارغةٌ لا ترمي شيئاً وتمرّ.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_data_table.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_entity_card.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_hub_kpi.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_data_table.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_entity_card.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_hub_kpi.dart';
 
 void main() {
   Future<void> show(WidgetTester tester, Widget child, Size size) async {

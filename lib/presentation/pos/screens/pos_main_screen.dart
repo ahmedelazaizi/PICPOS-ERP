@@ -1,12 +1,12 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:ural_erp/presentation/widgets/dialogs/app_confirm_dialog.dart';
+import 'package:picpos_erp/presentation/widgets/dialogs/app_confirm_dialog.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-import 'package:ural_erp/core/widgets/app_toast.dart';
+import 'package:picpos_erp/core/widgets/app_toast.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../services/journal_entry_diagnostics.dart';
 import '../../../data/providers/providers.dart';

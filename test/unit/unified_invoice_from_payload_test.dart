@@ -19,7 +19,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/e_invoicing/e_invoice_service_wrapper.dart';
+import 'package:picpos_erp/services/e_invoicing/e_invoice_service_wrapper.dart';
 
 void main() {
   Map<String, dynamic> payload() => {

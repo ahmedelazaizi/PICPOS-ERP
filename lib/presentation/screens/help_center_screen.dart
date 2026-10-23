@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:phosphor_flutter/phosphor_flutter.dart';

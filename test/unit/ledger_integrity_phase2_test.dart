@@ -1,9 +1,9 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/entities/accounting_entities.dart';
-import 'package:ural_erp/domain/entities/cart_item_entity.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/domain/entities/accounting_entities.dart';
+import 'package:picpos_erp/domain/entities/cart_item_entity.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {

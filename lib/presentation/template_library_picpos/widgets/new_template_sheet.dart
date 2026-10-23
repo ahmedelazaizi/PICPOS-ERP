@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // «قالب جديد» — النماذجُ الجاهزةُ كلُّها، لا ثمانيةٌ منها.
 //
 // هذه اللوحةُ هي المسارُ الذي كان مفقوداً: أحدَ عشرَ ملفَّ قالبٍ مشحونٍ مع

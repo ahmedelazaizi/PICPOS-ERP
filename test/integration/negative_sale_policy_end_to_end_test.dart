@@ -1,11 +1,11 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/data/repositories/sales_transaction_orchestrator.dart';
-import 'package:ural_erp/domain/entities/cart_item_entity.dart';
-import 'package:ural_erp/domain/repositories/sales_repository.dart';
-import 'package:ural_erp/services/stock_shortage_policy_service.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/data/repositories/sales_transaction_orchestrator.dart';
+import 'package:picpos_erp/domain/entities/cart_item_entity.dart';
+import 'package:picpos_erp/domain/repositories/sales_repository.dart';
+import 'package:picpos_erp/services/stock_shortage_policy_service.dart';
 
 void main() {
   late AppDatabase db;

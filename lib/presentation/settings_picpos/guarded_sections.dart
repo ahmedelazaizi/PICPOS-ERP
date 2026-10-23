@@ -24,7 +24,7 @@
 // وقد بقيت نصّاً: أربعةُ أرقامٍ أضعفُ من كلمةٍ حرّة، والتحويلُ إليها تخفيفُ
 // حمايةٍ بلا مقابل.
 library;
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 
 import 'package:flutter/widgets.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';

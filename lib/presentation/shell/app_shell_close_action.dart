@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/core/navigation/dirty_screens_registry.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
-import 'package:ural_erp/domain/models/app_close_cart_gate.dart';
-import 'package:ural_erp/presentation/widgets/dialogs/cart_not_empty_close_dialog.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/navigation/dirty_screens_registry.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/domain/models/app_close_cart_gate.dart';
+import 'package:picpos_erp/presentation/widgets/dialogs/cart_not_empty_close_dialog.dart';
 
 /// زرّ «إغلاق البرنامج» اليدويّ في الشريط الجانبيّ.
 ///

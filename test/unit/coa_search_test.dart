@@ -1,8 +1,8 @@
 // بحثُ دليل الحسابات — الوحدةُ الخالصة (`chart_of_accounts_search.dart`).
 import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/presentation/accounting_picpos/chart_of_accounts_search.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/presentation/accounting_picpos/chart_of_accounts_search.dart';
 
 void main() {
   const rows = <CoaSearchRow>[

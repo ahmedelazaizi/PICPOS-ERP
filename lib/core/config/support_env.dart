@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/config/brand.dart';
+import 'package:picpos_erp/core/config/brand.dart';
 
 /// متغيرات البيئة الخاصة بالدعم الفني (إعادة ضبط كلمة المرور… إلخ).
 ///

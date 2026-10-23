@@ -8,7 +8,7 @@
 
 import 'dart:io';
 
-import 'package:ural_erp/services/scale_xls_writer.dart';
+import 'package:picpos_erp/services/scale_xls_writer.dart';
 
 void main(List<String> args) {
   final path = args.isNotEmpty ? args.first : 'nvk_sample.xls';

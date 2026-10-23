@@ -23,12 +23,12 @@ import 'dart:io';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
-import 'package:ural_erp/data/database/connection_io.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/pending_restore.dart';
-import 'package:ural_erp/data/database/sync_interceptor.dart';
-import 'package:ural_erp/data/database/wal_checkpoint.dart';
-import 'package:ural_erp/services/admin/data_wipe_service.dart';
+import 'package:picpos_erp/data/database/connection_io.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/pending_restore.dart';
+import 'package:picpos_erp/data/database/sync_interceptor.dart';
+import 'package:picpos_erp/data/database/wal_checkpoint.dart';
+import 'package:picpos_erp/services/admin/data_wipe_service.dart';
 
 /// PathProvider وهمي بيوجّه مجلد المستندات لمجلد مؤقت يتحكم فيه الاختبار.
 ///

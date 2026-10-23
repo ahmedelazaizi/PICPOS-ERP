@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/usecases/e_invoicing/submit_einvoice_usecase.dart';
+import 'package:picpos_erp/domain/usecases/e_invoicing/submit_einvoice_usecase.dart';
 
 void main() {
   group('SubmitEInvoiceUseCase — EInvoiceResult', () {

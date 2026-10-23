@@ -9,8 +9,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_report_tabs.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_report_tabs.dart';
 
 void main() {
   const tabs = <PicPosReportTab>[

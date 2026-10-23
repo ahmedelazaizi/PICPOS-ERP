@@ -19,8 +19,8 @@
 // المصيدةِ المكتوبةِ فوق `ScreenRegistry.litePicpos`. فتُقاس الثوابتُ
 // المُسمّاةُ مباشرةً.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/core/navigation/screen_registry.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/navigation/screen_registry.dart';
 
 void main() {
   group('كلُّ تشكيلاتِ PicPos تصل إلى شاشة الميزان', () {

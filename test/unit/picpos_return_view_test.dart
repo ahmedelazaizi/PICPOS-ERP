@@ -4,8 +4,8 @@
 // وسطرُ التفاصيل حين **لا يوجد** اسمُ طرفٍ (حالةُ المشتريات الحقيقيّة)،
 // والعدّاداتُ التي تعدُّ ولا تخترع مبالغَ مرتجعات.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/constants/app_constants.dart';
-import 'package:ural_erp/domain/models/picpos_return_view.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/domain/models/picpos_return_view.dart';
 
 PicPosReturnInvoiceRow _row({
   int id = 1,

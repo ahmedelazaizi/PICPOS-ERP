@@ -1,11 +1,11 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/models/split_plan.dart';
-import 'package:ural_erp/domain/models/table_status.dart';
-import 'package:ural_erp/services/split_settlement_runner.dart';
-import 'package:ural_erp/services/table_checkout_coordinator.dart';
-import 'package:ural_erp/services/table_session_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/models/split_plan.dart';
+import 'package:picpos_erp/domain/models/table_status.dart';
+import 'package:picpos_erp/services/split_settlement_runner.dart';
+import 'package:picpos_erp/services/table_checkout_coordinator.dart';
+import 'package:picpos_erp/services/table_session_service.dart';
 
 void main() {
   late AppDatabase db;

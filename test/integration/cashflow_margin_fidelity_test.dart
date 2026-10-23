@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/repositories/treasury_repository.dart' show TransactionData;
-import 'package:ural_erp/domain/usecases/accounting/get_cashflow_statement_usecase.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/repositories/treasury_repository.dart' show TransactionData;
+import 'package:picpos_erp/domain/usecases/accounting/get_cashflow_statement_usecase.dart';
 
 void main() {
   late AppDatabase db;

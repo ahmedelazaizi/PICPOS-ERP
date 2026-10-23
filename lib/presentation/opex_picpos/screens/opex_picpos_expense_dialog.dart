@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // حوارُ «مصروف تشغيلي جديد» بهويّة PicPos — فورك `DLGS.expense` في
 // `PicPos Operating Expenses.dc.html`.
 //

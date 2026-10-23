@@ -14,7 +14,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/widgets/report_components.dart';
+import 'package:picpos_erp/presentation/widgets/report_components.dart';
 
 DateTime? capturedStart;
 DateTime? capturedEnd;

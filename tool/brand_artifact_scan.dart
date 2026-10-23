@@ -10,8 +10,8 @@
 // "natural", "plural" are fine; "Ural", "UralCash", "URAL-ERP",
 // "ural_api_token" are not), `monexia`, and the Arabic spellings of the other
 // brand. EXCEPTIONS (exact, each with a reason; the list must only shrink):
-//   * `ural_erp` — the Dart package name (library URIs in the AOT snapshot);
-//     internal only, until the mechanical rename to `picpos_erp` (BRAND-006).
+//   * brandPackageNameExceptions — now EMPTY: the Dart package was renamed to
+//     `picpos_erp` (BRAND-006).
 //   * brandDeferredCryptoLiterals — now EMPTY: the crypto salts / secure-storage
 //     key names were migrated (BRAND-005, B5; see
 //     docs/security/internal-identifier-migration.md).
@@ -33,15 +33,15 @@ final RegExp forbiddenBrandText = RegExp(
   caseSensitive: false,
 );
 
-/// Dart package name — internal only (BRAND-006, later mechanical rename).
-const List<String> brandPackageNameExceptions = ['ural_erp'];
+/// Dart package name exceptions: EMPTY since the rename to `picpos_erp` (BRAND-006).
+const List<String> brandPackageNameExceptions = <String>[];
 
 /// Crypto salts and secure-storage key names (BRAND-005 / step B5): MIGRATED
 /// (owner decision 2026-10-23, docs/security/internal-identifier-migration.md)
 /// — storage keys renamed with read-old/write-new/delete-old migration, salts
 /// kept byte-identical but assembled at runtime (`LegacyIdentifiers`). The
 /// allow-list is therefore EMPTY and must stay empty: any `ural` in the PicPos
-/// bundle other than the package name / ICU entry below fails.
+/// bundle other than the ICU entry below fails.
 const List<String> brandDeferredCryptoLiterals = <String>[];
 
 /// Third-party data that is not about the other product: ICU's time-zone

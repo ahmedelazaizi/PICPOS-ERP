@@ -9,9 +9,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/e_invoicing_providers.dart';
-import 'package:ural_erp/presentation/reports_picpos/screens/reports_picpos_screen.dart';
-import 'package:ural_erp/presentation/shell/report_category_nav.dart';
+import 'package:picpos_erp/data/providers/e_invoicing_providers.dart';
+import 'package:picpos_erp/presentation/reports_picpos/screens/reports_picpos_screen.dart';
+import 'package:picpos_erp/presentation/shell/report_category_nav.dart';
 
 /// الشريطُ الجانبيّ أرضيّتُه داكنةٌ وألوانُ الودجت بيضاءُ الشفافية، فتُوضَع
 /// في حاضنٍ داكنٍ كما في الشلّ — وإلّا صار الفحصُ يقرأ نصّاً غيرَ مرئيّ.

@@ -19,9 +19,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:postgres/postgres.dart' as pg;
-import 'package:ural_erp/data/database/connection_io.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/pg_config.dart';
+import 'package:picpos_erp/data/database/connection_io.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/pg_config.dart';
 
 /// Opaque handle returned by [bootPgTestSchema]. Owns the [AppDatabase]
 /// the test will use plus the teardown closure that closes the connection

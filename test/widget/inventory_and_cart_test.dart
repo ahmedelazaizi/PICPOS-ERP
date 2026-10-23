@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/presentation/screens/inventory/inventory_summary_card.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
-import 'package:ural_erp/domain/entities/cart_item_entity.dart';
+import 'package:picpos_erp/presentation/screens/inventory/inventory_summary_card.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/domain/entities/cart_item_entity.dart';
 
 /// Widget tests for InventorySummaryCard and CartItemEntity presentation.
 void main() {

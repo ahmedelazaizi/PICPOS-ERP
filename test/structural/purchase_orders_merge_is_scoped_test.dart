@@ -18,8 +18,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/core/navigation/screen_registry.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/navigation/screen_registry.dart';
 
 const _controllerPath =
     'lib/presentation/screens/purchases/purchase_invoices_controller.dart';

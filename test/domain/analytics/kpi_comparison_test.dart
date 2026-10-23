@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/analytics/kpi_comparison.dart';
-import 'package:ural_erp/domain/analytics/ratio_engine.dart';
+import 'package:picpos_erp/domain/analytics/kpi_comparison.dart';
+import 'package:picpos_erp/domain/analytics/ratio_engine.dart';
 
 void main() {
   test('prior-period budget: prior vs its own target and target change', () {

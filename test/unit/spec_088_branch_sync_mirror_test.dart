@@ -79,7 +79,7 @@ void main() {
       expect(
           src,
           contains(
-              "import 'package:ural_erp/data/database/sync_interceptor.dart'"),
+              "import 'package:picpos_erp/data/database/sync_interceptor.dart'"),
           reason:
               'Without the explicit import, isMirrorMode reference is unresolved '
               '(database.dart does not re-export sync_interceptor.dart).');

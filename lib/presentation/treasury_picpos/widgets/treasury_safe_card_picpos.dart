@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // بطاقةُ صندوقٍ بهويّة PicPos — **فوركٌ بقرار المالك 2026-08-22**.
 //
 // المصدر: `treasury/widgets/treasury_safe_card.dart`، ويبقى بلا مساسٍ لشاشة

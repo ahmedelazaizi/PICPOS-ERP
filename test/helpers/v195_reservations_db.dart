@@ -1,5 +1,5 @@
 import 'package:drift/drift.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 /// قاعدةُ اختبارٍ بشكل **v195**: `table_reservations` بلا `party_id`، بلا
 /// فهارس v196 وبلا `party_dedup_suspects` — ثم `db.runOnUpgrade(Migrator(db),

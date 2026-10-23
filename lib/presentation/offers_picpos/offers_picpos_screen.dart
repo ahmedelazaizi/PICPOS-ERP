@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // شاشةُ العروض بهويّة PicPos — فوركٌ لا تعديلٌ للمشترك.
 //
 // بلاغُ المالك 2026-08-23: «شاشة العروض مش بهوية picpos عاوزه تتظبط الوانها».
@@ -13,7 +13,7 @@ import 'package:ural_erp/core/i18n/tr.dart';
 // و`PicPosToolbar` لشريط الترشيح، و`PicPosEmptyState` للفراغ. وهذا ما يجعلها
 // **تُشبه** أخواتِها لا مجرّد أن تحمل لونَها.
 import 'package:flutter/material.dart';
-import 'package:ural_erp/core/widgets/app_toast.dart';
+import 'package:picpos_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';

@@ -7,7 +7,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/widgets/app_form_dialog.dart';
+import 'package:picpos_erp/core/widgets/app_form_dialog.dart';
 
 void main() {
   Widget buildTestApp({required Widget child}) {

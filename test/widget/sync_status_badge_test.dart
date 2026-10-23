@@ -11,8 +11,8 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/presentation/widgets/sync_status_badge.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/widgets/sync_status_badge.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
 
 Widget _wrap(Widget child) => MaterialApp(
       home: Scaffold(body: Center(child: child)),

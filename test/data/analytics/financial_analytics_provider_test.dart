@@ -1,9 +1,9 @@
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/providers/financial_analytics_provider.dart';
-import 'package:ural_erp/domain/analytics/account_classifier.dart';
-import 'package:ural_erp/domain/analytics/kpi_comparison.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/providers/financial_analytics_provider.dart';
+import 'package:picpos_erp/domain/analytics/account_classifier.dart';
+import 'package:picpos_erp/domain/analytics/kpi_comparison.dart';
 
 void main() {
   late AppDatabase db;

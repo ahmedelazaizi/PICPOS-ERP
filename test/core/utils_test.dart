@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/utils/number_utils.dart';
-import 'package:ural_erp/core/utils/date_utils.dart';
+import 'package:picpos_erp/core/utils/number_utils.dart';
+import 'package:picpos_erp/core/utils/date_utils.dart';
 
 void main() {
   group('NumberUtils', () {

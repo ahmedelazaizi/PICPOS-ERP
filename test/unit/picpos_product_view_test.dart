@@ -3,7 +3,7 @@
 // الهامشُ حسابٌ ماليٌّ يسهل قلبُه: القسمةُ على التكلفة بدل البيع تعطي رقماً
 // **أكبرَ دائماً** ويبدو معقولاً — فلا يُكتشف بالنظر. ولذلك يُقاس صراحةً.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/picpos_product_view.dart';
+import 'package:picpos_erp/domain/models/picpos_product_view.dart';
 
 void main() {
   group('picposMarginPercent — البسطُ والمقام', () {

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/utils/number_utils.dart';
-import 'package:ural_erp/services/accounting_validator.dart';
+import 'package:picpos_erp/core/utils/number_utils.dart';
+import 'package:picpos_erp/services/accounting_validator.dart';
 
 /// Spec 137 Phase 2 — rounding helpers must use JOD 3dp precision
 /// (BUG-H03, BUG-L01).

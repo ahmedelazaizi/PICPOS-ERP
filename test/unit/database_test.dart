@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/widgets/summary_card.dart';
-import 'package:ural_erp/presentation/widgets/status_badge.dart';
-import 'package:ural_erp/presentation/widgets/form_components.dart';
+import 'package:picpos_erp/presentation/widgets/summary_card.dart';
+import 'package:picpos_erp/presentation/widgets/status_badge.dart';
+import 'package:picpos_erp/presentation/widgets/form_components.dart';
 
 /// Widget tests for reusable components
 void main() {

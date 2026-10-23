@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/web/web_sql_comment_stripper.dart';
+import 'package:picpos_erp/web/web_sql_comment_stripper.dart';
 
 void main() {
   test('يزيل تعليق السطر والكتلة', () {

@@ -12,7 +12,7 @@
 library;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/security_service.dart';
+import 'package:picpos_erp/services/security_service.dart';
 
 void main() {
   group('SecurityService — Argon2id hashing (Week 8)', () {

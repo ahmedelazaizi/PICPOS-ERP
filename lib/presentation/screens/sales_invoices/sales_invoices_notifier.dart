@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/repositories/sales_repository.dart';
 import '../../../data/providers/providers.dart';

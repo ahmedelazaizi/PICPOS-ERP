@@ -28,7 +28,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/library_source.dart';
-import 'package:ural_erp/core/permissions/permission_enforcement_registry.dart';
+import 'package:picpos_erp/core/permissions/permission_enforcement_registry.dart';
 
 /// النظيرُ القديم ↔ توأمُ PicPos. مقيسٌ لا مفترَض: هذه هي المجلداتُ التي
 /// لها اسمان تحت `lib/presentation/`.
@@ -198,7 +198,7 @@ bool _referencesSymbolOf(String importerSource, String importedPath) {
 String? _resolveImport(String from, String raw) {
   if (raw.startsWith('dart:')) return null;
   if (raw.startsWith('package:')) {
-    const self = 'package:ural_erp/';
+    const self = 'package:picpos_erp/';
     if (!raw.startsWith(self)) return null;
     return 'lib/${raw.substring(self.length)}';
   }

@@ -20,8 +20,8 @@
 // فالوصلُ يمسّ **رايةَ الطاولات وحدَها**.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/config/feature_key.dart';
-import 'package:ural_erp/core/config/industry_tables_policy.dart';
+import 'package:picpos_erp/core/config/feature_key.dart';
+import 'package:picpos_erp/core/config/industry_tables_policy.dart';
 
 void main() {
   // ── حقنُ التجاوز ────────────────────────────────────────────────────────

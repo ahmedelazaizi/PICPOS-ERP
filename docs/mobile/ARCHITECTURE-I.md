@@ -16,7 +16,7 @@
                                          └──────────┬───────────────┘
  ┌────────────────────┐   HTTPS (I-3)               │ provider interface
  │ PicPos desktop     │ ◀──────────────────────────▶│ Mock (test) │ Meta Cloud API (prod)
- │ (ural_erp, Drift)  │  master data up, field docs down
+ │ (picpos_erp, Drift)  │  master data up, field docs down
  └────────────────────┘
 ```
 
@@ -49,7 +49,7 @@ What **is** reused (by contract, verified by parity tests):
 | Voucher-book leaf rules (inside `[range_from, range_to]`, not used, not cancelled, book `active`, holder = rep) | `voucher_books_schema.dart::validateVoucherBookLeaf` | same rules in push validation |
 | Distribution model (area → route → customers with sequence + effective dates; `rep_resources.van_warehouse_id/custody_safe_id`) | `distribution_model_schema.dart` (v185) | same table/column names in Postgres |
 
-Done in I-4 for server and mobile: the pure rules (tax rate, totals/rounding, pricing, returns math, credit rule, payment method, integrity payload/signing, barcode normalization, printed company identity, receipt QR) live in **`packages/picpos_rules`** (pure Dart), a path dependency of `server/` and `mobile/`; their copies were deleted. Follow-up: make `ural_erp` (desktop `lib/`) depend on it too — out of scope for I-4. Voucher-book leaf rules are still SQL in the server.
+Done in I-4 for server and mobile: the pure rules (tax rate, totals/rounding, pricing, returns math, credit rule, payment method, integrity payload/signing, barcode normalization, printed company identity, receipt QR) live in **`packages/picpos_rules`** (pure Dart), a path dependency of `server/` and `mobile/`; their copies were deleted. Follow-up: make `picpos_erp` (desktop `lib/`) depend on it too — out of scope for I-4. Voucher-book leaf rules are still SQL in the server.
 
 ### 1.2 Decision: cloud schema
 

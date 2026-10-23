@@ -16,11 +16,11 @@ library;
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/models/hr_attendance.dart';
-import 'package:ural_erp/domain/models/hr_attendance_import.dart';
-import 'package:ural_erp/domain/models/hr_employee_file.dart';
-import 'package:ural_erp/domain/models/hr_leave.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/models/hr_attendance.dart';
+import 'package:picpos_erp/domain/models/hr_attendance_import.dart';
+import 'package:picpos_erp/domain/models/hr_employee_file.dart';
+import 'package:picpos_erp/domain/models/hr_leave.dart';
 
 import '_support/pg_fixture.dart';
 

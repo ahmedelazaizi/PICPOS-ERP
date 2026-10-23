@@ -30,7 +30,7 @@
 // قاعدةٍ واحدةٍ لا يثبت أنّ **نصَّ** الفهرس يوافق الحارس؛ وهذا يثبته.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 /// يستخرج قائمةَ `NOT IN ('a', 'b', …)` من نصِّ إنشاء الفهرس.
 Set<String> _exemptionsInIndexSql(String sql) {

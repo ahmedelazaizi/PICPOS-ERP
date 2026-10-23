@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // شاشةُ «مصمّم القاعة» — بلاغُ المالك 2026-09-18 وقسمُ ٧ من خطّة إعادة
 // تصميم الشاشات.
 //

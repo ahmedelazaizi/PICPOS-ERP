@@ -8,10 +8,10 @@ import 'package:drift/drift.dart' hide isNotNull;
 import 'package:shelf/shelf.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/repositories/inventory_repository_impl.dart';
-import 'package:ural_erp/services/api/api_sales_handler.dart';
-import 'package:ural_erp/services/api/api_user_context.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/repositories/inventory_repository_impl.dart';
+import 'package:picpos_erp/services/api/api_sales_handler.dart';
+import 'package:picpos_erp/services/api/api_user_context.dart';
 
 /// Repeatable disk-backed ERP/POS benchmark.
 ///
@@ -135,7 +135,7 @@ class _BenchContext {
   _BenchContext._(this.profile, this.directory, this.db);
 
   static Future<_BenchContext> open(_BenchProfile profile) async {
-    final directory = await Directory.systemTemp.createTemp('ural_erp_perf_');
+    final directory = await Directory.systemTemp.createTemp('picpos_erp_perf_');
     final file = File('${directory.path}${Platform.pathSeparator}perf.db');
     final db = AppDatabase.withExecutor(
       NativeDatabase(

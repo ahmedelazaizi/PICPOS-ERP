@@ -1,5 +1,5 @@
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../picpos_shell/picpos_surface.dart';

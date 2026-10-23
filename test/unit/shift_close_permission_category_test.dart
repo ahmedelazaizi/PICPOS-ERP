@@ -23,7 +23,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
 
 import '../helpers/epoch3_source.dart';
 

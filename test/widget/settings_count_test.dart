@@ -10,8 +10,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/presentation/settings_picpos/widgets/settings_blocks.dart';
-import 'package:ural_erp/presentation/settings_picpos/widgets/settings_count.dart';
+import 'package:picpos_erp/presentation/settings_picpos/widgets/settings_blocks.dart';
+import 'package:picpos_erp/presentation/settings_picpos/widgets/settings_count.dart';
 
 SettingsValueRow _value(String t) =>
     SettingsValueRow(icon: PhosphorIconsBold.gear, title: t, value: '—');

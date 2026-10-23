@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/config/feature_dependency_graph.dart';
-import 'package:ural_erp/core/config/feature_key.dart';
-import 'package:ural_erp/core/config/feature_policy.dart';
+import 'package:picpos_erp/core/config/feature_dependency_graph.dart';
+import 'package:picpos_erp/core/config/feature_key.dart';
+import 'package:picpos_erp/core/config/feature_policy.dart';
 
 void main() {
   test('الحجوزاتُ لا تُجبر على وحدة الطاولات', () {

@@ -26,7 +26,7 @@
 
 import 'package:drift/drift.dart' show Value, Variable;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 void main() {
   late AppDatabase db;

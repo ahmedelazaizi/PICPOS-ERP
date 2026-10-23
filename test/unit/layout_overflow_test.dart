@@ -9,8 +9,8 @@
 // فالمقيسُ هنا أنّ قمّةَ نطاق المجاميع **لا تقلّ** عن قاع آخر صفّ.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/printing/template_document.dart';
-import 'package:ural_erp/services/printing/layout_engine.dart';
+import 'package:picpos_erp/domain/printing/template_document.dart';
+import 'package:picpos_erp/services/printing/layout_engine.dart';
 
 /// A4 بهوامشَ ١٠مم: صندوقُ المحتوى من ١٠ إلى ٢٨٧.
 const _a4 = PaperSpec(

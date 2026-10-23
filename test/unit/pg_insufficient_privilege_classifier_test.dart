@@ -19,7 +19,7 @@
 // ضيّق: لازم **ما** يصنّفش أخطاء التشغيل العادية كعطل إقلاع قاتل.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/main.dart';
+import 'package:picpos_erp/main.dart';
 
 void main() {
   group('isPostgresInsufficientPrivilege', () {

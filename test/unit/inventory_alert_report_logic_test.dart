@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/domain/entities/product_entity.dart';
-import 'package:ural_erp/domain/repositories/inventory_repository.dart';
-import 'package:ural_erp/presentation/reports_picpos/screens/inventory_alert_report_support.dart';
+import 'package:picpos_erp/domain/entities/product_entity.dart';
+import 'package:picpos_erp/domain/repositories/inventory_repository.dart';
+import 'package:picpos_erp/presentation/reports_picpos/screens/inventory_alert_report_support.dart';
 
 void main() {
   test('expiry rows expose remaining days and cost at risk', () {

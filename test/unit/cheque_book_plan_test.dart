@@ -5,7 +5,7 @@
 //    الشمولُ في العدّ · اشتقاقُ الحالة · ورفضُ السحبِ الجزئيّ.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/cheque_book_plan.dart';
+import 'package:picpos_erp/domain/models/cheque_book_plan.dart';
 
 ChequeBookRow _book({
   int id = 1,

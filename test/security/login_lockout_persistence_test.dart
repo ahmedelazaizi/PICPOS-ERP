@@ -1,8 +1,8 @@
 // SEC-009 (audit 2026-10-23): a brute-force lockout must survive a restart.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/login_lockout_store.dart';
-import 'package:ural_erp/services/login_rate_limiter.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/login_lockout_store.dart';
+import 'package:picpos_erp/services/login_rate_limiter.dart';
 
 void main() {
   late AppDatabase db;

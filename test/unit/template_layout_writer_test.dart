@@ -13,13 +13,13 @@
 // ‹الصنف› إلى ‹البيان›» — وهو ما كان مستحيلاً لأنّ العناوينَ حرفيّاتٌ في
 // الراسم.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/repositories/template_layout_writer.dart';
-import 'package:ural_erp/domain/printing/template_document.dart';
-import 'package:ural_erp/services/printing/layout_engine.dart';
-import 'package:ural_erp/services/printing/paint_plan.dart';
-import 'package:ural_erp/services/printing/template_render_pipeline.dart';
-import 'package:ural_erp/services/templated_invoice_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/repositories/template_layout_writer.dart';
+import 'package:picpos_erp/domain/printing/template_document.dart';
+import 'package:picpos_erp/services/printing/layout_engine.dart';
+import 'package:picpos_erp/services/printing/paint_plan.dart';
+import 'package:picpos_erp/services/printing/template_render_pipeline.dart';
+import 'package:picpos_erp/services/templated_invoice_service.dart';
 
 const _margins = MarginsMm(top: 10, right: 10, bottom: 10, left: 10);
 

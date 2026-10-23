@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/enums/requisition_status.dart';
+import 'package:picpos_erp/core/enums/requisition_status.dart';
 
 /// Spec 148 (S-ISSUE) — the canonical status vocabulary must round-trip and
 /// any legacy/unknown DB string must degrade to `pending` (so old rows still

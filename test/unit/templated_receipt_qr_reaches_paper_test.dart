@@ -13,9 +13,9 @@
 
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/models/receipt_qr_decision.dart';
-import 'package:ural_erp/services/templated_invoice_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/models/receipt_qr_decision.dart';
+import 'package:picpos_erp/services/templated_invoice_service.dart';
 
 import '../helpers/arabic_pdf_text.dart';
 import '../helpers/pdf_probe.dart';

@@ -22,12 +22,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/repositories/commercial_papers_repository.dart'
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/repositories/commercial_papers_repository.dart'
     show ICommercialPapersRepository;
-import 'package:ural_erp/presentation/settings_picpos/screens/cheques_picpos_create_dialog.dart';
-import 'package:ural_erp/presentation/settings_picpos/screens/cheques_picpos_screen.dart';
-import 'package:ural_erp/presentation/treasury_picpos/screens/cheque_books_picpos_screen.dart';
+import 'package:picpos_erp/presentation/settings_picpos/screens/cheques_picpos_create_dialog.dart';
+import 'package:picpos_erp/presentation/settings_picpos/screens/cheques_picpos_screen.dart';
+import 'package:picpos_erp/presentation/treasury_picpos/screens/cheque_books_picpos_screen.dart';
 
 class _FakePapersRepo implements ICommercialPapersRepository {
   @override

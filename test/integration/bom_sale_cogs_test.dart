@@ -28,15 +28,15 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 // CogsLine lives in manufacturing_dao.dart, which is a `part` of database.dart
 // — importing the part directly does not compile.
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/repositories/drift_accounting_repository.dart';
-import 'package:ural_erp/domain/repositories/audit_repository_interface.dart';
-import 'package:ural_erp/domain/repositories/i_products_repository.dart';
-import 'package:ural_erp/domain/repositories/inventory_repository.dart';
-import 'package:ural_erp/domain/repositories/parties_repository.dart';
-import 'package:ural_erp/domain/repositories/settings_repository.dart';
-import 'package:ural_erp/domain/repositories/treasury_repository.dart';
-import 'package:ural_erp/services/accounting_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/repositories/drift_accounting_repository.dart';
+import 'package:picpos_erp/domain/repositories/audit_repository_interface.dart';
+import 'package:picpos_erp/domain/repositories/i_products_repository.dart';
+import 'package:picpos_erp/domain/repositories/inventory_repository.dart';
+import 'package:picpos_erp/domain/repositories/parties_repository.dart';
+import 'package:picpos_erp/domain/repositories/settings_repository.dart';
+import 'package:picpos_erp/domain/repositories/treasury_repository.dart';
+import 'package:picpos_erp/services/accounting_service.dart';
 
 void main() {
   late AppDatabase db;

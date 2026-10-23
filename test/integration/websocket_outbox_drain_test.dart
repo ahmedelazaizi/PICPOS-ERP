@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' as drift;
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/offline_sync_worker.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/offline_sync_worker.dart';
 
 /// Phase 3 — Fix 3.6: WebSocket Reconnect → Outbox Drain
 ///

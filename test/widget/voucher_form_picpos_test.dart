@@ -19,7 +19,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/presentation/treasury_picpos/screens/voucher_form_picpos.dart';
+import 'package:picpos_erp/presentation/treasury_picpos/screens/voucher_form_picpos.dart';
 
 const _parties = <VoucherPartyOption>[
   (id: 5, name: 'شركة النور', meta: null, isDeliveryCompany: false),

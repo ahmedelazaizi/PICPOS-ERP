@@ -14,8 +14,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_report_bar.dart';
-import 'package:ural_erp/presentation/widgets/report_components.dart'
+import 'package:picpos_erp/presentation/picpos_shell/picpos_report_bar.dart';
+import 'package:picpos_erp/presentation/widgets/report_components.dart'
     show DateRangeFilter;
 
 void main() {

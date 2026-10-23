@@ -1,4 +1,4 @@
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 /// Repository interface for Manufacturing & Fixed Assets operations.
 ///

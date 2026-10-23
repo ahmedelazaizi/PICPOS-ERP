@@ -15,7 +15,7 @@
 // صفِّ التقديم. و`EInvoiceConfigs` تبقى على الخادم لأنّها تحمل السرّ.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/receipt_qr_decision.dart';
+import 'package:picpos_erp/domain/models/receipt_qr_decision.dart';
 
 void main() {
   const sale = ReceiptSaleSummary(

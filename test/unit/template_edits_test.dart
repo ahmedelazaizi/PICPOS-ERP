@@ -6,8 +6,8 @@
 // النطاق التالي أو خارجَ الورقة، والراسمُ يقصّه صامتاً. فكلُّ عمليّةٍ هنا
 // تُقاس عند حدَّيها لا في وسطها.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/printing/template_document.dart';
-import 'package:ural_erp/domain/printing/template_edits.dart';
+import 'package:picpos_erp/domain/printing/template_document.dart';
+import 'package:picpos_erp/domain/printing/template_edits.dart';
 
 const _margins = MarginsMm(top: 10, right: 10, bottom: 10, left: 10);
 

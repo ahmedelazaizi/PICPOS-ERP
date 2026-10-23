@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/screens/settings/work_holidays_screen.dart';
+import 'package:picpos_erp/presentation/screens/settings/work_holidays_screen.dart';
 
 import '_support/screen_smoke.dart';
 

@@ -24,7 +24,7 @@
 // ⚠️ هذا الملفُّ **ملفُّ تعريف** لا موضعُ إنفاذ: كلُّ كودٍ مذكورٌ هنا بالحرف
 // ويُعدّ في `permission_enforcement_coverage_test` من ملفات التعريف، فلا
 // يُحتسب ذكرُه إنفاذاً لزرٍّ.
-import 'package:ural_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
 
 import 'permission_codes.dart';
 

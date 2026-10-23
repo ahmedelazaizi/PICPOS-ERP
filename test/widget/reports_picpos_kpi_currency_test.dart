@@ -4,9 +4,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/constants/app_constants.dart';
-import 'package:ural_erp/data/providers/reports_hub_kpi_provider.dart';
-import 'package:ural_erp/presentation/reports_picpos/screens/reports_picpos_screen.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/data/providers/reports_hub_kpi_provider.dart';
+import 'package:picpos_erp/presentation/reports_picpos/screens/reports_picpos_screen.dart';
 
 const _kpi = ReportsHubKpi(
   revenue: (today: 1200, yesterday: 1000),

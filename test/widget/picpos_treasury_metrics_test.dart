@@ -13,8 +13,8 @@
 // حقيقيّاً: مجموعٌ غيرُ موجبٍ لا يُرسم له شريط.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/picpos_treasury_view.dart';
-import 'package:ural_erp/presentation/treasury_picpos/widgets/treasury_metrics_panel_picpos.dart';
+import 'package:picpos_erp/domain/models/picpos_treasury_view.dart';
+import 'package:picpos_erp/presentation/treasury_picpos/widgets/treasury_metrics_panel_picpos.dart';
 
 void main() {
   Future<void> show(

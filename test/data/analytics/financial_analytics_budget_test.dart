@@ -3,9 +3,9 @@
 // cost-centre handling.
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/providers/financial_analytics_provider.dart';
-import 'package:ural_erp/domain/analytics/kpi_comparison.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/providers/financial_analytics_provider.dart';
+import 'package:picpos_erp/domain/analytics/kpi_comparison.dart';
 
 import 'analytics_harness.dart';
 

@@ -16,10 +16,10 @@
 //    وهو أسوأُ من غياب الحارس: يُقرَأ «موصولة» وهي ليست كذلك. فحين يُضاف
 //    مصدرُ توصيلٍ سابعٌ، يُضاف هنا في نفس الكوميت.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/enums/app_screen.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/core/navigation/screen_registry.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/core/enums/app_screen.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/navigation/screen_registry.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
 
 void main() {
   group('الحجوزاتُ موصولةٌ في كلّ موضع', () {

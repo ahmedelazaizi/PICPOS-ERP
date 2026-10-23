@@ -1,10 +1,10 @@
 import 'dart:ui' show Locale;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/i18n/locale_provider.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/domain/repositories/settings_repository.dart';
-import 'package:ural_erp/services/stock_shortage_policy_service.dart';
+import 'package:picpos_erp/core/i18n/locale_provider.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/domain/repositories/settings_repository.dart';
+import 'package:picpos_erp/services/stock_shortage_policy_service.dart';
 
 class _MemorySettingsRepository implements ISettingsRepository {
   final values = <String, String>{};

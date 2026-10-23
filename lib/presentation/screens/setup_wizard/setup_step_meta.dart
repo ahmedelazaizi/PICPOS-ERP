@@ -25,7 +25,7 @@
 // لم تُخترَع هنا: شاشةُ مراجعةٍ تعرض ملخّصاً لكلّ ما أُدخل بناءٌ لا تنسيق،
 // وإدراجُها في السجلّ بلا جسمٍ يبنيها يعطي خطوةً فارغة.
 library;
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 
 import 'package:flutter/widgets.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';

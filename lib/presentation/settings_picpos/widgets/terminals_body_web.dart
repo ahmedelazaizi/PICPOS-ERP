@@ -8,7 +8,7 @@
 // يُختار بالاستيراد الشرطي (`dart.library.js_interop`)؛ الديسكتوب (io) يبقى
 // على الجسم الأصلي دون تغيير.
 import 'package:flutter/material.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 
 class PosTerminalsBody extends StatelessWidget {
   const PosTerminalsBody({super.key, this.searchQuery = ''});

@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // شاشةُ «فاتورة جديدة» بهوية PicPos — مبيعاتٍ ومشترياتٍ بنمطٍ واحد.
 //
 // المصدر: تصميمُ Claude Design «تصميم شاشات فواتير PicPos»، شاشتا

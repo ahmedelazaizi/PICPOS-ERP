@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/audit_log_integrity_service.dart';
+import 'package:picpos_erp/services/audit_log_integrity_service.dart';
 
 /// PIR Integration Test 2: Hash Chain Integrity (ICR-03)
 /// Verifies SHA-256 chain link validation and tamper detection.

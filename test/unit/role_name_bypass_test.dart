@@ -7,8 +7,8 @@
 // `isAdmin || isManager` كتجاوز كامل — فسحب صلاحية من «مدير فرع» ما كانش
 // بيعمل حاجة. ده اللي البلاغ كان عنه.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 AuthState _stateWithRole(String name, {required bool isSystemRole}) {
   // ملاحظة: `Role`/`User` مولّدين بـ drift (database.g.dart)، وفيهم حقول

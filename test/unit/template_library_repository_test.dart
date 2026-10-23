@@ -11,9 +11,9 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/repositories/invoice_templates_repository_impl.dart';
-import 'package:ural_erp/domain/repositories/invoice_templates_repository.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/repositories/invoice_templates_repository_impl.dart';
+import 'package:picpos_erp/domain/repositories/invoice_templates_repository.dart';
 
 const _assetDir = 'assets/invoice_templates';
 

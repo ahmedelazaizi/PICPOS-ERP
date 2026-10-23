@@ -13,12 +13,12 @@ library;
 
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/logging/diagnostic_logger.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/sync/client_first_sync_service.dart';
-import 'package:ural_erp/services/sync/strategies/branch_sync_strategy.dart';
-import 'package:ural_erp/services/sync/strategies/party_sync_strategy.dart';
-import 'package:ural_erp/services/sync_service.dart';
+import 'package:picpos_erp/core/logging/diagnostic_logger.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/sync/client_first_sync_service.dart';
+import 'package:picpos_erp/services/sync/strategies/branch_sync_strategy.dart';
+import 'package:picpos_erp/services/sync/strategies/party_sync_strategy.dart';
+import 'package:picpos_erp/services/sync_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Test doubles

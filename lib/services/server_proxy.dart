@@ -8,7 +8,7 @@ import 'tls_trust.dart';
 import 'api/client_schema_gate.dart';
 import '../web/web_session.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ural_erp/data/database/sync_interceptor.dart';
+import 'package:picpos_erp/data/database/sync_interceptor.dart';
 import '../core/logging/diagnostic_logger.dart';
 import 'network_service.dart';
 import 'device_identity_service.dart';

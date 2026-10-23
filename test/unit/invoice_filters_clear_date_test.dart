@@ -10,8 +10,8 @@
 // والتحليلُ أخضر، والعطبُ لا يظهر إلّا عند التشغيل.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/screens/sales_invoices_controller.dart';
-import 'package:ural_erp/presentation/screens/purchases/purchase_invoices_controller.dart';
+import 'package:picpos_erp/presentation/screens/sales_invoices_controller.dart';
+import 'package:picpos_erp/presentation/screens/purchases/purchase_invoices_controller.dart';
 
 void main() {
   final range = DateTimeRange(

@@ -23,7 +23,7 @@
 // 🔴 فسقوطُ فحصٍ هنا ليس عطباً في الكود بالضرورة — قد يكون تعديلاً للمسار
 //    بلا قرارِ مالكٍ جديد. راجع القرارَ قبل تعديل الرقم.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/setup_step_order.dart';
+import 'package:picpos_erp/domain/models/setup_step_order.dart';
 
 void main() {
   group('ترتيبُ الخطوات لكلّ نمط', () {

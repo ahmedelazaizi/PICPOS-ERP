@@ -9,8 +9,8 @@
 // date — keeping the fast clean path AND the self-heal.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/extensions/sales_cogs_backfill_extension.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/extensions/sales_cogs_backfill_extension.dart';
 
 void main() {
   late AppDatabase db;

@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class ShortcutHintDef {

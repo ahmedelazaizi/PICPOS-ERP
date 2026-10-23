@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/legacy_device_seed.dart';
+import 'package:picpos_erp/services/legacy_device_seed.dart';
 
 void main() {
   tearDown(() {

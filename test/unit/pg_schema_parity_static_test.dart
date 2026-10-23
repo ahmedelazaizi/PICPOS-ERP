@@ -28,8 +28,8 @@
 
 import 'package:drift/drift.dart' show DriftSqlType, TableInfo;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/logging/diagnostic_logger.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/core/logging/diagnostic_logger.dart';
+import 'package:picpos_erp/data/database/database.dart';
 import '../helpers/database_source.dart';
 
 void main() {

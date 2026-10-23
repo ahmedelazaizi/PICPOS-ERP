@@ -6,10 +6,10 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/db_key_names.dart';
-import 'package:ural_erp/services/legacy_device_seed.dart';
-import 'package:ural_erp/services/secure_storage_service.dart';
-import 'package:ural_erp/services/security_service.dart';
+import 'package:picpos_erp/services/db_key_names.dart';
+import 'package:picpos_erp/services/legacy_device_seed.dart';
+import 'package:picpos_erp/services/secure_storage_service.dart';
+import 'package:picpos_erp/services/security_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

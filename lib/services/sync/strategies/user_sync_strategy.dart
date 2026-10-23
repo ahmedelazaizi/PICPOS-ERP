@@ -1,10 +1,10 @@
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/unusable_credential.dart';
-import 'package:ural_erp/services/sync/sync_strategy.dart';
-import 'package:ural_erp/services/sync_event_bus.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/unusable_credential.dart';
+import 'package:picpos_erp/services/sync/sync_strategy.dart';
+import 'package:picpos_erp/services/sync_event_bus.dart';
 
 class UserSyncStrategy extends SyncStrategy {
   UserSyncStrategy(super.db);

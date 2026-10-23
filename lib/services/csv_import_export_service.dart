@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:ural_erp/core/widgets/app_toast.dart';
-import 'package:ural_erp/domain/repositories/i_products_repository.dart';
-import 'package:ural_erp/domain/repositories/parties_repository.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/core/widgets/app_toast.dart';
+import 'package:picpos_erp/domain/repositories/i_products_repository.dart';
+import 'package:picpos_erp/domain/repositories/parties_repository.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 /// CSV cell quoting + formula-injection guard (audit B DATA-007).
 ///

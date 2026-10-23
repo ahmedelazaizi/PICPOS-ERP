@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // جدولُ الأصناف بهويّة PicPos — **فوركٌ مقصودٌ بقرار المالك 2026-08-22**:
 // «العملُ على UralCash موقوف، فإذا أردتَ أن تعمل بشيءٍ على PicPos فانسخه إلى
 // PicPos ولا تشارك تعديلاتِ PicPos على UralCash».

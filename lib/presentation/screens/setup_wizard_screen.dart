@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'setup_wizard/setup_step_meta.dart';
 import 'dart:io';
@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/core/widgets/app_toast.dart';
+import 'package:picpos_erp/core/widgets/app_toast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // `app_config.dart` يعيد تصدير `business_profile.dart` — فمفيش استيراد
 // مباشر ليه هنا (الـ analyzer بيعتبره زيادة).

@@ -9,7 +9,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/presentation/treasury_picpos/screens/voucher_form_picpos.dart';
+import 'package:picpos_erp/presentation/treasury_picpos/screens/voucher_form_picpos.dart';
 
 const _accounts = <VoucherAccountOption>[
   (id: 1, code: '1111', name: 'الصندوق الرئيسي', partyId: null, safeId: 1),

@@ -2,8 +2,8 @@
 // export parties (with balances) or import them; and who may export the
 // products template (cost + sale prices).
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/financial_figures_access.dart';
-import 'package:ural_erp/core/permissions/party_data_access.dart';
+import 'package:picpos_erp/core/permissions/financial_figures_access.dart';
+import 'package:picpos_erp/core/permissions/party_data_access.dart';
 
 void main() {
   group('statement', () {

@@ -20,10 +20,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/data/providers/branch_scope_provider.dart';
-import 'package:ural_erp/data/providers/repository_providers.dart';
-import 'package:ural_erp/domain/repositories/reporting_repository.dart';
-import 'package:ural_erp/presentation/analytics_picpos/screens/analytics_picpos_screen.dart';
+import 'package:picpos_erp/data/providers/branch_scope_provider.dart';
+import 'package:picpos_erp/data/providers/repository_providers.dart';
+import 'package:picpos_erp/domain/repositories/reporting_repository.dart';
+import 'package:picpos_erp/presentation/analytics_picpos/screens/analytics_picpos_screen.dart';
 
 /// ثلاثةُ أشهرٍ متتاليةٍ تنتهي بالشهر الجاري — كي تقع داخلَ نافذة القراءة.
 List<Map<String, dynamic>> _series() {

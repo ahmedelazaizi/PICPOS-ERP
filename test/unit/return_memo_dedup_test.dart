@@ -18,9 +18,9 @@
 
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/extensions/return_memo_dedup_extension.dart';
-import 'package:ural_erp/services/sync/strategies/safe_transaction_sync_strategy.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/extensions/return_memo_dedup_extension.dart';
+import 'package:picpos_erp/services/sync/strategies/safe_transaction_sync_strategy.dart';
 
 void main() {
   late AppDatabase db;

@@ -9,8 +9,8 @@
 // وموضعُه النهائيُّ على الورقة = هامشُ الورق + مقدّماتُ النطاقات + إزاحتُه.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/printing/template_document.dart';
-import 'package:ural_erp/services/printing/layout_engine.dart';
+import 'package:picpos_erp/domain/printing/template_document.dart';
+import 'package:picpos_erp/services/printing/layout_engine.dart';
 
 TemplateElement _el(String id, {required double yMm, double xMm = 0}) =>
     TemplateElement(

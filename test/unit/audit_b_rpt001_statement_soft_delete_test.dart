@@ -3,8 +3,8 @@
 // nor in the opening balance.
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/repositories/parties_repository_impl.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/repositories/parties_repository_impl.dart';
 
 void main() {
   late AppDatabase db;

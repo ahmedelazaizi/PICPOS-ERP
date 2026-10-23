@@ -17,8 +17,8 @@
 // قرارُ المالك 2026-08-12 (الخيار ب): الطابعةُ تحترم تخطيطَ المصمّم.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/templated_invoice_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/templated_invoice_service.dart';
 
 /// عنصرُ قالبٍ بأقلّ ما يلزم — الباقي قيمٌ محايدةٌ لا يقرؤها الترتيب.
 InvoiceTemplateElement el({

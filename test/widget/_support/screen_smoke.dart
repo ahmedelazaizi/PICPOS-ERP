@@ -41,7 +41,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
 
 /// يفتح [screen] على قاعدةٍ في الذاكرة ويعيد ما سجّله الإطارُ من استثناء
 /// (‏`null` = رُسمت نظيفةً). يشمل ذلك `RenderFlex overflow` لأنه يُسجَّل

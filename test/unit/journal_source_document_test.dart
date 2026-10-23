@@ -11,8 +11,8 @@
 // غيرُ فارغ، وشاشةٌ داخلَ النطاق.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/domain/models/journal_source_document.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/domain/models/journal_source_document.dart';
 
 void main() {
   final wide = ScreenId.values.toSet();

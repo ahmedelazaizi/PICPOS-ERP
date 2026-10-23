@@ -6,7 +6,7 @@
 
 **Architecture:** لكل شاشة، شاشة PicPos في مجلد `*_picpos/` **تستورد وتنادي** نفس الـ controllers/providers/tables/dialogs الموجودة، وتبدّل طبقة العرض فقط بطقم `picpos_shell`. الاختيار في `app_main_screen.dart` (أو موقع `Navigator.push` للشاشات الفرعية) بـ `Brand.isPicPos ? XPicpos : X` — فرع `else` = سلوك UralCash حرف بحرف. الميزان يُضاف لـ lite بفرع `Brand.isPicPos` في `screen_registry.dart`.
 
-**Tech Stack:** Flutter · Riverpod 3 · drift (SQLite) · phosphor_flutter · google_fonts (Cairo). اسم الحزمة الداخلي `ural_erp` (مقبول، لا يُغيَّر). المرجع: السبيك `docs/superpowers/specs/2026-07-28-picpos-lite-screens-redesign-design.md`.
+**Tech Stack:** Flutter · Riverpod 3 · drift (SQLite) · phosphor_flutter · google_fonts (Cairo). اسم الحزمة الداخلي `picpos_erp` (مقبول، لا يُغيَّر). المرجع: السبيك `docs/superpowers/specs/2026-07-28-picpos-lite-screens-redesign-design.md`.
 
 ## Global Constraints
 
@@ -115,8 +115,8 @@ builder: (_) => Brand.isPicPos ? const XPicposScreen() : const XScreen(),
 ```dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/theme/picpos_theme.dart';
-import 'package:ural_erp/presentation/sales_invoices_picpos/screens/sales_invoices_picpos_screen.dart';
+import 'package:picpos_erp/core/theme/picpos_theme.dart';
+import 'package:picpos_erp/presentation/sales_invoices_picpos/screens/sales_invoices_picpos_screen.dart';
 void main() {
   testWidgets('SalesInvoicesPicposScreen موجودة وقابلة للإنشاء', (t) async {
     expect(const SalesInvoicesPicposScreen(), isA<Widget>());

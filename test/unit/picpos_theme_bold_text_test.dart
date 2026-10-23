@@ -33,7 +33,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/theme/picpos_theme.dart';
+import 'package:picpos_erp/core/theme/picpos_theme.dart';
 
 /// أخفُّ وزنٍ مقبولٍ في النظام. ما دونه يُقرأ باهتاً بجانب جاره.
 const FontWeight _minWeight = FontWeight.w600;

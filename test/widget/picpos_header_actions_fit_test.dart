@@ -34,7 +34,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-import 'package:ural_erp/presentation/picpos_shell/picpos_screen_scaffold.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_screen_scaffold.dart';
 
 /// حملُ شاشة «إدارة الطاولات» بنصوصه — وهي أثقلُ ترويسةٍ في المستودع.
 List<Widget> _tablesActions() => [

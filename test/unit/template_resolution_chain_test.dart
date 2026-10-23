@@ -11,7 +11,7 @@
 // فهذا الملفُّ لا يقيس `explain` وحدَها، بل يقيس **اتّفاقَها مع `resolve`**
 // على كلِّ تركيبةٍ من الفرع والطابعة واللغة وحضورِ الافتراضيّ.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/printing/template_resolver.dart';
+import 'package:picpos_erp/services/printing/template_resolver.dart';
 
 void main() {
   // رابطاتٌ تغطّي المستوياتِ الأربعةَ الأولى، كلٌّ بقالبٍ مميَّزٍ كي يُقرأ

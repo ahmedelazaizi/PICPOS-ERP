@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // لبِناتُ استمارة المرتجع (مبيعاتٍ ومشتريات) على تصميم المالك المرجعيّ —
 // المرحلة C2 من البند ٣.
 //

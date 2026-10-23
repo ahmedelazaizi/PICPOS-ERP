@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // شاشةُ «المشتريات الخارجيّة» — بندٌ أضافه المالك 2026-09-18.
 //
 // ═══ 🔴 ما الذي يجعل فاتورةً «خارجيّةً» أصلاً ═══

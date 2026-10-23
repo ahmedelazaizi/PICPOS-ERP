@@ -9,8 +9,8 @@
 //     أحداً تُنتج شاشةً لا تتحدّث.
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/models/picpos_booking_view.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/models/picpos_booking_view.dart';
 
 void main() {
   late AppDatabase db;

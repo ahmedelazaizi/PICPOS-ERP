@@ -1,8 +1,8 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'dart:async';
-import 'package:ural_erp/core/errors/app_exceptions.dart';
-import 'package:ural_erp/core/tax/effective_item_tax_rate.dart';
-import 'package:ural_erp/core/utils/financial_utils.dart';
+import 'package:picpos_erp/core/errors/app_exceptions.dart';
+import 'package:picpos_erp/core/tax/effective_item_tax_rate.dart';
+import 'package:picpos_erp/core/utils/financial_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/providers/providers.dart';
 import '../../domain/entities/product_entity.dart';

@@ -12,8 +12,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/domain/models/picpos_party_view.dart';
-import 'package:ural_erp/presentation/parties_picpos/screens/parties_picpos_screen.dart';
+import 'package:picpos_erp/domain/models/picpos_party_view.dart';
+import 'package:picpos_erp/presentation/parties_picpos/screens/parties_picpos_screen.dart';
 
 PicPosPartyCard _card({
   int id = 1,

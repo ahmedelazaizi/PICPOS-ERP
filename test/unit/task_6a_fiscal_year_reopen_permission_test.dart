@@ -10,8 +10,8 @@
 // (`canCloseAppWithoutPassword`) استخدموه: فحص الدالة الحقيقية بدل تركيب
 // شاشة `FiscalYearScreen` كاملة بقاعدة بيانات وسنة مالية وفترة مقفلة.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/presentation/screens/fiscal_year_screen.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/presentation/screens/fiscal_year_screen.dart';
 
 void main() {
   group('canReopenClosedPeriod — modify_closed_period', () {

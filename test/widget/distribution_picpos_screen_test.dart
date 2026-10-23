@@ -9,9 +9,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/presentation/screens/providers/distribution_controller.dart';
-import 'package:ural_erp/presentation/settings_picpos/screens/distribution_picpos_screen.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/presentation/screens/providers/distribution_controller.dart';
+import 'package:picpos_erp/presentation/settings_picpos/screens/distribution_picpos_screen.dart';
 
 SalesRoute _route(int id, String name, {int? repId, String? area}) => SalesRoute(
       id: id,

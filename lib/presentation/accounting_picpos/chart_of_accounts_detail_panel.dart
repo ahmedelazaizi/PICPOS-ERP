@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // لوحُ تفاصيل الحساب — **يحلّ محلَّ الحوارات تماماً** (قرارُ المالك 2026-09-18).
 //
 // ═══ لماذا لوحٌ لا حوار ═══

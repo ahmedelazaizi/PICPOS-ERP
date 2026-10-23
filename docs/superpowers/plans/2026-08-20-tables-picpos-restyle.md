@@ -88,7 +88,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ural_erp/presentation/screens/tables/floor_plan_designer.dart';
+import 'package:picpos_erp/presentation/screens/tables/floor_plan_designer.dart';
 
 void main() {
   testWidgets('المصمِّمُ يُبنى في وضع القراءة بلا انهيار', (tester) async {
@@ -162,8 +162,8 @@ git commit -m "docs(spec): نتيجةُ قياس الخريطة الميّتة"
 ```dart
 // test/unit/table_action_permissions_test.dart
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/domain/models/table_actions.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/domain/models/table_actions.dart';
 
 void main() {
   test('كلُّ فعلٍ يحرّك مالاً أو حالةً له كودُ صلاحيّة', () {
@@ -333,8 +333,8 @@ git commit -m "feat(tables): ثلاثةُ أفعالٍ كانت بلا صلاح�
 // test/unit/table_session_activity_log_test.dart
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNotNull;
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/table_session_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/table_session_service.dart';
 
 void main() {
   late AppDatabase db;
@@ -522,8 +522,8 @@ git commit -m "fix(tables): الحجزُ كان يُنشَأ بلا أثرٍ ف�
 // test/widget/tables_status_rail_test.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/table_status.dart';
-import 'package:ural_erp/presentation/tables_picpos/widgets/tables_status_rail.dart';
+import 'package:picpos_erp/domain/models/table_status.dart';
+import 'package:picpos_erp/presentation/tables_picpos/widgets/tables_status_rail.dart';
 
 void main() {
   test('العدُّ يشمل كلَّ حالةٍ ولو كانت صفراً', () {
@@ -736,9 +736,9 @@ git commit -m "feat(tables): عمودُ الحالات — والصفرُ يُع
 // test/widget/tables_action_rail_test.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/table_actions.dart';
-import 'package:ural_erp/domain/models/table_status.dart';
-import 'package:ural_erp/presentation/tables_picpos/widgets/tables_action_rail.dart';
+import 'package:picpos_erp/domain/models/table_actions.dart';
+import 'package:picpos_erp/domain/models/table_status.dart';
+import 'package:picpos_erp/presentation/tables_picpos/widgets/tables_action_rail.dart';
 
 void main() {
   test('الشريطُ ثمانيةُ أفعالٍ بترتيب صورة المالك', () {
@@ -1083,7 +1083,7 @@ git commit -m "feat(tables): شاشةُ PicPos — والمفتاحُ الميّ
 ```dart
 // test/unit/tables_report_aggregation_test.dart
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/tables_report_row.dart';
+import 'package:picpos_erp/domain/models/tables_report_row.dart';
 
 void main() {
   test('الطلبُ المدموجُ لا يُحسَب مرّتين', () {

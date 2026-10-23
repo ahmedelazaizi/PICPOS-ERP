@@ -23,13 +23,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import '../helpers/api_handler_source.dart';
 import '../helpers/library_source.dart';
-import 'package:ural_erp/core/enums/app_screen.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/core/navigation/screen_registry.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/services/delta_pull_service.dart';
-import 'package:ural_erp/services/id_namespace_service.dart';
+import 'package:picpos_erp/core/enums/app_screen.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/navigation/screen_registry.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/services/delta_pull_service.dart';
+import 'package:picpos_erp/services/id_namespace_service.dart';
 
 String _code(String path) => [
   for (final line

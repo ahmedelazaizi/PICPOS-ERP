@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/entities/product_entity.dart';
-import 'package:ural_erp/application/services/cart_pricing_service.dart';
+import 'package:picpos_erp/domain/entities/product_entity.dart';
+import 'package:picpos_erp/application/services/cart_pricing_service.dart';
 
 /// Unit tests for cart pricing logic
 ///

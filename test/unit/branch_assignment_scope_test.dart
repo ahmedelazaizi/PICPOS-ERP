@@ -18,7 +18,7 @@
 // وهو عطبٌ أوسعُ من «غائبةٍ عن فرعها» لا علاجٌ له.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/branch_assignment_scope.dart';
+import 'package:picpos_erp/domain/models/branch_assignment_scope.dart';
 
 /// أخفُّ من `Warehouse` وكافٍ: القاعدةُ لا تعرف إلا `branchId`.
 typedef _Row = ({int id, int? branchId});

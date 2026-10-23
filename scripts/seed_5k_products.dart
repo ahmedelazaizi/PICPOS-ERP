@@ -23,7 +23,7 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/widgets.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 Future<void> main(List<String> args) async {
   // Required so getApplicationDocumentsDirectory works outside the

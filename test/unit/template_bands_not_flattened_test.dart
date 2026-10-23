@@ -22,12 +22,12 @@ import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/printing/print_values.dart';
-import 'package:ural_erp/domain/printing/template_document.dart';
-import 'package:ural_erp/domain/printing/template_mapper.dart';
-import 'package:ural_erp/services/printing/template_migration.dart';
-import 'package:ural_erp/services/printing/template_render_pipeline.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/printing/print_values.dart';
+import 'package:picpos_erp/domain/printing/template_document.dart';
+import 'package:picpos_erp/domain/printing/template_mapper.dart';
+import 'package:picpos_erp/services/printing/template_migration.dart';
+import 'package:picpos_erp/services/printing/template_render_pipeline.dart';
 
 /// عنصرٌ قديمٌ بقسمٍ عامٍّ — عينُ ما كان يبذره الباذر.
 LegacyElement _body(String key, {double fontSize = 12}) => LegacyElement(

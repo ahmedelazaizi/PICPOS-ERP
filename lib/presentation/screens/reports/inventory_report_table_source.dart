@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' hide TextDirection;
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 class InventoryReportTableSource extends DataTableSource {
   InventoryReportTableSource({

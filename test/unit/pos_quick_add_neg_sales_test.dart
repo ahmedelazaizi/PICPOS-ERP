@@ -24,8 +24,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/repositories/drift_product_repository.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/repositories/drift_product_repository.dart';
 
 /// Reproduces the cart guard logic from
 /// lib/presentation/pos/providers/cart_controller.dart:222-237 so we

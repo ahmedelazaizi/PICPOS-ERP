@@ -4,7 +4,7 @@
 //    بعد الاعتماد · وما تفرضه كلُّ طريقةٍ وما تُسقطه.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/asset_disposal_plan.dart';
+import 'package:picpos_erp/domain/models/asset_disposal_plan.dart';
 
 String? _v({
   String method = 'sale',

@@ -1,6 +1,6 @@
 ﻿// Audit B DATA-007 (CSV formula injection) and DATA-008 (barcode trimmed).
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/csv_import_export_service.dart';
+import 'package:picpos_erp/services/csv_import_export_service.dart';
 
 void main() {
   test('formula-looking cells are neutralised with a leading apostrophe', () {

@@ -10,12 +10,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/constants/app_constants.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/presentation/widgets/permission_guard.dart';
-import 'package:ural_erp/presentation/sales_invoices_picpos/screens/sales_invoices_picpos_screen.dart'
+import 'package:picpos_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/presentation/widgets/permission_guard.dart';
+import 'package:picpos_erp/presentation/sales_invoices_picpos/screens/sales_invoices_picpos_screen.dart'
     as picpos;
 
 /// عرضُ قطعةِ الشريط ذاتِ [color] — صفرٌ إن لم تُرسم أصلاً.

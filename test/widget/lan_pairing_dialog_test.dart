@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/presentation/widgets/settings/lan_pairing_dialog.dart';
-import 'package:ural_erp/services/api/lan_pairing_service.dart';
+import 'package:picpos_erp/presentation/widgets/settings/lan_pairing_dialog.dart';
+import 'package:picpos_erp/services/api/lan_pairing_service.dart';
 
 void main() {
   testWidgets('pairing dialog shows the one-time code', (tester) async {

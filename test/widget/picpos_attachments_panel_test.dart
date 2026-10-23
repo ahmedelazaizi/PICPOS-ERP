@@ -12,10 +12,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/models/attachment_policy.dart';
-import 'package:ural_erp/domain/repositories/attachments_repository.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_attachments_panel.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/models/attachment_policy.dart';
+import 'package:picpos_erp/domain/repositories/attachments_repository.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_attachments_panel.dart';
 
 AttachmentData _row({
   required int id,

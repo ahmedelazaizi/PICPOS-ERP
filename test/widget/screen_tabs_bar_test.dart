@@ -9,8 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/presentation/shell/screen_tabs_bar.dart';
-import 'package:ural_erp/presentation/widgets/notifications/providers/notification_provider.dart';
+import 'package:picpos_erp/presentation/shell/screen_tabs_bar.dart';
+import 'package:picpos_erp/presentation/widgets/notifications/providers/notification_provider.dart';
 
 final _tabs = <ScreenTabView>[
   const ScreenTabView(

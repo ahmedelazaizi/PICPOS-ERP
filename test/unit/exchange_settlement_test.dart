@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/exchange_settlement.dart';
-import 'package:ural_erp/domain/models/return_refund_calculator.dart';
+import 'package:picpos_erp/domain/models/exchange_settlement.dart';
+import 'package:picpos_erp/domain/models/return_refund_calculator.dart';
 
 void main() {
   group('settleExchange', () {

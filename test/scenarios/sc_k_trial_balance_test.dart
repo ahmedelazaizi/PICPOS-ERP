@@ -5,10 +5,10 @@
 // ← صرف للمورد ← تحويل مخزني ← جرد بعجز ← بيع ثم إلغاؤه ← إقفال الوردية بعجز.
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/repositories/purchases_repository.dart';
-import 'package:ural_erp/domain/usecases/treasury/create_voucher_usecase.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/repositories/purchases_repository.dart';
+import 'package:picpos_erp/domain/usecases/treasury/create_voucher_usecase.dart';
 
 import 'scenario_world.dart';
 

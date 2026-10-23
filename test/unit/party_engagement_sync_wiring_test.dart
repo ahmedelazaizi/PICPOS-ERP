@@ -13,10 +13,10 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import '../helpers/api_handler_source.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/sync/strategies/party_follow_up_sync_strategy.dart';
-import 'package:ural_erp/services/sync/strategies/supplier_claim_sync_strategy.dart';
-import 'package:ural_erp/services/sync/sync_strategy.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/sync/strategies/party_follow_up_sync_strategy.dart';
+import 'package:picpos_erp/services/sync/strategies/supplier_claim_sync_strategy.dart';
+import 'package:picpos_erp/services/sync/sync_strategy.dart';
 
 int _countOf(String haystack, String needle) {
   var n = 0;

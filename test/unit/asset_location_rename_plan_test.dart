@@ -8,7 +8,7 @@
 //    فيها، فتُخطَّط خالصةً وتُقاس قبل أن تقع.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/asset_location_plan.dart';
+import 'package:picpos_erp/domain/models/asset_location_plan.dart';
 
 /// صفوفٌ مختصرةٌ — ما يلزم التخطيطَ وحدَه.
 List<AssetLocationRow> _rows(Map<int, String?> m) =>

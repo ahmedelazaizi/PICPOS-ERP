@@ -17,10 +17,10 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import '../helpers/library_source.dart';
 import '../helpers/api_handler_source.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/api/api_handler.dart';
-import 'package:ural_erp/services/delta_pull_service.dart';
-import 'package:ural_erp/services/id_namespace_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/api/api_handler.dart';
+import 'package:picpos_erp/services/delta_pull_service.dart';
+import 'package:picpos_erp/services/id_namespace_service.dart';
 
 /// نصُّ الملفّ بلا أسطر التعليق — فشرحُ العقد لا يُعَدُّ تنفيذاً له.
 ///

@@ -1,5 +1,5 @@
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
 // شاشة الجرد الميداني بهوية PicPos — semi-modular fork.
 //
 // الأصل: lib/presentation/screens/cycle_count_screen.dart (613 سطر).

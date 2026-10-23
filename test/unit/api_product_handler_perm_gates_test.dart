@@ -18,9 +18,9 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf/shelf.dart';
 
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/api/api_user_context.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/api/api_user_context.dart';
 
 void main() {
   group('api_product_handler perm gates (Spec 077 Batch 3)', () {

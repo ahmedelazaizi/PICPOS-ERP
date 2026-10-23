@@ -12,8 +12,8 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:ural_erp/data/providers/manufacturing_providers.dart';
-import 'package:ural_erp/data/providers/providers.dart';
+import 'package:picpos_erp/data/providers/manufacturing_providers.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
 
 void main() {
   group('branchListProvider (Spec 079 B2 guard)', () {

@@ -17,7 +17,7 @@
 // والتوقيعُ يمنع التخمينَ والتلاعبَ بالرقم، لا يمنع من جلس أمسَ وعاد اليوم
 // إلى نفس الشبكة. والرمزُ الثاني هو ما يمنعه من الكتابة.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/api/table_bill_token.dart';
+import 'package:picpos_erp/services/api/table_bill_token.dart';
 
 void main() {
   final opened = DateTime.utc(2026, 9, 12, 13, 5, 7);

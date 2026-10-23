@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/screens/coa/coa_shared.dart';
+import 'package:picpos_erp/presentation/screens/coa/coa_shared.dart';
 
 /// Tests for the extracted COA shared types and utilities.
 void main() {

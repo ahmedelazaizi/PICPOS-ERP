@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ural_erp/services/mirror_state.dart';
-import 'package:ural_erp/services/network_service.dart';
-import 'package:ural_erp/services/server_proxy.dart';
-import 'package:ural_erp/services/write_router.dart';
+import 'package:picpos_erp/services/mirror_state.dart';
+import 'package:picpos_erp/services/network_service.dart';
+import 'package:picpos_erp/services/server_proxy.dart';
+import 'package:picpos_erp/services/write_router.dart';
 
 /// MM.C unit tests for the routing helpers — WriteRouter behaviour and
 /// MirrorOfflineException identity. The full _tryOrQueue path requires

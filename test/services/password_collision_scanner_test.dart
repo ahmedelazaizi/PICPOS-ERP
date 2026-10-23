@@ -18,10 +18,10 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/network_service.dart';
-import 'package:ural_erp/services/password_collision_scanner.dart';
-import 'package:ural_erp/services/security_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/network_service.dart';
+import 'package:picpos_erp/services/password_collision_scanner.dart';
+import 'package:picpos_erp/services/security_service.dart';
 
 void main() {
   late AppDatabase db;

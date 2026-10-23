@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/license_service.dart';
-import 'package:ural_erp/core/utils/license_encoding.dart';
+import 'package:picpos_erp/services/license_service.dart';
+import 'package:picpos_erp/core/utils/license_encoding.dart';
 
 void main() {
   test('accepts a valid signed key for its machine', () async {

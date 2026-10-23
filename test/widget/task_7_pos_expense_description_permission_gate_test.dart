@@ -13,7 +13,7 @@
 // الشقيق `_canSelectType` أصلاً مالوش اختبار في هذا الملف لنفس السبب.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/pos/widgets/pos_expense_dialog.dart';
+import 'package:picpos_erp/presentation/pos/widgets/pos_expense_dialog.dart';
 
 void main() {
   group('pos_expense_description — حقل الوصف في ديالوج المصروف', () {

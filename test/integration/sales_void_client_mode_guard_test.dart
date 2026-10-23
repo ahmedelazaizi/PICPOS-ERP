@@ -2,10 +2,10 @@
 // ثم يكتب «ملغاة» محليًا قبل أن يردّ الخادم، فإن رفض الخادم (فاتورة لها مرتجع)
 // بقي المحلي ملغيًا والخادم حيًّا. الفحص نفسه يجب أن يسبق أي إرسال/كتابة محلية.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/sync_interceptor.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/data/repositories/sales_repository_impl.dart';
-import 'package:ural_erp/domain/models/return_original_link.dart';
+import 'package:picpos_erp/data/database/sync_interceptor.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/data/repositories/sales_repository_impl.dart';
+import 'package:picpos_erp/domain/models/return_original_link.dart';
 
 import '../scenarios/scenario_world.dart';
 

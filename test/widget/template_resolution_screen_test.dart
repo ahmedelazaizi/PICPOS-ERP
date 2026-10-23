@@ -18,12 +18,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/data/providers/repository_providers.dart';
-import 'package:ural_erp/domain/repositories/invoice_templates_repository.dart';
-import 'package:ural_erp/domain/repositories/printers_repository.dart';
-import 'package:ural_erp/presentation/template_resolution_picpos/screens/template_resolution_picpos_screen.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/data/providers/repository_providers.dart';
+import 'package:picpos_erp/domain/repositories/invoice_templates_repository.dart';
+import 'package:picpos_erp/domain/repositories/printers_repository.dart';
+import 'package:picpos_erp/presentation/template_resolution_picpos/screens/template_resolution_picpos_screen.dart';
 
 final _t0 = DateTime.utc(2026, 1, 1);
 

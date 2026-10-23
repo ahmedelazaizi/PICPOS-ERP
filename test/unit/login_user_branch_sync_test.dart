@@ -13,10 +13,10 @@
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/sync_interceptor.dart';
-import 'package:ural_erp/data/repositories/auth_repository_impl.dart';
-import 'package:ural_erp/services/network_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/sync_interceptor.dart';
+import 'package:picpos_erp/data/repositories/auth_repository_impl.dart';
+import 'package:picpos_erp/services/network_service.dart';
 
 // Feature 064 (R9) moved the `_verifyBranchAccess` gate from
 // `NetworkService.isClient` to `SyncInterceptor.isClientMode` so mirror mode

@@ -10,8 +10,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart' show SemanticsFlag;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/picpos_return_view.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_returns_panel.dart';
+import 'package:picpos_erp/domain/models/picpos_return_view.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_returns_panel.dart';
 
 PicPosReturnInvoiceRow _row({
   int id = 1,

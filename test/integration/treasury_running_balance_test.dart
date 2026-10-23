@@ -17,8 +17,8 @@
 
 import 'package:drift/drift.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/models/safe_running_balance.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/models/safe_running_balance.dart';
 
 void main() {
   late AppDatabase db;

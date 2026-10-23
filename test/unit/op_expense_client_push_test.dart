@@ -18,8 +18,8 @@
 // فالفحصُ الأخيرُ يشترط أنّ الوضعَ المستقلَّ يكتب الثلاثةَ فعلاً.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/sync_interceptor.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/sync_interceptor.dart';
 
 class _RecordingClient implements SyncInterceptor {
   int calls = 0;

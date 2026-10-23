@@ -34,9 +34,9 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/repositories/sales_repository.dart';
-import 'package:ural_erp/services/printing_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/repositories/sales_repository.dart';
+import 'package:picpos_erp/services/printing_service.dart';
 
 /// مستودعٌ لا بياناتِ طباعةٍ عنده — يحاكي فاتورةً محذوفةً أو معرِّفاً خاطئاً.
 class _NoDataSalesRepo implements SalesRepository {

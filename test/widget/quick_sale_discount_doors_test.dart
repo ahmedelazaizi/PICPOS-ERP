@@ -23,11 +23,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/data/providers/quick_sale_policy_providers.dart';
-import 'package:ural_erp/presentation/pos_picpos/widgets/picpos_cart_permissions.dart';
-import 'package:ural_erp/services/manager_approval_cache.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/data/providers/quick_sale_policy_providers.dart';
+import 'package:picpos_erp/presentation/pos_picpos/widgets/picpos_cart_permissions.dart';
+import 'package:picpos_erp/services/manager_approval_cache.dart';
 
 void main() {
   late AppDatabase db;

@@ -23,4 +23,4 @@ D:\Cash\develop\flutter\bin\cache\dart-sdk\bin\dart.exe test
 
 ## Follow-up: desktop
 
-The desktop app (`ural_erp`, root `lib/`) still has its own copies of these rules. Making it depend on this package (replacing `effective_item_tax_rate.dart`, the integrity payload, `company_identity.dart` and the QR decision with re-exports) is out of scope for I-4 and is the next step, so the desktop is also "parity by construction".
+The desktop app (`picpos_erp`, root `lib/`) still has its own copies of these rules. Making it depend on this package (replacing `effective_item_tax_rate.dart`, the integrity payload, `company_identity.dart` and the QR decision with re-exports) is out of scope for I-4 and is the next step, so the desktop is also "parity by construction".

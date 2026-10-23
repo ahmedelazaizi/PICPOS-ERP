@@ -17,8 +17,8 @@
 // ⚠️ وتُقاس **الأرقامُ** لا الحالات: «أُودع شيءٌ» يمرّ على ورقةٍ واحدةٍ من
 // خمس. فالاختبارُ يثبّت عددَ الاستدعاءات ومعرِّفاتِها ومعاملَ البنك.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/repositories/commercial_papers_repository.dart';
-import 'package:ural_erp/presentation/screens/commercial_papers/deposit_papers_action.dart';
+import 'package:picpos_erp/domain/repositories/commercial_papers_repository.dart';
+import 'package:picpos_erp/presentation/screens/commercial_papers/deposit_papers_action.dart';
 
 class _RecordingRepo implements ICommercialPapersRepository {
   _RecordingRepo({this.failOn = const {}});

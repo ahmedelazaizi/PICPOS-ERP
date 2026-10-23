@@ -13,9 +13,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/printing/template_document.dart';
-import 'package:ural_erp/domain/printing/template_mapper.dart';
-import 'package:ural_erp/services/printing/layout_engine.dart';
+import 'package:picpos_erp/domain/printing/template_document.dart';
+import 'package:picpos_erp/domain/printing/template_mapper.dart';
+import 'package:picpos_erp/services/printing/layout_engine.dart';
 
 const _dir = 'assets/invoice_templates';
 

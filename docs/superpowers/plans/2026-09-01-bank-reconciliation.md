@@ -74,9 +74,9 @@
 // `bank_reconciliation_posted_and_match_test`.
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/repositories/drift_accounting_repository.dart';
-import 'package:ural_erp/domain/entities/accounting_entities.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/repositories/drift_accounting_repository.dart';
+import 'package:picpos_erp/domain/entities/accounting_entities.dart';
 
 void main() {
   late AppDatabase db;
@@ -391,7 +391,7 @@ git commit -m "feat(accounting): كشفُ محرّك المطابقة البنك
 // البنك = دائنُ دفترنا). فالتحليلُ ينقل ما في العمودَين كما هو، والقالبُ
 // يحمل سطرَ الشرح.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/services/bank_statement_row.dart';
+import 'package:picpos_erp/data/services/bank_statement_row.dart';
 
 void main() {
   test('مرساة: صفٌّ سليمٌ يُقبَل بحقوله', () {
@@ -584,7 +584,7 @@ partyRepo, branchRepo, purchasesRepo, {...})`)، فالتحليلُ وحدَه �
 // ⚠️ القياسُ على **دالّةِ التجميع** لا على `_pickFile`: اختيارُ الملفّ
 // إضافةٌ من نظام التشغيل لا منطق.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/services/excel_service.dart';
+import 'package:picpos_erp/data/services/excel_service.dart';
 
 void main() {
   test('مرساة: صفوفٌ سليمةٌ كلُّها تُقبَل', () {
@@ -789,9 +789,9 @@ git commit -m "feat(accounting): قالبُ كشف البنك واستيرادُ
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/repository_providers.dart';
-import 'package:ural_erp/domain/repositories/treasury_repository.dart';
-import 'package:ural_erp/presentation/accounting_picpos/bank_reconciliation_picpos_screen.dart';
+import 'package:picpos_erp/data/providers/repository_providers.dart';
+import 'package:picpos_erp/domain/repositories/treasury_repository.dart';
+import 'package:picpos_erp/presentation/accounting_picpos/bank_reconciliation_picpos_screen.dart';
 
 // TODO_FOR_IMPLEMENTER: استعمل نفسَ نمطِ المزيَّفات في
 // `test/widget/analytics_picpos_screen_test.dart` — صنفٌ يُنفّذ الواجهةَ
@@ -1204,9 +1204,9 @@ git commit -m "feat(accounting): المطابقةُ البنكيّةُ تبوي�
 // ⚠️ والمقيسُ **قيمةٌ محسوبةٌ يدويّاً** لا «> صفر»: مصالحةٌ قد تتّفق عند
 // رقمٍ خاطئٍ وتمرّ خضراء.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/repositories/drift_accounting_repository.dart';
-import 'package:ural_erp/domain/entities/accounting_entities.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/repositories/drift_accounting_repository.dart';
+import 'package:picpos_erp/domain/entities/accounting_entities.dart';
 
 void main() {
   late AppDatabase db;

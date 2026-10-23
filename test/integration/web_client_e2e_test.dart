@@ -8,13 +8,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as shelf_io;
-import 'package:ural_erp/data/providers/dashboard_filter_provider.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/services/api/api_auth_middleware.dart';
-import 'package:ural_erp/services/api/api_handler.dart';
-import 'package:ural_erp/services/api/api_session_token.dart';
-import 'package:ural_erp/web/web_providers.dart';
-import 'package:ural_erp/web/web_session.dart';
+import 'package:picpos_erp/data/providers/dashboard_filter_provider.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/services/api/api_auth_middleware.dart';
+import 'package:picpos_erp/services/api/api_handler.dart';
+import 'package:picpos_erp/services/api/api_session_token.dart';
+import 'package:picpos_erp/web/web_providers.dart';
+import 'package:picpos_erp/web/web_session.dart';
 
 void main() {
   late AppDatabase db;

@@ -28,8 +28,8 @@
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/api/api_handler_base.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/api/api_handler_base.dart';
 
 /// Test-only `ApiHandlerBase` subclass that records every broadcast emission
 /// into a public list. Used to assert the wrapper actually fans out one

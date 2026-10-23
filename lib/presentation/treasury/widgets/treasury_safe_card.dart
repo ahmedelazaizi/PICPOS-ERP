@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:intl/intl.dart';
@@ -6,7 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../domain/repositories/treasury_repository.dart';
 import '../../widgets/branch_chip.dart';
 
-import 'package:ural_erp/l10n/app_localizations.dart';
+import 'package:picpos_erp/l10n/app_localizations.dart';
 import '../../../../../../core/constants/app_constants.dart';
 
 class TreasurySafeCard extends StatelessWidget {

@@ -23,16 +23,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/services/receipt_qr_resolver.dart';
-import 'package:ural_erp/domain/models/einvoice_document_status.dart';
-import 'package:ural_erp/domain/models/receipt_qr_decision.dart';
-import 'package:ural_erp/services/e_invoicing/e_invoice_auto_submitter.dart';
-import 'package:ural_erp/services/e_invoicing/e_invoice_service_wrapper.dart';
-import 'package:ural_erp/services/e_invoicing/e_invoice_submission_worker.dart';
-import 'package:ural_erp/services/e_invoicing/eta_service.dart';
-import 'package:ural_erp/services/secure_storage_service.dart';
-import 'package:ural_erp/data/repositories/drift_e_invoice_repository.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/services/receipt_qr_resolver.dart';
+import 'package:picpos_erp/domain/models/einvoice_document_status.dart';
+import 'package:picpos_erp/domain/models/receipt_qr_decision.dart';
+import 'package:picpos_erp/services/e_invoicing/e_invoice_auto_submitter.dart';
+import 'package:picpos_erp/services/e_invoicing/e_invoice_service_wrapper.dart';
+import 'package:picpos_erp/services/e_invoicing/e_invoice_submission_worker.dart';
+import 'package:picpos_erp/services/e_invoicing/eta_service.dart';
+import 'package:picpos_erp/services/secure_storage_service.dart';
+import 'package:picpos_erp/data/repositories/drift_e_invoice_repository.dart';
 
 
 void main() {

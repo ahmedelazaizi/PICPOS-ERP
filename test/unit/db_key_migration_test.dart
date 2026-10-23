@@ -2,10 +2,10 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/db_key_migration_service.dart';
-import 'package:ural_erp/services/db_key_names.dart';
-import 'package:ural_erp/services/db_key_types.dart';
-import 'package:ural_erp/services/db_keyinfo_file.dart';
+import 'package:picpos_erp/services/db_key_migration_service.dart';
+import 'package:picpos_erp/services/db_key_names.dart';
+import 'package:picpos_erp/services/db_key_types.dart';
+import 'package:picpos_erp/services/db_keyinfo_file.dart';
 
 import '../helpers/db_key_harness.dart';
 

@@ -15,13 +15,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart' as db;
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/repositories/accounting_repository.dart';
-import 'package:ural_erp/domain/repositories/branch_repository.dart';
-import 'package:ural_erp/domain/repositories/i_products_repository.dart';
-import 'package:ural_erp/domain/repositories/purchases_repository.dart';
-import 'package:ural_erp/presentation/screens/purchase_invoices/widgets/purchase_invoice_form.dart';
+import 'package:picpos_erp/data/database/database.dart' as db;
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/repositories/accounting_repository.dart';
+import 'package:picpos_erp/domain/repositories/branch_repository.dart';
+import 'package:picpos_erp/domain/repositories/i_products_repository.dart';
+import 'package:picpos_erp/domain/repositories/purchases_repository.dart';
+import 'package:picpos_erp/presentation/screens/purchase_invoices/widgets/purchase_invoice_form.dart';
 
 const _inScopeWarehouseId = 1;
 const _outOfScopeWarehouseId = 99;

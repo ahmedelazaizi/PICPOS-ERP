@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ural_erp/core/utils/friendly_error.dart';
+import 'package:picpos_erp/core/utils/friendly_error.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/repositories/treasury_repository.dart';
 import 'treasury_safe_card.dart';
 import 'treasury_transactions_list.dart';
 
-import 'package:ural_erp/l10n/app_localizations.dart';
+import 'package:picpos_erp/l10n/app_localizations.dart';
 
 /// Feature 011 / Issue UX-SCROLL — converted to StatefulWidget so the
 /// safes-list ScrollController persists across stream re-emissions

@@ -15,7 +15,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/settings_picpos/widgets/settings_section_pane.dart';
+import 'package:picpos_erp/presentation/settings_picpos/widgets/settings_section_pane.dart';
 
 void main() {
   Widget host(List<Widget> children) => MaterialApp(

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/usecases/manufacturing/create_bom_usecase.dart';
-import 'package:ural_erp/domain/usecases/manufacturing/execute_production_usecase.dart';
+import 'package:picpos_erp/domain/usecases/manufacturing/create_bom_usecase.dart';
+import 'package:picpos_erp/domain/usecases/manufacturing/execute_production_usecase.dart';
 
 void main() {
   group('CreateBOMUseCase — Input Validation', () {

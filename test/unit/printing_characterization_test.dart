@@ -31,9 +31,9 @@ import 'dart:typed_data';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/printing/template_pdf_renderer.dart';
-import 'package:ural_erp/services/templated_invoice_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/printing/template_pdf_renderer.dart';
+import 'package:picpos_erp/services/templated_invoice_service.dart';
 
 import '../helpers/pdf_probe.dart';
 import '../helpers/printing_characterization_fixture.dart';

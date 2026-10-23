@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/navigation/screen_registry.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/core/config/business_profile.dart';
-import 'package:ural_erp/presentation/scale_plu_picpos/screens/scale_plu_picpos_screen.dart';
+import 'package:picpos_erp/core/navigation/screen_registry.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/config/business_profile.dart';
+import 'package:picpos_erp/presentation/scale_plu_picpos/screens/scale_plu_picpos_screen.dart';
 
 void main() {
   testWidgets('ScalePluPicposScreen موجودة وقابلة للإنشاء', (t) async {

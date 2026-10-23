@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/entities/cart_item_entity.dart';
-import 'package:ural_erp/domain/models/table_order_totals.dart';
-import 'package:ural_erp/domain/models/tax_rate_bounds.dart';
-import 'package:ural_erp/domain/usecases/sales/calculate_invoice_totals_usecase.dart';
+import 'package:picpos_erp/domain/entities/cart_item_entity.dart';
+import 'package:picpos_erp/domain/models/table_order_totals.dart';
+import 'package:picpos_erp/domain/models/tax_rate_bounds.dart';
+import 'package:picpos_erp/domain/usecases/sales/calculate_invoice_totals_usecase.dart';
 
 /// ضريبةُ المبيعات على طلبات الطاولات — الطورُ أ.
 ///

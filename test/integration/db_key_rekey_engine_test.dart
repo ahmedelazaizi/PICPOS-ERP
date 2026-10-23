@@ -8,11 +8,11 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/db_key_manager.dart';
-import 'package:ural_erp/services/db_key_migration_service.dart';
-import 'package:ural_erp/services/db_key_types.dart';
-import 'package:ural_erp/services/secret_store.dart';
-import 'package:ural_erp/services/sqlcipher_engine.dart';
+import 'package:picpos_erp/services/db_key_manager.dart';
+import 'package:picpos_erp/services/db_key_migration_service.dart';
+import 'package:picpos_erp/services/db_key_types.dart';
+import 'package:picpos_erp/services/secret_store.dart';
+import 'package:picpos_erp/services/sqlcipher_engine.dart';
 
 class _User extends QueryExecutorUser {
   @override

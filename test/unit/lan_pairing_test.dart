@@ -5,11 +5,11 @@ import 'package:drift/drift.dart' show Value, Variable;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf/shelf.dart';
 
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/api/api_auth_middleware.dart';
-import 'package:ural_erp/services/api/api_handler.dart';
-import 'package:ural_erp/services/api/lan_pairing_api_handler.dart';
-import 'package:ural_erp/services/api/lan_pairing_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/api/api_auth_middleware.dart';
+import 'package:picpos_erp/services/api/api_handler.dart';
+import 'package:picpos_erp/services/api/lan_pairing_api_handler.dart';
+import 'package:picpos_erp/services/api/lan_pairing_service.dart';
 
 class _PairingConnectionInfo implements HttpConnectionInfo {
   _PairingConnectionInfo(String address)

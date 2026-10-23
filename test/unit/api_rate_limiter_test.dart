@@ -17,8 +17,8 @@ import 'dart:io' show HttpConnectionInfo, InternetAddress;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf/shelf.dart';
-import 'package:ural_erp/services/api/api_rate_limiter.dart';
-import 'package:ural_erp/services/api/client_address.dart';
+import 'package:picpos_erp/services/api/api_rate_limiter.dart';
+import 'package:picpos_erp/services/api/client_address.dart';
 
 /// A dummy handler that always returns 200 OK.
 Response _ok(Request _) => Response.ok('ok');

@@ -8,10 +8,10 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_header_actions.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_page_header.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_screen_scaffold.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_header_actions.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_page_header.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_screen_scaffold.dart';
 
 List<PicPosHeaderAction> _sixActions(List<String> log) => [
       PicPosHeaderAction(

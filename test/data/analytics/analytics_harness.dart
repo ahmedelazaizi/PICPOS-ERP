@@ -1,6 +1,6 @@
 // Shared fixtures for the analytics DB tests (not a test file itself).
 import 'package:drift/drift.dart' hide isNotNull, isNull;
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 /// Helpers over an in-memory [AppDatabase.forTesting] (which seeds the
 /// standard chart, its default account mappings and a current fiscal year).

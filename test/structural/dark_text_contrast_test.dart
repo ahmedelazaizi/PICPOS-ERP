@@ -2,8 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
-import 'package:ural_erp/core/theme/picpos_theme.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/core/theme/picpos_theme.dart';
 
 const _oldDarkSecondary = Color(0xFF374151);
 const _oldDarkMuted = Color(0xFF94A3B8);

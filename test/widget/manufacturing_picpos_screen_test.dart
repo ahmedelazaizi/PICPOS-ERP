@@ -4,11 +4,11 @@ import 'package:drift/drift.dart' hide isNotNull;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/manufacturing_providers.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/entities/product_entity.dart';
-import 'package:ural_erp/presentation/manufacturing_picpos/manufacturing_picpos_screen.dart';
-import 'package:ural_erp/presentation/widgets/permission_guard.dart';
+import 'package:picpos_erp/data/providers/manufacturing_providers.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/entities/product_entity.dart';
+import 'package:picpos_erp/presentation/manufacturing_picpos/manufacturing_picpos_screen.dart';
+import 'package:picpos_erp/presentation/widgets/permission_guard.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

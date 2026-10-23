@@ -22,14 +22,14 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
-import 'package:ural_erp/data/database/connection_io.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/pending_restore.dart';
-import 'package:ural_erp/data/database/schema_version_limit.dart';
-import 'package:ural_erp/data/database/wal_checkpoint.dart';
-import 'package:ural_erp/services/db_key_boot.dart';
-import 'package:ural_erp/services/legacy_device_seed.dart';
-import 'package:ural_erp/services/sqlcipher_engine.dart' show DbInspection;
+import 'package:picpos_erp/data/database/connection_io.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/pending_restore.dart';
+import 'package:picpos_erp/data/database/schema_version_limit.dart';
+import 'package:picpos_erp/data/database/wal_checkpoint.dart';
+import 'package:picpos_erp/services/db_key_boot.dart';
+import 'package:picpos_erp/services/legacy_device_seed.dart';
+import 'package:picpos_erp/services/sqlcipher_engine.dart' show DbInspection;
 
 import '../helpers/sqlcipher_real.dart';
 

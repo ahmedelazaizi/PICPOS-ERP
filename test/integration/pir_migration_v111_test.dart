@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 /// PIR Integration Test 4: Database Schema & Migration Readiness
 /// Verifies schema version and that the database is functional.

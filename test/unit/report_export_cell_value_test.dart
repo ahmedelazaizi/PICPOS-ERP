@@ -24,8 +24,8 @@
 
 import 'package:excel/excel.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/constants/app_constants.dart';
-import 'package:ural_erp/data/services/excel_service.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/data/services/excel_service.dart';
 
 void main() {
   group('§٣‑٧ دقّةُ الخليّة في المسار العامّ (exportReport)', () {

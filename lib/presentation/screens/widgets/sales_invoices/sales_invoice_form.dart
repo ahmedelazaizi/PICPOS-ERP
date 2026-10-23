@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // Spec 090 — sales invoice form extraction.
 //
 // Ports the working PurchaseInvoiceForm pattern to sales:

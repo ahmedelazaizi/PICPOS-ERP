@@ -2,9 +2,9 @@
 // محجوبةٌ عن كلّ شاشة. وهذا يقيس **الوصولَ** لا المنطق: المنطقُ مختبَرٌ في
 // `bank_reconciliation_posted_and_match_test`.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/repositories/drift_accounting_repository.dart';
-import 'package:ural_erp/domain/entities/accounting_entities.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/repositories/drift_accounting_repository.dart';
+import 'package:picpos_erp/domain/entities/accounting_entities.dart';
 
 void main() {
   late AppDatabase db;

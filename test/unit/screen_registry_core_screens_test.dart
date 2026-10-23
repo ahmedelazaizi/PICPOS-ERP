@@ -16,8 +16,8 @@
 // **قرارٌ قائمٌ** لا سهو. فحارسٌ يفرض الاحتواءَ كان سيَحمرّ على تصميمٍ مقصود.
 // والمقيسُ هنا أضيقُ وأصدق: شاشاتٌ جوهريّةٌ بعينها لا يجوز أن تغيب.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/core/navigation/screen_registry.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/navigation/screen_registry.dart';
 
 void main() {
   /// النطاقاتُ التي تُشحن، باسمها كما تُقرأ في الفشل.

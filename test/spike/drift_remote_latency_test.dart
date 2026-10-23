@@ -14,8 +14,8 @@ import 'package:drift/native.dart';
 import 'package:drift/remote.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stream_channel/stream_channel.dart';
-import 'package:ural_erp/services/web_read/drift_json_channel.dart';
-import 'package:ural_erp/services/web_read/web_read_policy_interceptor.dart';
+import 'package:picpos_erp/services/web_read/drift_json_channel.dart';
+import 'package:picpos_erp/services/web_read/web_read_policy_interceptor.dart';
 import 'package:web_socket_channel/io.dart';
 
 const int _lines = 60000; // سطور قيود

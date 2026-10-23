@@ -17,9 +17,9 @@
 // حين تصله قائمةٌ فارغة بدل أن يعرض زرَّ إيداعٍ يُلقي.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/repositories/treasury_repository.dart'
+import 'package:picpos_erp/domain/repositories/treasury_repository.dart'
     show SafeData;
-import 'package:ural_erp/presentation/settings_picpos/screens/cheques_picpos_deposit_dialog.dart';
+import 'package:picpos_erp/presentation/settings_picpos/screens/cheques_picpos_deposit_dialog.dart';
 
 const _banks = [
   SafeData(

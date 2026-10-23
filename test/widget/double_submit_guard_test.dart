@@ -7,17 +7,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/repositories/accounting_repository.dart';
-import 'package:ural_erp/domain/repositories/parties_repository.dart';
-import 'package:ural_erp/presentation/screens/parties/providers/party_groups_controller.dart'
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/repositories/accounting_repository.dart';
+import 'package:picpos_erp/domain/repositories/parties_repository.dart';
+import 'package:picpos_erp/presentation/screens/parties/providers/party_groups_controller.dart'
     show activePartyGroupsProvider;
-import 'package:ural_erp/presentation/bookings_picpos/widgets/new_booking_panel.dart';
-import 'package:ural_erp/presentation/parties_picpos/dialogs/add_party_dialog_picpos.dart';
-import 'package:ural_erp/presentation/screens/tables_screen.dart'
+import 'package:picpos_erp/presentation/bookings_picpos/widgets/new_booking_panel.dart';
+import 'package:picpos_erp/presentation/parties_picpos/dialogs/add_party_dialog_picpos.dart';
+import 'package:picpos_erp/presentation/screens/tables_screen.dart'
     show showTableReservationDialog;
-import 'package:ural_erp/services/booking_actions_service.dart';
-import 'package:ural_erp/services/table_session_service.dart';
+import 'package:picpos_erp/services/booking_actions_service.dart';
+import 'package:picpos_erp/services/table_session_service.dart';
 
 class _FakeBookingActions implements BookingActionsService {
   int calls = 0;

@@ -28,7 +28,7 @@
 //  ‏٥) **ولا صفَّ يُخترَع.** الأعمدةُ تُضاف ولا تُنشئ بيانات.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 /// الستّةُ والعشرون بأسمائها SQL — نفسُ قائمة `phase4Tables` في `epoch_3.dart`.
 const _phase4Tables = <String>[

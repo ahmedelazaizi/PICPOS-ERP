@@ -1,8 +1,8 @@
 // test/unit/hourly_salary_model_test.dart
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/extensions/hr_extensions.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/extensions/hr_extensions.dart';
 
 void main() {
   late AppDatabase db;

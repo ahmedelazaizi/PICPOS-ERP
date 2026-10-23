@@ -23,15 +23,15 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/core/theme/picpos_theme.dart';
-import 'package:ural_erp/data/providers/manufacturing_providers.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/repositories/accounting_repository.dart';
-import 'package:ural_erp/presentation/accounting_picpos/chart_of_accounts_overview.dart';
-import 'package:ural_erp/presentation/accounting_picpos/chart_of_accounts_picpos_screen.dart';
-import 'package:ural_erp/presentation/accounting_picpos/general_ledger_picpos_screen.dart';
-import 'package:ural_erp/presentation/screens/coa/coa_shared.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/theme/picpos_theme.dart';
+import 'package:picpos_erp/data/providers/manufacturing_providers.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/repositories/accounting_repository.dart';
+import 'package:picpos_erp/presentation/accounting_picpos/chart_of_accounts_overview.dart';
+import 'package:picpos_erp/presentation/accounting_picpos/chart_of_accounts_picpos_screen.dart';
+import 'package:picpos_erp/presentation/accounting_picpos/general_ledger_picpos_screen.dart';
+import 'package:picpos_erp/presentation/screens/coa/coa_shared.dart';
 
 final _arabic = RegExp(r'[\u0600-\u06FF]');
 

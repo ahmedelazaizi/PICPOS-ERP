@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // Permission Codes Registry
 //
 // Contains all permission codes used throughout the application.

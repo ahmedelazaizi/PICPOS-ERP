@@ -12,7 +12,7 @@
 //
 // فالمنعُ من أصله أرخصُ من معالجةِ أثره — وهذا الملفُّ يقيس القرار.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/branch_assignment_scope.dart';
+import 'package:picpos_erp/domain/models/branch_assignment_scope.dart';
 
 void main() {
   group('«كل الفروع» لغيرِ المميَّز تجهيزةٌ ناقصة', () {

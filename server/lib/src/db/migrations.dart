@@ -1,6 +1,6 @@
 /// Ordered, append-only schema migrations for the cloud database.
 ///
-/// Table and column names mirror the desktop (ural_erp) schema so the I-3
+/// Table and column names mirror the desktop (picpos_erp) schema so the I-3
 /// desktop<->cloud mapper is a column copy. Every replicated table carries the
 /// desktop v167 sync columns: global_id, last_modified_at (epoch ms here),
 /// deleted_at, origin_client_id, row_version. `touch_row()` maintains

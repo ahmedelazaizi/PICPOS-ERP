@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNotNull;
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 /// Spec 136 ISS-13 — a branch cash sale must autopost its cash debit to the
 /// account linked to the safe the cash actually went into, NOT the admin cash

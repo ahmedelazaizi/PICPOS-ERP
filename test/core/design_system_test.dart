@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/design_system/spacing.dart';
+import 'package:picpos_erp/core/design_system/spacing.dart';
 
 void main() {
   group('Design System - Spacing', () {

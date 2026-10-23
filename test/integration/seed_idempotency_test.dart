@@ -12,7 +12,7 @@
 // PostgreSQL as well.
 // ═══════════════════════════════════════════════════════════════════════════
 
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

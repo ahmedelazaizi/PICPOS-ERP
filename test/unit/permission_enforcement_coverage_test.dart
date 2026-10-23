@@ -8,8 +8,8 @@
 // الصلاحيات وهو مالوش مستقبل — وما حدش يكتشف غير من الميدان.
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/core/permissions/permission_enforcement_registry.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/core/permissions/permission_enforcement_registry.dart';
 
 /// الملفات اللي بتعرّف الصلاحية مش اللي بتفحصها — وجود الكود فيها مش إنفاذ.
 const _definitionFiles = [

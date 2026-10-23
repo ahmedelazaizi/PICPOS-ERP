@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
 
 /// Standard confirmation dialog for the UralCash ERP system.
 /// Optimized for P1 remediation to provide a high-fidelity, consistent UI.

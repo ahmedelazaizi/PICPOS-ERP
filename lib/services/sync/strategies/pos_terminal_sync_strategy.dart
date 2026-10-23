@@ -1,8 +1,8 @@
 // ignore_for_file: avoid_dynamic_calls
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/sync/sync_strategy.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/sync/sync_strategy.dart';
 
 /// Pulls pos_terminals master data from the server into the local DB.
 ///

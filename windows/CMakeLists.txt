@@ -1,6 +1,6 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
-project(ural_erp LANGUAGES CXX)
+project(picpos_erp LANGUAGES CXX)
 
 # ── هوية المنتج ────────────────────────────────────────────────────────────
 #

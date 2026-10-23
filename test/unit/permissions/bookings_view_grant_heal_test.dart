@@ -2,8 +2,8 @@
 // يملك الأولى يُمنَح الثانية في إقلاعٍ idempotent (علَمٌ مرّةً واحدة).
 import 'package:drift/drift.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/role_grant_preflight_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/role_grant_preflight_service.dart';
 
 const _flag = 'bookings_view_from_tables_view_backfill_done';
 

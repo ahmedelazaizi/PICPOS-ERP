@@ -7,17 +7,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/theme/app_theme.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/providers/branch_scope_provider.dart';
-import 'package:ural_erp/data/providers/financial_analytics_provider.dart';
-import 'package:ural_erp/data/providers/manufacturing_providers.dart'
+import 'package:picpos_erp/core/theme/app_theme.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/providers/branch_scope_provider.dart';
+import 'package:picpos_erp/data/providers/financial_analytics_provider.dart';
+import 'package:picpos_erp/data/providers/manufacturing_providers.dart'
     show branchListProvider;
-import 'package:ural_erp/domain/analytics/budget_targets.dart';
-import 'package:ural_erp/domain/analytics/financial_snapshot.dart';
-import 'package:ural_erp/domain/analytics/ratio_engine.dart';
-import 'package:ural_erp/presentation/analytics_picpos/fin_analytics_state.dart';
-import 'package:ural_erp/presentation/analytics_picpos/financial_indicators_picpos_screen.dart';
+import 'package:picpos_erp/domain/analytics/budget_targets.dart';
+import 'package:picpos_erp/domain/analytics/financial_snapshot.dart';
+import 'package:picpos_erp/domain/analytics/ratio_engine.dart';
+import 'package:picpos_erp/presentation/analytics_picpos/fin_analytics_state.dart';
+import 'package:picpos_erp/presentation/analytics_picpos/financial_indicators_picpos_screen.dart';
 
 import 'fin_test_support.dart';
 

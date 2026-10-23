@@ -5,8 +5,8 @@
 // (راجع setUp في quick_sale_discount_doors_test) فالفتح هنا بـ runAsync.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/connection.dart' show isTestExecutor;
-import 'package:ural_erp/data/providers/providers.dart';
+import 'package:picpos_erp/data/database/connection.dart' show isTestExecutor;
+import 'package:picpos_erp/data/providers/providers.dart';
 
 void main() {
   testWidgets('forTesting DB is marked as test executor and opens quickly',

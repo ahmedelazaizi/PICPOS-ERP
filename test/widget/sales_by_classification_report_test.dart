@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/data/providers/manufacturing_providers.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/repositories/reporting_repository.dart';
-import 'package:ural_erp/presentation/screens/reports/sales_by_classification_report.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/data/providers/manufacturing_providers.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/repositories/reporting_repository.dart';
+import 'package:picpos_erp/presentation/screens/reports/sales_by_classification_report.dart';
 
 class _DelayedReportingRepository implements IReportingRepository {
   final List<Completer<List<SalesByCategoryRow>>> categoryRequests = [];

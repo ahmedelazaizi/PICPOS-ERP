@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/pos_picpos/widgets/picpos_pos_shortcuts.dart';
+import 'package:picpos_erp/presentation/pos_picpos/widgets/picpos_pos_shortcuts.dart';
 
 /// Guards the PicPos POS key map (طلب ٤).
 ///

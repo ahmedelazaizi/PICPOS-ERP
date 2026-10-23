@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:drift/drift.dart' show Value;
@@ -6,7 +6,7 @@ import '../../../../core/utils/uuid_v7.dart';
 import '../../../../data/providers/providers.dart';
 import '../../../../services/client_write_interceptor.dart';
 import '../../../widgets/dialogs/app_form_dialog.dart';
-import 'package:ural_erp/l10n/app_localizations.dart';
+import 'package:picpos_erp/l10n/app_localizations.dart';
 
 class WarehouseEditDialog extends AppFormDialog<bool> {
   final Warehouse? existing;

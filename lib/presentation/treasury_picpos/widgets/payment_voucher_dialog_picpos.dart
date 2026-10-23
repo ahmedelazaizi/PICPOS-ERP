@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // نسخةُ PicPos من payment_voucher_dialog.dart — فوركٌ مقصود.
 //
 // ═══ لماذا نسخٌ لا مشاركة ═══
@@ -16,7 +16,7 @@ import 'package:ural_erp/core/i18n/tr.dart';
 // النّسبيّةُ تبقى كما هي حرفاً.
 
 import 'package:flutter/material.dart';
-import 'package:ural_erp/core/widgets/app_toast.dart';
+import 'package:picpos_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
@@ -29,7 +29,7 @@ import '../../../services/generators/generators.dart';
 import '../../../services/client_write_interceptor.dart';
 import '../../../core/utils/uuid_v7.dart';
 
-import 'package:ural_erp/l10n/app_localizations.dart';
+import 'package:picpos_erp/l10n/app_localizations.dart';
 import '../../../../../../core/constants/app_constants.dart';
 
 class PaymentVoucherDialogPicpos extends ConsumerStatefulWidget {

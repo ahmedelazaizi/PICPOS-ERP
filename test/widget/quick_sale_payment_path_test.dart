@@ -15,9 +15,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/pos/widgets/pos_cash_tendering_dialog.dart';
-import 'package:ural_erp/presentation/pos/widgets/pos_dialogs.dart';
-import 'package:ural_erp/presentation/pos_picpos/widgets/picpos_payment_methods.dart';
+import 'package:picpos_erp/presentation/pos/widgets/pos_cash_tendering_dialog.dart';
+import 'package:picpos_erp/presentation/pos/widgets/pos_dialogs.dart';
+import 'package:picpos_erp/presentation/pos_picpos/widgets/picpos_payment_methods.dart';
 
 void main() {
   Future<void> beat(WidgetTester tester, [int frames = 10]) async {

@@ -1,7 +1,7 @@
 // SEC-006 / SEC-015 (audit 2026-10-23): small hardening helpers.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/api/constant_time.dart';
-import 'package:ural_erp/services/cash_drawer_service_io.dart';
+import 'package:picpos_erp/services/api/constant_time.dart';
+import 'package:picpos_erp/services/cash_drawer_service_io.dart';
 
 void main() {
   test('ConstantTime.equals', () {

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/entities/product_entity.dart';
-import 'package:ural_erp/presentation/pos/services/scale_barcode_handler.dart';
+import 'package:picpos_erp/domain/entities/product_entity.dart';
+import 'package:picpos_erp/presentation/pos/services/scale_barcode_handler.dart';
 
 /// Mock data source for testing — returns predefined products.
 class MockBarcodeDataSource implements ScaleBarcodeDataSource {

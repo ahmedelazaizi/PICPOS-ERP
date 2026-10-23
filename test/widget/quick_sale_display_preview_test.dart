@@ -13,7 +13,7 @@
 // المُمرَّرة، وعددُ أعمدة الشبكة = العددُ المُمرَّر.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/settings_picpos/widgets/quick_sale_display_preview.dart';
+import 'package:picpos_erp/presentation/settings_picpos/widgets/quick_sale_display_preview.dart';
 
 Future<void> _pump(
   WidgetTester tester,

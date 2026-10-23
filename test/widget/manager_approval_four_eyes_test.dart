@@ -5,13 +5,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/manager_approval_rules.dart';
-import 'package:ural_erp/data/database/database.dart' as db;
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/repositories/auth_repository.dart';
-import 'package:ural_erp/presentation/widgets/permission_guard.dart';
-import 'package:ural_erp/services/login_rate_limiter.dart';
-import 'package:ural_erp/services/manager_approval_cache.dart';
+import 'package:picpos_erp/core/permissions/manager_approval_rules.dart';
+import 'package:picpos_erp/data/database/database.dart' as db;
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/repositories/auth_repository.dart';
+import 'package:picpos_erp/presentation/widgets/permission_guard.dart';
+import 'package:picpos_erp/services/login_rate_limiter.dart';
+import 'package:picpos_erp/services/manager_approval_cache.dart';
 
 db.User _user(int id, String name) => db.User(
       id: id,

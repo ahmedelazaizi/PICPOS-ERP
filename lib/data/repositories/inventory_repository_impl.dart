@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/sync_interceptor.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/sync_interceptor.dart';
 import '../../domain/repositories/inventory_repository.dart';
 import '../../domain/entities/stock_requisition_entity.dart';
 import '../../domain/entities/stock_requisition_item_entity.dart';

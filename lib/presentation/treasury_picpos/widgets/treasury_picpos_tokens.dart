@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // رموزُ تصميم شاشة الخزينة — **مكانٌ واحدٌ لا سبعة**.
 //
 // قرارُ المالك 2026-08-22 يمنع مشاركةَ تعديلات PicPos مع UralCash، فالودجتُ

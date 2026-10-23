@@ -38,7 +38,7 @@ This file merges the three axis baselines with duplicates removed: [A](<axis-A-s
 
 | Component | Path | Notes |
 |---|---|---|
-| Windows desktop app (primary) | `lib/`, `windows/` | Flutter + Riverpod + Drift. SQLite + SQLCipher locally, or PostgreSQL in server mode. Embedded shelf LAN API on the host. Dart package name `ural_erp` (BRAND-006). |
+| Windows desktop app (primary) | `lib/`, `windows/` | Flutter + Riverpod + Drift. SQLite + SQLCipher locally, or PostgreSQL in server mode. Embedded shelf LAN API on the host. Dart package name `picpos_erp` (BRAND-006). |
 | Web mirror client | `lib/main_web_entry.dart`, `web/` | Reads over WebSocket, writes via the HTTP API. Built in CI as an artifact only. |
 | PicPos Van (field rep) | `mobile/` | `com.picpos.picpos_van`, offline-first, Bluetooth printing, `mobile_scanner`. |
 | PicPos إدارة (Admin) | `mobile_admin/` | `com.picpos.admin`: cloud pairing, signed snapshots, approvals, app lock. Partly placeholder. |

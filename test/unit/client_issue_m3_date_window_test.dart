@@ -20,7 +20,7 @@
 
 import 'package:flutter/material.dart' show DateTimeRange;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/screens/sales_invoices_controller.dart';
+import 'package:picpos_erp/presentation/screens/sales_invoices_controller.dart';
 
 void main() {
   // المستخدم اختار: 2026-07-01 → 2026-07-31

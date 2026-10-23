@@ -10,8 +10,8 @@
 // و`sortOrder` ترتيباً، والصفُّ يُغلَق حين يبلغ مجموعُ النسب مئة.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/printing/template_document.dart';
-import 'package:ural_erp/domain/printing/template_mapper.dart';
+import 'package:picpos_erp/domain/printing/template_document.dart';
+import 'package:picpos_erp/domain/printing/template_mapper.dart';
 
 const _a4 = PaperSpec(
   widthMm: 210,

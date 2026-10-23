@@ -17,9 +17,9 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/data/providers/quick_sale_policy_providers.dart';
-import 'package:ural_erp/domain/models/quick_sale_policy.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/data/providers/quick_sale_policy_providers.dart';
+import 'package:picpos_erp/domain/models/quick_sale_policy.dart';
 
 void main() {
   late AppDatabase db;

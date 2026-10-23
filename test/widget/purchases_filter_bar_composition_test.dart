@@ -19,13 +19,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/data/providers/inventory_providers.dart';
-import 'package:ural_erp/domain/repositories/inventory_repository.dart'
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/data/providers/inventory_providers.dart';
+import 'package:picpos_erp/domain/repositories/inventory_repository.dart'
     show WarehouseData;
-import 'package:ural_erp/presentation/purchases_picpos/screens/purchases_picpos_screen.dart';
-import 'package:ural_erp/presentation/screens/purchases/purchase_invoices_controller.dart';
+import 'package:picpos_erp/presentation/purchases_picpos/screens/purchases_picpos_screen.dart';
+import 'package:picpos_erp/presentation/screens/purchases/purchase_invoices_controller.dart';
 
 /// متحكّمٌ لا يلمس قاعدةً — `build` تُستبدَل كاملةً فلا يُشغَّل تحميلُ الأصل.
 class _FrozenController extends PurchaseInvoicesController {

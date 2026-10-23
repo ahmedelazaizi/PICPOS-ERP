@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // lib/presentation/shell/screen_tabs_bar.dart
 //
 // شريطُ تابات الشاشات — بلاغُ المالك 2026-09-12: «لو خلينا الشاشات فعلا

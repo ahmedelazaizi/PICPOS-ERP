@@ -21,8 +21,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:ural_erp/services/printing/printing_models.dart';
-import 'package:ural_erp/services/printing/report_pdf_generator.dart';
+import 'package:picpos_erp/services/printing/printing_models.dart';
+import 'package:picpos_erp/services/printing/report_pdf_generator.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

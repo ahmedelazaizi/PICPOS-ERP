@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:cryptography/cryptography.dart';
-import 'package:ural_erp/core/utils/license_encoding.dart';
+import 'package:picpos_erp/core/utils/license_encoding.dart';
 
 Future<void> main(List<String> arguments) async {
   if (arguments.length != 2) {

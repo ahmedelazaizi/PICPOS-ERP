@@ -14,13 +14,13 @@
 // `default: return ''`، أو يخرج جدولُ الحركة بأعمدة الفاتورة فيصير ستّةَ
 // أعمدةٍ فارغة. ولا يُمسَك ذلك إلّا بقراءة المطبوع.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/printing/party_statement_snapshot.dart';
-import 'package:ural_erp/domain/printing/print_values.dart';
-import 'package:ural_erp/domain/printing/template_document.dart';
-import 'package:ural_erp/services/printing/layout_engine.dart';
-import 'package:ural_erp/services/printing/paint_plan.dart';
-import 'package:ural_erp/services/printing/template_render_pipeline.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/printing/party_statement_snapshot.dart';
+import 'package:picpos_erp/domain/printing/print_values.dart';
+import 'package:picpos_erp/domain/printing/template_document.dart';
+import 'package:picpos_erp/services/printing/layout_engine.dart';
+import 'package:picpos_erp/services/printing/paint_plan.dart';
+import 'package:picpos_erp/services/printing/template_render_pipeline.dart';
 
 const _margins = MarginsMm(top: 10, right: 10, bottom: 10, left: 10);
 

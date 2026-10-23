@@ -13,7 +13,7 @@
 // الافتراضيَّ لحظةَ الترقية — فيبقى ذيلاً للسلسلة لا بديلاً عنها.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/printing/template_resolver.dart';
+import 'package:picpos_erp/services/printing/template_resolver.dart';
 
 const _doc = 'sales_invoice';
 

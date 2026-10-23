@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' show Variable;
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/id_namespace_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/id_namespace_service.dart';
 
 /// Spec 136 ISS-22 — the client id-namespace floor must lift the auto-increment
 /// sequence for transactional tables (e.g. sales_invoices) to >= 1 billion so

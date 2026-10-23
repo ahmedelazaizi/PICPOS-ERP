@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // إعدادات ربط PicPos تجمع السحابة والشبكة والتطبيقات دون نسخ تدفّقات الإقران.
 // الإجراء للمدير (`system_admin` أو `*`)؛ غيره يرى إشعاراً للعرض فقط.
 

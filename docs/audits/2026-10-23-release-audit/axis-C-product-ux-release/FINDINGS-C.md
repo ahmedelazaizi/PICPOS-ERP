@@ -20,7 +20,7 @@ All findings are bound to `feat/tables-reservations-permissions` at `d69be1eafc7
 | BRAND-003 | CI release job publishes a UralCash-branded Windows build named "PicPos-ERP" | Defect | Critical | P0 | High | **Yes** (if tags are pushed) |
 | BRAND-004 | Every brand default is UralCash (Dart, CMake, Runner.rc, main.cpp) | Defect | High | P0 | High | **Yes** |
 | BRAND-005 | UralCash salts, keys and env-var names are compiled into the PicPos binary | Defect | Medium | P1 | High | No |
-| BRAND-006 | Dart package `ural_erp` plus description "UralCash ERP" | Improvement | Medium | P2 | High | No |
+| BRAND-006 | Dart package `picpos_erp` plus description "UralCash ERP" | Improvement | Medium | P2 | High | No |
 | BRAND-007 | UralCash installer branch, art and build script are kept in the PicPos tree | Defect | Medium | P1 | High | No |
 | BRAND-008 | UralCash icons in `windows/runner/resources` and at the repo root | Defect | Medium | P1 | High | No |
 | BRAND-009 | UralCash-only code paths in `lib/` (theme, nav, vendor strip, wizard title, log prefix, legacy screens) | Defect | Medium | P1 | High | No |
@@ -67,9 +67,9 @@ Release-blocking for the general Windows release: BRAND-001, BRAND-002, BRAND-00
 ## BRAND: exhaustive UralCash inventory
 
 ### Method and scope of the inventory
-- `git grep -I -i` on every tracked file for `uralcash`, `ural_erp`, `monexia`, `avalon`, `nexplay`, `legal_erp`, `يورال`, `uraljo`, and the word-boundary regex `(?<![a-z])ural(?!_erp)`. The plain `ural` term matches "struct**ural**", "nat**ural**" and "pl**ural**", so those false positives were excluded.
+- `git grep -I -i` on every tracked file for `uralcash`, `picpos_erp`, `monexia`, `avalon`, `nexplay`, `legal_erp`, `يورال`, `uraljo`, and the word-boundary regex `(?<![a-z])ural(?!_erp)`. The plain `ural` term matches "struct**ural**", "nat**ural**" and "pl**ural**", so those false positives were excluded.
   - `uralcash`: 359 files / 1,064 hits.
-  - `ural_erp`: 1,875 files / 4,643 hits (almost all `package:ural_erp/` imports).
+  - `picpos_erp`: 1,875 files / 4,643 hits (almost all `package:picpos_erp/` imports).
   - `monexia`: 19 / 38.
   - `avalon`: 12 / 22 (docs, `scripts/gate.sh`, one test).
   - `يورال`: 6.
@@ -159,7 +159,7 @@ Release-blocking for the general Windows release: BRAND-001, BRAND-002, BRAND-00
   - `UralCash-ERP-Integrity-v1` ([invoice_integrity_service.dart:10](<../../../../lib/services/invoice_integrity_service.dart#L10>)) and `UralCash-API-v1` ([api_auth_middleware.dart:146](<../../../../lib/services/api/api_auth_middleware.dart#L146>)).
   - Secure-storage keys: `ural_invoice_integrity_secret_v2`, `ural_db_fallback_enc_key` ([db_key_names.dart:15](<../../../../lib/services/db_key_names.dart#L15>)), `ural_table_bill_hmac_v1`, `ural_api_session_hmac_v1` ([server_secrets.dart:37-38](<../../../../lib/services/api/server_secrets.dart#L37-L38>)), `ural_api_token` ([server_proxy.dart:36](<../../../../lib/services/server_proxy.dart#L36>)), `ural_lan_install_secret_v1` ([lan_pairing_service.dart:15](<../../../../lib/services/api/lan_pairing_service.dart#L15>)).
   - Support env vars: `URAL_RESET_ADMIN_PASSWORD`, `URAL_PURGE_USERS`, `URAL_RESET_SETUP_WIZARD` ([main.dart:738-821](<../../../../lib/main.dart#L738>)) and `URAL_RESET_DEV_PASSWORD` ([developer_auth_service.dart:160](<../../../../lib/services/developer_auth_service.dart#L160>)).
-  - 1,503 `package:ural_erp/…` library URIs (BRAND-006).
+  - 1,503 `package:picpos_erp/…` library URIs (BRAND-006).
 - **Related, not found as a literal:**
   - `UralCash-Session-v1` ([api_session_token.dart:32](<../../../../lib/services/api/api_session_token.dart#L32>)).
   - The pepper `UralCash_Security_Pepper_v2`, built from char codes ([legacy_device_seed.dart:37-42](<../../../../lib/services/legacy_device_seed.dart#L37-L42>)).
@@ -176,25 +176,25 @@ Release-blocking for the general Windows release: BRAND-001, BRAND-002, BRAND-00
   - Accept `PICPOS_*` env vars, keeping `URAL_*` as deprecated aliases for one release.
   - Delete the dead `_generateApiKey` or change the prefix to `pp_`.
 - **Risks:** any mistake in the byte-array transcription is a data-loss bug. Add unit tests asserting that the bytes equal the old literal before the literal is deleted.
-- **Acceptance:** the artifact scan finds 0 occurrences of `uralcash` or `ural_` (except `package:ural_erp/` until BRAND-006), and the existing session, integrity and DB-key tests stay green.
+- **Acceptance:** the artifact scan finds 0 occurrences of `uralcash` or `ural_` (except `package:picpos_erp/` until BRAND-006), and the existing session, integrity and DB-key tests stay green.
 - **Release-blocking:** no (not user-visible), but it is required for a literal reading of the owner requirement.
 
-### BRAND-006: Dart package `ural_erp` plus description "UralCash ERP"
+### BRAND-006: Dart package `picpos_erp` plus description "UralCash ERP"
 - **Type:** Improvement · **Severity** Medium · **Priority** P2 · **Confidence** High · **Class (b)**.
 - **Location:**
-  - [pubspec.yaml:1-2](<../../../../pubspec.yaml#L1-L2>) (`name: ural_erp`, `description: "UralCash ERP - …"`).
-  - `windows/CMakeLists.txt` `project(ural_erp …)`.
-  - 603 `lib/` files and 1,219 `test/` files import `package:ural_erp/`, plus `tool/`, `scripts/` and `server/` comments.
+  - [pubspec.yaml:1-2](<../../../../pubspec.yaml#L1-L2>) (`name: picpos_erp`, `description: "UralCash ERP - …"`).
+  - `windows/CMakeLists.txt` `project(picpos_erp …)`.
+  - 603 `lib/` files and 1,219 `test/` files import `package:picpos_erp/`, plus `tool/`, `scripts/` and `server/` comments.
 - **Feasibility analysis:**
-  - No runtime string keyed on the package name was found (`'ural_erp'` or `"ural_erp"` literal: 0 hits).
+  - No runtime string keyed on the package name was found (`'picpos_erp'` or `"picpos_erp"` literal: 0 hits).
   - Windows data paths come from the exe version resource (CompanyName/ProductName), not the package name.
-  - No `package: 'ural_erp'` asset lookups.
+  - No `package: 'picpos_erp'` asset lookups.
   - So user data risk is low. The cost is about 1,850 mechanical file edits, regenerating `database.g.dart` and `l10n`, and merge conflicts with every open branch and the `patches-for-uralcash` diffs.
 - **Recommendation:**
   - (1) Now: change the `description` to PicPos (zero risk).
   - (2) Rename to `picpos_erp` in a single dedicated mechanical commit once the feature branches are merged, gated by the full test suite.
-  - (3) Alternatively keep `ural_erp` as internal-only and build with `--obfuscate --split-debug-info`. *Not verified* whether obfuscation also removes library URIs from the AOT snapshot; it must be measured with the artifact scan before relying on it.
-- **Acceptance:** `pubspec.yaml` contains no UralCash text, and after a rename the scan finds 0 `ural_erp`.
+  - (3) Alternatively keep `picpos_erp` as internal-only and build with `--obfuscate --split-debug-info`. *Not verified* whether obfuscation also removes library URIs from the AOT snapshot; it must be measured with the artifact scan before relying on it.
+- **Acceptance:** `pubspec.yaml` contains no UralCash text, and after a rename the scan finds 0 `picpos_erp`.
 - **Release-blocking:** no.
 
 ### BRAND-007: UralCash installer branch, art and build script kept in the PicPos tree
@@ -292,7 +292,7 @@ Release-blocking for the general Windows release: BRAND-001, BRAND-002, BRAND-00
   - The comment in `brand.dart:134-138` records that an earlier `uralcash`-only grep missed "Ural Technology / uraljo.com"; the same class of miss happened again with `logo.PNG` and `en.json`.
 - **Remediation:** add `tool/check_brand_artifact.ps1` (reusable in CI) and call it at the end of `build_picpos.bat`, before ISCC, and in CI `build-windows`. It should:
   1. Hash-deny-list the known UralCash images (`logo.PNG`, `icon.ico`, the wizard BMPs).
-  2. Byte-scan every file under the Release dir, as Latin-1 and UTF-16LE, for `(?i)uralcash|ural[ _-]?(cash|erp|technology|information)|monexia|uraljo|يورال|الأورال`. Allow-list `package:ural_erp/` only until BRAND-006.
+  2. Byte-scan every file under the Release dir, as Latin-1 and UTF-16LE, for `(?i)uralcash|ural[ _-]?(cash|erp|technology|information)|monexia|uraljo|يورال|الأورال`. Allow-list `package:picpos_erp/` only until BRAND-006.
   3. Assert the exe VersionInfo fields equal `PicPos`.
   4. Fail with the file name and offset.
   - Also extract the installer with `innounp` or install it silently into a temp VM and rescan, if feasible.
@@ -309,7 +309,7 @@ Release-blocking for the general Windows release: BRAND-001, BRAND-002, BRAND-00
 | B3 (P1, 1–2 d) | Delete the UralCash branch from installer, build scripts and icons: `setup.iss` `#if uralcash`, info file, BMPs, `make_wizard_images.py`, `build_release.bat`, `app_icon_uralcash.ico`, root `icon.ico`, `gen_installer_art` entry. | BRAND-007/008 | None for PicPos (AppId unchanged). | `git grep -i uralcash -- installer windows tool build_*.bat` returns 0. |
 | B4 (P1, 2–4 d, incremental) | Collapse `Brand` to PicPos constants; delete UralCash themes, nav layout, vendor strip, wizard title and `monexia` log prefix; rewrite comments. | BRAND-009 | Medium. Brand-dependent tests (`brand_isolation_test`) must be rewritten as PicPos-only. **Keep the `picpos_*` runtime identifiers unchanged.** | `git grep -i -E "uralcash|monexia|uraljo|يورال" -- lib` returns 0; the full suite is green. |
 | B5 (P1, 1–2 d) | Replace salt and pepper literals with byte-identical constants; migrate secure-storage keys (read old, write new, delete old); add env-var aliases. | BRAND-005 | **High if done wrong.** It can lock users out of an encrypted DB or invalidate sessions and the invoice hash chain. Mitigate with golden tests on derived values before and after, and a pre-change backup. | Scan shows 0 `uralcash`/`ural_` in `app.so`; key-derivation golden tests pass; an existing v196 DB still opens. |
-| B6 (P2, 1 d plus merge cost) | Rename the package to `picpos_erp` in one mechanical commit after the branches merge. Change the description now. | BRAND-006 | Medium (merge conflicts); low for data (no runtime keying found). | Scan shows 0 `ural_erp`; the full suite is green. |
+| B6 (P2, 1 d plus merge cost) | Rename the package to `picpos_erp` in one mechanical commit after the branches merge. Change the description now. | BRAND-006 | Medium (merge conflicts); low for data (no runtime keying found). | Scan shows 0 `picpos_erp`; the full suite is green. |
 | B7 (P2, 1–2 d) | Purge or archive non-shipped content: dead packages, `web_app/`, patches, backports, docs, scripts, SQL headers. Rewrite the customer-facing `tools/postgresql_setup_guide.md` (P1). | BRAND-010 | Low. Archive first if history is wanted. | `git grep -i uralcash` returns only an explicit archive allow-list. |
 | B8 (owner) | Answer the BRAND-011 question about pre-split installs; if any exist, design a one-time importer. | BRAND-011 | Data-loss perception if old installs exist. | Answer recorded, and an importer test if needed. |
 

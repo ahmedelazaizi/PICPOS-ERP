@@ -15,8 +15,8 @@
 // قديمٌ من عنصرِ جدولٍ فالاستدلالُ القديم يبقى احتياطاً — كي لا ينقلب مطبوع.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/templated_invoice_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/templated_invoice_service.dart';
 
 InvoiceTemplateElement el({
   required int id,

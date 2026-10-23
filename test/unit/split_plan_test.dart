@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/split_plan.dart';
+import 'package:picpos_erp/domain/models/split_plan.dart';
 
 void main() {
   group('SplitPlan.equal', () {

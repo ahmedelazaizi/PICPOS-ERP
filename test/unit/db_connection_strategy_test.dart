@@ -3,9 +3,9 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/db_connection_strategy.dart';
-import 'package:ural_erp/data/database/pg_config.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/db_connection_strategy.dart';
+import 'package:picpos_erp/data/database/pg_config.dart';
 
 void main() {
   group('DbConnectionResult model', () {

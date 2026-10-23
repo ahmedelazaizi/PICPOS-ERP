@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // lib/presentation/settings_picpos/screens/guest_services_settings_picpos.dart
 //
 // إعداداتُ خدمات الضيف والعميل — بلاغُ المالك 2026-09-12:

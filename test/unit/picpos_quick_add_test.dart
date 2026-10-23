@@ -20,16 +20,16 @@
 // هشٌّ ومكلفٌ مقابل قيمةٍ أقلّ من اختبار دالّة القرار الخالصة مباشرة —
 // نفسُ المفاضلة الموثّقة في `picpos_quick_return_lines_test.dart`.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/returnable_line.dart';
+import 'package:picpos_erp/domain/models/returnable_line.dart';
 // ⚠️ التعدادُ من **نسخة PicPos** لا من المشترَك: `shouldOfferQuickAdd` صارت
 // تقرأ `PicposBarcodeSearchErrorKind` بعد استنساخ المتحكّم (‏قرارُ المالك
 // 2026-08-29). والنوعان متطابقا القيم ومختلفا الهويّة — وهذا هو المقصود:
 // تعديلُ أحدِهما لا يرتدُّ على الآخر.
-import 'package:ural_erp/presentation/pos_picpos/providers/picpos_search_controller.dart'
+import 'package:picpos_erp/presentation/pos_picpos/providers/picpos_search_controller.dart'
     show PicposBarcodeSearchErrorKind;
-import 'package:ural_erp/presentation/pos_picpos/screens/picpos_pos_screen.dart'
+import 'package:picpos_erp/presentation/pos_picpos/screens/picpos_pos_screen.dart'
     as picpos;
-import 'package:ural_erp/presentation/pos_picpos/state/pos_return_mode.dart';
+import 'package:picpos_erp/presentation/pos_picpos/state/pos_return_mode.dart';
 
 void main() {
   PosReturnMode buildReturnMode() {

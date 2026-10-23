@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'brand.dart';
 
 /// Distribution flavor used for packaging, branding, and default profile

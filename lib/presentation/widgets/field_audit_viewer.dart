@@ -1,5 +1,5 @@
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../data/database/database.dart'; // Only for FieldAuditLog type

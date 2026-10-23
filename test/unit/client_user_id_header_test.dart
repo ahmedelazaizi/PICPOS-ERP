@@ -25,10 +25,10 @@ import 'package:flutter_test/flutter_test.dart';
 import '../helpers/library_source.dart';
 import 'package:shelf/shelf.dart';
 
-import 'package:ural_erp/data/database/sync_interceptor.dart';
-import 'package:ural_erp/services/api/api_auth_middleware.dart';
-import 'package:ural_erp/services/api/api_session_token.dart';
-import 'package:ural_erp/services/api/api_user_context.dart';
+import 'package:picpos_erp/data/database/sync_interceptor.dart';
+import 'package:picpos_erp/services/api/api_auth_middleware.dart';
+import 'package:picpos_erp/services/api/api_session_token.dart';
+import 'package:picpos_erp/services/api/api_user_context.dart';
 
 void main() {
   group('SyncInterceptor.currentUserId (client-side session selector)', () {

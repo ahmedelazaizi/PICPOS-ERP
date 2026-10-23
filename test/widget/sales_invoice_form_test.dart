@@ -13,8 +13,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/entities/quotation_entity.dart';
-import 'package:ural_erp/presentation/screens/widgets/sales_invoices/sales_invoice_form.dart';
+import 'package:picpos_erp/domain/entities/quotation_entity.dart';
+import 'package:picpos_erp/presentation/screens/widgets/sales_invoices/sales_invoice_form.dart';
 
 // Typed no-op callbacks. Using the public typedefs from the form ensures
 // the parameter list stays in sync with the production widget — a function

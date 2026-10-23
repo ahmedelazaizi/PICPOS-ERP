@@ -5,8 +5,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/analytics/account_classifier.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/analytics/account_classifier.dart';
 
 void main() {
   const purposesPath =

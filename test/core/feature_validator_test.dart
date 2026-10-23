@@ -7,11 +7,11 @@
 // you something real — don't loosen the assertions without updating the
 // ═══════════════════════════════════════════════════════════════════════════
 
-import 'package:ural_erp/core/config/business_profile.dart';
-import 'package:ural_erp/core/config/feature_dependency_graph.dart';
-import 'package:ural_erp/core/config/feature_key.dart';
-import 'package:ural_erp/core/config/feature_policy.dart';
-import 'package:ural_erp/core/config/feature_validator.dart';
+import 'package:picpos_erp/core/config/business_profile.dart';
+import 'package:picpos_erp/core/config/feature_dependency_graph.dart';
+import 'package:picpos_erp/core/config/feature_key.dart';
+import 'package:picpos_erp/core/config/feature_policy.dart';
+import 'package:picpos_erp/core/config/feature_validator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

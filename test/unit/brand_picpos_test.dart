@@ -15,17 +15,17 @@
 
 import 'package:flutter/material.dart' show Color;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/config/app_config.dart';
+import 'package:picpos_erp/core/config/app_config.dart';
 // `BusinessProfile` و`FeaturePolicy` يصلان عبر `app_config.dart` المستورد
 // فوق — استيرادُهما صراحةً يرفع خطَّ أساس analyze بلا فائدة.
-import 'package:ural_erp/core/config/brand.dart';
-import 'package:ural_erp/core/constants/app_constants.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/core/navigation/screen_registry.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
-import 'package:ural_erp/core/theme/app_theme.dart';
-import 'package:ural_erp/data/database/connection_io.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/core/config/brand.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/navigation/screen_registry.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/core/theme/app_theme.dart';
+import 'package:picpos_erp/data/database/connection_io.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
 
 void main() {
   // مفيش `skip` على مستوى الملف في flutter_test، فالبوابة على مستوى الجروب.

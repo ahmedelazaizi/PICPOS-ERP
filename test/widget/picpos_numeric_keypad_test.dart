@@ -1,6 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/pos_picpos/widgets/picpos_numeric_keypad_dialog.dart';
+import 'package:picpos_erp/presentation/pos_picpos/widgets/picpos_numeric_keypad_dialog.dart';
 
 /// The cart-cell numeric keypad (طلب ٣).
 ///

@@ -5,7 +5,7 @@
 // unaffected (they don't do CORS).
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/network_service.dart';
+import 'package:picpos_erp/services/network_service.dart';
 
 void main() {
   group('A-SEC-5 CORS origin allowlist', () {

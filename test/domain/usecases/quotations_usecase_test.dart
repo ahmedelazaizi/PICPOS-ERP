@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/usecases/quotations/create_quotation_usecase.dart';
-import 'package:ural_erp/domain/repositories/i_quotations_repository.dart';
-import 'package:ural_erp/domain/entities/quotation_entity.dart';
-import 'package:ural_erp/domain/entities/cart_item_entity.dart';
+import 'package:picpos_erp/domain/usecases/quotations/create_quotation_usecase.dart';
+import 'package:picpos_erp/domain/repositories/i_quotations_repository.dart';
+import 'package:picpos_erp/domain/entities/quotation_entity.dart';
+import 'package:picpos_erp/domain/entities/cart_item_entity.dart';
 import 'package:flutter/material.dart';
 
 /// Fake repository for testing usecases without DB

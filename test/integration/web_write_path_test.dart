@@ -20,16 +20,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as shelf_io;
-import 'package:ural_erp/data/database/sync_interceptor.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/services/api/api_auth_middleware.dart';
-import 'package:ural_erp/services/api/api_handler.dart';
-import 'package:ural_erp/services/api/api_session_token.dart';
-import 'package:ural_erp/services/client_write_interceptor.dart';
-import 'package:ural_erp/services/server_proxy.dart';
-import 'package:ural_erp/services/write_router.dart';
-import 'package:ural_erp/web/web_providers.dart';
-import 'package:ural_erp/web/web_session.dart';
+import 'package:picpos_erp/data/database/sync_interceptor.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/services/api/api_auth_middleware.dart';
+import 'package:picpos_erp/services/api/api_handler.dart';
+import 'package:picpos_erp/services/api/api_session_token.dart';
+import 'package:picpos_erp/services/client_write_interceptor.dart';
+import 'package:picpos_erp/services/server_proxy.dart';
+import 'package:picpos_erp/services/write_router.dart';
+import 'package:picpos_erp/web/web_providers.dart';
+import 'package:picpos_erp/web/web_session.dart';
 
 /// رسالة بدء المضيف: منفذ الإرجاع + هل تُفتح مسارات الكتابة لرمز الويب.
 class _HostArgs {

@@ -5,7 +5,7 @@
 // البنك = دائنُ دفترنا). فالتحليلُ ينقل ما في العمودَين كما هو، والقالبُ
 // يحمل سطرَ الشرح.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/services/bank_statement_row.dart';
+import 'package:picpos_erp/data/services/bank_statement_row.dart';
 
 void main() {
   test('مرساة: صفٌّ سليمٌ يُقبَل بحقوله', () {

@@ -15,7 +15,7 @@
 //   • Client mode without branch_id: base URI returned unchanged.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/websocket_sync_client.dart';
+import 'package:picpos_erp/services/websocket_sync_client.dart';
 
 void main() {
   final base = Uri.parse('ws://hq.local:8080/ws');

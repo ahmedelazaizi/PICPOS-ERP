@@ -24,8 +24,8 @@
 // [CostingMethod] لم يعد يحمل إلا الصيغ المسموحة، والاختيار بينها قرار إعداد
 // لا تفضيل استخدام.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/repositories/settings_repository.dart';
-import 'package:ural_erp/services/costing_method_service.dart';
+import 'package:picpos_erp/domain/repositories/settings_repository.dart';
+import 'package:picpos_erp/services/costing_method_service.dart';
 
 void main() {
   group('الصيغ المتاحة محصورة في المسموح به', () {

@@ -30,8 +30,8 @@
 // وتصل السلسلةَ مقطعاً واحداً يساريَّ الاتّجاه.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/templated_invoice_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/templated_invoice_service.dart';
 
 import '../helpers/pdf_probe.dart';
 

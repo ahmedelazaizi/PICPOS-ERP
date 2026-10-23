@@ -16,7 +16,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/tax/tax_rate_policy.dart';
+import 'package:picpos_erp/core/tax/tax_rate_policy.dart';
 
 /// نسخة طبق الأصل من `ExcelService._normalizeTaxRate`.
 double normalizeTaxRate(double raw, {List<double>? allowed}) {

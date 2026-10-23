@@ -18,7 +18,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/treasury_picpos/widgets/treasury_actions_grid_picpos.dart';
+import 'package:picpos_erp/presentation/treasury_picpos/widgets/treasury_actions_grid_picpos.dart';
 
 void main() {
   /// نفسُ تركيب جسم الشاشة: عمودٌ ← بانٍ ← صفٌّ فيه مرنٌ وثابتُ العرض.

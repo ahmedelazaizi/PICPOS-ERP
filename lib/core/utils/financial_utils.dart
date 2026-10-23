@@ -1,5 +1,5 @@
 import 'dart:math' as math;
-import 'package:ural_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
 
 /// Utility class for precise financial calculations.
 /// Avoids floating-point rounding errors by using standard fixed-point strategies

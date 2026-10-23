@@ -14,7 +14,7 @@
 // موازياً ينحرف يوماً عن السلوك.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/sales_return_refund_split.dart';
+import 'package:picpos_erp/domain/models/sales_return_refund_split.dart';
 
 /// مختصرٌ يملأ ما لا تعنيه الحالةُ المختبَرة.
 SalesReturnRefundSplit split({

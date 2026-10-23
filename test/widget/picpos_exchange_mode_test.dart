@@ -6,8 +6,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/exchange_settlement.dart';
-import 'package:ural_erp/presentation/pos_picpos/widgets/picpos_exchange_mode_banner.dart';
+import 'package:picpos_erp/domain/models/exchange_settlement.dart';
+import 'package:picpos_erp/presentation/pos_picpos/widgets/picpos_exchange_mode_banner.dart';
 
 Widget _wrap(Widget child) => MaterialApp(
       home: Directionality(

@@ -33,8 +33,8 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/delta_pull_service.dart';
-import 'package:ural_erp/services/id_namespace_service.dart';
+import 'package:picpos_erp/services/delta_pull_service.dart';
+import 'package:picpos_erp/services/id_namespace_service.dart';
 
 /// الأعمدةُ الخمسةُ التي يقوم عليها مسارُ الدلتا.
 const _syncColumns = <String>[

@@ -1,4 +1,4 @@
-import 'package:ural_erp/services/backup/remote_backup_config.dart';
+import 'package:picpos_erp/services/backup/remote_backup_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

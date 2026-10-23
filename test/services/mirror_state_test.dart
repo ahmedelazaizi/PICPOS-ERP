@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ural_erp/services/mirror_state.dart';
-import 'package:ural_erp/services/network_service.dart';
+import 'package:picpos_erp/services/mirror_state.dart';
+import 'package:picpos_erp/services/network_service.dart';
 
 /// MM.A foundation tests — exercises the persistence + lifecycle of
 /// MirrorState and confirms NetworkMode.mirror is reachable through the

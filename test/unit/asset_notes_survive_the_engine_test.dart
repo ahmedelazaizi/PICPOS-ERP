@@ -31,7 +31,7 @@
 // فتاتُ خبزٍ لا سجلّ — فيُضاف سطراً تحت ما كتبه المستخدم ولا يحلّ محلَّه.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 void main() {
   late AppDatabase db;

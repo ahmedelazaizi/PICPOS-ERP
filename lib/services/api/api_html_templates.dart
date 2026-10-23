@@ -5,7 +5,7 @@
 // Extracted from ApiHandler for maintainability (PIR C-01).
 // Contains the HTML/CSS/JS templates served by the embedded server.
 
-import 'package:ural_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
 
 /// Digital Menu HTML — served at /menu
 /// Fetches products/categories from /api/menu and renders a grid layout.

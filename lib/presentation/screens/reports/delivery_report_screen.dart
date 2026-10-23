@@ -1,11 +1,11 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 import 'package:flutter/material.dart';
 // دفعة ١٢ — حارس reports_delivery_recon على زرار «تسوية».
 import '../../../core/permissions/permission_codes.dart';
 import '../../widgets/permission_guard.dart';
-import 'package:ural_erp/core/widgets/app_toast.dart';
+import 'package:picpos_erp/core/widgets/app_toast.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';

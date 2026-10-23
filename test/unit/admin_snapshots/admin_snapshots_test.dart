@@ -1,11 +1,11 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:picpos_api_client/picpos_api_client.dart';
-import 'package:ural_erp/core/constants/app_constants.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/entities/accounting_entities.dart';
-import 'package:ural_erp/services/admin_snapshots/admin_snapshot_builder.dart';
-import 'package:ural_erp/services/admin_snapshots/admin_user_mirror.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/entities/accounting_entities.dart';
+import 'package:picpos_erp/services/admin_snapshots/admin_snapshot_builder.dart';
+import 'package:picpos_erp/services/admin_snapshots/admin_user_mirror.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

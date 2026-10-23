@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_data_table.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_filter_strip.dart';
-import 'package:ural_erp/core/theme/picpos_theme.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_data_table.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_filter_strip.dart';
+import 'package:picpos_erp/core/theme/picpos_theme.dart';
 
 double _contrast(Color first, Color second) {
   final a = first.computeLuminance();

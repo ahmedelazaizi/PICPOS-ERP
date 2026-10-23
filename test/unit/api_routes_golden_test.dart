@@ -11,8 +11,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf/shelf.dart' as shelf;
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/api/api_handler.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/api/api_handler.dart';
 
 final _token = RegExp(
   r"router\.(get|post|put|delete|patch|all|head|options)\(\s*'([^']+)'"

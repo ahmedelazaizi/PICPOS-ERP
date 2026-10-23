@@ -2,8 +2,8 @@
 // registry before it offers to exit; a refusal keeps the app open.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/navigation/dirty_screens_registry.dart';
-import 'package:ural_erp/presentation/shell/app_shell_close_action.dart';
+import 'package:picpos_erp/core/navigation/dirty_screens_registry.dart';
+import 'package:picpos_erp/presentation/shell/app_shell_close_action.dart';
 
 void main() {
   late List<String> log;

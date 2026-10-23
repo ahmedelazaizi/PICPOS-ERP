@@ -14,7 +14,7 @@
 // يقول شيئاً، وهو أسوأُ من لا رسم.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_report_chart.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_report_chart.dart';
 
 void main() {
   Future<void> show(WidgetTester tester, Widget child, Size size) async {

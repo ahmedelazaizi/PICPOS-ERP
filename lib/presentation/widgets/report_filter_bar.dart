@@ -37,7 +37,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter/material.dart';
-import 'package:ural_erp/core/config/brand.dart';
+import 'package:picpos_erp/core/config/brand.dart';
 import '../picpos_shell/picpos_report_bar.dart';
 import 'report_components.dart' show DateRangeFilter;
 

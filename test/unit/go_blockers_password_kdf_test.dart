@@ -24,12 +24,12 @@
 // «صحيح» من الفرع القديم فيمرُّ صامتاً.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/repositories/settings_repository_cached.dart';
-import 'package:ural_erp/services/admin_password_service.dart';
-import 'package:ural_erp/services/api/server_login_throttle.dart';
-import 'package:ural_erp/services/developer_auth_service.dart';
-import 'package:ural_erp/services/security_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/repositories/settings_repository_cached.dart';
+import 'package:picpos_erp/services/admin_password_service.dart';
+import 'package:picpos_erp/services/api/server_login_throttle.dart';
+import 'package:picpos_erp/services/developer_auth_service.dart';
+import 'package:picpos_erp/services/security_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

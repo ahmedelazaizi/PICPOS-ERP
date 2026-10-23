@@ -2,13 +2,13 @@
 // everywhere. One rule (`effectiveItemTaxRate`) feeds every pure engine;
 // non-exempt items must compute exactly as before.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/tax/effective_item_tax_rate.dart';
-import 'package:ural_erp/core/tax/einvoice_exempt_codes.dart';
-import 'package:ural_erp/domain/entities/cart_item_entity.dart';
-import 'package:ural_erp/domain/models/picpos_invoice_draft.dart';
-import 'package:ural_erp/domain/models/table_order_totals.dart';
-import 'package:ural_erp/domain/usecases/sales/add_to_cart_usecase.dart';
-import 'package:ural_erp/domain/usecases/sales/calculate_invoice_totals_usecase.dart';
+import 'package:picpos_erp/core/tax/effective_item_tax_rate.dart';
+import 'package:picpos_erp/core/tax/einvoice_exempt_codes.dart';
+import 'package:picpos_erp/domain/entities/cart_item_entity.dart';
+import 'package:picpos_erp/domain/models/picpos_invoice_draft.dart';
+import 'package:picpos_erp/domain/models/table_order_totals.dart';
+import 'package:picpos_erp/domain/usecases/sales/add_to_cart_usecase.dart';
+import 'package:picpos_erp/domain/usecases/sales/calculate_invoice_totals_usecase.dart';
 
 CartItemEntity _line({
   required int id,

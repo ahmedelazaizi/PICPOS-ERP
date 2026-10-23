@@ -10,7 +10,7 @@
 // الصافي — ثلاثةُ أرقامٍ لا رقم.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/user_shift_summary.dart';
+import 'package:picpos_erp/domain/models/user_shift_summary.dart';
 
 ShiftSummaryInput _row({
   required String userName,

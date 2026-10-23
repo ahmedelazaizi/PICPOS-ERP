@@ -75,7 +75,7 @@
 
 ```dart
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/exchange_settlement.dart';
+import 'package:picpos_erp/domain/models/exchange_settlement.dart';
 
 void main() {
   group('settleExchange', () {
@@ -232,7 +232,7 @@ test('شقُّ الارتجاع يستعمل أساسَ الاسترداد ال�
 });
 ```
 
-وأضِف الاستيرادَ `import 'package:ural_erp/domain/models/return_refund_calculator.dart';`.
+وأضِف الاستيرادَ `import 'package:picpos_erp/domain/models/return_refund_calculator.dart';`.
 
 - [ ] **خطوة ٢: شغّله**
 

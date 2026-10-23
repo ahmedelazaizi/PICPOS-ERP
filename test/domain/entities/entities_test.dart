@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/entities/cart_item_entity.dart';
-import 'package:ural_erp/domain/entities/product_entity.dart';
-import 'package:ural_erp/domain/entities/party_entity.dart';
-import 'package:ural_erp/domain/entities/invoice_entity.dart';
+import 'package:picpos_erp/domain/entities/cart_item_entity.dart';
+import 'package:picpos_erp/domain/entities/product_entity.dart';
+import 'package:picpos_erp/domain/entities/party_entity.dart';
+import 'package:picpos_erp/domain/entities/invoice_entity.dart';
 
 void main() {
   group('CartItemEntity', () {

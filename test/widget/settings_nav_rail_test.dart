@@ -10,9 +10,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/core/constants/app_constants.dart';
-import 'package:ural_erp/presentation/settings_picpos/widgets/settings_nav_rail.dart';
-import 'package:ural_erp/services/license_service.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/presentation/settings_picpos/widgets/settings_nav_rail.dart';
+import 'package:picpos_erp/services/license_service.dart';
 
 const _items = <SettingsNavRailItem>[
   SettingsNavRailItem(

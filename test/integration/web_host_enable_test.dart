@@ -17,14 +17,14 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as shelf_io;
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/api/api_auth_middleware.dart';
-import 'package:ural_erp/services/api/api_handler.dart';
-import 'package:ural_erp/services/api/api_rate_limiter.dart';
-import 'package:ural_erp/services/api/api_session_token.dart';
-import 'package:ural_erp/services/api/api_web_session_handler.dart';
-import 'package:ural_erp/services/api/web_static_handler.dart';
-import 'package:ural_erp/services/network_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/api/api_auth_middleware.dart';
+import 'package:picpos_erp/services/api/api_handler.dart';
+import 'package:picpos_erp/services/api/api_rate_limiter.dart';
+import 'package:picpos_erp/services/api/api_session_token.dart';
+import 'package:picpos_erp/services/api/api_web_session_handler.dart';
+import 'package:picpos_erp/services/api/web_static_handler.dart';
+import 'package:picpos_erp/services/network_service.dart';
 
 void main() {
   late Directory webDir;

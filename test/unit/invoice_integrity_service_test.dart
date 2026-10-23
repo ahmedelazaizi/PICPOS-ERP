@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/invoice_integrity_service.dart';
+import 'package:picpos_erp/services/invoice_integrity_service.dart';
 
 void main() {
   const invoice = <String, Object>{

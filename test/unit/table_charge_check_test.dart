@@ -6,7 +6,7 @@
 // الفرقَ يُكتشَف بدقّة `AppConstants.decimalPlaces` لا بمقارنة `double`
 // ساذجة.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/table_charge_check.dart';
+import 'package:picpos_erp/domain/models/table_charge_check.dart';
 
 void main() {
   test('التطابقُ التامُّ لا يُنتج فرقاً', () {

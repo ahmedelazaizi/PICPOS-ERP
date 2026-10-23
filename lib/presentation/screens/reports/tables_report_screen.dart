@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 // ═══════════════════════════════════════════════════════════════════════════
 // تقريرُ الطاولات — الإيرادُ ودورانُ الطاولة ونصيبُ الضيف

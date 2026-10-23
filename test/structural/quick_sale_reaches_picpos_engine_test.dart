@@ -25,7 +25,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/quick_sale_policy.dart';
+import 'package:picpos_erp/domain/models/quick_sale_policy.dart';
 
 const _picposEngineDirs = [
   'lib/presentation/pos_picpos',

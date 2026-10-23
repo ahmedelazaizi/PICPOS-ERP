@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // Spec 078 — تقريرُ جاهزيّة صلاحيّات الخادم.
 //
 // ── لماذا لم يعد ديالوجَ تبديل ───────────────────────────────────────────

@@ -13,19 +13,19 @@
 //     UI used to swallow silently (see picpos_purchase_return_save_feedback_test).
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/errors/app_exceptions.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/repositories/drift_accounting_repository.dart';
-import 'package:ural_erp/data/repositories/purchases_repository_impl.dart';
-import 'package:ural_erp/domain/models/document_record.dart';
-import 'package:ural_erp/domain/repositories/audit_repository_interface.dart';
-import 'package:ural_erp/domain/repositories/i_products_repository.dart';
-import 'package:ural_erp/domain/repositories/inventory_repository.dart';
-import 'package:ural_erp/domain/repositories/parties_repository.dart';
-import 'package:ural_erp/domain/repositories/purchases_repository.dart';
-import 'package:ural_erp/domain/repositories/settings_repository.dart';
-import 'package:ural_erp/domain/repositories/treasury_repository.dart';
-import 'package:ural_erp/services/accounting_service.dart';
+import 'package:picpos_erp/core/errors/app_exceptions.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/repositories/drift_accounting_repository.dart';
+import 'package:picpos_erp/data/repositories/purchases_repository_impl.dart';
+import 'package:picpos_erp/domain/models/document_record.dart';
+import 'package:picpos_erp/domain/repositories/audit_repository_interface.dart';
+import 'package:picpos_erp/domain/repositories/i_products_repository.dart';
+import 'package:picpos_erp/domain/repositories/inventory_repository.dart';
+import 'package:picpos_erp/domain/repositories/parties_repository.dart';
+import 'package:picpos_erp/domain/repositories/purchases_repository.dart';
+import 'package:picpos_erp/domain/repositories/settings_repository.dart';
+import 'package:picpos_erp/domain/repositories/treasury_repository.dart';
+import 'package:picpos_erp/services/accounting_service.dart';
 
 /// (purchased qty, unit cost, returned qty) — 93000 bought, 970 returned.
 const _lines = [

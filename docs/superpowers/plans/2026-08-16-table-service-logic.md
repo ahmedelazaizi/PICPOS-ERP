@@ -38,7 +38,7 @@
 
 ### قيمٌ ثابتة
 
-- اسم الحزمة في الاستيراد: `ural_erp`
+- اسم الحزمة في الاستيراد: `picpos_erp`
 - `AppConstants.decimalPlaces == 3` ⇒ معاملُ التدوير `1000`
 - خطُّ أساس `flutter analyze lib test` = **٦ info**. أيُّ زيادةٍ فشل.
 
@@ -92,7 +92,7 @@
 
 ```dart
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/split_plan.dart';
+import 'package:picpos_erp/domain/models/split_plan.dart';
 
 void main() {
   group('SplitPlan.equal', () {
@@ -196,7 +196,7 @@ void main() {
 flutter test test/unit/split_plan_test.dart
 ```
 
-المتوقَّع: فشلٌ في التحميل — `Target of URI doesn't exist: 'package:ural_erp/domain/models/split_plan.dart'`.
+المتوقَّع: فشلٌ في التحميل — `Target of URI doesn't exist: 'package:picpos_erp/domain/models/split_plan.dart'`.
 
 - [ ] **Step 3: اكتب أقلَّ تنفيذٍ يُنجح الاختبار**
 
@@ -496,7 +496,7 @@ dart run build_runner build --delete-conflicting-outputs
 // بصمتٍ، و`flutter analyze` لا يكشفها. هذا الاختبار يكشفها.
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 void main() {
   late AppDatabase db;
@@ -615,9 +615,9 @@ git commit -m "feat(db): v154 — الطلبُ يحمل ضيوفَه وخصمَ�
 
 ```dart
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/models/table_status.dart';
-import 'package:ural_erp/services/table_session_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/models/table_status.dart';
+import 'package:picpos_erp/services/table_session_service.dart';
 
 void main() {
   late AppDatabase db;
@@ -783,7 +783,7 @@ void main() {
 flutter test test/unit/table_session_service_test.dart
 ```
 
-المتوقَّع: فشلُ تحميلٍ — `Target of URI doesn't exist: 'package:ural_erp/services/table_session_service.dart'`.
+المتوقَّع: فشلُ تحميلٍ — `Target of URI doesn't exist: 'package:picpos_erp/services/table_session_service.dart'`.
 
 - [ ] **Step 3: اكتب `TableStatus`**
 
@@ -1898,10 +1898,10 @@ git commit -m "feat(tables): الدفعُ الجزئيُّ حالةٌ طبيعي
 
 ```dart
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/models/split_plan.dart';
-import 'package:ural_erp/services/table_checkout_coordinator.dart';
-import 'package:ural_erp/services/table_session_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/models/split_plan.dart';
+import 'package:picpos_erp/services/table_checkout_coordinator.dart';
+import 'package:picpos_erp/services/table_session_service.dart';
 
 void main() {
   late AppDatabase db;
@@ -2115,7 +2115,7 @@ git commit -m "feat(tables): خطّةُ التقسيم تُبنى من حالة 
 
 ```dart
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
 
 void main() {
   test('صلاحيةُ خصم الطاولة مسجَّلةٌ في تصنيف الطاولات', () {
@@ -2201,8 +2201,8 @@ git commit -m "feat(perms): صلاحيةُ خصم الطاولة، وطباعة�
 
 ```dart
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/table_actions.dart';
-import 'package:ural_erp/domain/models/table_status.dart';
+import 'package:picpos_erp/domain/models/table_actions.dart';
+import 'package:picpos_erp/domain/models/table_status.dart';
 
 void main() {
   test('المتاحةُ لا تُظهر دفعاً ولا نقلاً', () {

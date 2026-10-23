@@ -12,8 +12,8 @@
 // والورقُ المتّصلُ بلا ارتفاعٍ لا يُقسَّم مهما طال — مئةُ صنفٍ ورقةٌ واحدة.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/printing/template_document.dart';
-import 'package:ural_erp/services/printing/layout_engine.dart';
+import 'package:picpos_erp/domain/printing/template_document.dart';
+import 'package:picpos_erp/services/printing/layout_engine.dart';
 
 const _thermal58 = PaperSpec.continuous(
   widthMm: 58,

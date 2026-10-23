@@ -13,8 +13,8 @@
 // الموحَّدُ يفحص `pos_shift_close`، لا وجودَ المستخدم فحسب.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/presentation/shift_close_picpos/widgets/picpos_close_permissions.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/presentation/shift_close_picpos/widgets/picpos_close_permissions.dart';
 
 void main() {
   test('من يملك pos_shift_close يُغلق', () {

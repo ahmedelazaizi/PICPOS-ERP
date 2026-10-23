@@ -17,14 +17,14 @@ import 'package:http/http.dart' as http;
 import 'package:shelf/shelf.dart' as shelf;
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_router/shelf_router.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/api/api_auth_middleware.dart';
-import 'package:ural_erp/services/api/api_handler.dart';
-import 'package:ural_erp/services/api/api_session_token.dart';
-import 'package:ural_erp/services/api/api_web_session_handler.dart';
-import 'package:ural_erp/services/api/web_session_guard.dart';
-import 'package:ural_erp/services/web_read/drift_json_channel.dart';
-import 'package:ural_erp/services/web_read/web_read_channel_host.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/api/api_auth_middleware.dart';
+import 'package:picpos_erp/services/api/api_handler.dart';
+import 'package:picpos_erp/services/api/api_session_token.dart';
+import 'package:picpos_erp/services/api/api_web_session_handler.dart';
+import 'package:picpos_erp/services/api/web_session_guard.dart';
+import 'package:picpos_erp/services/web_read/drift_json_channel.dart';
+import 'package:picpos_erp/services/web_read/web_read_channel_host.dart';
 import 'package:web_socket_channel/io.dart';
 
 /// عميل بلا جداول معرَّفة؛ SQL خام فقط (التحقق على المضيف).

@@ -4,9 +4,9 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' as drift;
-import 'package:ural_erp/core/errors/app_error.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/balance_reconciliation_service.dart';
+import 'package:picpos_erp/core/errors/app_error.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/balance_reconciliation_service.dart';
 
 void main() {
   late AppDatabase db;

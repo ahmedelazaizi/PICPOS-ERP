@@ -9,10 +9,10 @@
 
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/models/document_record.dart';
-import 'package:ural_erp/domain/models/voucher_book.dart';
-import 'package:ural_erp/services/delta_pull_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/models/document_record.dart';
+import 'package:picpos_erp/domain/models/voucher_book.dart';
+import 'package:picpos_erp/services/delta_pull_service.dart';
 
 void main() {
   late AppDatabase db;

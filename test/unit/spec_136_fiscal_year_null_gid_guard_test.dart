@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNull, isNotNull;
-import 'package:ural_erp/core/utils/uuid_v7.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/sync/strategies/fiscal_year_sync_strategy.dart';
+import 'package:picpos_erp/core/utils/uuid_v7.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/sync/strategies/fiscal_year_sync_strategy.dart';
 
 /// Spec 136 — fiscal-year silent-drift guard.
 ///

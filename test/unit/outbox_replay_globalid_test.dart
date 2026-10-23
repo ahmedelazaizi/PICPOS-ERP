@@ -23,7 +23,7 @@
 // `_replayOperation` بياخد `ServerProxy` حقيقي وبيلمس قاعدة البيانات والشبكة.
 // اللي انكسر هو **قراءة الحقل من الـpayload** — فده اللي اتفصل واتغطّى.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/offline_sync_worker.dart';
+import 'package:picpos_erp/services/offline_sync_worker.dart';
 
 void main() {
   group('replayGlobalIdFrom — قراءة الـglobalId من payload مخزّن', () {

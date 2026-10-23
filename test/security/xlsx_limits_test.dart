@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/services/xlsx_sanitizer.dart';
+import 'package:picpos_erp/data/services/xlsx_sanitizer.dart';
 
 Uint8List _zip(int entries, {int bytesEach = 10}) {
   final a = Archive();

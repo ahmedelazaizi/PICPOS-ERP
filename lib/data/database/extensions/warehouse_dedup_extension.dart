@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart' show Variable;
-import 'package:ural_erp/core/logging/diagnostic_logger.dart';
+import 'package:picpos_erp/core/logging/diagnostic_logger.dart';
 import '../database.dart';
 
 /// Spec 150 / BUG 5b — merge duplicate warehouse rows that piled up on

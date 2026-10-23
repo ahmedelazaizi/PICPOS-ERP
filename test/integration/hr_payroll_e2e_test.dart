@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNotNull;
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/extensions/hr_extensions.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/extensions/hr_extensions.dart';
 
 /// E2E Test: HR Payroll Lifecycle
 /// Employee → Salary Payment → Overtime → Treasury Integration

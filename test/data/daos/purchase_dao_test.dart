@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNotNull;
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 /// Id of the seeded `admin` user (role_id 1 = مدير النظام), who holds
 /// `purchases_edit` through the system-admin bypass — `purchases_edit` is a

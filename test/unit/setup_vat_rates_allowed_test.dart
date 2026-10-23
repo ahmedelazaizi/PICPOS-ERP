@@ -3,8 +3,8 @@
 // أو استيرادُ Excel أو الـAPI.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/tax/tax_rate_policy.dart';
-import 'package:ural_erp/presentation/screens/setup_wizard_screen.dart';
+import 'package:picpos_erp/core/tax/tax_rate_policy.dart';
+import 'package:picpos_erp/presentation/screens/setup_wizard_screen.dart';
 
 void main() {
   const owner = <double>[0, 1, 2, 4, 5, 10, 14, 15, 16];

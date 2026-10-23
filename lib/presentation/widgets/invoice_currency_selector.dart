@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // F-07: Multi-Currency Invoice Selector Widget
 // Adds currency selection + conversion to sales/purchase invoice dialogs

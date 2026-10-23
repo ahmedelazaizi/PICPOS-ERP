@@ -6,8 +6,8 @@
 // ينتظر مؤقّت drift في المنطقة الوهميّة). المنفذُ الوهميُّ هنا يسجّل كلَّ
 // نداءٍ فيُثبَت **ما لم يقع** بقدر ما يُثبَت ما وقع: أن الفاتورة لم تُرحَّل.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/split_plan.dart';
-import 'package:ural_erp/services/split_settlement_runner.dart';
+import 'package:picpos_erp/domain/models/split_plan.dart';
+import 'package:picpos_erp/services/split_settlement_runner.dart';
 
 class _FakePort implements SplitSettlementPort {
   _FakePort({

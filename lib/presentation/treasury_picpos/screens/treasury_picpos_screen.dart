@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // الأصل: lib/presentation/screens/treasury_screen.dart (719 سطر، مونوليث
 // بلا `part of`). كلاسان داخليان منسوخان منه حرفياً — `_CashFlowTab`
 // (تبويب ٥: تحليل التدفقات النقدية) و`_ReconciliationDialog`+
@@ -28,7 +28,7 @@ import 'package:ural_erp/core/i18n/tr.dart';
 // `reconciliationServiceProvider` و`getCashFlowStatementUseCaseProvider`.
 //
 // راجع lib/presentation/screens/treasury_screen.dart (الأصل).
-import 'package:ural_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
@@ -50,7 +50,7 @@ import '../../treasury/widgets/treasury_closing_tab.dart';
 import '../../treasury/widgets/daily_closing_dialog.dart';
 import '../widgets/receipt_voucher_dialog_picpos.dart';
 import '../widgets/payment_voucher_dialog_picpos.dart';
-import 'package:ural_erp/l10n/app_localizations.dart';
+import 'package:picpos_erp/l10n/app_localizations.dart';
 import '../../treasury/widgets/safe_management_dialog.dart';
 import '../../../services/reconciliation_service.dart';
 import '../../../domain/usecases/accounting/get_cashflow_statement_usecase.dart';

@@ -24,8 +24,8 @@
 
 import 'package:drift/drift.dart' show OrderingTerm, Value;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/models/purchase_line_discount.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/models/purchase_line_discount.dart';
 
 void main() {
   late AppDatabase db;

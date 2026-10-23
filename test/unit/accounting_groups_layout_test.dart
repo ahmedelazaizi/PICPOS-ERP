@@ -21,9 +21,9 @@ import 'dart:io';
 import '../helpers/library_source.dart';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/config/brand.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/core/config/brand.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
 
 /// نصٌّ بلا أسطر التعليق — فذكرُ اسمٍ في شرحٍ ليس باباً يُفتَح.
 String _stripComments(String raw) => [

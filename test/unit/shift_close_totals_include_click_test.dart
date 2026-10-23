@@ -16,8 +16,8 @@
 // جمعاتٍ مكرَّرة، فأيُّ قناةٍ رابعةٍ لاحقاً تُضاف مرّةً واحدة.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/presentation/pos/providers/pos_closing_controller.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/presentation/pos/providers/pos_closing_controller.dart';
 
 void main() {
   // نفسُ أرقام التشغيلة الميدانية: نقد ١٠ · بنك ٣٠ · كليك ١٥.

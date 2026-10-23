@@ -13,8 +13,8 @@
 // للتانية بالسبب الصحيح، بيختفي من التتبّع بالكامل، وده بالظبط نوع
 // الانزلاق اللي خلّى ٨٠ كود يفضلوا من غير رقابة لحدّ ما حصل السويب.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/core/permissions/permission_enforcement_registry.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/core/permissions/permission_enforcement_registry.dart';
 
 void main() {
   test('nonToggleable و knownUnenforced ما بيتقاطعوش', () {

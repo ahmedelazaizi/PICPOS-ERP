@@ -16,8 +16,8 @@
 //   نسختَين من مسارٍ ماليٍّ تنحرفان بأوّل تعديل. فاستُخرجت إلى دالّةٍ
 //   واحدةٍ تستدعيها الشاشتان، وهذا الاختبارُ يثبّت عقدَها.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/repositories/commercial_papers_repository.dart';
-import 'package:ural_erp/presentation/screens/commercial_papers/create_paper_action.dart';
+import 'package:picpos_erp/domain/repositories/commercial_papers_repository.dart';
+import 'package:picpos_erp/presentation/screens/commercial_papers/create_paper_action.dart';
 
 class _RecordingRepo implements ICommercialPapersRepository {
   final List<Map<String, Object?>> created = [];

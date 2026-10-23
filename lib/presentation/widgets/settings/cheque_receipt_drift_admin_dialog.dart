@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // Spec 133 — Cheque Receipt Voucher: Single Customer Credit (FR-011 UI surface).
 //
 // Server-mode-only admin maintenance dialog that displays which customers

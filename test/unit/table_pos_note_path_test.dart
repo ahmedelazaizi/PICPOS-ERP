@@ -18,11 +18,11 @@
 // الاختبار هنا بيمسك الانحراف السلوكي (ضياع المعدِّلات) مش شكل الكود.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ural_erp/data/providers/settings_providers.dart';
-import 'package:ural_erp/domain/entities/cart_item_entity.dart';
-import 'package:ural_erp/presentation/pos/providers/cart_controller.dart';
-import 'package:ural_erp/presentation/pos/screens/pos_table_service_screen.dart';
-import 'package:ural_erp/presentation/pos/widgets/modifier_selection_dialog.dart';
+import 'package:picpos_erp/data/providers/settings_providers.dart';
+import 'package:picpos_erp/domain/entities/cart_item_entity.dart';
+import 'package:picpos_erp/presentation/pos/providers/cart_controller.dart';
+import 'package:picpos_erp/presentation/pos/screens/pos_table_service_screen.dart';
+import 'package:picpos_erp/presentation/pos/widgets/modifier_selection_dialog.dart';
 
 void main() {
   late ProviderContainer container;

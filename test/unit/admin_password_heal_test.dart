@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/auth/admin_password_heal.dart';
+import 'package:picpos_erp/core/auth/admin_password_heal.dart';
 
 void main() {
   test('preserves structurally valid Argon2 password', () {

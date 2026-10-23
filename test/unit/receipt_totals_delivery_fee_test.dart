@@ -14,7 +14,7 @@
 // للاختبار — ده كان السبب الحقيقي إن العطل عاش.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/printing/thermal_receipt_generator.dart';
+import 'package:picpos_erp/services/printing/thermal_receipt_generator.dart';
 
 void main() {
   group('ReceiptTotals — فاتورة توصيل', () {

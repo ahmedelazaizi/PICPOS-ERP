@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // «الشيكات والأوراق التجارية» — نسخةُ PicPos على «PicPos Cheques.dc.html».
 //
 // ملفُّ تصميمٍ **مستقلٌّ** (`MODULES = []`) بخمس تبويبات: الواردة · الصادرة ·

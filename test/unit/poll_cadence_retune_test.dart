@@ -18,7 +18,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/services/adaptive_poll_timer.dart';
+import 'package:picpos_erp/services/adaptive_poll_timer.dart';
 
 void main() {
   group('Spec 129 F7 — AdaptivePollTimer cadence retune', () {

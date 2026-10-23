@@ -11,7 +11,7 @@
 // ورقمٌ لم يُسوَّ لا يُنتج خطأً: `wa.me` يفتح صفحةً تقول «الرقمُ غيرُ صالح»،
 // فيظنّ الموظّفُ أن العميلَ ليس على واتساب. وهو إخفاقٌ **صامتٌ من جهتنا**.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/whatsapp_message.dart';
+import 'package:picpos_erp/domain/models/whatsapp_message.dart';
 
 void main() {
   group('تسويةُ الرقم', () {

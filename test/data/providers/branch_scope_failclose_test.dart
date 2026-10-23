@@ -17,10 +17,10 @@ import 'package:drift/drift.dart' as drift;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/services/mirror_state.dart';
-import 'package:ural_erp/services/network_service.dart';
-import 'package:ural_erp/services/websocket_sync_client.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/services/mirror_state.dart';
+import 'package:picpos_erp/services/network_service.dart';
+import 'package:picpos_erp/services/websocket_sync_client.dart';
 
 UserWithRole _userWithRole({
   required int userId,

@@ -11,7 +11,7 @@
 // pass restores it.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 void main() {
   test('ensureSchemaDefaults restores parties.account_id (B-MIG-1)', () async {

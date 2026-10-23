@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/costing_method_service.dart';
+import 'package:picpos_erp/services/costing_method_service.dart';
 
 void main() {
   // حالة `lastPurchase` اتشالت مع الصيغة نفسها — مش صيغة تحميل تكلفة مسموحة

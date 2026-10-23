@@ -51,8 +51,8 @@ const _webTrue = {
 
 String? _resolve(String from, String target) {
   if (target.startsWith('dart:')) return null;
-  if (target.startsWith('package:ural_erp/')) {
-    return 'lib/${target.substring('package:ural_erp/'.length)}';
+  if (target.startsWith('package:picpos_erp/')) {
+    return 'lib/${target.substring('package:picpos_erp/'.length)}';
   }
   if (target.startsWith('package:')) return null;
   return Uri.parse(from).resolve(target).path;

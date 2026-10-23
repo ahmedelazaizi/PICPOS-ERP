@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // محرّرُ النماذج — تصميمُ `PicPos Template Editor.dc.html`.
 //
 // ── ما يحلّه ──────────────────────────────────────────────────────────────

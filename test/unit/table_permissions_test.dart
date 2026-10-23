@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/domain/models/table_actions.dart';
-import 'package:ural_erp/domain/models/table_status.dart';
-import 'package:ural_erp/presentation/screens/tables_screen.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/domain/models/table_actions.dart';
+import 'package:picpos_erp/domain/models/table_status.dart';
+import 'package:picpos_erp/presentation/screens/tables_screen.dart';
 
 void main() {
   // الأفعالُ الثلاثةُ الموصولةُ حديثاً (الإلغاء، تغييرُ الحالة، طباعةُ

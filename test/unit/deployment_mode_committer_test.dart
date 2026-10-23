@@ -8,9 +8,9 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/deployment/commit_result.dart';
-import 'package:ural_erp/services/deployment/setup_contract.dart';
-import 'package:ural_erp/services/network_service.dart';
+import 'package:picpos_erp/services/deployment/commit_result.dart';
+import 'package:picpos_erp/services/deployment/setup_contract.dart';
+import 'package:picpos_erp/services/network_service.dart';
 
 void main() {
   group('SetupContract construction', () {

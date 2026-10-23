@@ -21,13 +21,13 @@
 // نفس فخ Task 6a/7). فالخطوة اللي بتطبّق نتيجة الديالوج اتستخرجت لدالة
 // top-level `applyCartItemEdit` والإنتاج بينادي نفسها بالظبط.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/constants/app_constants.dart';
-import 'package:ural_erp/domain/entities/cart_item_entity.dart';
-import 'package:ural_erp/data/repositories/sales_transaction_orchestrator.dart';
-import 'package:ural_erp/presentation/pos/providers/cart_controller.dart';
-import 'package:ural_erp/presentation/pos/screens/pos_main_screen.dart';
-import 'package:ural_erp/presentation/pos/widgets/modifier_selection_dialog.dart';
-import 'package:ural_erp/presentation/pos/widgets/pos_dialogs.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/domain/entities/cart_item_entity.dart';
+import 'package:picpos_erp/data/repositories/sales_transaction_orchestrator.dart';
+import 'package:picpos_erp/presentation/pos/providers/cart_controller.dart';
+import 'package:picpos_erp/presentation/pos/screens/pos_main_screen.dart';
+import 'package:picpos_erp/presentation/pos/widgets/modifier_selection_dialog.dart';
+import 'package:picpos_erp/presentation/pos/widgets/pos_dialogs.dart';
 
 void main() {
   // ═════════════════════════════════════════════════════════════════════════

@@ -19,7 +19,7 @@
 // لم يُطلب.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/templated_invoice_service.dart';
+import 'package:picpos_erp/services/templated_invoice_service.dart';
 
 List<Map<String, dynamic>> _items(List<String?> notes) => [
       for (final n in notes)

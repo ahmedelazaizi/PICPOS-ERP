@@ -3,9 +3,9 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/sync/strategies/user_sync_strategy.dart';
-import 'package:ural_erp/services/unusable_credential.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/sync/strategies/user_sync_strategy.dart';
+import 'package:picpos_erp/services/unusable_credential.dart';
 
 void main() {
   late AppDatabase db;

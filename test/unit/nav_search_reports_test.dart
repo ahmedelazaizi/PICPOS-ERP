@@ -15,10 +15,10 @@
 // الملفُّ يشترط أن تُشتَقَّ المداخلُ من **الكتالوج نفسِه**.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/domain/models/nav_search.dart';
-import 'package:ural_erp/presentation/reports_picpos/screens/reports_picpos_screen.dart';
-import 'package:ural_erp/presentation/shell/report_category_nav.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/domain/models/nav_search.dart';
+import 'package:picpos_erp/presentation/reports_picpos/screens/reports_picpos_screen.dart';
+import 'package:picpos_erp/presentation/shell/report_category_nav.dart';
 
 final _reportsIndex = ScreenId.reports.navigationIndex;
 

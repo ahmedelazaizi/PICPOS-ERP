@@ -3,10 +3,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
-import 'package:ural_erp/core/widgets/app_toast.dart';
-import 'package:ural_erp/data/services/excel_import_result.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/core/widgets/app_toast.dart';
+import 'package:picpos_erp/data/services/excel_import_result.dart';
 
 /// How many row errors the result dialog lists (the copy button has all).
 const int kImportErrorsShown = 50;

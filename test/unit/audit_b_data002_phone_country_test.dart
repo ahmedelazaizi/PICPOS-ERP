@@ -2,7 +2,7 @@
 // canonical key, but two numbers that BOTH carry a (different) country code are
 // different people; a local number (no code) still matches either.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/utils/phone_normalizer.dart';
+import 'package:picpos_erp/core/utils/phone_normalizer.dart';
 
 void main() {
   test('F.1 unchanged: canonical key still drops the country code', () {

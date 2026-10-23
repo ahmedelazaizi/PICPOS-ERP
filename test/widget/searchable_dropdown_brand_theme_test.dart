@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/config/brand.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
-import 'package:ural_erp/core/theme/app_theme.dart';
-import 'package:ural_erp/presentation/widgets/searchable_dropdown.dart';
+import 'package:picpos_erp/core/config/brand.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/core/theme/app_theme.dart';
+import 'package:picpos_erp/presentation/widgets/searchable_dropdown.dart';
 
 double _contrast(Color first, Color second) {
   final a = first.computeLuminance();

@@ -7,8 +7,8 @@
 // `offer_cards.dart`، اتستخرج منطقه لدالتين top-level (`canEditOffer`/
 // `canDeleteOffer`) عشان تتفحصوا من غير تركيب `OffersScreen` كاملة.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/presentation/screens/offers_screen.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/presentation/screens/offers_screen.dart';
 
 void main() {
   group('canEditOffer — offers_edit', () {

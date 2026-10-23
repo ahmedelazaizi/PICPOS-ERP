@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/returnable_line.dart';
-import 'package:ural_erp/presentation/pos_picpos/state/pos_return_mode.dart';
+import 'package:picpos_erp/domain/models/returnable_line.dart';
+import 'package:picpos_erp/presentation/pos_picpos/state/pos_return_mode.dart';
 
 void main() {
   const l = ReturnableLine(

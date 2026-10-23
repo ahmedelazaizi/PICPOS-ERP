@@ -14,16 +14,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart' as db;
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/data/providers/providers.dart' show excelServiceProvider;
-import 'package:ural_erp/data/providers/repository_providers.dart';
-import 'package:ural_erp/data/services/excel_service.dart' show BankStatementRowsSummary;
-import 'package:ural_erp/domain/repositories/accounting_repository.dart';
-import 'package:ural_erp/domain/repositories/treasury_repository.dart';
-import 'package:ural_erp/presentation/accounting_picpos/bank_reconciliation_picpos_screen.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_dialog.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_hub_kpi.dart';
+import 'package:picpos_erp/data/database/database.dart' as db;
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/data/providers/providers.dart' show excelServiceProvider;
+import 'package:picpos_erp/data/providers/repository_providers.dart';
+import 'package:picpos_erp/data/services/excel_service.dart' show BankStatementRowsSummary;
+import 'package:picpos_erp/domain/repositories/accounting_repository.dart';
+import 'package:picpos_erp/domain/repositories/treasury_repository.dart';
+import 'package:picpos_erp/presentation/accounting_picpos/bank_reconciliation_picpos_screen.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_dialog.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_hub_kpi.dart';
 
 // ⚠️ **`db.BankStatementLine` هنا لا في الشاشة**: الشاشةُ تقرأ عناصرَ
 // القوائمِ الثلاثِ ديناميكيّاً (`avoid_dynamic_calls` مُلغًى فيها عمداً) —

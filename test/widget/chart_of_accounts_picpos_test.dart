@@ -12,9 +12,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/repositories/accounting_repository.dart';
-import 'package:ural_erp/presentation/accounting_picpos/chart_of_accounts_picpos_screen.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/repositories/accounting_repository.dart';
+import 'package:picpos_erp/presentation/accounting_picpos/chart_of_accounts_picpos_screen.dart';
 
 class _FakeAccountingRepo implements IAccountingRepository {
   _FakeAccountingRepo(this._accounts);

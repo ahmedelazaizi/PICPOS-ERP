@@ -26,7 +26,7 @@
 // قاعدة بيانات. اللي انكسر هو **قرار الغرض المحاسبي** من نوع السند — فده
 // اللي اتفصل واتغطّى.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/inventory_service.dart';
+import 'package:picpos_erp/services/inventory_service.dart';
 
 void main() {
   group('inventoryBondAccountPurpose — نوع السند بيحدد الحساب المقابل', () {

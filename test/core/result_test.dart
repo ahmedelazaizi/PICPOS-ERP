@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/errors/result.dart';
+import 'package:picpos_erp/core/errors/result.dart';
 
 void main() {
   group('Result', () {

@@ -9,8 +9,8 @@
 // الفعلي (إن `onSelected` بينده عليها فعلاً) في
 // `test/widget/task_6b_loyalty_points_menu_permission_gate_test.dart`.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/presentation/screens/loyalty_screen.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/presentation/screens/loyalty_screen.dart';
 
 void main() {
   group('canAdjustLoyaltyPoints — loyalty_manage', () {

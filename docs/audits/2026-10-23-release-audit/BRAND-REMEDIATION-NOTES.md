@@ -75,3 +75,7 @@ This section used to list ten literals that were kept because renaming them woul
 ## 5. Verification (see the task report for command output)
 
 `build_picpos.bat` ends with `tool/brand_artifact_scan.dart` on `build\windows\x64\runner\Release`; after the B5 migration the scan finds, in the PicPos bundle, only: `package:ural_erp` (1,518 in `app.so`) and ICU's `Uralsk` time-zone entry in `icudtl.dat` (Kazakh city, third-party data, exact file-scoped exception). **No salt / storage-key literal remains.** Re-run 2026-10-23: `brand scan: build\windows\x64\runner\Release: CLEAN; documented exceptions: {data/app.so :: ural_erp: 1518, data/icudtl.dat :: Uralsk: 1}`, identical for `FlavorBuilds\PicPos`. (Before the migration the same scan listed ten extra literals.)
+
+## Update: package rename (BRAND-006 closed)
+
+The root Dart package was renamed `ural_erp` -> `picpos_erp` (pubspec, all `package:` imports in lib/ and test/, generated `database.g.dart` URIs, CMake `project()`, tools/docs). `brandPackageNameExceptions` in `tool/brand_artifact_scan.dart` is now empty; the only remaining documented exception is ICU's `Uralsk` entry in `data/icudtl.dat`. The older rows above describe the state before the rename. Historical `.patch`/`.diff` files under `docs/superpowers/backports` and `patches-for-uralcash` are archived diffs and were left byte-identical.

@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 import 'dart:convert';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';

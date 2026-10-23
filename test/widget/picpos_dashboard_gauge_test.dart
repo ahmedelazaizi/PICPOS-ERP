@@ -4,8 +4,8 @@
 // يستقبلوا قيمة جاهزة ويرسموها، فهما آمنين للـ pump المباشر.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/dashboard_picpos/widgets/picpos_gauge.dart';
-import 'package:ural_erp/presentation/dashboard_picpos/widgets/picpos_donut.dart';
+import 'package:picpos_erp/presentation/dashboard_picpos/widgets/picpos_gauge.dart';
+import 'package:picpos_erp/presentation/dashboard_picpos/widgets/picpos_donut.dart';
 
 void main() {
   testWidgets('PicPosGauge builds and paints for a value in 0..1', (t) async {

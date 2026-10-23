@@ -13,7 +13,7 @@
 // *قرارِ* الظهور وحده — يملك الصلاحية · ليس داخل شاشة البيع ⇒ أظهِر —
 // يجعله قابلاً للاختبار مباشرةً بلا شجرة ودجت هشّة.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/pos_shortcut_fab_gate.dart';
+import 'package:picpos_erp/domain/models/pos_shortcut_fab_gate.dart';
 
 void main() {
   group('shouldShowPosShortcutFab', () {

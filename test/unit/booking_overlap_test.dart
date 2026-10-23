@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/booking_overlap.dart';
+import 'package:picpos_erp/domain/models/booking_overlap.dart';
 
 BookingSlot slot(int startHour, int endHour) => BookingSlot(
       startsAt: DateTime(2026, 8, 20, startHour),

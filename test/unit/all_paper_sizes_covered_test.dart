@@ -11,11 +11,11 @@
 // الصفَّ الأوّل. فتثبيتُ إطفائه هناك جزءٌ من العقد لا نقصٌ فيه.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/printing/template_document.dart';
-import 'package:ural_erp/domain/printing/template_mapper.dart';
-import 'package:ural_erp/services/printing/layout_engine.dart';
-import 'package:ural_erp/services/printing/template_render_pipeline.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/printing/template_document.dart';
+import 'package:picpos_erp/domain/printing/template_mapper.dart';
+import 'package:picpos_erp/services/printing/layout_engine.dart';
+import 'package:picpos_erp/services/printing/template_render_pipeline.dart';
 
 /// المقاساتُ الأربعةُ بعرض الورق المخزَّن — لا بعرض الطباعة.
 const _papers = <String, ({double widthMm, double? heightMm})>{

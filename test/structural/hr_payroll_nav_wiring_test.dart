@@ -10,14 +10,14 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/library_source.dart';
-import 'package:ural_erp/core/config/brand.dart';
-import 'package:ural_erp/core/config/business_profile.dart';
-import 'package:ural_erp/core/enums/app_screen.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/core/navigation/screen_registry.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/presentation/shell/screen_breadcrumbs.dart';
+import 'package:picpos_erp/core/config/brand.dart';
+import 'package:picpos_erp/core/config/business_profile.dart';
+import 'package:picpos_erp/core/enums/app_screen.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/navigation/screen_registry.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/presentation/shell/screen_breadcrumbs.dart';
 
 void main() {
   const screens = {

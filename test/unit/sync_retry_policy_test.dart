@@ -3,9 +3,9 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/logging/diagnostic_logger.dart';
-import 'package:ural_erp/core/networking/sync_failure_class.dart';
-import 'package:ural_erp/core/networking/sync_retry_policy.dart';
+import 'package:picpos_erp/core/logging/diagnostic_logger.dart';
+import 'package:picpos_erp/core/networking/sync_failure_class.dart';
+import 'package:picpos_erp/core/networking/sync_retry_policy.dart';
 
 void main() {
   setUp(() {

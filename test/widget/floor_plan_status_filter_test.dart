@@ -12,12 +12,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/theme/table_status_palette.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/providers/repository_providers.dart';
-import 'package:ural_erp/domain/models/table_status.dart';
-import 'package:ural_erp/domain/repositories/restaurant_repository.dart';
-import 'package:ural_erp/presentation/screens/tables/floor_plan_designer.dart';
+import 'package:picpos_erp/core/theme/table_status_palette.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/providers/repository_providers.dart';
+import 'package:picpos_erp/domain/models/table_status.dart';
+import 'package:picpos_erp/domain/repositories/restaurant_repository.dart';
+import 'package:picpos_erp/presentation/screens/tables/floor_plan_designer.dart';
 
 RestaurantTable _table(int id, String name, String status) => RestaurantTable(
       id: id,

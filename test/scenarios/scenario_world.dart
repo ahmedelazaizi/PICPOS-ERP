@@ -5,17 +5,17 @@
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/data/repositories/sales_transaction_orchestrator.dart';
-import 'package:ural_erp/data/repositories/treasury_repository_impl.dart';
-import 'package:ural_erp/services/accounting_service.dart';
-import 'package:ural_erp/domain/entities/cart_item_entity.dart';
-import 'package:ural_erp/domain/entities/product_entity.dart';
-import 'package:ural_erp/domain/repositories/sales_repository.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/data/repositories/sales_transaction_orchestrator.dart';
+import 'package:picpos_erp/data/repositories/treasury_repository_impl.dart';
+import 'package:picpos_erp/services/accounting_service.dart';
+import 'package:picpos_erp/domain/entities/cart_item_entity.dart';
+import 'package:picpos_erp/domain/entities/product_entity.dart';
+import 'package:picpos_erp/domain/repositories/sales_repository.dart';
 
-export 'package:ural_erp/data/database/database.dart';
-export 'package:ural_erp/domain/repositories/sales_repository.dart' show SaleRequest;
+export 'package:picpos_erp/data/database/database.dart';
+export 'package:picpos_erp/domain/repositories/sales_repository.dart' show SaleRequest;
 
 /// فرق مقبول عند مقارنة الأرقام العشرية.
 const double kEps = 0.005;

@@ -17,10 +17,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/models/import_purchase_plan.dart';
-import 'package:ural_erp/domain/repositories/import_purchases_repository.dart';
-import 'package:ural_erp/presentation/import_purchases_picpos/screens/import_purchases_picpos_screen.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/models/import_purchase_plan.dart';
+import 'package:picpos_erp/domain/repositories/import_purchases_repository.dart';
+import 'package:picpos_erp/presentation/import_purchases_picpos/screens/import_purchases_picpos_screen.dart';
 import '../helpers/attachments_test_overrides.dart';
 
 final _now = DateTime(2026, 9, 20);

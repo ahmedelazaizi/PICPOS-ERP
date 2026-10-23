@@ -20,10 +20,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/data/database/database.dart' as db;
-import 'package:ural_erp/data/providers/repository_providers.dart';
-import 'package:ural_erp/domain/repositories/reporting_repository.dart';
-import 'package:ural_erp/presentation/report_builder_picpos/screens/report_builder_picpos_screen.dart';
+import 'package:picpos_erp/data/database/database.dart' as db;
+import 'package:picpos_erp/data/providers/repository_providers.dart';
+import 'package:picpos_erp/domain/repositories/reporting_repository.dart';
+import 'package:picpos_erp/presentation/report_builder_picpos/screens/report_builder_picpos_screen.dart';
 
 /// نفسُ قائمةِ المحرّك: «يحتوي» للنصّ وحدَه.
 const _opsByType = {

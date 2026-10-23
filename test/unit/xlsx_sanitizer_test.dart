@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:excel/excel.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/services/xlsx_sanitizer.dart';
+import 'package:picpos_erp/data/services/xlsx_sanitizer.dart';
 
 import 'xlsx_defect_fixture.dart';
 

@@ -4,7 +4,7 @@
 // `ProviderContainer`.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/floor_plan_layout.dart';
+import 'package:picpos_erp/domain/models/floor_plan_layout.dart';
 
 FloorPlanItemInput _item({
   String kind = 'wall',

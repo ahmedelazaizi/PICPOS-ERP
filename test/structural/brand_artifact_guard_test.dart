@@ -16,7 +16,7 @@
 //       PicPos bundle exists, unless PICPOS_REQUIRE_BUNDLE=1 (CI/build script).
 //
 // The policy (forbidden words, the explicit exception list: the Dart package
-// name `ural_erp`, one ICU data entry; the crypto/storage-literal list is now
+// one ICU data entry (no package-name exception: the package is `picpos_erp`); the crypto/storage-literal list is now
 // empty) and
 // the scanner live in tool/brand_artifact_scan.dart so build_picpos.bat can run
 // the same scan without starting a second Flutter tool.
@@ -86,8 +86,8 @@ final RegExp _dartString =
 List<String> _dartLiteralHits(String src) => _dartString
     .allMatches(_stripDartComments(src))
     .map((m) => m.group(0)!)
-    // `package:ural_erp/…` URIs: the package-name exception (BRAND-006).
-    .where((s) => forbiddenBrandText.hasMatch(s.replaceAll('ural_erp', '')))
+    // No package-name exception any more (renamed to `picpos_erp`).
+    .where((s) => forbiddenBrandText.hasMatch(s))
     .toList();
 
 // ── tests ──────────────────────────────────────────────────────────────────
@@ -184,7 +184,7 @@ void main() {
     test('internal secret/identifier allow-list is EMPTY (migrated, '
         'docs/security/internal-identifier-migration.md)', () {
       expect(brandDeferredCryptoLiterals, isEmpty);
-      expect(brandPackageNameExceptions, ['ural_erp']);
+      expect(brandPackageNameExceptions, isEmpty);
       expect(brandThirdPartyDataExceptions, {
         'data/icudtl.dat': ['Uralsk.meta']
       });
@@ -207,8 +207,8 @@ void main() {
       final cmake = codeOnly('windows/CMakeLists.txt', '#');
       final rc = codeOnly('windows/runner/Runner.rc', '//');
       final cpp = codeOnly('windows/runner/main.cpp', '//');
-      // `project(ural_erp ...)` is the Dart package name (BRAND-006 exception).
-      final cmakeNoPkg = cmake.replaceAll('ural_erp', '');
+      // The CMake project name is `picpos_erp` now: no exception needed.
+      final cmakeNoPkg = cmake;
       expect(_textHits(cmakeNoPkg), isEmpty);
       expect(_textHits(rc), isEmpty);
       expect(_textHits(cpp), isEmpty);

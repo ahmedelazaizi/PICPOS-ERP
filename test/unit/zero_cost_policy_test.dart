@@ -6,7 +6,7 @@
 // Verifies all three policy modes: block, warn, allow.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/journal_entry_factory.dart';
+import 'package:picpos_erp/services/journal_entry_factory.dart';
 
 void main() {
   group('ZeroCostPolicy', () {

@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/theme/app_theme.dart';
-import 'package:ural_erp/l10n/app_localizations.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/entities/product_entity.dart';
-import 'package:ural_erp/presentation/manufacturing_picpos/manufacturing_picpos_screen.dart';
-import 'package:ural_erp/presentation/products_picpos/screens/products_picpos_screen.dart';
-import 'package:ural_erp/presentation/screens/login_screen.dart';
-import 'package:ural_erp/presentation/screens/settings_screen.dart';
-import 'package:ural_erp/presentation/screens/widgets/sales_invoices/sales_invoice_form.dart';
-import 'package:ural_erp/presentation/treasury/widgets/payment_voucher_dialog.dart';
-import 'package:ural_erp/presentation/pos/screens/pos_main_screen.dart';
-import 'package:ural_erp/presentation/screens/products/widgets/product_edit_dialog.dart';
-import 'package:ural_erp/presentation/widgets/dialogs/add_product_dialog.dart';
+import 'package:picpos_erp/core/theme/app_theme.dart';
+import 'package:picpos_erp/l10n/app_localizations.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/entities/product_entity.dart';
+import 'package:picpos_erp/presentation/manufacturing_picpos/manufacturing_picpos_screen.dart';
+import 'package:picpos_erp/presentation/products_picpos/screens/products_picpos_screen.dart';
+import 'package:picpos_erp/presentation/screens/login_screen.dart';
+import 'package:picpos_erp/presentation/screens/settings_screen.dart';
+import 'package:picpos_erp/presentation/screens/widgets/sales_invoices/sales_invoice_form.dart';
+import 'package:picpos_erp/presentation/treasury/widgets/payment_voucher_dialog.dart';
+import 'package:picpos_erp/presentation/pos/screens/pos_main_screen.dart';
+import 'package:picpos_erp/presentation/screens/products/widgets/product_edit_dialog.dart';
+import 'package:picpos_erp/presentation/widgets/dialogs/add_product_dialog.dart';
 
 const _coveredScreens = <String>[
   'POS main screen',

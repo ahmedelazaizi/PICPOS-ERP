@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // منطق منسوخ من lib/presentation/screens/activity_log_screen.dart وتوابعه
 // (activity_log/activity_log_filters.dart، activity_log/activity_log_items.dart)
 // — أي إصلاح منطقي يتصلّح في المصدر أولاً ثم patch (مصيدة النسخ §٥.٨). لا يُنسخ
@@ -30,7 +30,7 @@ import 'package:ural_erp/core/i18n/tr.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:ural_erp/core/widgets/app_toast.dart';
+import 'package:picpos_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:excel/excel.dart' as xls;

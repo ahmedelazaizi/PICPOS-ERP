@@ -1,8 +1,8 @@
 ﻿// Audit B ACC-006 — manual journal entries touching cash are classified by the
 // nature of the counter-account (IAS 7), not dumped into operating.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/entities/accounting_entities.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/entities/accounting_entities.dart';
 
 void main() {
   late AppDatabase db;

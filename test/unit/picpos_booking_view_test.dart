@@ -1,6 +1,6 @@
 // حساباتُ شاشة الحجوزات — خالصةٌ فتُقاس بلا قاعدةٍ ولا ودجت.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/picpos_booking_view.dart';
+import 'package:picpos_erp/domain/models/picpos_booking_view.dart';
 
 void main() {
   group('تصنيفُ العميل', () {

@@ -9,10 +9,10 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/theme/app_colors.dart';
-import 'package:ural_erp/presentation/pos/widgets/pos_shortcut_bar.dart';
-import 'package:ural_erp/presentation/widgets/invoice_safety_guards.dart';
-import 'package:ural_erp/domain/entities/party_entity.dart';
+import 'package:picpos_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/pos/widgets/pos_shortcut_bar.dart';
+import 'package:picpos_erp/presentation/widgets/invoice_safety_guards.dart';
+import 'package:picpos_erp/domain/entities/party_entity.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers

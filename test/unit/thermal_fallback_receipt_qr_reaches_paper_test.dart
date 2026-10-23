@@ -14,9 +14,9 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/receipt_qr_decision.dart';
-import 'package:ural_erp/services/printing/printing_models.dart';
-import 'package:ural_erp/services/printing/thermal_receipt_generator.dart';
+import 'package:picpos_erp/domain/models/receipt_qr_decision.dart';
+import 'package:picpos_erp/services/printing/printing_models.dart';
+import 'package:picpos_erp/services/printing/thermal_receipt_generator.dart';
 
 import '../helpers/arabic_pdf_text.dart';
 import '../helpers/pdf_probe.dart';

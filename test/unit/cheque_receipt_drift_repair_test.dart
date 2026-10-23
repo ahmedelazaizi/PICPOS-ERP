@@ -35,12 +35,12 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/logging/diagnostic_logger.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/entities/accounting_entities.dart';
-import 'package:ural_erp/services/cheque_receipt_drift_audit_service.dart';
-import 'package:ural_erp/services/cheque_receipt_drift_repair_service.dart';
-import 'package:ural_erp/services/network_service.dart';
+import 'package:picpos_erp/core/logging/diagnostic_logger.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/entities/accounting_entities.dart';
+import 'package:picpos_erp/services/cheque_receipt_drift_audit_service.dart';
+import 'package:picpos_erp/services/cheque_receipt_drift_repair_service.dart';
+import 'package:picpos_erp/services/network_service.dart';
 
 void main() {
   late AppDatabase db;

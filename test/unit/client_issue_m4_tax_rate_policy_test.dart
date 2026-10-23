@@ -14,7 +14,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/tax/tax_rate_policy.dart';
+import 'package:picpos_erp/core/tax/tax_rate_policy.dart';
 
 void main() {
   test('السلّم الافتراضي هو ما طلبه العميل بالضبط', () {

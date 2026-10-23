@@ -10,10 +10,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/presentation/pos/widgets/cart/total_row.dart';
-import 'package:ural_erp/domain/entities/cart_item_entity.dart';
-import 'package:ural_erp/domain/usecases/sales/calculate_invoice_totals_usecase.dart';
-import 'package:ural_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/presentation/pos/widgets/cart/total_row.dart';
+import 'package:picpos_erp/domain/entities/cart_item_entity.dart';
+import 'package:picpos_erp/domain/usecases/sales/calculate_invoice_totals_usecase.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
 
 /// Helper: mount a single widget in a minimal MaterialApp.
 Widget _wrap(Widget child) => MaterialApp(

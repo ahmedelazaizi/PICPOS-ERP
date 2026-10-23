@@ -14,7 +14,7 @@
 
 import 'package:flutter/widgets.dart' show FontWeight;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/config/pos_layout_policy.dart';
+import 'package:picpos_erp/core/config/pos_layout_policy.dart';
 
 void main() {
   group('الوجهتان مقيستان بالاسم', () {

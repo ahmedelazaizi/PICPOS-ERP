@@ -64,8 +64,8 @@
 // test/unit/hourly_salary_model_test.dart
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/extensions/hr_extensions.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/extensions/hr_extensions.dart';
 
 void main() {
   late AppDatabase db;
@@ -228,7 +228,7 @@ dart run build_runner build --delete-conflicting-outputs
 // test/unit/work_holidays_test.dart
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 void main() {
   late AppDatabase db;
@@ -581,8 +581,8 @@ git commit -m "feat(hr): حسابُ أيام العمل · وتحقّقُ الك
 // test/unit/hourly_rate_test.dart
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/extensions/hr_extensions.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/extensions/hr_extensions.dart';
 
 void main() {
   late AppDatabase db;
@@ -725,8 +725,8 @@ git commit -m "feat(hr): نواةُ أجر الساعة — مصدرٌ واحد 
 ```dart
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/extensions/hr_extensions.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/extensions/hr_extensions.dart';
 
 void main() {
   late AppDatabase db;
@@ -922,8 +922,8 @@ git commit -m "feat(hr): موديلُ hourly من ساعات الحضور · و�
 // test/unit/overtime_amount_test.dart
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/extensions/hr_extensions.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/extensions/hr_extensions.dart';
 
 void main() {
   late AppDatabase db;
@@ -1104,8 +1104,8 @@ git commit -m "fix(hr): مقامُ أجر الساعة في الإضافي كا�
 ```dart
 // test/unit/employee_hours_validation_test.dart
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/extensions/hr_extensions.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/extensions/hr_extensions.dart';
 
 void main() {
   late AppDatabase db;
@@ -1289,8 +1289,8 @@ git commit -m "fix(hr): تسجيلُ الإضافي كان معطَّلاً صا
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/presentation/screens/settings/work_holidays_screen.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/presentation/screens/settings/work_holidays_screen.dart';
 
 import '_support/screen_smoke.dart';
 
@@ -1366,8 +1366,8 @@ git commit -m "feat(hr): شاشةُ تعريف عطلات العمل لكل فر
 ```dart
 // test/unit/employee_hours_validation_test.dart
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/database/extensions/hr_extensions.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/extensions/hr_extensions.dart';
 
 void main() {
   late AppDatabase db;

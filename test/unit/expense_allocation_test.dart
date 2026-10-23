@@ -15,7 +15,7 @@
 // ⚠️ **والأرقامُ مثبَّتةٌ محسوبةً بيد** لا «> صفر»: مصالحةٌ تتّفق عند رقمٍ
 // خاطئٍ تمرّ خضراء.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/expense_allocation.dart';
+import 'package:picpos_erp/domain/models/expense_allocation.dart';
 
 void main() {
   group('بالمعدل × الكمية', () {

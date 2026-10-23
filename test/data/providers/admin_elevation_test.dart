@@ -16,11 +16,11 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/data/providers/mutation_guard_provider.dart';
-import 'package:ural_erp/services/network_service.dart';
-import 'package:ural_erp/services/websocket_sync_client.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/data/providers/mutation_guard_provider.dart';
+import 'package:picpos_erp/services/network_service.dart';
+import 'package:picpos_erp/services/websocket_sync_client.dart';
 
 UserWithRole _userWithRole({
   required String roleName,

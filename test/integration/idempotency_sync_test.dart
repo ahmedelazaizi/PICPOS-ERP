@@ -4,9 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shelf/shelf.dart';
 import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart' as drift;
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/api/api_sales_handler.dart';
-import 'package:ural_erp/services/api/api_user_context.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/api/api_sales_handler.dart';
+import 'package:picpos_erp/services/api/api_user_context.dart';
 
 void main() {
   group('Idempotency Key Sync Tests', () {

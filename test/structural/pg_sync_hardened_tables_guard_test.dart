@@ -24,8 +24,8 @@
 // يختم. ذاك يُقاس على PostgreSQL وحدَها.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/delta_pull_service.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/delta_pull_service.dart';
 
 /// جداولُ في القائمة المصلَّبة وليست في `pullTables` — **بحكمٍ مكتوب**.
 ///

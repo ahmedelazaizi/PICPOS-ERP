@@ -10,7 +10,7 @@
 //     «‏+Infinity%» تُطبَع على شاشةٍ ماليّةٍ بلا حارس.
 //  ‏٤) **حصرُ المدفوع** — `clamp` على مدىً مقلوبٍ يرمي، وصافٍ سالبٌ ممكن.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/picpos_invoice_draft.dart';
+import 'package:picpos_erp/domain/models/picpos_invoice_draft.dart';
 
 void main() {
   PicPosInvoiceLine line({

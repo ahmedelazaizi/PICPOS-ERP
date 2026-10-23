@@ -17,7 +17,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:ural_erp/core/permissions/role_grant_matrix.dart';
+import 'package:picpos_erp/core/permissions/role_grant_matrix.dart';
 
 void main() {
   group('Spec 086 — admin essentials safety net', () {

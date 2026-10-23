@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // شاشةُ «المصاريف التشغيلية» بهويّة PicPos — على تصميم
 // `PicPos Operating Expenses.dc.html` بتبويباته الخمسة.
 //

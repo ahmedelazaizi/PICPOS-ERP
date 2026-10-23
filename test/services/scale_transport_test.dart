@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/scale_transport.dart';
+import 'package:picpos_erp/services/scale_transport.dart';
 
 void main() {
   late ScaleTransport transport;

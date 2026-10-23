@@ -27,13 +27,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart' as db;
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/domain/repositories/accounting_repository.dart';
-import 'package:ural_erp/domain/repositories/budget_repository.dart';
-import 'package:ural_erp/domain/repositories/manufacturing_repository.dart';
-import 'package:ural_erp/presentation/opex_picpos/screens/opex_picpos_screen.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_report_tabs.dart';
+import 'package:picpos_erp/data/database/database.dart' as db;
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/domain/repositories/accounting_repository.dart';
+import 'package:picpos_erp/domain/repositories/budget_repository.dart';
+import 'package:picpos_erp/domain/repositories/manufacturing_repository.dart';
+import 'package:picpos_erp/presentation/opex_picpos/screens/opex_picpos_screen.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_report_tabs.dart';
 
 final _now = DateTime.now();
 final _thisMonth = DateTime(_now.year, _now.month, 5);

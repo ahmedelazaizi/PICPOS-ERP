@@ -16,12 +16,12 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/data/providers/quick_sale_policy_providers.dart';
-import 'package:ural_erp/domain/entities/cart_item_entity.dart';
-import 'package:ural_erp/domain/models/quick_sale_policy.dart';
-import 'package:ural_erp/domain/usecases/sales/hold_order_usecase.dart';
-import 'package:ural_erp/presentation/pos_picpos/widgets/picpos_payment_methods.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/data/providers/quick_sale_policy_providers.dart';
+import 'package:picpos_erp/domain/entities/cart_item_entity.dart';
+import 'package:picpos_erp/domain/models/quick_sale_policy.dart';
+import 'package:picpos_erp/domain/usecases/sales/hold_order_usecase.dart';
+import 'package:picpos_erp/presentation/pos_picpos/widgets/picpos_payment_methods.dart';
 
 void main() {
   late AppDatabase db;

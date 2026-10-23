@@ -12,8 +12,8 @@
 
 import 'package:excel/excel.dart' as xl;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/constants/app_constants.dart';
-import 'package:ural_erp/services/excel_export_helper.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/services/excel_export_helper.dart';
 
 void main() {
   test('الرقمُ يُدوَّر لخاناتِ العملة قبل الكتابة', () {

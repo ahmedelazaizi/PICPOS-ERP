@@ -8,7 +8,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/presentation/settings_picpos/widgets/settings_blocks.dart';
+import 'package:picpos_erp/presentation/settings_picpos/widgets/settings_blocks.dart';
 
 Future<void> _pump(WidgetTester tester, double width, Widget child) async {
   tester.view.physicalSize = Size(width, 1000);

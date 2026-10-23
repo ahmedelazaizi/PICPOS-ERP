@@ -12,7 +12,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:ural_erp/presentation/picpos_shell/picpos_danger_confirm.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_danger_confirm.dart';
 
 /// يفتح الحوارَ ويعيد دالّةً تقرأ نتيجتَه بعد الإغلاق.
 Future<bool?> _open(

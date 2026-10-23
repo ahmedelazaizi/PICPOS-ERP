@@ -16,7 +16,7 @@
 // تتخلّف عن الأولى.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/domain/models/return_original_link.dart';
+import 'package:picpos_erp/domain/models/return_original_link.dart';
 
 void main() {
   group('البناء', () {

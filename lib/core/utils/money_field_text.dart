@@ -1,4 +1,4 @@
-﻿import 'package:ural_erp/core/constants/app_constants.dart';
+﻿import 'package:picpos_erp/core/constants/app_constants.dart';
 
 /// Text for a price/cost/margin input populated from a stored `double`.
 ///

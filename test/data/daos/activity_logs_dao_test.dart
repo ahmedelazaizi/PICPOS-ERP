@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/database.dart';
 
 // Task 11 (سجلُّ الطاولة) — يغذّي `logsForEntity` شاشةَ سجل الطاولة، وهو
 // استعلامٌ خالصٌ على `ActivityLogs` المسلسَل بالهاش (ICR-03) لا جدولٌ جديد.

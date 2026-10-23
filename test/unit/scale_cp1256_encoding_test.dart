@@ -9,7 +9,7 @@
 // real CAS/DIGI/Dibal scale (R1 — needs on-device verification).
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/scale_transport.dart';
+import 'package:picpos_erp/services/scale_transport.dart';
 
 void main() {
   final t = ScaleTransport();

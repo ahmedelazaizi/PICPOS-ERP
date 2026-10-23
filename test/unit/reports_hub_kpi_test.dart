@@ -16,7 +16,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/library_source.dart';
-import 'package:ural_erp/data/providers/reports_hub_kpi_provider.dart';
+import 'package:picpos_erp/data/providers/reports_hub_kpi_provider.dart';
 
 void main() {
   group('نسبةُ التغيّر', () {

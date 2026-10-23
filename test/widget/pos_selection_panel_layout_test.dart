@@ -16,16 +16,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/config/pos_layout_policy.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/data/providers/repository_providers.dart';
-import 'package:ural_erp/data/database/database.dart' show ProductBarcode;
-import 'package:ural_erp/data/providers/settings_providers.dart';
-import 'package:ural_erp/domain/entities/product_entity.dart';
-import 'package:ural_erp/domain/repositories/i_products_repository.dart';
-import 'package:ural_erp/presentation/pos/widgets/pos_product_search_field.dart';
-import 'package:ural_erp/presentation/pos/widgets/pos_product_selection_panel.dart';
-import 'package:ural_erp/presentation/pos/widgets/product_grid.dart';
+import 'package:picpos_erp/core/config/pos_layout_policy.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/data/providers/repository_providers.dart';
+import 'package:picpos_erp/data/database/database.dart' show ProductBarcode;
+import 'package:picpos_erp/data/providers/settings_providers.dart';
+import 'package:picpos_erp/domain/entities/product_entity.dart';
+import 'package:picpos_erp/domain/repositories/i_products_repository.dart';
+import 'package:picpos_erp/presentation/pos/widgets/pos_product_search_field.dart';
+import 'package:picpos_erp/presentation/pos/widgets/pos_product_selection_panel.dart';
+import 'package:picpos_erp/presentation/pos/widgets/product_grid.dart';
 
 class _EmptyProductRepo implements IProductRepository {
   @override

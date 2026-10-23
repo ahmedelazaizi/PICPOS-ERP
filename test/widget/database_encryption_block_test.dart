@@ -10,12 +10,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/core/theme/app_theme.dart';
-import 'package:ural_erp/data/providers/providers.dart';
-import 'package:ural_erp/presentation/settings_picpos/widgets/database_encryption_block.dart';
-import 'package:ural_erp/services/db_encryption_actions.dart';
-import 'package:ural_erp/services/db_key_boot.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/theme/app_theme.dart';
+import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/presentation/settings_picpos/widgets/database_encryption_block.dart';
+import 'package:picpos_erp/services/db_encryption_actions.dart';
+import 'package:picpos_erp/services/db_key_boot.dart';
 
 class _Fake implements DbEncryptionActions {
   DbEncryptionStatus st =

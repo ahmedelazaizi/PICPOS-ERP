@@ -1,5 +1,5 @@
-import 'package:ural_erp/core/i18n/tr.dart';
-import 'package:ural_erp/data/providers/financial_figures_providers.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/data/providers/financial_figures_providers.dart';
 // منطق منسوخ من unified_parties_screen.dart (monolith) — أي إصلاح منطقي
 // يتصلّح في المصدر أولاً ثم patch (مصيدة النسخ §٥.٨).
 //

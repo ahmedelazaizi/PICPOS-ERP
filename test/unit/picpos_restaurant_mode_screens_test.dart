@@ -20,10 +20,10 @@
 // فالرايةُ الحاكمةُ للشاشتَين واحدة: `tablesEnabled` = «وضعُ المطاعم».
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/config/business_profile.dart';
-import 'package:ural_erp/core/config/feature_policy.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/core/navigation/screen_registry.dart';
+import 'package:picpos_erp/core/config/business_profile.dart';
+import 'package:picpos_erp/core/config/feature_policy.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/navigation/screen_registry.dart';
 
 void main() {
   group('الرايةُ مطفأة — لا شيءَ يتغيّر', () {

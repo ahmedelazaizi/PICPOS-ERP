@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/utils/number_utils.dart';
+import 'package:picpos_erp/core/utils/number_utils.dart';
 
 /// Spec 137 BUG-U14/U25: numeric fields must accept Arabic-locale input
 /// (Arabic-Indic digits and comma as the decimal separator).

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/services/scale_disconnect_detector.dart';
+import 'package:picpos_erp/services/scale_disconnect_detector.dart';
 
 /// Regression cover for the scale "cable disconnected" verdict.
 ///

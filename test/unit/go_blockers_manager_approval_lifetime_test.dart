@@ -15,8 +15,8 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/services/manager_approval_cache.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/services/manager_approval_cache.dart';
 
 const _perm = 'pos_discount';
 

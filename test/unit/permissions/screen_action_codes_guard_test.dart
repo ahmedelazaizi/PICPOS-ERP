@@ -1,10 +1,10 @@
 // B-8 + B-1/B-2: حدودُ قاعدة «أيُّ كودِ فعلٍ يفتح الشاشة».
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/navigation/screen_id.dart';
-import 'package:ural_erp/core/permissions/financial_figures_access.dart';
-import 'package:ural_erp/core/permissions/screen_access_resolver.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/data/providers/screen_access_selectors.dart';
+import 'package:picpos_erp/core/navigation/screen_id.dart';
+import 'package:picpos_erp/core/permissions/financial_figures_access.dart';
+import 'package:picpos_erp/core/permissions/screen_access_resolver.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/data/providers/screen_access_selectors.dart';
 
 void main() {
   group('B-8: screenActionCodes لا تمسّ الشاشاتِ الحسّاسة', () {

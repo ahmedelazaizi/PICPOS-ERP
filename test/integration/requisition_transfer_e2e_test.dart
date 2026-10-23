@@ -14,13 +14,13 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/inventory_service.dart';
-import 'package:ural_erp/data/repositories/inventory_repository_impl.dart';
-import 'package:ural_erp/domain/entities/stock_requisition_entity.dart';
-import 'package:ural_erp/domain/entities/stock_requisition_item_entity.dart';
-import 'package:ural_erp/domain/repositories/settings_repository.dart';
-import 'package:ural_erp/core/enums/requisition_status.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/inventory_service.dart';
+import 'package:picpos_erp/data/repositories/inventory_repository_impl.dart';
+import 'package:picpos_erp/domain/entities/stock_requisition_entity.dart';
+import 'package:picpos_erp/domain/entities/stock_requisition_item_entity.dart';
+import 'package:picpos_erp/domain/repositories/settings_repository.dart';
+import 'package:picpos_erp/core/enums/requisition_status.dart';
 
 /// approveRequisition never touches settingsRepo — a noSuchMethod fake avoids
 /// implementing the whole ISettingsRepository surface.

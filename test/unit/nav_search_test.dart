@@ -9,8 +9,8 @@
 // على الرأس لا يجد المدخل. ونفسُه في «ى/ي» و«ة/ه» — وكلُّها محارفُ مختلفةٌ
 // بايتاً لا شكلاً.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/providers/auth_providers.dart';
-import 'package:ural_erp/domain/models/nav_search.dart';
+import 'package:picpos_erp/data/providers/auth_providers.dart';
+import 'package:picpos_erp/domain/models/nav_search.dart';
 
 void main() {
   group('تسويةُ النصّ العربيّ', () {

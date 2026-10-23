@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // حوارُ «تجيير ورقة» بهويّة PicPos — فورك `DLGS.endorse` في
 // `PicPos Cheques.dc.html`.
 //

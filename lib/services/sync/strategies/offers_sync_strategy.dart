@@ -1,8 +1,8 @@
 // ignore_for_file: avoid_dynamic_calls
 import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/sync/sync_strategy.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/sync/sync_strategy.dart';
 
 class OffersSyncStrategy extends SyncStrategy {
   OffersSyncStrategy(super.db);

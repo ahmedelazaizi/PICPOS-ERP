@@ -17,8 +17,8 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/repositories/sales_repository.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/repositories/sales_repository.dart';
 
 void main() {
   test('kDefaultTaxPercent is the named fallback (14), documenting the fix', () {

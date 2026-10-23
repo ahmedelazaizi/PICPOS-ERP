@@ -7,11 +7,11 @@
 // default on every PicPos sale path).
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/tax/product_tax_choice.dart';
-import 'package:ural_erp/core/tax/tax_rate_policy.dart';
-import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/domain/entities/cart_item_entity.dart';
-import 'package:ural_erp/domain/usecases/sales/calculate_invoice_totals_usecase.dart';
+import 'package:picpos_erp/core/tax/product_tax_choice.dart';
+import 'package:picpos_erp/core/tax/tax_rate_policy.dart';
+import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/entities/cart_item_entity.dart';
+import 'package:picpos_erp/domain/usecases/sales/calculate_invoice_totals_usecase.dart';
 
 /// Invoice tax for one line of [taxRate] at a 14% company default — the
 /// production totals engine (`item.taxRate > 0 ? item.taxRate : taxPercent`).

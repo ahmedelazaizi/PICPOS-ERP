@@ -1,4 +1,4 @@
-import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:picpos_erp/core/i18n/tr.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 // Dashboard Aging & KPI Widgets (U-13, U-14, U-15, U-16)
 // AR Aging, AP Aging, Cash Flow Forecast, Slow-Moving Items

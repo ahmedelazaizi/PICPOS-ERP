@@ -22,8 +22,8 @@
 // **و** أشّرت عليه الإعدادات.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/permissions/permission_codes.dart';
-import 'package:ural_erp/presentation/pos_picpos/widgets/picpos_payment_methods.dart';
+import 'package:picpos_erp/core/permissions/permission_codes.dart';
+import 'package:picpos_erp/presentation/pos_picpos/widgets/picpos_payment_methods.dart';
 
 void main() {
   const allFive = {'cash', 'card', 'click', 'credit', 'multiple'};

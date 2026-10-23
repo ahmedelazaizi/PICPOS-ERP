@@ -19,7 +19,7 @@
 // التنصيبات.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ural_erp/core/constants/app_constants.dart';
+import 'package:picpos_erp/core/constants/app_constants.dart';
 
 import '../helpers/dao_source.dart';
 
