@@ -185,23 +185,15 @@ class TableSessionService {
     });
   }
 
-  /// حجزٌ سريعٌ للطاولة — يكتب الصفَّ **ويترك أثراً**.
-  ///
-  /// كان الودجتُ ينادي `restaurantRepo.createReservation` على المستودع
-  /// مباشرةً، فيُنشَأ الحجزُ بلا سطرِ سجلٍّ واحد: مَن حجز الطاولةَ ومتى؟ لا
-  /// جواب. والتسجيلُ هنا لا في الودجت كي لا يضيع إن نودي المسارُ من شاشةٍ
-  /// أخرى.
-  ///
-  /// وهذا **حجزُ طاولةٍ** لا موعدُ خدمة: العربونُ والخدماتُ والموظّفون
-  /// لمنظومة الحجوزات، ولها مواصفتُها.
-  ///
-  /// الخدمةُ لا تحمل مستودعاً (`_repo`) بل `AppDatabase` مباشرةً، فيُنادى
-  /// `_db.createReservation` — نفسُ ما كان الودجتُ ينادي عبر
-  /// `IRestaurantRepository`، بلا تبعيّةٍ جديدة.
+  /// حجزٌ سريعٌ للطاولة — يكتب الصفَّ **ويترك أثراً** في سجلّ العمليات (مَن
+  /// حجز ومتى). وهذا حجزُ طاولةٍ لا موعدُ خدمة (العربونُ والخدمات لمنظومة
+  /// الحجوزات). [partyId] = العميلُ المرجعيّ (معدومٌ = ضيف)، والاسمُ/الهاتفُ
+  /// لقطةٌ. يُنادى `_db.createReservation` مباشرةً.
   Future<void> reserveTable({
     required int tableId,
     required String customerName,
     String? customerPhone,
+    int? partyId,
     required DateTime reservationTime,
     required int partySize,
     String? notes,
@@ -212,6 +204,7 @@ class TableSessionService {
       tableId: tableId,
       customerName: customerName,
       customerPhone: customerPhone,
+      partyId: partyId,
       reservationTime: reservationTime,
       partySize: partySize,
       notes: notes,

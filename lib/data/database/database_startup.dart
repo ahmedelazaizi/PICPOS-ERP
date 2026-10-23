@@ -17,7 +17,6 @@ extension DatabaseStartup on AppDatabase {
   /// Entry point called from `MigrationStrategy.beforeOpen`.
   /// Orchestrates all startup phases in the correct dependency order.
   Future<void> runBeforeOpen(OpeningDetails details) async {
-    // Phase 1: Ensure PostgreSQL compat layer exists
     if (_isPostgres) {
       try {
         await _createPostgresCompatLayer();
@@ -44,6 +43,7 @@ extension DatabaseStartup on AppDatabase {
     await ensureHrPayrollSchema();
     await ensureFieldExpenseSchema(seed: false);
     await ensureWarehouseLocationsSchema(backfill: false);
+    await ensureReservationPartiesSchema();
 
     // Phase 2b: Database integrity — ensure critical PK/UNIQUE constraints
     // exist on PG installs whose schema was created by an older or crashed
@@ -111,9 +111,7 @@ extension DatabaseStartup on AppDatabase {
     // path (was deferred in a `Future.microtask`). The microtask raced with
     // the Setup Wizard's atomic seeder, causing 23505 duplicate-key errors
     // when both paths inserted the same permission codes concurrently.
-    // `syncAllPermissions()` is idempotent and cheap when everything is
-    // already seeded (pre-checks + ON CONFLICT), so running it here costs
-    // nothing on a healthy DB but eliminates the race entirely.
+    // `syncAllPermissions()` is idempotent (ON CONFLICT): free when seeded.
     await _syncPermissionsAndAccounts();
 
     // Phase 5: One-time data patches (CRITICAL: Must block queries to prevent FormatExceptions)
@@ -1735,6 +1733,7 @@ extension DatabaseStartup on AppDatabase {
   /// Background tasks that don't block the user from logging in.
   Future<void> _scheduleDeferredTasks() async {
     await _runFinancialIntegrityChecks();
+    await retryResPartiesBackfill(); // A-1 (never throws)
     // Auto-backup on startup — only for SQLite (file-based)
     if (!_isPostgres) {
       try {

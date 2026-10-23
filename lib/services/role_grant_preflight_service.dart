@@ -166,12 +166,55 @@ class RoleGrantPreflightService {
   /// ⚠️ والختمُ **بعد** النجاح لا قبله: فشلٌ في المنتصف يترك البصمةَ بلا
   /// ختمٍ فيُعاد في الإقلاع التالي، بدل أن يُحرق تنصيبٌ لم يُطبَّق عليه شيء.
   Future<int> grantMissingDefaultsOnce() async {
+    // F.6 — شاشةُ الحجوزات انتقلت من `tables_view` إلى `bookings_view`؛ تُمنَح
+    // لكلّ دورٍ يملك الأولى كي لا يفقد أحدٌ وصولَه. لها علَمُها هي (لا بصمةُ
+    // المصفوفة) لأنّ المصدرَ حالةُ القاعدة لا المصفوفة.
+    final healed = await grantBookingsViewToTablesViewHoldersOnce();
     final fingerprint = computeRoleGrantMatrixFingerprint();
     if (await db.getSettingValue(kRoleGrantMatrixFingerprint) == fingerprint) {
-      return 0;
+      return healed;
     }
     final inserted = await grantMissingDefaults();
     await db.setSetting(kRoleGrantMatrixFingerprint, fingerprint);
+    return inserted + healed;
+  }
+
+  /// يمنح `bookings_view` لكلّ دورٍ يملك `tables_view` — **مرّةً واحدة**
+  /// (علَمٌ في الإعدادات)، فلا يُرَدُّ نزعُ المشغّل لاحقاً. idempotent: إدراجٌ
+  /// بلا تعارض، وإعادةُ التشغيل (أو ترحيلٌ مكافئ في epoch) لا تُكرّر شيئاً.
+  ///
+  /// الختمُ بعد النجاح فقط؛ وغيابُ أحد الكودَين من `permissions` (لم يُزرع بعد)
+  /// يترك العلَمَ بلا ختمٍ فيُعاد في الإقلاع التالي.
+  Future<int> grantBookingsViewToTablesViewHoldersOnce() async {
+    const flag = 'bookings_view_from_tables_view_backfill_done';
+    if (await db.getSettingValue(flag) == 'true') return 0;
+    final source = await (db.select(db.permissions)
+          ..where((p) => p.code.equals('tables_view')))
+        .getSingleOrNull();
+    final target = await (db.select(db.permissions)
+          ..where((p) => p.code.equals('bookings_view')))
+        .getSingleOrNull();
+    if (source == null || target == null) return 0;
+    final holders = await (db.select(db.rolePermissions)
+          ..where((rp) => rp.permissionId.equals(source.id)))
+        .get();
+    final already = await (db.select(db.rolePermissions)
+          ..where((rp) => rp.permissionId.equals(target.id)))
+        .get();
+    final have = {for (final r in already) r.roleId};
+    var inserted = 0;
+    for (final roleId in {for (final h in holders) h.roleId}) {
+      if (have.contains(roleId)) continue;
+      await db.into(db.rolePermissions).insert(
+            RolePermissionsCompanion.insert(
+              roleId: roleId,
+              permissionId: target.id,
+            ),
+            onConflict: DoNothing(target: []),
+          );
+      inserted++;
+    }
+    await db.setSetting(flag, 'true');
     return inserted;
   }
 

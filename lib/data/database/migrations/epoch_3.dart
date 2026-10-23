@@ -16,5 +16,6 @@ extension Epoch3Migrations on AppDatabase {
     await _migrateEpoch3V157ToV166(m, from);
     await _migrateEpoch3V167ToV173(m, from);
     await _migrateEpoch3V174ToV195(m, from);
+    await _migrateEpoch3V196ToV205(m, from);
   }
 }

@@ -80,3 +80,8 @@ part of 'database.dart';
   //
   // Schema v177: sale reposts after an authorized edit may legitimately
   // produce multiple auto-posted JEs for one invoice reference.
+  //
+  // Schema v196: customers are the single reference for reservations —
+  // table_reservations.party_id (bookings.party_id already existed) + the local
+  // party_dedup_suspects report; F.1 backfill links/creates customers by phone
+  // (migrations/epoch_3_v196_v205.dart, reservation_parties_*.dart).

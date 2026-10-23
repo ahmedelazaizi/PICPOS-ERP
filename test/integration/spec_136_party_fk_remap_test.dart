@@ -20,6 +20,8 @@ import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/services/delta_pull_service.dart';
 import 'package:ural_erp/services/sync/sync_strategy.dart';
 
+import '../helpers/v195_reservations_db.dart';
+
 /// Minimal concrete strategy so the abstract base's resolveLocalPartyId can be
 /// exercised directly.
 class _TestStrategy extends SyncStrategy {
@@ -128,6 +130,78 @@ void main() {
         reason: 'server party_id 7 must be remapped to local 5000 so '
             'getPartyStatement (filters by local id) finds the voucher',
       );
+    });
+
+    test('D-2: table_reservations.party_id is remapped via remote_id_mappings',
+        () async {
+      DeltaPullService.instance.initialize(db);
+      await db.into(db.parties).insert(
+            PartiesCompanion.insert(name: 'Cust', id: const Value(5000)),
+          );
+      await db.storeFkMapping(
+        tableName: 'parties',
+        localId: 5000,
+        remoteId: 7,
+        globalId: 'p-uuid-res',
+      );
+      final tid = await insertTestTable(db, 'T-D2');
+
+      await DeltaPullService.instance.upsertRowForTest('table_reservations', {
+        'id': 9101,
+        'table_id': tid,
+        'customer_name': 'Cust',
+        'reservation_time': 1900000000,
+        'party_id': 7, // host id — exists locally only through the mapping
+        'created_at': 1700000000,
+        'global_id': 'res-uuid-1',
+      });
+
+      expect((await rowOf(db, 'table_reservations', 9101))['party_id'], 5000);
+    });
+
+    test('D-2: bookings.party_id is remapped via remote_id_mappings', () async {
+      DeltaPullService.instance.initialize(db);
+      await db.into(db.parties).insert(
+            PartiesCompanion.insert(name: 'Cust', id: const Value(5001)),
+          );
+      await db.storeFkMapping(
+        tableName: 'parties',
+        localId: 5001,
+        remoteId: 8,
+        globalId: 'p-uuid-bk',
+      );
+      final svc = await insertTestServiceId(db);
+
+      await DeltaPullService.instance.upsertRowForTest('bookings', {
+        'id': 9102,
+        'customer_name': 'Cust',
+        'party_id': 8,
+        'service_id': svc,
+        'starts_at': 1900000000,
+        'ends_at': 1900001800,
+        'global_id': 'bk-uuid-1',
+      });
+
+      expect((await rowOf(db, 'bookings', 9102))['party_id'], 5001);
+    });
+
+    test('D-2: a reservation party_id that exists locally is not remapped',
+        () async {
+      DeltaPullService.instance.initialize(db);
+      await db.into(db.parties).insert(
+            PartiesCompanion.insert(name: 'Cust', id: const Value(60)),
+          );
+      final tid = await insertTestTable(db, 'T-D2b');
+      await DeltaPullService.instance.upsertRowForTest('table_reservations', {
+        'id': 9103,
+        'table_id': tid,
+        'customer_name': 'Cust',
+        'reservation_time': 1900000000,
+        'party_id': 60,
+        'created_at': 1700000000,
+        'global_id': 'res-uuid-2',
+      });
+      expect((await rowOf(db, 'table_reservations', 9103))['party_id'], 60);
     });
 
     test('a server party_id that already matches locally is left unchanged',

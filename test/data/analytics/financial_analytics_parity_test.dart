@@ -225,14 +225,50 @@ void main() {
     expect(sales, 1600); // account balance sees the same posted lines
   });
 
-  test('soft-deleted posted entry: engine counts it exactly like the DAO',
+  // C-2 (changed on BOTH sides): this test used to assert that a soft-deleted
+  // posted entry is counted by the DAO reports and by the engine alike
+  // (revenue 1533). The income statement, balance sheet, cash-flow statement
+  // and the engine's account SQL now all exclude `is_deleted` entries, like the
+  // trial balance always did, so the entry must move nothing.
+  test('soft-deleted posted entry is ignored by the DAO reports AND the engine',
       () async {
+    final before = await computeFinancialAnalytics(db, (from: from, to: to));
+    final cfBefore = await db.getCashFlowStatement(from, to);
+    final bsBefore = await db.getBalanceSheet(to);
+
     await gl.post(DateTime(2026, 1, 31), [('1111', 33, 0), ('4121', 0, 33)],
         deleted: true);
-    // getIncomeStatement / getBalanceSheet do not filter is_deleted (only the
-    // trial balance does), so the engine mirrors that rather than diverging.
-    await expectParity(null);
+
+    await expectParity(null); // DAO and engine still agree...
     final r = await computeFinancialAnalytics(db, (from: from, to: to));
-    expect(r.current.revenue, 1533);
+    expect(r.current.revenue, 1500); // ...and neither counts the 33
+    expect(r.current.revenue, before.current.revenue);
+    expect(r.current.netIncome, before.current.netIncome);
+    expect(r.current.cash, before.current.cash);
+    expect(r.current.totalAssets, before.current.totalAssets);
+    expect(r.current.operatingCashFlow, before.current.operatingCashFlow);
+    expect(
+        r.ratios.map((x) => x.value).toList(),
+        before.ratios.map((x) => x.value).toList(),
+        reason: 'no ratio may move when a JE is soft-deleted');
+
+    final cf = await db.getCashFlowStatement(from, to);
+    expect(cf['closingBalance'], cfBefore['closingBalance']);
+    expect(cf['operating'], cfBefore['operating']);
+    expect((await db.getBalanceSheet(to))['totalAssets'],
+        bsBefore['totalAssets']);
+  });
+
+  test('a soft-deleted entry is also invisible to loadAccountRecords',
+      () async {
+    final salesBefore = (await loadAccountRecords(db, from, to))
+        .firstWhere((a) => a.code == '4121')
+        .balance;
+    await gl.post(DateTime(2026, 1, 31), [('1111', 33, 0), ('4121', 0, 33)],
+        deleted: true);
+    final salesAfter = (await loadAccountRecords(db, from, to))
+        .firstWhere((a) => a.code == '4121')
+        .balance;
+    expect(salesAfter, salesBefore);
   });
 }

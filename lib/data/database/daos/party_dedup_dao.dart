@@ -131,6 +131,10 @@ extension PartyDedupDao on AppDatabase {
             ),
           );
 
+          // v196 — حجوزاتُ الطرف المدموج (خدماتٌ وطاولات) تتبع الطرفَ الباقي،
+          // فلا تبقى مشيرةً إلى طرفٍ محذوف.
+          await repointReservationParties(dup.id, g.canonical.id);
+
           merged.add(MergedPartyDedupRecord(
             dupId: dup.id,
             canonicalId: g.canonical.id,

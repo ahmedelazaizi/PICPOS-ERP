@@ -15,6 +15,7 @@ const List<String> kEpoch3SplitParts = <String>[
   'lib/data/database/migrations/epoch_3_v157_v166.dart',
   'lib/data/database/migrations/epoch_3_v167_v173.dart',
   'lib/data/database/migrations/epoch_3_v174_v195.dart',
+  'lib/data/database/migrations/epoch_3_v196_v205.dart',
 ];
 
 /// epoch_3.dart plus the parts split out of it, joined by newlines.

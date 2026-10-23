@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../data/database/database.dart';
 import '../core/logging/diagnostic_logger.dart';
 import 'conflict_resolution_service.dart';
+import 'delta_pull_column_filter.dart';
 import 'id_namespace_service.dart';
 import 'security_service.dart';
 import 'server_proxy.dart';
@@ -37,6 +38,7 @@ const Set<String> kFinancialSyncTables = {
 /// keys of the form `_watermark__<tableName>`.
 class DeltaPullService {
   DeltaPullService._();
+  final _columnFilter = DeltaPullColumnFilter();
   static final DeltaPullService instance = DeltaPullService._();
 
   AppDatabase? _db;
@@ -566,6 +568,7 @@ class DeltaPullService {
   void initialize(AppDatabase db) {
     _db = db;
     _blobSchema = null;
+    _columnFilter.reset();
     ConflictResolutionService.instance.initialize(db);
   }
 
@@ -1063,20 +1066,18 @@ class DeltaPullService {
       return;
     }
 
-    // Spec 136 (field 2026-06-14): remap server party FK → LOCAL party id on the
-    // mirror's REAL inbound path. The SyncStrategy-layer party remap
-    // (purchase/safe_transaction strategies) is DEAD CODE for client/mirror —
-    // Tier-3 strategies are skipped and DeltaPull is the path that actually
-    // runs. Writing the server's customer_id/supplier_id/party_id raw made
-    // getPartyStatement (filters by LOCAL partyId) return nothing → supplier &
-    // customer statements empty on the mirror, and clobbered the cwi_commerce
-    // local cash-receipt cache row's local partyId on the server echo. Resolve
-    // via the parties FK mappings DeltaPull already records (storeFkMapping,
-    // ~line 197/269). Falls through unchanged when the party kept the server id.
+    // Spec 136: remap server party FK → LOCAL party id on the mirror's REAL
+    // inbound path (the SyncStrategy remap is dead code for client/mirror).
+    // A raw server id made getPartyStatement (LOCAL partyId) come up empty and
+    // clobbered the cwi_commerce cash-receipt cache row. Resolved via the
+    // parties mappings (storeFkMapping); unchanged when the id is kept.
+    // D-2: table_reservations/bookings carry party_id too.
     const partyFkByTable = {
       'sales_invoices': 'customer_id',
       'purchase_invoices': 'supplier_id',
       'safe_transactions': 'party_id',
+      'table_reservations': 'party_id',
+      'bookings': 'party_id',
     };
     final partyFkCol = partyFkByTable[table];
     if (partyFkCol != null && row[partyFkCol] is int) {
@@ -1116,6 +1117,7 @@ class DeltaPullService {
       globalId: globalId,
       onPatched: (patched) => row = patched,
     );
+    row = await _columnFilter.apply(_db!, table, row); // D-1
 
     // If the local row exists with a different id (client-originated record
     // that now carries a server id), UPDATE in place — preserving the local
@@ -1343,7 +1345,8 @@ class DeltaPullService {
         );
         for (final raw in embeddedJournalLines) {
           if (raw is! Map) continue;
-          final lineRow = Map<String, dynamic>.from(raw);
+          final lineRow = await _columnFilter.apply(
+              _db!, 'journal_entry_lines', Map<String, dynamic>.from(raw));
           // Force entry_id to the server's id (which the header upsert
           // above adopted as the local id). Defensive against a server
           // payload accidentally omitting it.

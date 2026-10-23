@@ -7,10 +7,9 @@
 // * revenue / cogs / grossProfit / netIncome / totalAssets / totalLiabilities /
 //   equity come straight from `getIncomeStatement` / `getBalanceSheet` with the
 //   same `allowedBranchIds`, so they are identical by construction. The
-//   account-level SQL here uses the same posted-only, NO is_deleted filter as
-//   those two reports (the trial balance is the only report that also filters
-//   is_deleted; a soft-deleted posted entry is therefore counted by the income
-//   statement, the balance sheet AND this engine alike).
+//   account-level SQL here uses the same posted-only AND `is_deleted = false`
+//   filter as the trial balance, income statement, balance sheet and cash-flow
+//   statement (C-2): a soft-deleted posted entry moves none of them.
 // * cash is the GL balance of the same cash/bank subtree the cash-flow
 //   statement uses (parent group of the `cash`/`bank` accounts, so per-safe
 //   sub-accounts and deposits count); the mapped-account bucket is only the
@@ -140,6 +139,7 @@ Future<List<AccountRecord>> loadAccountRecords(
     JOIN journal_entries e ON l.entry_id = e.id
     JOIN accounts a ON l.account_id = a.id
     WHERE e.is_posted = ${db.sqlBool(true)}
+      AND e.is_deleted = ${db.sqlBool(false)}
       AND ((a.account_type IN $_plTypes AND e.entry_date BETWEEN ? AND ?)
         OR (a.account_type NOT IN $_plTypes AND e.entry_date <= ?))
       $scope
@@ -344,7 +344,9 @@ Future<FinancialAnalyticsResult> computeFinancialAnalytics(
   );
 }
 
-final financialAnalyticsProvider = FutureProvider.family<
+// autoDispose (C-8): recomputed when re-listened instead of staying stale after
+// a journal entry is posted (finIndicatorsProvider, the screen's, already is).
+final financialAnalyticsProvider = FutureProvider.autoDispose.family<
     FinancialAnalyticsResult, FinancialAnalyticsParams>((ref, params) async {
   final db = ref.watch(databaseProvider);
   final scope = await ref.watch(branchScopeProvider.future);

@@ -8,7 +8,6 @@ import 'package:drift/drift.dart';
 import 'package:rxdart/rxdart.dart' show DebounceExtensions; // Spec 115 L2 — debounceTime
 import 'package:uuid/uuid.dart';
 import 'package:flutter/foundation.dart';
-// Import treasury_repository.dart for DAO types (SafeData, TreasurySummaryData, etc.)
 import '../../domain/repositories/treasury_repository.dart';
 import '../../domain/models/receipt_qr_decision.dart'
     show kEInvoiceEnabledSettingKey;
@@ -53,6 +52,7 @@ import '../../core/permissions/permission_codes.dart';
 import '../../core/tax/effective_item_tax_rate.dart';
 import '../../core/tax/einvoice_exempt_codes.dart';
 import '../../core/utils/arabic_utils.dart';
+import '../../core/utils/phone_normalizer.dart';
 // Spec 139 — deterministic JE balancing uses FinancialUtils' minor-unit helpers
 // and the single balance-tolerance source of truth. `show` avoids importing its
 // UnbalancedJournalException (a different type lives in journal_entry_factory).
@@ -69,8 +69,8 @@ import '../../services/role_grant_preflight_service.dart';
 import '../../domain/entities/accounting_entities.dart';
 import 'sync_interceptor.dart';
 import '../../services/sync/mirror_settings_keys.dart';
-// Removing error_handler to break cycle
 import 'daos/audit_dashboard_dao.dart';
+import 'daos/journal_approval_guard.dart';
 // Feature 004 (US1): Exception types for the auto-account-linkage path.
 import 'daos/account_linkage_exceptions.dart';
 export 'daos/account_linkage_exceptions.dart';
@@ -224,7 +224,6 @@ part 'daos/quotations_dao.dart';
 part 'daos/scale_dao.dart';
 part 'daos/purchase_orders_dao.dart';
 part 'daos/modifiers_dao.dart';
-// fixed_assets_dao.dart merged into fixed_assets_dao_ext.dart (Phase 3.2 God DAO split)
 part 'daos/sales_orders_dao.dart';
 part 'daos/bank_reconciliation_dao.dart';
 part 'daos/data_maintenance_dao.dart';
@@ -276,6 +275,9 @@ part 'migrations/epoch_3_v148_v156.dart';
 part 'migrations/epoch_3_v157_v166.dart';
 part 'migrations/epoch_3_v167_v173.dart';
 part 'migrations/epoch_3_v174_v195.dart';
+part 'migrations/epoch_3_v196_v205.dart';
+part 'reservation_parties_schema.dart';
+part 'reservation_parties_backfill.dart';
 part 'models/projections.dart';
 
 // Table Definitions
@@ -668,7 +670,7 @@ class AppDatabase extends _$AppDatabase {
   /// Current schema version. The per-version history (what each bump changed)
   /// lives in `database_schema_history.dart`; the migrations are in `migrations/`.
   @override
-  int get schemaVersion => 195;
+  int get schemaVersion => 196;
 
 
   /// Canonical list of sync-hardening tables (mirrors the list in

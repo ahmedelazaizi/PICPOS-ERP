@@ -1708,8 +1708,7 @@ extension AccountingDaoWritesExt on AppDatabase {
       code: PermissionCodes.accountingJournalApprove,
       arabicReason: 'لا تملك صلاحية اعتماد القيد',
     );
-    // ورقةُ الدفع تُجمَع داخلَ المعاملة وتُرسَل بعد إغلاقها — كما في
-    // `createJournalEntry` تماماً، كي لا تحبس زمنُ الشبكة قفلَ الكتابة.
+    // ورقةُ الدفع تُجمَع داخل المعاملة وتُرسَل بعد إغلاقها (كـ`createJournalEntry`).
     JournalEntryData? pushEntry;
     List<Map<String, dynamic>>? pushLines;
 
@@ -1719,16 +1718,20 @@ extension AccountingDaoWritesExt on AppDatabase {
       )..where((e) => e.id.equals(entryId))).getSingleOrNull();
       if (entry == null) throw Exception('القيد غير موجود');
       if (entry.isPosted) throw Exception('القيد مرحّل بالفعل');
+      // C-1: محذوف/غير متوازن ⇒ رفضٌ قبل أيّ كتابة (راجع journal_approval_guard).
+      final approvalLines = await (select(
+        journalEntryLines,
+      )..where((l) => l.entryId.equals(entryId))).get();
+      final blocker = draftApprovalBlocker(
+        isDeleted: entry.isDeleted,
+        lines: approvalLines.map((l) => (debit: l.debit, credit: l.credit)),
+      );
+      if (blocker != null) throw Exception(blocker);
       await validateFinancialPeriod(entry.entryDate, operation: 'اعتماد القيد');
 
-      // ⚠️ **لا يعتمد القيدَ منشئُه** — قرارُ مالك 2026-08-27.
-      //
-      //    والفحصُ هنا لا في الواجهة: الواجهةُ تُخفي الزرَّ فتحسّن التجربة،
-      //    لكنّ المسارَ يُبلَغ من غيرها (مزامنة · سكربت · شاشةٌ ثانية).
-      //    وهو **قبل** أيّ كتابة، فالرفضُ لا يترك رصيداً تحرّك.
-      //
-      //    و`created_by = NULL` لا يُمنَع: قيدٌ أقدمُ من الضابط أو آليٌّ لا
-      //    يمكن إثباتُ منشئه، ومنعُه يُجمّده بلا سبيلٍ لفكِّه.
+      // ⚠️ **لا يعتمد القيدَ منشئُه** (مالك 2026-08-27). الفحصُ هنا لا في
+      //    الواجهة (المسارُ يُبلَغ من مزامنة/سكربت) وقبل أيّ كتابة. و
+      //    `created_by = NULL` لا يُمنَع: لا يمكن إثباتُ منشئه فيتجمّد.
       final makerRow = await customSelect(
         'SELECT created_by FROM journal_entries WHERE id = ?',
         variables: [Variable.withInt(entryId)],
@@ -1742,15 +1745,19 @@ extension AccountingDaoWritesExt on AppDatabase {
       // Post and record approval — migration-added columns, must use customStatement
       final boolTrue = sqlBool(true);
       final boolFalse = sqlBool(false);
-      await customStatement(
-        "UPDATE journal_entries SET is_posted = $boolTrue, needs_approval = $boolFalse, approved_by = ?, approved_at = ? WHERE id = ?",
-        [approverId, DateTime.now().millisecondsSinceEpoch, entryId],
+      final posted = await customUpdate(
+        'UPDATE journal_entries SET is_posted = $boolTrue, needs_approval = $boolFalse, approved_by = ?, approved_at = ? '
+        'WHERE id = ? AND is_posted = $boolFalse AND is_deleted = $boolFalse',
+        variables: [
+          Variable.withInt(approverId),
+          Variable.withInt(DateTime.now().millisecondsSinceEpoch),
+          Variable.withInt(entryId),
+        ],
+        updates: {journalEntries},
       );
+      if (posted != 1) throw Exception('تعذّر اعتماد القيد (تغيّرت حالته)');
 
       // ICR-01: Update account balances now that the entry is posted (perf-01 batch)
-      final approvalLines = await (select(
-        journalEntryLines,
-      )..where((l) => l.entryId.equals(entryId))).get();
       final approvalAccountIds = approvalLines.map((l) => l.accountId).toSet();
       if (approvalAccountIds.isNotEmpty) {
         final ph = approvalAccountIds.map((_) => '?').join(', ');
@@ -1804,13 +1811,8 @@ extension AccountingDaoWritesExt on AppDatabase {
       }
     });
 
-    // ⚠️ **الاعتمادُ هو ما يدفع المسودّةَ إلى الخادم.** إنشاؤها لا يدفع
-    //    (‏راجع `createJournalEntry`)، فلو لم تُدفَع هنا لبقيت محبوسةً في
-    //    الجهاز بعد اعتمادها: رصيدٌ يتحرّك محلّيّاً ولا أثرَ له على الخادم
-    //    ولا على بقيّة الأجهزة — وهو افتراقُ أستاذٍ صامت.
-    //
-    //    والـ`globalId` يُمرَّر كما هو، فالخادمُ يخزّنها تحت نفس الهويّة
-    //    ولا تعود بالسحب صفّاً مكرَّراً.
+    // ⚠️ **الاعتمادُ هو ما يدفع المسودّةَ إلى الخادم** (إنشاؤها لا يدفع)، وإلا
+    //    افترق الأستاذُ صامتاً. والـ`globalId` يُمرَّر كما هو فلا يتكرّر الصفّ.
     final pe = pushEntry;
     final lines = pushLines;
     if (pe != null && lines != null) {

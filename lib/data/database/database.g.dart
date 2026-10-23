@@ -34617,6 +34617,20 @@ class $TableReservationsTable extends TableReservations
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _partyIdMeta = const VerificationMeta(
+    'partyId',
+  );
+  @override
+  late final GeneratedColumn<int> partyId = GeneratedColumn<int>(
+    'party_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES parties (id)',
+    ),
+  );
   static const VerificationMeta _reservationTimeMeta = const VerificationMeta(
     'reservationTime',
   );
@@ -34736,6 +34750,7 @@ class $TableReservationsTable extends TableReservations
     tableId,
     customerName,
     customerPhone,
+    partyId,
     reservationTime,
     partySize,
     notes,
@@ -34788,6 +34803,12 @@ class $TableReservationsTable extends TableReservations
           data['customer_phone']!,
           _customerPhoneMeta,
         ),
+      );
+    }
+    if (data.containsKey('party_id')) {
+      context.handle(
+        _partyIdMeta,
+        partyId.isAcceptableOrUnknown(data['party_id']!, _partyIdMeta),
       );
     }
     if (data.containsKey('reservation_time')) {
@@ -34886,6 +34907,10 @@ class $TableReservationsTable extends TableReservations
         DriftSqlType.string,
         data['${effectivePrefix}customer_phone'],
       ),
+      partyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}party_id'],
+      ),
       reservationTime: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}reservation_time'],
@@ -34941,6 +34966,9 @@ class TableReservation extends DataClass
   final int tableId;
   final String customerName;
   final String? customerPhone;
+
+  /// v196 — العميلُ المرجعيّ (معدومٌ = ضيفٌ). الاسمُ/الهاتفُ أعلاه لقطةٌ للتاريخ.
+  final int? partyId;
   final DateTime reservationTime;
   final int partySize;
   final String? notes;
@@ -34956,6 +34984,7 @@ class TableReservation extends DataClass
     required this.tableId,
     required this.customerName,
     this.customerPhone,
+    this.partyId,
     required this.reservationTime,
     required this.partySize,
     this.notes,
@@ -34975,6 +35004,9 @@ class TableReservation extends DataClass
     map['customer_name'] = Variable<String>(customerName);
     if (!nullToAbsent || customerPhone != null) {
       map['customer_phone'] = Variable<String>(customerPhone);
+    }
+    if (!nullToAbsent || partyId != null) {
+      map['party_id'] = Variable<int>(partyId);
     }
     map['reservation_time'] = Variable<DateTime>(reservationTime);
     map['party_size'] = Variable<int>(partySize);
@@ -35007,6 +35039,9 @@ class TableReservation extends DataClass
       customerPhone: customerPhone == null && nullToAbsent
           ? const Value.absent()
           : Value(customerPhone),
+      partyId: partyId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(partyId),
       reservationTime: Value(reservationTime),
       partySize: Value(partySize),
       notes: notes == null && nullToAbsent
@@ -35040,6 +35075,7 @@ class TableReservation extends DataClass
       tableId: serializer.fromJson<int>(json['tableId']),
       customerName: serializer.fromJson<String>(json['customerName']),
       customerPhone: serializer.fromJson<String?>(json['customerPhone']),
+      partyId: serializer.fromJson<int?>(json['partyId']),
       reservationTime: serializer.fromJson<DateTime>(json['reservationTime']),
       partySize: serializer.fromJson<int>(json['partySize']),
       notes: serializer.fromJson<String?>(json['notes']),
@@ -35060,6 +35096,7 @@ class TableReservation extends DataClass
       'tableId': serializer.toJson<int>(tableId),
       'customerName': serializer.toJson<String>(customerName),
       'customerPhone': serializer.toJson<String?>(customerPhone),
+      'partyId': serializer.toJson<int?>(partyId),
       'reservationTime': serializer.toJson<DateTime>(reservationTime),
       'partySize': serializer.toJson<int>(partySize),
       'notes': serializer.toJson<String?>(notes),
@@ -35078,6 +35115,7 @@ class TableReservation extends DataClass
     int? tableId,
     String? customerName,
     Value<String?> customerPhone = const Value.absent(),
+    Value<int?> partyId = const Value.absent(),
     DateTime? reservationTime,
     int? partySize,
     Value<String?> notes = const Value.absent(),
@@ -35095,6 +35133,7 @@ class TableReservation extends DataClass
     customerPhone: customerPhone.present
         ? customerPhone.value
         : this.customerPhone,
+    partyId: partyId.present ? partyId.value : this.partyId,
     reservationTime: reservationTime ?? this.reservationTime,
     partySize: partySize ?? this.partySize,
     notes: notes.present ? notes.value : this.notes,
@@ -35120,6 +35159,7 @@ class TableReservation extends DataClass
       customerPhone: data.customerPhone.present
           ? data.customerPhone.value
           : this.customerPhone,
+      partyId: data.partyId.present ? data.partyId.value : this.partyId,
       reservationTime: data.reservationTime.present
           ? data.reservationTime.value
           : this.reservationTime,
@@ -35148,6 +35188,7 @@ class TableReservation extends DataClass
           ..write('tableId: $tableId, ')
           ..write('customerName: $customerName, ')
           ..write('customerPhone: $customerPhone, ')
+          ..write('partyId: $partyId, ')
           ..write('reservationTime: $reservationTime, ')
           ..write('partySize: $partySize, ')
           ..write('notes: $notes, ')
@@ -35168,6 +35209,7 @@ class TableReservation extends DataClass
     tableId,
     customerName,
     customerPhone,
+    partyId,
     reservationTime,
     partySize,
     notes,
@@ -35187,6 +35229,7 @@ class TableReservation extends DataClass
           other.tableId == this.tableId &&
           other.customerName == this.customerName &&
           other.customerPhone == this.customerPhone &&
+          other.partyId == this.partyId &&
           other.reservationTime == this.reservationTime &&
           other.partySize == this.partySize &&
           other.notes == this.notes &&
@@ -35204,6 +35247,7 @@ class TableReservationsCompanion extends UpdateCompanion<TableReservation> {
   final Value<int> tableId;
   final Value<String> customerName;
   final Value<String?> customerPhone;
+  final Value<int?> partyId;
   final Value<DateTime> reservationTime;
   final Value<int> partySize;
   final Value<String?> notes;
@@ -35219,6 +35263,7 @@ class TableReservationsCompanion extends UpdateCompanion<TableReservation> {
     this.tableId = const Value.absent(),
     this.customerName = const Value.absent(),
     this.customerPhone = const Value.absent(),
+    this.partyId = const Value.absent(),
     this.reservationTime = const Value.absent(),
     this.partySize = const Value.absent(),
     this.notes = const Value.absent(),
@@ -35235,6 +35280,7 @@ class TableReservationsCompanion extends UpdateCompanion<TableReservation> {
     required int tableId,
     required String customerName,
     this.customerPhone = const Value.absent(),
+    this.partyId = const Value.absent(),
     required DateTime reservationTime,
     this.partySize = const Value.absent(),
     this.notes = const Value.absent(),
@@ -35253,6 +35299,7 @@ class TableReservationsCompanion extends UpdateCompanion<TableReservation> {
     Expression<int>? tableId,
     Expression<String>? customerName,
     Expression<String>? customerPhone,
+    Expression<int>? partyId,
     Expression<DateTime>? reservationTime,
     Expression<int>? partySize,
     Expression<String>? notes,
@@ -35269,6 +35316,7 @@ class TableReservationsCompanion extends UpdateCompanion<TableReservation> {
       if (tableId != null) 'table_id': tableId,
       if (customerName != null) 'customer_name': customerName,
       if (customerPhone != null) 'customer_phone': customerPhone,
+      if (partyId != null) 'party_id': partyId,
       if (reservationTime != null) 'reservation_time': reservationTime,
       if (partySize != null) 'party_size': partySize,
       if (notes != null) 'notes': notes,
@@ -35287,6 +35335,7 @@ class TableReservationsCompanion extends UpdateCompanion<TableReservation> {
     Value<int>? tableId,
     Value<String>? customerName,
     Value<String?>? customerPhone,
+    Value<int?>? partyId,
     Value<DateTime>? reservationTime,
     Value<int>? partySize,
     Value<String?>? notes,
@@ -35303,6 +35352,7 @@ class TableReservationsCompanion extends UpdateCompanion<TableReservation> {
       tableId: tableId ?? this.tableId,
       customerName: customerName ?? this.customerName,
       customerPhone: customerPhone ?? this.customerPhone,
+      partyId: partyId ?? this.partyId,
       reservationTime: reservationTime ?? this.reservationTime,
       partySize: partySize ?? this.partySize,
       notes: notes ?? this.notes,
@@ -35330,6 +35380,9 @@ class TableReservationsCompanion extends UpdateCompanion<TableReservation> {
     }
     if (customerPhone.present) {
       map['customer_phone'] = Variable<String>(customerPhone.value);
+    }
+    if (partyId.present) {
+      map['party_id'] = Variable<int>(partyId.value);
     }
     if (reservationTime.present) {
       map['reservation_time'] = Variable<DateTime>(reservationTime.value);
@@ -35371,6 +35424,7 @@ class TableReservationsCompanion extends UpdateCompanion<TableReservation> {
           ..write('tableId: $tableId, ')
           ..write('customerName: $customerName, ')
           ..write('customerPhone: $customerPhone, ')
+          ..write('partyId: $partyId, ')
           ..write('reservationTime: $reservationTime, ')
           ..write('partySize: $partySize, ')
           ..write('notes: $notes, ')
@@ -162301,6 +162355,30 @@ final class $$PartiesTableReferences
     );
   }
 
+  static MultiTypedResultKey<$TableReservationsTable, List<TableReservation>>
+  _tableReservationsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.tableReservations,
+        aliasName: $_aliasNameGenerator(
+          db.parties.id,
+          db.tableReservations.partyId,
+        ),
+      );
+
+  $$TableReservationsTableProcessedTableManager get tableReservationsRefs {
+    final manager = $$TableReservationsTableTableManager(
+      $_db,
+      $_db.tableReservations,
+    ).filter((f) => f.partyId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _tableReservationsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$BookingsTable, List<Booking>> _bookingsRefsTable(
     _$AppDatabase db,
   ) => MultiTypedResultKey.fromTable(
@@ -162930,6 +163008,31 @@ class $$PartiesTableFilterComposer
           }) => $$PurchaseReturnsTableFilterComposer(
             $db: $db,
             $table: $db.purchaseReturns,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> tableReservationsRefs(
+    Expression<bool> Function($$TableReservationsTableFilterComposer f) f,
+  ) {
+    final $$TableReservationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.tableReservations,
+      getReferencedColumn: (t) => t.partyId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TableReservationsTableFilterComposer(
+            $db: $db,
+            $table: $db.tableReservations,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -163857,6 +163960,32 @@ class $$PartiesTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> tableReservationsRefs<T extends Object>(
+    Expression<T> Function($$TableReservationsTableAnnotationComposer a) f,
+  ) {
+    final $$TableReservationsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.tableReservations,
+          getReferencedColumn: (t) => t.partyId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$TableReservationsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.tableReservations,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
   Expression<T> bookingsRefs<T extends Object>(
     Expression<T> Function($$BookingsTableAnnotationComposer a) f,
   ) {
@@ -164257,6 +164386,7 @@ class $$PartiesTableTableManager
             bool purchaseInvoicesRefs,
             bool importPurchaseDetailsRefs,
             bool purchaseReturnsRefs,
+            bool tableReservationsRefs,
             bool bookingsRefs,
             bool safeTransactionsRefs,
             bool heldOrdersRefs,
@@ -164442,6 +164572,7 @@ class $$PartiesTableTableManager
                 purchaseInvoicesRefs = false,
                 importPurchaseDetailsRefs = false,
                 purchaseReturnsRefs = false,
+                tableReservationsRefs = false,
                 bookingsRefs = false,
                 safeTransactionsRefs = false,
                 heldOrdersRefs = false,
@@ -164464,6 +164595,7 @@ class $$PartiesTableTableManager
                     if (purchaseInvoicesRefs) db.purchaseInvoices,
                     if (importPurchaseDetailsRefs) db.importPurchaseDetails,
                     if (purchaseReturnsRefs) db.purchaseReturns,
+                    if (tableReservationsRefs) db.tableReservations,
                     if (bookingsRefs) db.bookings,
                     if (safeTransactionsRefs) db.safeTransactions,
                     if (heldOrdersRefs) db.heldOrders,
@@ -164613,6 +164745,27 @@ class $$PartiesTableTableManager
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.supplierId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (tableReservationsRefs)
+                        await $_getPrefetchedData<
+                          Party,
+                          $PartiesTable,
+                          TableReservation
+                        >(
+                          currentTable: table,
+                          referencedTable: $$PartiesTableReferences
+                              ._tableReservationsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$PartiesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).tableReservationsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.partyId == item.id,
                               ),
                           typedResults: items,
                         ),
@@ -164959,6 +165112,7 @@ typedef $$PartiesTableProcessedTableManager =
         bool purchaseInvoicesRefs,
         bool importPurchaseDetailsRefs,
         bool purchaseReturnsRefs,
+        bool tableReservationsRefs,
         bool bookingsRefs,
         bool safeTransactionsRefs,
         bool heldOrdersRefs,
@@ -179798,6 +179952,7 @@ typedef $$TableReservationsTableCreateCompanionBuilder =
       required int tableId,
       required String customerName,
       Value<String?> customerPhone,
+      Value<int?> partyId,
       required DateTime reservationTime,
       Value<int> partySize,
       Value<String?> notes,
@@ -179815,6 +179970,7 @@ typedef $$TableReservationsTableUpdateCompanionBuilder =
       Value<int> tableId,
       Value<String> customerName,
       Value<String?> customerPhone,
+      Value<int?> partyId,
       Value<DateTime> reservationTime,
       Value<int> partySize,
       Value<String?> notes,
@@ -179856,6 +180012,25 @@ final class $$TableReservationsTableReferences
       $_db.restaurantTables,
     ).filter((f) => f.id.sqlEquals($_column));
     final item = $_typedResult.readTableOrNull(_tableIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $PartiesTable _partyIdTable(_$AppDatabase db) =>
+      db.parties.createAlias(
+        $_aliasNameGenerator(db.tableReservations.partyId, db.parties.id),
+      );
+
+  $$PartiesTableProcessedTableManager? get partyId {
+    final $_column = $_itemColumn<int>('party_id');
+    if ($_column == null) return null;
+    final manager = $$PartiesTableTableManager(
+      $_db,
+      $_db.parties,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_partyIdTable($_db));
     if (item == null) return manager;
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: [item]),
@@ -179951,6 +180126,29 @@ class $$TableReservationsTableFilterComposer
           }) => $$RestaurantTablesTableFilterComposer(
             $db: $db,
             $table: $db.restaurantTables,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PartiesTableFilterComposer get partyId {
+    final $$PartiesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.partyId,
+      referencedTable: $db.parties,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PartiesTableFilterComposer(
+            $db: $db,
+            $table: $db.parties,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -180057,6 +180255,29 @@ class $$TableReservationsTableOrderingComposer
     );
     return composer;
   }
+
+  $$PartiesTableOrderingComposer get partyId {
+    final $$PartiesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.partyId,
+      referencedTable: $db.parties,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PartiesTableOrderingComposer(
+            $db: $db,
+            $table: $db.parties,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$TableReservationsTableAnnotationComposer
@@ -180141,6 +180362,29 @@ class $$TableReservationsTableAnnotationComposer
     );
     return composer;
   }
+
+  $$PartiesTableAnnotationComposer get partyId {
+    final $$PartiesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.partyId,
+      referencedTable: $db.parties,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PartiesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.parties,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$TableReservationsTableTableManager
@@ -180156,7 +180400,7 @@ class $$TableReservationsTableTableManager
           $$TableReservationsTableUpdateCompanionBuilder,
           (TableReservation, $$TableReservationsTableReferences),
           TableReservation,
-          PrefetchHooks Function({bool tableId})
+          PrefetchHooks Function({bool tableId, bool partyId})
         > {
   $$TableReservationsTableTableManager(
     _$AppDatabase db,
@@ -180180,6 +180424,7 @@ class $$TableReservationsTableTableManager
                 Value<int> tableId = const Value.absent(),
                 Value<String> customerName = const Value.absent(),
                 Value<String?> customerPhone = const Value.absent(),
+                Value<int?> partyId = const Value.absent(),
                 Value<DateTime> reservationTime = const Value.absent(),
                 Value<int> partySize = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
@@ -180195,6 +180440,7 @@ class $$TableReservationsTableTableManager
                 tableId: tableId,
                 customerName: customerName,
                 customerPhone: customerPhone,
+                partyId: partyId,
                 reservationTime: reservationTime,
                 partySize: partySize,
                 notes: notes,
@@ -180212,6 +180458,7 @@ class $$TableReservationsTableTableManager
                 required int tableId,
                 required String customerName,
                 Value<String?> customerPhone = const Value.absent(),
+                Value<int?> partyId = const Value.absent(),
                 required DateTime reservationTime,
                 Value<int> partySize = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
@@ -180227,6 +180474,7 @@ class $$TableReservationsTableTableManager
                 tableId: tableId,
                 customerName: customerName,
                 customerPhone: customerPhone,
+                partyId: partyId,
                 reservationTime: reservationTime,
                 partySize: partySize,
                 notes: notes,
@@ -180246,7 +180494,7 @@ class $$TableReservationsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({tableId = false}) {
+          prefetchHooksCallback: ({tableId = false, partyId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -180281,6 +180529,21 @@ class $$TableReservationsTableTableManager
                               )
                               as T;
                     }
+                    if (partyId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.partyId,
+                                referencedTable:
+                                    $$TableReservationsTableReferences
+                                        ._partyIdTable(db),
+                                referencedColumn:
+                                    $$TableReservationsTableReferences
+                                        ._partyIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
 
                     return state;
                   },
@@ -180305,7 +180568,7 @@ typedef $$TableReservationsTableProcessedTableManager =
       $$TableReservationsTableUpdateCompanionBuilder,
       (TableReservation, $$TableReservationsTableReferences),
       TableReservation,
-      PrefetchHooks Function({bool tableId})
+      PrefetchHooks Function({bool tableId, bool partyId})
     >;
 typedef $$TableOrderPaymentsTableCreateCompanionBuilder =
     TableOrderPaymentsCompanion Function({

@@ -256,7 +256,7 @@ extension AccountingReportsDao on AppDatabase {
       JOIN journal_entry_lines l ON a.id = l.account_id
       JOIN journal_entries e ON l.entry_id = e.id
       WHERE a.account_type IN ('revenue', 'expense', 'contra_revenue')
-        AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue $ccFilter $brFilter$azFilter
+        AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue AND e.is_deleted = ${sqlBool(false)} $ccFilter $brFilter$azFilter
       GROUP BY a.id
       ''',
       variables: [dateVar(from), dateVar(to), ...ccVars, ...brVars, ...azVars],
@@ -411,7 +411,7 @@ extension AccountingReportsDao on AppDatabase {
       JOIN journal_entries e ON l.entry_id = e.id
       JOIN accounts a ON l.account_id = a.id
       WHERE a.code = ? AND e.entry_date BETWEEN ? AND ?
-        AND e.is_posted = $boolTrue $ccFilter $brFilter$azFilter
+        AND e.is_posted = $boolTrue AND e.is_deleted = ${sqlBool(false)} $ccFilter $brFilter$azFilter
       ''',
       variables: [
         Variable(outputVatCode),
@@ -474,7 +474,7 @@ extension AccountingReportsDao on AppDatabase {
       JOIN journal_entry_lines l ON a.id = l.account_id
       JOIN journal_entries e ON l.entry_id = e.id
       WHERE a.account_type IN ('asset', 'liability', 'equity', 'contra_asset')
-        AND e.entry_date <= ? AND e.is_posted = $boolTrue $ccFilter $brFilter$azFilter
+        AND e.entry_date <= ? AND e.is_posted = $boolTrue AND e.is_deleted = ${sqlBool(false)} $ccFilter $brFilter$azFilter
       GROUP BY a.id
       ''',
       variables: [dateVar(atDate), ...ccVars, ...brVars, ...azVars],
@@ -653,7 +653,7 @@ extension AccountingReportsDao on AppDatabase {
       INNER JOIN journal_entries je ON je.id = jel.entry_id
       INNER JOIN accounts a ON a.id = jel.account_id
       WHERE $cashBankFilter
-        AND je.entry_date BETWEEN ? AND ? AND je.is_posted = $boolTrue $ccFilter $brFilter$azFilter
+        AND je.entry_date BETWEEN ? AND ? AND je.is_posted = $boolTrue AND je.is_deleted = ${sqlBool(false)} $ccFilter $brFilter$azFilter
         AND (je.reference_type IS NULL OR je.reference_type NOT IN ($nonOperatingRefTypes))
       GROUP BY je.reference_type
       ''',
@@ -730,7 +730,7 @@ extension AccountingReportsDao on AppDatabase {
       INNER JOIN journal_entries je ON je.id = jel.entry_id
       INNER JOIN accounts a ON a.id = jel.account_id
       WHERE $cashBankFilter
-        AND je.entry_date BETWEEN ? AND ? AND je.is_posted = $boolTrue $ccFilter $brFilter$azFilter
+        AND je.entry_date BETWEEN ? AND ? AND je.is_posted = $boolTrue AND je.is_deleted = ${sqlBool(false)} $ccFilter $brFilter$azFilter
         AND je.reference_type IN ($investingRefTypes)
       ''',
       variables: [dateVar(from), dateVar(to), ...ccVars, ...brVars, ...azVars],
@@ -754,7 +754,7 @@ extension AccountingReportsDao on AppDatabase {
       INNER JOIN journal_entries je ON je.id = jel.entry_id
       INNER JOIN accounts a ON a.id = jel.account_id
       WHERE $cashBankFilter
-        AND je.entry_date BETWEEN ? AND ? AND je.is_posted = $boolTrue $ccFilter $brFilter$azFilter
+        AND je.entry_date BETWEEN ? AND ? AND je.is_posted = $boolTrue AND je.is_deleted = ${sqlBool(false)} $ccFilter $brFilter$azFilter
         AND je.reference_type IN ($financingRefTypes)
       ''',
       variables: [dateVar(from), dateVar(to), ...ccVars, ...brVars, ...azVars],
@@ -777,7 +777,7 @@ extension AccountingReportsDao on AppDatabase {
       INNER JOIN journal_entries je ON je.id = jel.entry_id
       INNER JOIN accounts a ON a.id = jel.account_id
       WHERE $cashBankFilter
-        AND je.entry_date < ? AND je.is_posted = $boolTrue $ccFilter $brFilter$azFilter
+        AND je.entry_date < ? AND je.is_posted = $boolTrue AND je.is_deleted = ${sqlBool(false)} $ccFilter $brFilter$azFilter
       ''',
       variables: [dateVar(from), ...ccVars, ...brVars, ...azVars],
       readsFrom: {journalEntryLines, journalEntries, accounts},

@@ -625,9 +625,9 @@ extension TablesDao on AppDatabase {
     required DateTime reservationTime,
     int partySize = 2,
     String? notes,
+    int? partyId,
   }) async {
     return transaction(() async {
-      // Update table status to reserved
       await updateTableStatus(tableId, 'reserved');
 
       return into(tableReservations).insert(
@@ -635,6 +635,7 @@ extension TablesDao on AppDatabase {
           tableId: tableId,
           customerName: customerName,
           customerPhone: Value(customerPhone),
+          partyId: Value(partyId),
           reservationTime: reservationTime,
           partySize: Value(partySize),
           notes: Value(notes),
@@ -657,7 +658,6 @@ extension TablesDao on AppDatabase {
         tableReservations,
       )..where((r) => r.id.equals(reservationId))).getSingle();
 
-      // Update reservation status
       await updateReservationStatus(reservationId, 'cancelled');
 
       // Check if table has other reservations, if not make it available
@@ -688,7 +688,6 @@ extension TablesDao on AppDatabase {
         tableReservations,
       )..where((r) => r.id.equals(reservationId))).getSingle();
 
-      // Update reservation status to seated
       await updateReservationStatus(reservationId, 'seated');
 
       // Create a table order (which marks table as occupied)

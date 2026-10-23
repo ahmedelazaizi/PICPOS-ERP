@@ -297,6 +297,9 @@ class TableReservations extends Table {
   IntColumn get tableId => integer().references(RestaurantTables, #id)();
   TextColumn get customerName => text().withLength(max: 100)();
   TextColumn get customerPhone => text().nullable()();
+
+  /// v196 — العميلُ المرجعيّ (معدومٌ = ضيفٌ). الاسمُ/الهاتفُ أعلاه لقطةٌ للتاريخ.
+  IntColumn get partyId => integer().nullable().references(Parties, #id)();
   DateTimeColumn get reservationTime => dateTime()(); // الوقت المتوقع للوصول
   IntColumn get partySize =>
       integer().withDefault(const Constant(2))(); // عدد الأشخاص

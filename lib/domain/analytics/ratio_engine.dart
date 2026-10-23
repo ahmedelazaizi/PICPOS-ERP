@@ -3,6 +3,11 @@
 // Conventions
 //  * A ratio whose denominator is 0 (or any input non-finite) has
 //    `value == null` and status [RatioStatus.unknown]; never NaN/Infinity.
+//  * A ratio whose denominator is NEGATIVE (negative equity for ROE, a net
+//    loss for OCF / net income) keeps its value but is graded
+//    [RatioStatus.bad]: dividing by a negative turns two negatives into a
+//    positive that would otherwise grade "good" (C-7). This matches how the
+//    leverage ratios already treat negative equity.
 //  * Period ratios are NOT annualised: turnover = period flow / balance.
 //  * Balance figures are period-end (no averaging) — documented simplification.
 //  * Thresholds are rule-of-thumb defaults, stated in each ratio's formula.
@@ -94,8 +99,11 @@ Ratio _make(
   double warn,
   Bilingual Function(RatioStatus s) interp, {
   bool negativeIsBad = false,
+  bool forceBad = false,
 }) {
-  final s = gradeValue(value, dir, good, warn, negativeIsBad: negativeIsBad);
+  final s = forceBad && value != null
+      ? RatioStatus.bad
+      : gradeValue(value, dir, good, warn, negativeIsBad: negativeIsBad);
   return Ratio(
     key: key,
     group: group,
@@ -220,6 +228,7 @@ class RatioEngine {
             const Bilingual('عائد مقبول للملاك', 'Acceptable return for owners'),
             const Bilingual('عائد ضعيف للملاك', 'Poor return for owners'),
           ),
+          forceBad: s.equity < 0,
         ),
         _make(
           RatioGroup.profitability, 'ebitda_margin',
@@ -389,6 +398,7 @@ class RatioEngine {
             const Bilingual('جزء من الأرباح لم يتحول لنقد', 'Part of profit is not yet cash'),
             const Bilingual('الأرباح لا تقابلها سيولة', 'Profit is not backed by cash'),
           ),
+          forceBad: s.netIncome < 0,
         ),
         _make(
           RatioGroup.cashFlow, 'free_cash_flow_margin',
