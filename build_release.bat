@@ -15,11 +15,11 @@ REM ----------------------------------------------------------------------
 REM ----------------------------------------------------------------------
 REM UralCash brand identity - set explicitly on purpose.
 REM
-REM These match the CMake defaults, so in theory they are redundant. In
-REM practice they are required: build_picpos.bat copies the PicPos icon over
-REM app_icon.ico, so without restoring it here a UralCash build that follows
-REM a PicPos build would ship the PicPos icon. Every brand script must set
-REM its identity in full and never assume a clean previous state.
+REM The CMake / Runner.rc defaults are PicPos (owner decision 2026-10-23), so
+REM these values are REQUIRED here, not redundant. The icon is copied below
+REM over app_icon.ico, and put back to the PicPos icon right after the build so
+REM the committed default stays PicPos. Every brand script must set its
+REM identity in full and never assume a clean previous state.
 REM
 REM NOTE: keep this file ASCII-only - cmd.exe reads .bat in the OEM codepage
 REM and UTF-8 comments corrupt the parser, silently dropping `set` lines.
@@ -52,7 +52,10 @@ REM including the copy to FlavorBuilds\Unified -- never ran, while the script
 REM still exited 0 (it inherited flutter.bat's exit code). The build output
 REM was correct; the published folder silently kept an older copy.
 call flutter build windows --dart-define=APP_FLAVOR=unified --dart-define=APP_BRAND=%BRAND_ID% --release
-if %ERRORLEVEL% NEQ 0 (
+set BUILD_RC=%ERRORLEVEL%
+REM Put the default (PicPos) icon back so the working tree stays PicPos.
+copy /Y "windows\runner\resources\app_icon_picpos.ico" "windows\runner\resources\app_icon.ico" >nul
+if %BUILD_RC% NEQ 0 (
     echo.
     echo BUILD FAILED!
     exit /b 1

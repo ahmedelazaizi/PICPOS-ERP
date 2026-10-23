@@ -12,7 +12,7 @@
 #ifdef BRAND_BINARY_NAME
 #define BRAND_WINDOW_TITLE L"" BRAND_BINARY_NAME
 #else
-#define BRAND_WINDOW_TITLE L"UralCash"
+#define BRAND_WINDOW_TITLE L"PicPos"
 #endif
 
 int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,

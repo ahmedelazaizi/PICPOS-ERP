@@ -7,7 +7,7 @@
 #   powershell -ExecutionPolicy Bypass -File tool\make_release_checksums.ps1 -Version 3.9.1.275
 #   powershell -ExecutionPolicy Bypass -File tool\make_release_checksums.ps1 -Files a.exe,b.zip
 #
-# Default: reads `#define AppVersion` from installer\setup.iss and hashes
+# Default: reads `#define AppVersion` from installer\setup_picpos.iss and hashes
 # installer\output\PicPos-Setup-<version>.exe (required) and .zip (if present).
 # Output: SHA256SUMS.txt next to the files, in `sha256sum` format
 # ("<hash> *<name>"), UTF-8 without BOM, LF line endings.
@@ -25,9 +25,9 @@ $root = Split-Path -Parent $PSScriptRoot
 if (-not $Files) {
     if (-not $Dir) { $Dir = Join-Path $root 'installer\output' }
     if (-not $Version) {
-        $iss = Get-Content (Join-Path $root 'installer\setup.iss') -Raw -Encoding UTF8
+        $iss = Get-Content (Join-Path $root 'installer\setup_picpos.iss') -Raw -Encoding UTF8
         $m = [regex]::Match($iss, '(?m)^\s*#define\s+AppVersion\s+"([^"]+)"')
-        if (-not $m.Success) { throw 'Could not read AppVersion from installer\setup.iss; pass -Version.' }
+        if (-not $m.Success) { throw 'Could not read AppVersion from installer\setup_picpos.iss; pass -Version.' }
         $Version = $m.Groups[1].Value
     }
     $exe = Join-Path $Dir "PicPos-Setup-$Version.exe"

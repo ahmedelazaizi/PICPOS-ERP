@@ -103,6 +103,15 @@ jobs:
       - name: Analyze code (strict)
         run: flutter analyze lib/
 
+      # ── PicPos brand guards (owner decision 2026-10-23: PicPos only) ───────
+      # Separate steps on purpose: on a Windows runner a failing native command
+      # in the middle of a multi-line pwsh script does not fail the step.
+      - name: PicPos brand unit guard (APP_BRAND=picpos)
+        run: flutter test --dart-define=APP_BRAND=picpos test/unit/brand_picpos_test.dart
+
+      - name: PicPos brand artifact guard (assets + visible strings)
+        run: flutter test test/structural/brand_artifact_guard_test.dart
+
       # ── God-File size gates ────────────────────────────────────────────────
       # Each threshold is the MAXIMUM allowed byte size.
       # Lower the threshold when a file is refactored; never raise it.
@@ -625,30 +634,65 @@ jobs:
       # Codegen is NOT run in CI (see `root_static` job): database.g.dart is committed.
 
       # ── Version stamp ──────────────────────────────────────────────────────
-      # Artifact name format: PicPos-ERP-<semver>+<short-sha>-windows
+      # The version comes from pubspec.yaml ONLY (`3.9.2+277` -> name 3.9.2,
+      # build 277) so the exe, the installer (`AppVersion 3.9.2.277`) and the
+      # test `installer_version_matches_pubspec_test` all agree. The CI run
+      # number is deliberately NOT used as the build number (REL-001).
+      # Artifact name format: PicPos-ERP-<semver>+<build>-<short-sha>-windows
       - name: Compute build metadata
         id: meta
         shell: bash
         run: |
-          SEMVER=$(grep '^version:' pubspec.yaml | sed 's/version:[[:space:]]*//')
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version:[[:space:]]*//' | tr -d '\r')
+          SEMVER="${VERSION%%+*}"
+          BUILD="${VERSION##*+}"
           SHORT_SHA=${GITHUB_SHA::8}
-          FULL="${SEMVER}+${SHORT_SHA}"
+          FULL="${SEMVER}+${BUILD}-${SHORT_SHA}"
           echo "semver=${SEMVER}"       >> "$GITHUB_OUTPUT"
+          echo "build=${BUILD}"         >> "$GITHUB_OUTPUT"
           echo "full-version=${FULL}"   >> "$GITHUB_OUTPUT"
           echo "artifact-name=PicPos-ERP-${FULL}-windows" >> "$GITHUB_OUTPUT"
           echo "Building: PicPos-ERP ${FULL}"
 
-      - name: Build Windows release
-        run: >-
-          flutter build windows --release
-          --build-name="${{ steps.meta.outputs.semver }}"
-          --build-number="${{ github.run_number }}"
+      # ── Build PicPos (same entry point as a local release) ─────────────────
+      # build_picpos.bat sets the BRAND_* CMake env vars, passes
+      # --dart-define=APP_BRAND=picpos, applies the PicPos icon, forces the
+      # SQLCipher sqlite3.dll and fails if the DLL lacks the "sqlcipher"
+      # marker, prunes non-PicPos assets from the bundle, and runs the brand
+      # artifact guard on the real bundle (PICPOS_REQUIRE_BUNDLE=1).
+      # Output: FlavorBuilds\PicPos (copy of build\windows\x64\runner\Release).
+      - name: Build PicPos Windows release
+        shell: cmd
+        run: build_picpos.bat
+
+      # Independent re-checks on the produced folder (do not trust the script).
+      - name: Verify PicPos bundle (identity, SQLCipher, version)
+        shell: pwsh
+        run: |
+          $dir = "FlavorBuilds\PicPos"
+          $exe = Join-Path $dir "PicPos.exe"
+          if (-not (Test-Path $exe)) { throw "PicPos.exe missing in $dir" }
+          $others = Get-ChildItem $dir -Filter *.exe | Where-Object { $_.Name -ne "PicPos.exe" }
+          if ($others) { throw "unexpected executables: $($others.Name -join ', ')" }
+          $vi = (Get-Item $exe).VersionInfo
+          if ($vi.CompanyName -ne "PicPos" -or $vi.ProductName -ne "PicPos") {
+            throw "exe identity is '$($vi.CompanyName)' / '$($vi.ProductName)', expected PicPos / PicPos"
+          }
+          $want = "${{ steps.meta.outputs.semver }}"
+          if ($vi.FileVersion -notlike "$want*") {
+            throw "exe FileVersion '$($vi.FileVersion)' does not start with pubspec version '$want'"
+          }
+          $dll = Join-Path $dir "sqlite3.dll"
+          $bytes = [IO.File]::ReadAllBytes($dll)
+          $text = [Text.Encoding]::GetEncoding(28591).GetString($bytes)
+          if (-not $text.Contains("sqlcipher")) { throw "sqlite3.dll is not SQLCipher" }
+          Write-Host "OK: PicPos.exe $($vi.FileVersion), SQLCipher dll present"
 
       # ── Package as zip ─────────────────────────────────────────────────────
       - name: Package artifact
         shell: pwsh
         run: |
-          $src = "build\windows\x64\runner\Release"
+          $src = "FlavorBuilds\PicPos"
           $name = "${{ steps.meta.outputs.artifact-name }}"
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           Compress-Archive -Path "$src\*" -DestinationPath "dist\${name}.zip" -Force

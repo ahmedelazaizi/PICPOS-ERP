@@ -89,4 +89,12 @@ void main() {
           'يرفع pubspec.',
     );
   });
+
+  test('🔴 وسكربتُ مثبِّت PicPos (setup_picpos.iss) يطابق pubspec أيضاً', () {
+    final iss = File('installer/setup_picpos.iss').readAsStringSync();
+    final im = RegExp(r'#define\s+AppVersion\s+"([^"]+)"').firstMatch(iss);
+    expect(im?.group(1), _pubspecToInnoVersion(pubspecVersion),
+        reason: 'حدِّث `#define AppVersion` في `installer/setup_picpos.iss` '
+            'إلى «${_pubspecToInnoVersion(pubspecVersion)}» مع رفع pubspec.');
+  });
 }

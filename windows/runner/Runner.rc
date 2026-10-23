@@ -76,15 +76,15 @@ IDI_APP_ICON            ICON                    "resources\\app_icon.ico"
 // بتيجي من CMake (windows/CMakeLists.txt) اللي بيقراها من متغيرات البيئة
 // اللي سكربت بناء العلامة بيظبطها. القيم دي هي اللي المستخدم بيشوفها في
 // «خصائص الملف» على الـ exe، فلو فضلت ثابتة كان PicPos هيوزّع ملف مكتوب
-// عليه UralCash — نفس نوع الخلط اللي الفصل ده موجود يمنعه.
+// عليه اسم منتج آخر. الافتراضي PicPos (قرار المالك 2026-10-23).
 #if !defined(BRAND_BINARY_NAME)
-#define BRAND_BINARY_NAME "UralCash"
+#define BRAND_BINARY_NAME "PicPos"
 #endif
 #if !defined(BRAND_PRODUCT_NAME)
-#define BRAND_PRODUCT_NAME "UralCash ERP"
+#define BRAND_PRODUCT_NAME "PicPos"
 #endif
 #if !defined(BRAND_COMPANY_NAME)
-#define BRAND_COMPANY_NAME "Monexia"
+#define BRAND_COMPANY_NAME "PicPos"
 #endif
 #define BRAND_EXE_NAME BRAND_BINARY_NAME ".exe"
 #define BRAND_COPYRIGHT "Copyright (C) 2026 " BRAND_COMPANY_NAME ". All rights reserved."

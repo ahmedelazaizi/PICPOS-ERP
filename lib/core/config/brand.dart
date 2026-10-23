@@ -57,7 +57,11 @@ class Brand {
   static const String name = isPicPos ? 'PicPos' : 'UralCash';
 
   /// الاسم العربي الظاهر للمستخدم.
-  static String get nameAr => isPicPos ? tr('بيك بوس') : tr('يورال كاش');
+  static String get nameAr => isPicPos
+      ? tr('بيك بوس')
+      // العلامة البديلة: لا تمرّ عبر tr() كي لا يدخل اسمها فهرس الترجمة
+      // المشحون مع PicPos (assets/i18n/en.json) — BRAND-002.
+      : (uiLocaleCode == 'en' ? name : 'يورال كاش');
 
   // ── الأصول ───────────────────────────────────────────────────────────────
 

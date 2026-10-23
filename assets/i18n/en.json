@@ -4337,7 +4337,6 @@
   "تطبيق كسعر بيع": "Apply as Selling Price",
   "تطبيق ورقة التحميل": "Apply Allocation Sheet",
   "تطبيق ورقة التكاليف المحمَّلة": "Apply Allocated Costs Sheet",
-  "تطوير: Ural Technology": "Developed by: Ural Technology",
   "تطوير: {p0}": "Developed by: {p0}",
   "تظهر في الطباعة": "Shown in print",
   "تظهر في الفواتير والتقارير المطبوعة": "Shown on printed invoices and reports",
@@ -8740,7 +8739,6 @@
   "مرتَّبةً بالمبيعات تنازليّاً": "Sorted by sales, descending",
   "مرتَّبةً بعدد العمليات تنازليّاً": "Sorted by transaction count, descending",
   "مرتّب زمنياً · المدين يزيد الذمة والدائن ينقصها · الرصيد الجاري تراكمي": "Chronological · Debit increases the balance and credit decreases it · Running balance is cumulative",
-  "مرحباً بك في URAL-ERP": "Welcome to URAL-ERP",
   "مرحباً بك في {p0}": "Welcome to {p0}",
   "مرحّل": "Posted",
   "مرخّصة": "Licensed",
@@ -9871,7 +9869,6 @@
   "يوجد فرق — راجع القيود": "There is a difference — review the entries",
   "يوجد فرق — راجع مصادر الفروق أعلاه": "There is a difference — review the sources of differences above",
   "يوجد وردية مفتوحة حالياً": "A shift is currently open",
-  "يورال كاش": "Ural Cash",
   "يوليو": "July",
   "يوم": "Day",
   "يوم الأسبوع": "Day of Week",
@@ -11232,5 +11229,7 @@
   "إنشاء سند مالي": "Create financial voucher",
   "تعديل الطرف": "Edit party",
   "حذف الطرف": "Delete party",
-  "فتح كشف الحساب": "Open account statement"
+  "فتح كشف الحساب": "Open account statement",
+  "لا يمكنك الموافقة على إجراءٍ طلبتَه بنفسك — يلزم مسؤولٌ آخر": "You cannot approve an action you requested yourself — another manager is required",
+  "محاولات فاشلة كثيرة — أعد المحاولة بعد {p0} دقيقة": "Too many failed attempts — try again in {p0} minute(s)"
 }

@@ -9,15 +9,15 @@ REM broken build that still reports SUCCESS. Keep every .bat in English.
 REM
 REM Run build_picpos.bat FIRST. This script packages whatever is currently
 REM in build\windows\x64\runner\Release, so packaging without a fresh
-REM PicPos build would wrap the other brand's binaries. The .iss refuses to
-REM compile if PicPos.exe is not there, but that guard only catches the
-REM obvious case - a stale PicPos build still packages silently.
+REM PicPos build would wrap stale binaries. The .iss refuses to compile if
+REM PicPos.exe is not there, but that guard only catches the obvious case -
+REM a stale PicPos build still packages silently.
 REM ======================================================================
 
 setlocal
 
 set BRAND_ID=picpos
-set ISS_FILE=installer\setup.iss
+set ISS_FILE=installer\setup_picpos.iss
 set ISCC="C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 
 echo ============================================
@@ -44,9 +44,15 @@ if not exist "build\windows\x64\runner\Release\PicPos.exe" (
     echo Run build_picpos.bat first.
     exit /b 1
 )
-if exist "build\windows\x64\runner\Release\UralCash.exe" (
-    echo FAILED: UralCash.exe found in the Release output - mixed build.
-    echo Run build_picpos.bat to rebuild cleanly.
+for %%F in ("build\windows\x64\runner\Release\*.exe") do (
+    if /I not "%%~nxF"=="PicPos.exe" (
+        echo FAILED: unexpected executable %%~nxF in the Release output - mixed build.
+        echo Run build_picpos.bat to rebuild cleanly.
+        exit /b 1
+    )
+)
+if exist "build\windows\x64\runner\Release\data\flutter_assets\logo.PNG" (
+    echo FAILED: non-PicPos asset in the Release output - run build_picpos.bat.
     exit /b 1
 )
 
@@ -73,7 +79,7 @@ set SIGN_ARGS=
 if defined PICPOS_SIGN_PFX set SIGN_ARGS=/DSignInstaller=1 "/Spicpossign=$q%~dp0tool\sign_file.cmd$q $f"
 if defined PICPOS_SIGN_THUMBPRINT set SIGN_ARGS=/DSignInstaller=1 "/Spicpossign=$q%~dp0tool\sign_file.cmd$q $f"
 if not defined SIGN_ARGS echo unsigned build - PICPOS_SIGN_PFX / PICPOS_SIGN_THUMBPRINT not set.
-%ISCC% /DBrandId=%BRAND_ID% %SIGN_ARGS% %ISS_FILE%
+%ISCC% %SIGN_ARGS% %ISS_FILE%
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo INSTALLER BUILD FAILED!

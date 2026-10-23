@@ -1,4 +1,4 @@
-﻿# Project-level configuration.
+# Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
 project(ural_erp LANGUAGES CXX)
 
@@ -11,20 +11,20 @@ project(ural_erp LANGUAGES CXX)
 # ليه متغيرات بيئة وليه `--dart-define`؟ لأن `--dart-define` بيوصل لكود Dart
 # بس ومبيوصلش لـ CMake خالص، والحاجات دي بتتحدد وقت الترجمة الأصلية.
 #
-# الافتراضي UralCash عشان أي بناء قديم أو تشغيل من الـ IDE يفضل شغال زي ما هو.
+# الافتراضي PicPos (قرار المالك 2026-10-23: النظام PicPos فقط)، فأي بناء بلا\n# متغيرات بيئة ينتج PicPos.exe. المنتج البديل يمرّر قيمه صراحةً (build_release.bat).
 #
 # ⚠ الـ CMake cache بيحتفظ بالقيم دي. تبديل العلامة في نفس مجلد البناء بيخلّي
 #   ناتج مختلط — عشان كده سكربتات البناء بتمسح مجلد البناء الأول.
 if(DEFINED ENV{BRAND_BINARY_NAME})
   set(BINARY_NAME "$ENV{BRAND_BINARY_NAME}")
 else()
-  set(BINARY_NAME "UralCash")
+  set(BINARY_NAME "PicPos")
 endif()
 
 if(DEFINED ENV{BRAND_PRODUCT_NAME})
   set(BRAND_PRODUCT_NAME "$ENV{BRAND_PRODUCT_NAME}")
 else()
-  set(BRAND_PRODUCT_NAME "UralCash ERP")
+  set(BRAND_PRODUCT_NAME "PicPos")
 endif()
 
 # الكيان القانوني الظاهر في «خصائص الملف» وسطر حقوق النشر. لازم يكون الاسم
@@ -33,7 +33,7 @@ endif()
 if(DEFINED ENV{BRAND_COMPANY_NAME})
   set(BRAND_COMPANY_NAME "$ENV{BRAND_COMPANY_NAME}")
 else()
-  set(BRAND_COMPANY_NAME "Monexia")
+  set(BRAND_COMPANY_NAME "PicPos")
 endif()
 
 message(STATUS "Brand: BINARY_NAME=${BINARY_NAME} PRODUCT_NAME=${BRAND_PRODUCT_NAME} COMPANY=${BRAND_COMPANY_NAME}")

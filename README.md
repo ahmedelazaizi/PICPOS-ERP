@@ -92,8 +92,8 @@ PicPos ERP نظام متكامل يغطي دورة العمل كاملة من ن
 ## العلامة التجارية والإصدارات
 
 - العلامة تُحدَّد وقت البناء بـ `--dart-define=APP_BRAND=<id>` (`lib/core/config/brand.dart`)، والمعرّفان المعروفان: `picpos` و`uralcash`.
-- **تنبيه:** القيمة الافتراضية عند غياب `APP_BRAND` هي `uralcash`؛ لذا مرّر `APP_BRAND=picpos` دائمًا عند تشغيل أو بناء منتج PicPos (`build_picpos.bat` يفعل ذلك).
-- UralCash علامة بديلة قديمة في الكود تُبنى عبر `build_release.bat`؛ ولا يُفترض أن تظهر في منتج PicPos (يفحص `build_picpos.bat` عزل العلامة قبل البناء).
+- **تنبيه:** القيمة الافتراضية لـ Dart عند غياب `APP_BRAND` ما زالت `uralcash` (اختبارات المستودع تعتمد عليها)؛ لذا مرّر `APP_BRAND=picpos` دائمًا عند تشغيل أو بناء PicPos (`build_picpos.bat` وCI يفعلان). أمّا افتراضات النظام الأصلي (CMake، `Runner.rc`، `main.cpp`) فصارت PicPos.
+- قرار المالك (2026-10-23): النظام PicPos فقط؛ لا يظهر اسم أي منتج آخر في أي ناتج PicPos. سكربتات PicPos: `build_picpos.bat` (يحذف الأصول غير PicPos بـ `tool/prune_picpos_bundle.ps1` ثم يشغّل `test/structural/brand_artifact_guard_test.dart` على الحزمة) و`build_installer_picpos.bat` (يستخدم `installer/setup_picpos.iss`). تفاصيل الجرد: [docs/audits/2026-10-23-release-audit/BRAND-REMEDIATION-NOTES.md](docs/audits/2026-10-23-release-audit/BRAND-REMEDIATION-NOTES.md).
 - الـ Flavors (`lib/core/config/app_flavor.dart`): `unified`، `restaurant`، `cafe`، `supermarket`، `supermarket_pro`، `supermarket_plus`، `commercial`. بناء `build_picpos.bat` يستخدم `APP_FLAVOR=unified`.
 - ملف النشاط (Business Profile) والميزات يُختاران وقت التشغيل ويُخزَّنان في قاعدة البيانات، دون ملف تنفيذي لكل نشاط (تعليق `build_release.bat`).
 
