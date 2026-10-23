@@ -15,7 +15,9 @@ import '../../../data/providers/providers.dart';
 import '../../../domain/models/picpos_booking_view.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
 import '../screens/bookings_picpos_screen.dart';
+import '../../../core/permissions/permission_codes.dart';
 import 'booking_catalog_editors.dart';
+import 'booking_permission_gates.dart';
 
 // ═════════════════════════ قائمة الانتظار ═════════════════════════
 
@@ -213,6 +215,26 @@ class DottedBorderBox extends StatelessWidget {
       );
 }
 
+// فتحُ محرّري الكتالوج يمرّ ببوّابة `bookings_resources_manage` /
+// `bookings_services_manage` (فتحُ الشاشة لا يمنح التعديل).
+Future<void> _editResource(WidgetRef ref, BuildContext context,
+        {BookingResource? existing}) =>
+    runBookingAction(
+        ref,
+        context,
+        PermissionCodes.bookingsResourcesManage,
+        tr('إدارة الموارد'),
+        () => showResourceEditor(context, existing: existing));
+
+Future<void> _editService(WidgetRef ref, BuildContext context,
+        {BookingService? existing}) =>
+    runBookingAction(
+        ref,
+        context,
+        PermissionCodes.bookingsServicesManage,
+        tr('إدارة الخدمات'),
+        () => showServiceEditor(context, existing: existing));
+
 // ═════════════════════════ الموارد ═════════════════════════
 
 class BookingsResourcesView extends ConsumerWidget {
@@ -237,7 +259,7 @@ class BookingsResourcesView extends ConsumerWidget {
             title: tr('لا موارد معرَّفة'),
             hint: tr('أضف موظَّفاً أو جهازاً ليمكن إسنادُ الحجوزات إليه.'),
             action: FilledButton.icon(
-              onPressed: () => showResourceEditor(context),
+              onPressed: () => _editResource(ref, context),
               icon: const Icon(PhosphorIconsBold.plus, size: 16),
               label:  Text(tr('مورد جديد')),
             ),
@@ -259,12 +281,12 @@ class BookingsResourcesView extends ConsumerWidget {
               return _AddCard(
                 label: tr('مورد جديد'),
                 icon: PhosphorIconsBold.userPlus,
-                onTap: () => showResourceEditor(context),
+                onTap: () => _editResource(ref, context),
               );
             }
             final r = list[i];
             return _ResourceCard(
-              onEdit: () => showResourceEditor(context, existing: r),
+              onEdit: () => _editResource(ref, context, existing: r),
               name: r.name,
               role: r.role,
               kind: r.kind,
@@ -491,7 +513,7 @@ class BookingsServicesView extends ConsumerWidget {
             title: tr('لا خدمات معرَّفة'),
             hint: tr('أضف خدمةً بمدّتها وسعرها ليمكن الحجزُ عليها.'),
             action: FilledButton.icon(
-              onPressed: () => showServiceEditor(context),
+              onPressed: () => _editService(ref, context),
               icon: const Icon(PhosphorIconsBold.plus, size: 16),
               label:  Text(tr('خدمة جديدة')),
             ),
@@ -511,14 +533,14 @@ class BookingsServicesView extends ConsumerWidget {
               return _AddCard(
                 label: tr('خدمة جديدة'),
                 icon: PhosphorIconsBold.plus,
-                onTap: () => showServiceEditor(context),
+                onTap: () => _editService(ref, context),
               );
             }
             final s = list[i];
             final count =
                 rows.where((r) => r.serviceId == s.id && r.occupiesTime).length;
             return _ServiceCard(
-              onEdit: () => showServiceEditor(context, existing: s),
+              onEdit: () => _editService(ref, context, existing: s),
               name: s.name,
               durationMinutes: s.durationMinutes,
               bufferMinutes: s.bufferMinutes,

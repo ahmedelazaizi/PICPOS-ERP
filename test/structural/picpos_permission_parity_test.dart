@@ -45,6 +45,9 @@ bool _isDefinitionFile(String p) {
   return n.endsWith('lib/core/permissions/permission_codes.dart') ||
       n.endsWith('lib/core/permissions/role_grant_matrix.dart') ||
       n.endsWith('lib/core/permissions/permission_enforcement_registry.dart') ||
+      // مجموعاتُ «فتح الشاشة» (P2): تسرد أكوادَ أفعالٍ لتقرّر من يرى الشاشة،
+      // وتُستورَد عبر `auth_providers` من كلّ توأم — فذكرُها هناك تعريفٌ لا حراسة.
+      n.endsWith('lib/core/permissions/screen_access_resolver.dart') ||
       n.endsWith('data/permission_categories.dart') ||
       n.contains('lib/data/database/database_seeder');
 }

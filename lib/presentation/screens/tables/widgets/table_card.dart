@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/theme/table_status_palette.dart';
 import '../../../../data/providers/providers.dart';
 import '../../../../domain/repositories/restaurant_repository.dart';
 import '../providers/tables_state_provider.dart';
+import 'table_section_chip.dart';
 import 'table_status_info.dart';
 
 class TableCard extends ConsumerWidget {
@@ -14,17 +16,29 @@ class TableCard extends ConsumerWidget {
   final IRestaurantRepository restaurantRepo;
   final Function(RestaurantTable) onInteraction;
 
+  /// اسمُ قسم الطاولة — يُرسَم شريحةً صغيرةً تحت الاسم. null = لا شريحة.
+  final String? sectionName;
+
+  /// طاولةٌ لا تطابق الحالةَ المميَّزة: تُعتَّم (لا تُخفى).
+  final bool dimmed;
+
+  /// طاولةٌ تطابق الحالةَ المميَّزة: إطارٌ بارزٌ بلون حالتها.
+  final bool highlighted;
+
   const TableCard({
     super.key,
     required this.table,
     required this.restaurantRepo,
     required this.onInteraction,
+    this.sectionName,
+    this.dimmed = false,
+    this.highlighted = false,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final uiState = ref.watch(tablesUIProvider);
-    final statusInfo = tableStatusInfo(table.status);
+    final statusInfo = tableStatusInfoOf(context, table.status);
     // البطاقةُ تعيش على سطحِ الشاشة، فألوانُها تُشتقُّ من الثيم. الأبيضُ
     // المثبَّتُ كان يعمل ما دامت الشاشةُ داكنةً وحدَها؛ وفي الوضع الفاتح
     // يذوب في السطح فيختفي اسمُ الطاولة وسعتُها.
@@ -40,7 +54,13 @@ class TableCard extends ConsumerWidget {
 
     final isRound = table.capacity <= 4;
 
-    return GestureDetector(
+    final emphasised = isSelected || highlighted;
+
+    return AnimatedOpacity(
+      // التعتيمُ لا يُلغي النقرَ: الطاولةُ المعتَّمةُ تبقى قابلةً للفتح.
+      opacity: dimmed ? TableStatusPalette.dimmedOpacity : 1,
+      duration: const Duration(milliseconds: 200),
+      child: GestureDetector(
       onTap: () => onInteraction(table),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
@@ -61,13 +81,13 @@ class TableCard extends ConsumerWidget {
           ),
           borderRadius: BorderRadius.circular(isRound ? 80 : 18),
           border: Border.all(
-            color: isSelected
+            color: emphasised
                 ? statusInfo.color
                 : statusInfo.color.withValues(alpha: 0.25),
-            width: isSelected ? 2.5 : 1.5,
+            width: emphasised ? 2.5 : 1.5,
           ),
           boxShadow: [
-            if (isSelected || isActive)
+            if (!dimmed && (isSelected || isActive))
               BoxShadow(
                 color: statusInfo.color.withValues(alpha: isSelected ? 0.25 : 0.1),
                 blurRadius: isSelected ? 20 : 12,
@@ -108,6 +128,11 @@ class TableCard extends ConsumerWidget {
                       color: statusInfo.color,
                     ),
                     textAlign: TextAlign.center),
+                if (sectionName != null && sectionName!.isNotEmpty)
+                  TableSectionChip(
+                    key: Key('table_card_section_${table.id}'),
+                    name: sectionName!,
+                  ),
                 const SizedBox(height: 2),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -180,7 +205,7 @@ class TableCard extends ConsumerWidget {
                           tr('دُفع {p0} من {p1}', {'p0': progress.paid.toStringAsFixed(AppConstants.decimalPlaces), 'p1': progress.effective.toStringAsFixed(AppConstants.decimalPlaces)}),
                           style: GoogleFonts.cairo(
                               fontSize: 8,
-                              color: const Color(0xFFF97316),
+                              color: TableStatusPalette.of(context, 'paid'),
                               fontWeight: FontWeight.w700),
                         ),
                       );
@@ -204,10 +229,11 @@ class TableCard extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                        color: TableStatusPalette.of(context, 'available')
+                            .withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
-                            color: const Color(0xFF10B981)
+                            color: TableStatusPalette.of(context, 'available')
                                 .withValues(alpha: 0.3)),
                       ),
                       child: Text(
@@ -215,7 +241,7 @@ class TableCard extends ConsumerWidget {
                         style: GoogleFonts.cairo(
                             fontSize: 9,
                             fontWeight: FontWeight.w800,
-                            color: const Color(0xFF10B981)),
+                            color: TableStatusPalette.of(context, 'available')),
                       ),
                     );
                   },
@@ -223,6 +249,7 @@ class TableCard extends ConsumerWidget {
               ),
           ],
         ),
+      ),
       ),
     );
   }

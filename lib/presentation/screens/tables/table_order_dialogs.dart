@@ -398,6 +398,11 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
             ),
             ElevatedButton.icon(
               onPressed: () async {
+                if (!await _ensureTableAction(
+                    PermissionCodes.tablesAddItems, tr('إضافة أصناف'))) {
+                  return;
+                }
+                if (!ctx.mounted) return;
                 Navigator.pop(ctx);
                 await _printKitchenOrder(restaurantRepo, table, order);
                 if (context.mounted) {
@@ -416,7 +421,12 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
               label:  Text(tr('إضافة أصناف')),
             ),
             ElevatedButton.icon(
-              onPressed: () {
+              onPressed: () async {
+                if (!await _ensureTableAction(
+                    PermissionCodes.tablesCheckout, tr('تحصيل الحساب'))) {
+                  return;
+                }
+                if (!ctx.mounted) return;
                 Navigator.pop(ctx);
                 // Navigate to TablePosScreen for checkout/payment
                 if (context.mounted) {
@@ -482,6 +492,14 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
       );
     } catch (e) {
       debugPrint('Failed to print kitchen order: $e');
+      // فشلُ الطباعة لا يُترك للّوج وحده: المطبخ لن يستلم التذكرة.
+      if (mounted) {
+        AppToast.show(
+          context,
+          tr('تعذّرت طباعة طلب المطبخ — أعد المحاولة أو سلّم الطلب يدوياً'),
+          type: ToastType.error,
+        );
+      }
     }
   }
 
@@ -524,6 +542,11 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
     }
   }
 
+  /// فحصٌ متزامنٌ لكود فعل الطاولة مع توست الرفض — نفسُ منطق
+  /// `_ensureTablePermission` (في `_TableOperationsMixin`) دون الاعتماد عليه.
+  Future<bool> _ensureTableAction(String code, String actionName) =>
+      ensureTableAction(ref, context, code, actionName);
+
   Future<void> _onMergeTable(
     IRestaurantRepository restaurantRepo,
     RestaurantTable sourceTable,
@@ -532,6 +555,12 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
     unawaited(DiagnosticLogger.log('TABLE-MERGE',
         '7/ دخولُ _onMergeTable source=${sourceTable.id} order=${sourceOrder.id} busy=$_mergingTables'));
     if (_mergingTables) return;
+    // الدمجُ بزرّ حوار الطلب يتخطّى `TableActionsRunner.run` — فالفحصُ هنا في
+    // القمع نفسه (المسارُ الآخرُ يفحص قبله أيضاً، والفحصُ المزدوج بلا أثر).
+    if (!await _ensureTableAction(
+        PermissionCodes.tablesMerge, tr('دمج الطاولات'))) {
+      return;
+    }
     final allTables = await restaurantRepo.getAllTables();
     unawaited(DiagnosticLogger.log(
         'TABLE-MERGE', '8/ getAllTables أعادت ${allTables.length}'));

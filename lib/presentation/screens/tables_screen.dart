@@ -18,7 +18,10 @@ import '../../domain/repositories/restaurant_repository.dart';
 import '../../services/invoice_generator.dart';
 import '../pos/screens/pos_table_service_screen.dart';
 import '../widgets/permission_guard.dart';
+import '../shared_widgets/customer_picker/customer_picker_field.dart';
+import '../shared_widgets/customer_picker/customer_picker_value.dart';
 import 'tables/tables.dart';
+import 'tables/table_action_gate.dart';
 import 'tables/merge_table_dialog.dart';
 import 'tables/split_table_dialog.dart';
 import 'tables/table_log_sheet.dart';
@@ -30,6 +33,7 @@ import '../../domain/models/receipt_qr_decision.dart';
 part 'tables/table_order_dialogs.dart';
 part 'tables/table_sections_crud.dart';
 part 'tables/table_operations.dart';
+part 'tables/table_reservation_dialog.dart';
 
 class TablesScreen extends ConsumerStatefulWidget {
   const TablesScreen({super.key});

@@ -59,47 +59,24 @@ extension _MainScreenLifecycle on _MainScreenState {
     );
 
     // 1. Per-user default screen (set in user management)
-    int targetScreenIndex = 1; // fallback: POS
+    // (ScreenId.name · المفاتيح القديمة · فهرس رقمي) ثم الإعداد العام، ثم
+    // التحقق من المسموح — كلّه في المحلّل الخالص.
     final userDefault = authState.user?.defaultScreen;
-    if (userDefault != null && userDefault.isNotEmpty) {
-      switch (userDefault) {
-        case 'pos':
-          targetScreenIndex = 1;
-        case 'dashboard':
-          targetScreenIndex = 0;
-        case 'tables':
-          targetScreenIndex = 3;
-        case 'products':
-          targetScreenIndex = 4;
-        case 'inventory':
-          targetScreenIndex = 8;
-        default:
-          targetScreenIndex = int.tryParse(userDefault) ?? 1;
-      }
-    } else {
-      // 2. Global setting fallback
-      final savedSetting = await db.getSettingValue('default_home_screen');
-      if (savedSetting != null) {
-        targetScreenIndex = int.tryParse(savedSetting) ?? 1;
-      }
-    }
-
-    // 3. Validate against allowed indices for current user
-    if (!allowedIndices.contains(targetScreenIndex)) {
-      debugPrint(
-        '[NAV] Target screen $targetScreenIndex not in allowed '
-        '$allowedIndices — falling back',
-      );
-      targetScreenIndex = allowedIndices.contains(1)
-          ? 1
-          : (allowedIndices.isNotEmpty ? allowedIndices.first : 0);
-    }
+    final globalDefault = (userDefault != null && userDefault.isNotEmpty)
+        ? null
+        : await db.getSettingValue('default_home_screen');
+    final targetScreenIndex = resolveDefaultScreenIndex(
+      userDefault,
+      allowedIndices,
+      globalDefault: globalDefault,
+    );
 
     // ⚠️ **بالفهرس المطلق لا بموضعٍ في قائمة.** الحسابُ السابقُ كان
     // `allowedIndices.indexOf(target)` والقراءةُ `screens[_currentIndex]`،
     // و`screens` مُرتَّبةٌ بترتيب `_getAllScreens()` لا بترتيب
     // `allowedIndices` — فموضعٌ صحيحٌ في إحداهما يفتح شاشةً أخرى.
-    final isAllowed = allowedIndices.contains(targetScreenIndex);
+    final isAllowed =
+        targetScreenIndex != null && allowedIndices.contains(targetScreenIndex);
     debugPrint(
       '[NAV] _initDefaultScreen: target=$targetScreenIndex → '
       'allowed=$isAllowed',
@@ -381,6 +358,13 @@ extension _MainScreenLifecycle on _MainScreenState {
         return;
       }
     }
+
+    // مسوّداتٌ لم تُحفَظ (مصمّم القاعة…) تُسأل قبل أن يهدمها الإغلاقُ (E-1).
+    if (mounted &&
+        !await ref.read(dirtyScreensRegistryProvider).confirmCloseAll()) {
+      return;
+    }
+    if (!mounted) return;
 
     final authState = ref.read(authProvider);
     // ده قرار صلاحية حقيقي: بيقرر هل غلق البرنامج محتاج كلمة سر مدير ولا لأ.

@@ -11,6 +11,7 @@ import '../../core/widgets/shimmer_loading.dart';
 
 import '../../data/providers/providers.dart';
 import '../widgets/enhanced_components.dart';
+import '../shared_widgets/default_screen_dropdown.dart';
 import '../../services/client_write_interceptor.dart';
 import '../widgets/dialogs/app_confirm_dialog.dart';
 import 'settings/widgets/add_user_dialog.dart';
@@ -252,7 +253,9 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
+                    DefaultScreenDropdown(
+                      roleId: user.roleId,
+                      value: user.defaultScreen,
                       decoration: const InputDecoration(
                         prefixIcon: Icon(PhosphorIconsLight.monitor),
                         contentPadding: EdgeInsets.symmetric(
@@ -260,25 +263,6 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                           vertical: 8,
                         ),
                       ),
-                      initialValue: user.defaultScreen,
-                      items:  [
-                        DropdownMenuItem(
-                          value: 'pos',
-                          child: Text(tr('البيع السريع')),
-                        ),
-                        DropdownMenuItem(
-                          value: 'dashboard',
-                          child: Text(tr('لوحة القيادة')),
-                        ),
-                        DropdownMenuItem(
-                          value: 'products',
-                          child: Text(tr('المنتجات')),
-                        ),
-                        DropdownMenuItem(
-                          value: 'inventory',
-                          child: Text(tr('المخزون')),
-                        ),
-                      ],
                       onChanged: (screen) =>
                           _updateDefaultScreen(user.id, screen),
                     ),

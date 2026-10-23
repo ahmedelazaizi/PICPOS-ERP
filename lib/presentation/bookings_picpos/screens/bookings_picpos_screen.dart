@@ -20,10 +20,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/models/picpos_booking_view.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
+import '../../widgets/permission_guard.dart';
+import '../widgets/booking_permission_gates.dart';
 import '../../picpos_shell/picpos_kpi_row.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../widgets/bookings_board_table.dart';
@@ -51,10 +54,16 @@ class BookingsPicPosScreen extends ConsumerWidget {
       subtitle: bookingDayLabel(day),
       icon: PhosphorIconsBold.calendarCheck,
       headerActions: [
-        FilledButton.icon(
-          onPressed: () => showNewBookingPanel(context, onDay: day),
-          icon: const Icon(PhosphorIconsBold.calendarPlus, size: 17),
-          label:  Text(tr('حجز جديد')),
+        PermissionGuard(
+          permission: PermissionCodes.bookingsAdd,
+          showDisabled: true,
+          actionName: tr('حجز جديد'),
+          onGranted: () => showNewBookingPanel(context, onDay: day),
+          child: FilledButton.icon(
+            onPressed: () => showNewBookingPanel(context, onDay: day),
+            icon: const Icon(PhosphorIconsBold.calendarPlus, size: 17),
+            label:  Text(tr('حجز جديد')),
+          ),
         ),
       ],
       subHeader: Padding(
@@ -161,11 +170,25 @@ class BookingsPicPosScreen extends ConsumerWidget {
       case BookingsDestination.reminders:
         return const BookingsRemindersView();
       case BookingsDestination.reports:
-        return BookingsReportsView(rows: rows, day: day);
+        return _guarded(
+            PermissionCodes.bookingsReports,
+            BookingsReportsView(rows: rows, day: day));
       case BookingsDestination.settings:
-        return const BookingsSettingsView();
+        return _guarded(
+            PermissionCodes.bookingsSettings, const BookingsSettingsView());
     }
   }
+
+  /// الوجهةُ تُعرض لمن يملك كودَها فقط (التبويبُ مخفيٌّ له أصلاً؛ هذا للحالة
+  /// المحفوظة قبل تغيّر صلاحياته).
+  Widget _guarded(String code, Widget view) => PermissionGuard(
+        permission: code,
+        fallback: PicPosEmptyState(
+          icon: PhosphorIconsBold.lock,
+          title: tr('لا تملك صلاحية عرض هذه الصفحة'),
+        ),
+        child: view,
+      );
 
   /// فعلُ الصفّ — تبديلُ حالةٍ، أو تسليمٌ لنقطة البيع حين تكون `next` فارغة.
   ///
@@ -177,6 +200,13 @@ class BookingsPicPosScreen extends ConsumerWidget {
     BookingBoardRow row,
     String next,
   ) async {
+    // الفعلُ بكوده هو: الإلغاءُ `bookings_cancel`، وما عداه `bookings_status`
+    // (ومنه تسليمُ التفويتر؛ والفاتورةُ نفسُها تُحرَس في نقطة البيع).
+    if (!await ensurePermission(ref, context, bookingStatusPermission(next),
+        actionName: tr('تغيير حالة الحجز'))) {
+      return;
+    }
+    if (!context.mounted) return;
     if (next.isEmpty) {
       final handed = await showBookingInvoiceDialog(context, row: row);
       if (handed == true && context.mounted) {

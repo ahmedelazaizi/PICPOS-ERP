@@ -189,6 +189,10 @@ extension _MainScreenNavigation on _MainScreenState {
     if (!_tabs.contains(screenIndex)) return;
     if (_tabs.order.length <= 1) return;
 
+    // شاشةٌ متّسخةٌ (مثل مصمّم القاعة) تسأل قبل أن يهدمها الإغلاقُ (E-1).
+    final registry = ref.read(dirtyScreensRegistryProvider);
+    if (!await registry.confirmCloseScreen(screenIndex) || !mounted) return;
+
     if (screenIndex == AppScreen.pos.value) {
       final cartState = ref.read(cartControllerProvider);
       if (cartState.items.isNotEmpty) {
@@ -331,6 +335,8 @@ extension _MainScreenNavigation on _MainScreenState {
         ),
       );
     }
+    // B-7: لا شاشةَ يفتحها المستخدم ⇒ حالةٌ صريحةٌ بمخرج، لا هيكلٌ فارغ.
+    if (allowedIndices.isEmpty) return const NoScreensAvailableView();
     {
       final screens = _getScreensForAllowed(allowedIndices);
       final byScreenIndex = {for (final s in screens) s.index: s};
@@ -375,6 +381,11 @@ extension _MainScreenNavigation on _MainScreenState {
               .length;
           if (shouldBlockAppCloseForCart(cartItemCountForBackExit)) {
             await showCartNotEmptyCloseBlockedDialog(context);
+            return;
+          }
+          // مسوّداتٌ لم تُحفَظ (مصمّم القاعة…) تُسأل قبل الخروج (E-1).
+          if (!await ref.read(dirtyScreensRegistryProvider).confirmCloseAll() ||
+              !context.mounted) {
             return;
           }
 

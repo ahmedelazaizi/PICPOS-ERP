@@ -43,6 +43,7 @@ import '../../../core/widgets/shimmer_loading.dart';
 
 import '../../../data/providers/providers.dart';
 import '../../widgets/enhanced_components.dart';
+import '../../shared_widgets/default_screen_dropdown.dart';
 import '../../../services/client_write_interceptor.dart';
 import '../../widgets/dialogs/app_confirm_dialog.dart';
 import '../../screens/settings/widgets/add_user_dialog.dart';
@@ -337,7 +338,7 @@ class _UsersManagementPicposScreenState
           const SizedBox(height: 6),
           _userMetaLine(
             PhosphorIconsBold.house,
-            tr('الشاشة الافتراضية: {p0}', {'p0': _homeScreenLabel(user.defaultScreen)}),
+            tr('الشاشة الافتراضية: {p0}', {'p0': defaultScreenLabel(user.defaultScreen)}),
             AppColors.textMuted,
           ),
           const Spacer(),
@@ -499,23 +500,6 @@ class _UsersManagementPicposScreenState
         .join();
   }
 
-  /// تسميةُ الشاشة الافتراضية — نفسُ خيارات القائمة المنسدلة في حوار
-  /// الإعدادات، فلا يختلف الوصفُ عن المحرِّر.
-  String _homeScreenLabel(String? screen) {
-    switch (screen) {
-      case 'pos':
-        return tr('البيع السريع');
-      case 'dashboard':
-        return tr('لوحة القيادة');
-      case 'products':
-        return tr('المنتجات');
-      case 'inventory':
-        return tr('المخزون');
-      default:
-        return 'غير محددة';
-    }
-  }
-
   /// ⚠️ **القفلُ يؤكَّد قبل تنفيذه** — و`_toggleUserLock` لا تؤكّد داخلها.
   ///
   /// كان التأكيدُ في **المستدعي** (زرُّ القفل في جسم الطيّ)، فنقلُ الإجراء
@@ -633,7 +617,9 @@ class _UsersManagementPicposScreenState
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
+                    DefaultScreenDropdown(
+                      roleId: user.roleId,
+                      value: user.defaultScreen,
                       decoration: const InputDecoration(
                         prefixIcon: Icon(PhosphorIconsLight.monitor),
                         contentPadding: EdgeInsets.symmetric(
@@ -641,25 +627,6 @@ class _UsersManagementPicposScreenState
                           vertical: 8,
                         ),
                       ),
-                      initialValue: user.defaultScreen,
-                      items:  [
-                        DropdownMenuItem(
-                          value: 'pos',
-                          child: Text(tr('البيع السريع')),
-                        ),
-                        DropdownMenuItem(
-                          value: 'dashboard',
-                          child: Text(tr('لوحة القيادة')),
-                        ),
-                        DropdownMenuItem(
-                          value: 'products',
-                          child: Text(tr('المنتجات')),
-                        ),
-                        DropdownMenuItem(
-                          value: 'inventory',
-                          child: Text(tr('المخزون')),
-                        ),
-                      ],
                       onChanged: (screen) =>
                           _updateDefaultScreen(user.id, screen),
                     ),

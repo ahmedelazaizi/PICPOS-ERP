@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/table_status_palette.dart';
+import 'widgets/table_status_info.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../domain/repositories/restaurant_repository.dart';
 import '../../../data/database/database.dart';
@@ -18,15 +20,9 @@ class FloorPlanDesigner extends ConsumerStatefulWidget {
   final bool isEditMode;
   final Function(RestaurantTable) onTap;
 
-  /// حصرُ المرسوم بحالةٍ واحدة — `null` تعني «الكلّ».
-  ///
-  /// **اختياريٌّ لا يغيّر السلوكَ الافتراضيّ:** `TablesScreen` القديمة لا
-  /// تمرّره فتبقى كما هي. أُضيف لأن عمودَ الحالات في شاشة PicPos كان يُرشِّح
-  /// فرعَ الشبكة وحدَه، فالمستخدمُ يهبط على الخريطة (`isVisualView` افتراضُها
-  /// `true`) وينقر «متاحة» فلا يتغيّر شيء.
-  ///
-  /// ويُلغى في وضع التصميم: ترتيبُ خريطةٍ ناقصةٍ يخدع العين، وأدواتُ المحاذاة
-  /// والتوزيع تعمل على القائمة كاملةً على أيّ حال.
+  /// الحالةُ المميَّزة — `null` تعني «لا تمييز». **تُميِّز ولا تُخفي**: تُرسَم
+  /// كلُّ الطاولات وغيرُ المطابقة تُعتَّم (`TableStatusPalette.dimmedOpacity`).
+  /// اختياريٌّ: `TablesScreen` القديمة لا تمرّره. ويُلغى في وضع التصميم.
   final String? statusFilter;
 
   const FloorPlanDesigner({
@@ -218,16 +214,8 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
       stream: _tablesStream,
       builder: (context, snapshot) {
         final tables = snapshot.data ?? [];
-        // المرسومُ وحدَه يُرشَّح. أدواتُ الشريط (`_autoLayout` والمحاذاةُ
-        // والتوزيع) ورفاقُ الالتقاط في `_buildDraggableTable` تبقى على
-        // [tables] كاملةً — وإلّا رتّب زرُّ «تنظيم تلقائي» جزءاً من القسم
-        // فوق جزءٍ مخفيٍّ منه.
-        final visible = (widget.statusFilter == null || widget.isEditMode)
-            ? tables
-            : [
-                for (final t in tables)
-                  if (t.status == widget.statusFilter) t,
-              ];
+        // كلُّ الطاولات تُرسَم دائماً؛ التمييزُ تعتيمٌ في `_buildDraggableTable`.
+        final visible = tables;
 
         return Directionality(
           textDirection: TextDirection.rtl,
@@ -480,7 +468,8 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
   ) {
     final pos = _livePositions[table.id] ?? Offset(table.x, table.y);
     final isDragging = _draggingTableId == table.id;
-    final color = _getStatusColor(table.status);
+    final statusInfo = tableStatusInfoOf(context, table.status);
+    final color = statusInfo.color;
     final isCircle = table.shape == 'circle';
     // Size based on capacity
     final size = (60.0 + (table.capacity * 8.0)).clamp(80.0, 140.0);
@@ -505,7 +494,7 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
             : BorderRadius.circular(14),
         border: Border.all(
           color: color.withValues(alpha: isDragging ? 1 : 0.6),
-          width: isDragging ? 2.5 : 1.5,
+          width: isDragging || (!widget.isEditMode && widget.statusFilter == table.status) ? 2.5 : 1.5,
         ),
         boxShadow: [
           if (isDragging)
@@ -560,24 +549,30 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
                   ),
                 ],
               ),
-              // Status badge
-              if (table.status != 'available')
-                Container(
-                  margin: const EdgeInsets.only(top: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    _statusLabel(table.status),
-                    style: GoogleFonts.cairo(
-                      fontSize: 8,
-                      color: color,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+              // شارةُ الحالة: لونٌ + أيقونةٌ + نصٌّ لكلِّ الحالات (لا اللونُ وحدَه).
+              Container(
+                margin: const EdgeInsets.only(top: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(4),
                 ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(statusInfo.icon, size: 8, color: color),
+                    const SizedBox(width: 2),
+                    Text(
+                      statusInfo.label,
+                      style: GoogleFonts.cairo(
+                        fontSize: 8,
+                        color: color,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               // Edit mode indicator
               if (widget.isEditMode)
                 Padding(
@@ -600,7 +595,14 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
 
     // In view mode → just position
     if (!widget.isEditMode) {
-      return Positioned(left: pos.dx, top: pos.dy, child: tableWidget);
+      final f = widget.statusFilter;
+      return Positioned(
+        left: pos.dx,
+        top: pos.dy,
+        child: f != null && table.status != f
+            ? Opacity(opacity: TableStatusPalette.dimmedOpacity, child: tableWidget)
+            : tableWidget,
+      );
     }
 
     // In edit mode → GestureDetector for drag
@@ -659,49 +661,6 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
         ),
       ),
     );
-  }
-
-  // ─── Status helpers ────────────────────────────────────────────────
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'available':
-        return const Color(0xFF10B981);
-      case 'reserved':
-        return Colors.orange;
-      case 'occupied':
-      case 'seated':
-        return const Color(0xFF14B8A6);
-      case 'ordered':
-        return const Color(0xFF3B82F6);
-      case 'eating':
-        return const Color(0xFF6366F1);
-      case 'billing':
-        return const Color(0xFFF59E0B);
-      case 'cleaning':
-        return const Color(0xFF6B7280);
-      default:
-        return const Color(0xFF9CA3AF);
-    }
-  }
-
-  String _statusLabel(String status) {
-    switch (status) {
-      case 'reserved':
-        return tr('محجوزة');
-      case 'occupied':
-      case 'seated':
-        return tr('مشغولة');
-      case 'ordered':
-        return tr('طلب');
-      case 'eating':
-        return tr('تناول');
-      case 'billing':
-        return tr('حساب');
-      case 'cleaning':
-        return tr('تنظيف');
-      default:
-        return status;
-    }
   }
 }
 

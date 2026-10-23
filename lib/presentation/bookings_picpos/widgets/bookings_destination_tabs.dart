@@ -11,6 +11,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/models/picpos_booking_view.dart';
+import 'booking_permission_gates.dart';
 
 class BookingsDestinationTabs extends ConsumerWidget {
   const BookingsDestinationTabs({super.key});
@@ -30,6 +31,10 @@ class BookingsDestinationTabs extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final current = ref.watch(bookingsDestinationProvider);
+    // وجهتا التقارير والإعدادات بكوديهما (`bookings_reports`/`bookings_settings`)؛
+    // قبل وصول القائمة تُخفيان (الإغلاقُ عند الجهل).
+    final perms =
+        ref.watch(currentUserPermissionsProvider).value ?? const <String>[];
 
     return Container(
       height: 52,
@@ -44,7 +49,8 @@ class BookingsDestinationTabs extends ConsumerWidget {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  for (final d in BookingsDestination.values) ...[
+                  for (final d in BookingsDestination.values)
+                    if (bookingDestinationAllowed(perms, d)) ...[
                     _Tab(
                       label: d.label,
                       icon: _icons[d]!,

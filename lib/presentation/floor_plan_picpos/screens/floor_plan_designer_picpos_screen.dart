@@ -37,6 +37,8 @@ import '../../picpos_shell/picpos_empty_state.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../widgets/permission_guard.dart';
 import '../widgets/floor_plan_canvas_picpos.dart';
+import 'floor_plan_designer_dirty.dart';
+import 'floor_plan_designer_navigation.dart';
 
 /// المقاسُ الابتدائيُّ لكلّ نوعِ معلَم — جدارٌ شريطٌ طويلٌ نحيف، وعمودٌ
 /// مربّعٌ صغير. ولو وُلِد الكلُّ بمقاسٍ واحدٍ لوجب على المستخدم تحجيمُ كلّ
@@ -114,7 +116,8 @@ class FloorPlanDesignerPicposScreen extends ConsumerStatefulWidget {
 }
 
 class _FloorPlanDesignerPicposScreenState
-    extends ConsumerState<FloorPlanDesignerPicposScreen> {
+    extends ConsumerState<FloorPlanDesignerPicposScreen>
+    with FloorPlanDirtyRegistration {
   int? _sectionId;
   FloorPlanUndoStack<FloorPlanSectionLayout>? _stack;
   FloorPlanSectionLayout? _saved;
@@ -132,6 +135,9 @@ class _FloorPlanDesignerPicposScreenState
   final Map<int, Offset> _shopOrigins = <int, Offset>{};
 
   FloorPlanSectionLayout? get _draft => _stack?.current;
+
+  @override
+  bool get hasUnsavedFloorPlan => _dirty || _shopOrigins.isNotEmpty;
 
   bool get _dirty {
     final d = _draft;
@@ -457,32 +463,15 @@ class _FloorPlanDesignerPicposScreenState
     }
   }
 
-  Future<bool> _confirmDiscard() async {
-    if (!_dirty) return true;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          title:  Text(tr('تغييراتٌ لم تُحفَظ')),
-          content:  Text(
-            tr('مغادرةُ هذا القسم الآن تُسقط ما رسمتَه فيه. أتريد المتابعة؟'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child:  Text(tr('ابقَ')),
-            ),
-            TextButton(
-              key: const Key('floor_plan_discard_ok'),
-              onPressed: () => Navigator.pop(ctx, true),
-              child:  Text(tr('غادِر واترك التغييرات')),
-            ),
-          ],
-        ),
-      ),
-    );
-    return ok ?? false;
+  // الحوارُ والمغادرةُ في `floor_plan_designer_navigation.dart` (سقفُ الحجم).
+  Future<bool> _confirmDiscard() async =>
+      !_dirty || await showFloorPlanDiscardDialog(context);
+
+  /// يُسقط المسوّدةَ ويعيد قراءةَ المحفوظ.
+  Future<void> _discardDraft() async {
+    if (mounted) setState(_shopOrigins.clear);
+    final id = _sectionId;
+    if (id != null) await _loadSection(id);
   }
 
   // ───────────────────────────────────────────────────────────────────────
@@ -534,7 +523,12 @@ class _FloorPlanDesignerPicposScreenState
         ref.watch(floorPlanSectionsProvider).asData?.value ??
             const <TableSection>[];
 
-    return PicPosScreenScaffold(
+    return FloorPlanLeaveGuard(
+      dirty: hasUnsavedFloorPlan,
+      discardDraft: _discardDraft,
+      child: PicPosScreenScaffold(
+      onBack: () => leaveFloorPlanDesigner(context, ref,
+          dirty: hasUnsavedFloorPlan, discardDraft: _discardDraft),
       title: tr('مصمم القاعة'),
       subtitle: _shopView
           ? tr('نظرةُ المحلّ كلِّه — اسحب القسمَ لتضعه على الأرضيّة')
@@ -558,7 +552,7 @@ class _FloorPlanDesignerPicposScreenState
       ],
       toolbar: _shopView ? _shopToolbar() : _editorToolbar(sections),
       body: _shopView ? _shopBody() : _editorBody(sections),
-    );
+    ));
   }
 
   // ─── شريطُ المحرّر ─────────────────────────────────────────────────────

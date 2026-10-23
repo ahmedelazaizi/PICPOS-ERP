@@ -2,6 +2,7 @@ import 'package:ural_erp/core/i18n/tr.dart';
 import 'picpos_surface.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import 'picpos_header_actions.dart';
 
 /// هيدر شاشات PicPos: خلفية فاتحة، عنوان داكن، وخط لوني سفلي 2.5px بلون العلامة
 /// (فلسفة PicPosTheme: «شريط علوي فاتح بشريحة لونية سفلية»). التايبوغرافي من الثيم.
@@ -16,6 +17,16 @@ class PicPosPageHeader extends StatelessWidget {
   /// أزرار الإجراءات على أول الصف (يمين في RTL).
   final List<Widget> actions;
 
+  /// بديلٌ اختياريّ عن [actions]: إجراءاتٌ بأولويّات تُقاس على العرض الفعليّ
+  /// وتنتقل الأقلُّ أولويّةً منها إلى قائمة «⋯» بدل أن تنزلق خارجَ الشاشة.
+  /// حين يُمرَّر يُهمَل [actions]؛ وحين لا يُمرَّر يبقى السلوكُ القديمُ كما هو
+  /// (إجراءاتٌ في `SingleChildScrollView`) لكلّ الشاشات الأخرى.
+  final List<PicPosHeaderAction>? actionsBar;
+
+  /// رجوعٌ صريح: يرسم سهمَ الرجوع حتى حين لا يستطيع `Navigator.canPop`
+  /// (شاشاتُ الشريط الجانبيّ ليست راوتاً مدفوعاً).
+  final VoidCallback? onBack;
+
   const PicPosPageHeader({
     super.key,
     required this.title,
@@ -23,7 +34,38 @@ class PicPosPageHeader extends StatelessWidget {
     this.icon,
     this.search,
     this.actions = const [],
+    this.actionsBar,
+    this.onBack,
   });
+
+  /// خانةُ العنوان. القديمُ: حصّةٌ مرنةٌ 28%. ومع [actionsBar]: عرضٌ طبيعيٌّ
+  /// بسقف 240 — فيأخذ الشريطُ **كلَّ** ما تبقّى ويقيسه بدقّة، بدل أن يُحصَر في
+  /// 72% فينزلق أوّلُ إجراءٍ خارجَ النافذة بصمت.
+  Widget _titleSlot(Widget child) => actionsBar == null
+      ? Flexible(flex: 28, child: child)
+      : ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 240),
+          child: child,
+        );
+
+  /// ذيلُ الصفّ مع [actionsBar]: البحثُ (إن وُجد) ثم الشريط.
+  Widget _barTail() {
+    final bar = PicPosHeaderActionsBar(actions: actionsBar!);
+    if (search == null) return bar;
+    return Row(
+      children: [
+        Flexible(
+          flex: 2,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 320),
+            child: search!,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Flexible(flex: 3, child: bar),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,9 +89,10 @@ class PicPosPageHeader extends StatelessWidget {
           // `matchTextDirection` فينعكسان وحدَهما في RTL. فـ`arrow_back`
           // يُرسَم → في RTL و← في LTR (نحو بداية السطر)، بينما
           // `arrow_forward` القديمُ كان يُرسَم ← في RTL و→ في LTR.
-          if (Navigator.canPop(context)) ...[
+          if (onBack != null || Navigator.canPop(context)) ...[
             IconButton(
-              onPressed: () => Navigator.maybePop(context),
+              key: const Key('picpos_header_back'),
+              onPressed: onBack ?? () => Navigator.maybePop(context),
               icon: const Icon(Icons.arrow_back),
               color: AppColors.primary,
               tooltip: tr('رجوع'),
@@ -79,9 +122,8 @@ class PicPosPageHeader extends StatelessWidget {
           // والقصُّ بسطرٍ واحدٍ ونقاطٍ يُبقي الترويسةَ صفّاً واحداً كما في
           // التصميم بدل أن تنمو رأسيّاً على الشاشات الضيّقة.
           // حصّةٌ مرنةٌ لا عرضٌ طبيعيّ — راجع شرحَ مجموعة الذيل أدناه.
-          Flexible(
-            flex: 28,
-            child: Column(
+          _titleSlot(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -129,6 +171,9 @@ class PicPosPageHeader extends StatelessWidget {
           // والعلاجُ حصّةٌ مرنةٌ صريحةٌ (٧٢ مقابلَ ٢٨ للعنوان) — وهي النيّةُ
           // المكتوبةُ أصلاً، تُنفَّذ الآن بدل أن تُروى. والتمريرُ يبقى: آليّةٌ
           // مقصودةٌ للضيق الحقيقيّ لا عَرَضٌ يُزال.
+          if (actionsBar != null)
+            Expanded(child: _barTail())
+          else
           Expanded(
             flex: 72,
             child: Align(

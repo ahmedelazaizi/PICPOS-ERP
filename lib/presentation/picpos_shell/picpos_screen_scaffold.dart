@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'picpos_header_actions.dart';
 import 'picpos_page_header.dart';
 
 /// إطار شاشة PicPos: RTL + Scaffold بخلفية canvas + هيدر أعلى + محتوى.
@@ -9,6 +10,13 @@ class PicPosScreenScaffold extends StatelessWidget {
   final IconData? icon;
   final Widget? headerSearch;
   final List<Widget> headerActions;
+
+  /// بديلٌ أولويٌّ عن [headerActions] — راجع `PicPosPageHeader.actionsBar`.
+  final List<PicPosHeaderAction>? headerActionsBar;
+
+  /// رجوعٌ صريحٌ للشاشات التي ليست راوتاً مدفوعاً — راجع
+  /// `PicPosPageHeader.onBack`.
+  final VoidCallback? onBack;
   final Widget? subHeader;
   final Widget? toolbar;
   final Widget body;
@@ -21,6 +29,8 @@ class PicPosScreenScaffold extends StatelessWidget {
     this.icon,
     this.headerSearch,
     this.headerActions = const [],
+    this.headerActionsBar,
+    this.onBack,
     this.subHeader,
     this.toolbar,
     required this.body,
@@ -46,6 +56,8 @@ class PicPosScreenScaffold extends StatelessWidget {
               icon: icon,
               search: headerSearch,
               actions: headerActions,
+              actionsBar: headerActionsBar,
+              onBack: onBack,
             ),
             ?subHeader,
             ?toolbar,

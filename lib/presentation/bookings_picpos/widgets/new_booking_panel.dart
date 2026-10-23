@@ -15,6 +15,10 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/number_utils.dart';
 import '../../../data/providers/providers.dart';
 import '../../picpos_shell/picpos_dialog.dart';
+import '../../../core/permissions/permission_codes.dart';
+import '../../widgets/permission_guard.dart';
+import '../../shared_widgets/customer_picker/customer_picker_field.dart';
+import '../../shared_widgets/customer_picker/customer_picker_value.dart';
 
 /// يفتح لوحَ الحجز الجديد. يعيد `true` حين يُحفَظ حجزٌ فعلاً.
 Future<bool?> showNewBookingPanel(BuildContext context, {DateTime? onDay}) {
@@ -34,8 +38,7 @@ class NewBookingPanel extends ConsumerStatefulWidget {
 }
 
 class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
-  final _name = TextEditingController();
-  final _phone = TextEditingController();
+  CustomerPickerValue _customer = CustomerPickerValue.empty;
   final _deposit = TextEditingController(text: '0');
   final _notes = TextEditingController();
 
@@ -56,8 +59,6 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
 
   @override
   void dispose() {
-    _name.dispose();
-    _phone.dispose();
     _deposit.dispose();
     _notes.dispose();
     super.dispose();
@@ -81,7 +82,7 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
       return tr('لا خدمات معرَّفة — أضِفها من زرّ «الخدمات» أعلى الشاشة');
     }
     if (_serviceId == null) return tr('اختر الخدمة');
-    if (_name.text.trim().isEmpty) return tr('اكتب اسم العميل');
+    if (_customer.name.trim().isEmpty) return tr('اكتب اسم العميل');
     if (_startsAt.isBefore(DateTime.now())) {
       return tr('لا يمكن الحجز في الماضي — اختر وقتاً قادماً');
     }
@@ -114,11 +115,12 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
       body: [
         Row(
           children: [
-            Expanded(child: _field(tr('اسم العميل'), _name)),
-            const SizedBox(width: 10),
             Expanded(
-              child: _field(tr('رقم الهاتف'), _phone,
-                  keyboard: TextInputType.phone, ltr: true),
+              child: CustomerPickerField(
+                label: tr('العميل'),
+                value: _customer,
+                onChanged: (v) => setState(() => _customer = v),
+              ),
             ),
           ],
         ),
@@ -250,16 +252,32 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
   }
 
   Future<void> _save() async {
+    // ⚠️ E-3/E-5: العلَمُ يُرفَع **قبل** أيِّ `await` — فحصُ الصلاحية قد يفتح
+    //    حوارَ موافقة، والنقرةُ الثانيةُ في تلك الفجوة كانت تُنشئ حجزاً مكرّراً
+    //    (وسندَ عربونٍ مكرّراً).
+    if (_saving) return;
     setState(() {
       _saving = true;
       _error = null;
     });
+    var saved = false;
     try {
+      if (!await ensurePermission(ref, context, PermissionCodes.bookingsAdd,
+          actionName: tr('حفظ الحجز'))) {
+        return;
+      }
+      if (!mounted) return;
+      if (_depositValue > 0 &&
+          !await ensurePermission(ref, context, PermissionCodes.bookingsDeposit,
+              actionName: tr('تحصيل العربون'))) {
+        return;
+      }
+      if (!mounted) return;
       final auth = ref.read(authProvider);
       await ref.read(bookingActionsServiceProvider).create(
-            customerName: _name.text.trim(),
-            customerPhone:
-                _phone.text.trim().isEmpty ? null : _phone.text.trim(),
+            customerName: _customer.name.trim(),
+            customerPhone: _customer.phoneOrNull,
+            partyId: _customer.partyId,
             serviceId: _serviceId!,
             resourceId: _resourceId,
             startsAt: _startsAt,
@@ -268,6 +286,7 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
             userId: auth.user?.id,
             userName: auth.user?.displayName ?? '',
           );
+      saved = true;
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       // ⚠️ الفشلُ يُقال ولا يُبتلَع: تعارضُ موعدٍ أو حجزٌ في الماضي أو تعذّرُ
@@ -275,7 +294,8 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
       // مفتوحاً بلا سبب.
       if (mounted) setState(() => _error = '$e');
     } finally {
-      if (mounted) setState(() => _saving = false);
+      // بعد نجاحٍ يبقى مُعطَّلاً: اللوحُ يُغلَق، ونقرةٌ أثناء الإغلاق مكرِّرة.
+      if (mounted && !saved) setState(() => _saving = false);
     }
   }
 

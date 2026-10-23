@@ -419,15 +419,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
     String permission,
     String actionName,
   ) async {
-    final permissions =
-        ref.read(currentUserPermissionsProvider).asData?.value ??
-            const <String>[];
-    if (hasTableActionPermission(permissions, permission)) return true;
-    if (screenContext.mounted) {
-      AppToast.show(screenContext, tr('ليس لديك صلاحية {actionName}', {'actionName': actionName}),
-          type: ToastType.error);
-    }
-    return false;
+    return ensureTableAction(ref, screenContext, permission, actionName);
   }
 
   /// إلغاءُ الطلب — هدمٌ يمحو طلباً حيّاً، فيُؤكَّد صراحةً ويلزمه
@@ -810,243 +802,9 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
     return '${dateTime.day}/${dateTime.month} - $hour:$minute';
   }
 
-  /// Show dialog to create a new reservation
-  ///
-  /// بلا `restaurantRepo`: الحجزُ صار يمرّ بالخدمة (انظر التعليقَ عند نداء
-  /// الحفظ)، فبقي المعامِلُ معلَّقاً بلا مستعمل.
-  void _showReservationDialog(
-    BuildContext context,
-    RestaurantTable table,
-  ) {
-    final nameController = TextEditingController();
-    final phoneController = TextEditingController();
-    final notesController = TextEditingController();
-    int partySize = table.capacity;
-    DateTime reservationTime = DateTime.now().add(const Duration(hours: 1));
-    bool saving = false;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: StatefulBuilder(
-          builder: (ctx, setDialogState) => AlertDialog(
-            title: Row(
-              children: [
-                const Icon(
-                  PhosphorIconsBold.calendarPlus,
-                  color: Colors.orange,
-                ),
-                const SizedBox(width: 8),
-                Text(tr('حجز {p0}', {'p0': table.name})),
-              ],
-            ),
-            content: SizedBox(
-              width: 350,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: nameController,
-                      decoration:  InputDecoration(
-                        labelText: tr('اسم العميل *'),
-                        prefixIcon: const Icon(PhosphorIconsBold.user),
-                      ),
-                      autofocus: true,
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: phoneController,
-                      decoration:  InputDecoration(
-                        labelText: tr('رقم الهاتف'),
-                        prefixIcon: const Icon(PhosphorIconsBold.phone),
-                      ),
-                      keyboardType: TextInputType.phone,
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: () async {
-                              final date = await showDatePicker(
-                                context: context,
-                                initialDate: reservationTime,
-                                firstDate: DateTime.now(),
-                                lastDate: DateTime.now().add(
-                                  const Duration(days: 30),
-                                ),
-                              );
-                              if (date != null) {
-                                setDialogState(() {
-                                  reservationTime = DateTime(
-                                    date.year,
-                                    date.month,
-                                    date.day,
-                                    reservationTime.hour,
-                                    reservationTime.minute,
-                                  );
-                                });
-                              }
-                            },
-                            child: InputDecorator(
-                              decoration:  InputDecoration(
-                                labelText: tr('التاريخ'),
-                                prefixIcon: const Icon(PhosphorIconsBold.calendar),
-                              ),
-                              child: Text(
-                                '${reservationTime.day}/${reservationTime.month}/${reservationTime.year}',
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () async {
-                              final time = await showTimePicker(
-                                context: context,
-                                initialTime: TimeOfDay.fromDateTime(
-                                  reservationTime,
-                                ),
-                              );
-                              if (time != null) {
-                                setDialogState(() {
-                                  reservationTime = DateTime(
-                                    reservationTime.year,
-                                    reservationTime.month,
-                                    reservationTime.day,
-                                    time.hour,
-                                    time.minute,
-                                  );
-                                });
-                              }
-                            },
-                            child: InputDecorator(
-                              decoration:  InputDecoration(
-                                labelText: tr('الوقت'),
-                                prefixIcon: const Icon(PhosphorIconsBold.clock),
-                              ),
-                              child: Text(
-                                '${reservationTime.hour.toString().padLeft(2, '0')}:${reservationTime.minute.toString().padLeft(2, '0')}',
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                         Text(tr('عدد الأشخاص: ')),
-                        IconButton(
-                          onPressed: partySize > 1
-                              ? () => setDialogState(() => partySize--)
-                              : null,
-                          icon: const Icon(PhosphorIconsBold.minus),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '$partySize',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => setDialogState(() => partySize++),
-                          icon: const Icon(PhosphorIconsBold.plus),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: notesController,
-                      decoration:  InputDecoration(
-                        labelText: tr('ملاحظات'),
-                        prefixIcon: const Icon(PhosphorIconsBold.notepad),
-                      ),
-                      maxLines: 2,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child:  Text(tr('إلغاء')),
-              ),
-              ElevatedButton.icon(
-                onPressed: saving ? null : () async {
-                  if (nameController.text.trim().isEmpty) {
-                    AppToast.show(
-                      ctx,
-                      tr('يرجى إدخال اسم العميل'),
-                      type: ToastType.warning,
-                    );
-                    return;
-                  }
-                  setDialogState(() => saving = true);
-                  try {
-                    // نداءُ الخدمة لا المستودعِ مباشرةً: `reserveTable` تكتب
-                    // صفَّ الحجز **وتترك أثراً** في `ActivityLogs` (كان
-                    // النداءُ القديمَ على `restaurantRepo.createReservation`
-                    // يُنشئ الحجزَ بلا سطرِ سجلٍّ واحد). والمستخدمُ الحاليُّ
-                    // يُمرَّر كما يفعل بقيّةُ أفعال هذا الملفّ.
-                    final user = ref.read(authProvider).user;
-                    await ref.read(tableSessionServiceProvider).reserveTable(
-                          tableId: table.id,
-                          customerName: nameController.text.trim(),
-                          customerPhone: phoneController.text.trim().isNotEmpty
-                              ? phoneController.text.trim()
-                              : null,
-                          reservationTime: reservationTime,
-                          partySize: partySize,
-                          notes: notesController.text.trim().isNotEmpty
-                              ? notesController.text.trim()
-                              : null,
-                          userId: user?.id,
-                          userName: user?.displayName ?? tr('مجهول'),
-                        );
-
-                    if (ctx.mounted) {
-                      Navigator.pop(ctx);
-                      AppToast.show(
-                        context,
-                        tr('تم حجز {p0} بنجاح', {'p0': table.name}),
-                        type: ToastType.success,
-                      );
-                    }
-                  } catch (e) {
-                    setDialogState(() => saving = false);
-                    if (ctx.mounted) {
-                      AppToast.show(ctx, tr('خطأ: {e}', {'e': e}), type: ToastType.error);
-                    }
-                  }
-                },
-                icon: const Icon(PhosphorIconsBold.calendarCheck, size: 18),
-                label:  Text(tr('تأكيد الحجز')),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  /// حوارُ حجز طاولة — انتقل إلى `table_reservation_dialog.dart` (منتقي العميل).
+  void _showReservationDialog(BuildContext context, RestaurantTable table) =>
+      showTableReservationDialog(context, ref, table);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1175,6 +933,17 @@ class _TableActionsHostState extends ConsumerState<TableActionsHost>
         break;
     }
 
+    // الصلاحيةُ المشروطةُ تمرّ `blockOnTapOpen` (ممنوحةٌ) لكنّها تحتاج موافقةً.
+    final openCode = permissionForAction(TableAction.open);
+    if (openCode != null &&
+        tableActionGate(permissions, openCode) ==
+            TableActionGate.needsApproval) {
+      if (!mounted) return;
+      final approved = await _ensureTablePermission(
+          context, openCode, tableActionLabels[TableAction.open]!);
+      if (!approved) return;
+    }
+    if (!mounted) return;
     _confirmOpenTable(repo, table);
   }
 

@@ -30,12 +30,14 @@ import '../../../data/providers/screen_navigation_provider.dart';
 import '../../../domain/models/table_actions.dart';
 import '../../../domain/repositories/restaurant_repository.dart';
 import '../../picpos_shell/picpos_content_card.dart';
+import '../../picpos_shell/picpos_header_actions.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../screens/tables/floor_plan_designer.dart';
 import '../../screens/tables/providers/tables_state_provider.dart';
 import '../../screens/tables/widgets/table_card.dart';
 import '../../screens/tables_screen.dart' show TableActionsHost, TableActionsRunner;
 import '../../widgets/permission_guard.dart';
+import '../logic/tables_grid_model.dart';
 import '../widgets/guest_requests_banner.dart';
 import '../widgets/table_session_pin_card.dart';
 import '../widgets/tables_action_rail.dart';
@@ -143,68 +145,13 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
       title: tr('إدارة الطاولات'),
       subtitle: _scopeLabel(sections, scopeId),
       icon: PhosphorIconsBold.circlesThree,
-      headerActions: [
-        PermissionGuard(
-          permission: PermissionCodes.tablesManage,
-          allowManagerOverride: true,
-          actionName: tr('إضافة طاولة'),
-          onGranted: () => widget.actions.addTable(sectionId: scopeId),
-          child: OutlinedButton.icon(
-            onPressed: () => widget.actions.addTable(sectionId: scopeId),
-            icon: const Icon(PhosphorIconsBold.plus, size: 18),
-            label:  Text(tr('إضافة طاولة')),
-            style: OutlinedButton.styleFrom(foregroundColor: AppColors.success),
-          ),
-        ),
-        const SizedBox(width: Spacing.sm),
-        // في الرأس لا في «مزيد»: `PermissionGuard` يُعطّل الأزرارَ المعروفةَ
-        // تعطيلاً حقيقيّاً، أمّا مدخلُ قائمةٍ منبثقةٍ فيبقى قابلاً للاختيار
-        // مهما لُفّ نصُّه — فتكون الحراسةُ زينةً لا ضابطاً.
-        PermissionGuard(
-          permission: PermissionCodes.tablesManage,
-          allowManagerOverride: true,
-          actionName: tr('إدارة أقسام الطاولات'),
-          onGranted: widget.actions.manageSections,
-          child: OutlinedButton.icon(
-            onPressed: widget.actions.manageSections,
-            icon: const Icon(PhosphorIconsBold.mapPinArea, size: 18),
-            label:  Text(tr('إدارة الأقسام')),
-            style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary),
-          ),
-        ),
-        // ⚠️ **وأكوادُ حساب الطاولات انتقلت إلى الإعدادات** (قسمُ ٧، بلاغُ
-        // المالك «قارئُ QR مكانُه مش شاشة الطاولات»): ورقةٌ تُطبَع مرّةً
-        // عند التجهيز ثمّ تُلصَق، فلا تزاحم أفعالَ النادل اليوميّة.
-        // والحراسةُ انتقلت معها بحرفها — راجع `TableBillQrLauncherRow`.
-        const SizedBox(width: Spacing.sm),
-        OutlinedButton.icon(
-          // بلا مسٍّ لـ`_sectionId`: احتياطُ الخريطة محسوبٌ في `scopeId` فوق،
-          // فكتابةُ أوّلِ قسمٍ هنا كانت تُخرج مَن اختار «كل المناطق» منها
-          // صامتاً ولا تعيده عند الرجوع إلى الشبكة.
-          onPressed: ref.read(tablesUIProvider.notifier).toggleView,
-          icon: Icon(
-            uiState.isVisualView
-                ? PhosphorIconsBold.gridFour
-                : PhosphorIconsBold.mapTrifold,
-            size: 18,
-          ),
-          label: Text(uiState.isVisualView ? tr('عرض الشبكة') : tr('عرض الخريطة')),
-          style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary),
-        ),
-        // مصمّمُ القاعة — **في العرضَين كلَيهما**. كان القديمُ محصوراً
-        // بوضع الخريطة لأنّه كان يقلب هذه الشاشةَ نفسَها، وهذا يفتح
-        // شاشةً أخرى — وحصرُه بعرضٍ بعينه يُخفيه عمّن يبحث عنه.
-        const SizedBox(width: Spacing.sm),
-        buildTablesOpenDesignerButton(
-          onOpen: () => ref
-              .read(screenNavigationProvider.notifier)
-              .open(ScreenId.floorPlanDesigner.navigationIndex),
-        ),
-        const SizedBox(width: Spacing.sm),
-        _buildScopeMenu(sections, scopeId, uiState.isVisualView),
-        const SizedBox(width: Spacing.sm),
-        _buildMoreMenu(selectedTable),
-      ],
+      // 🔴 شريطُ إجراءاتٍ بأولويّات (خطة A.4): كان الصفُّ في `SingleChildScrollView`
+      // مثبَّتٍ من آخره فيُقَصُّ «إضافة طاولة» بصمتٍ عند الضيق. الآن «إضافة
+      // طاولة» لا تختفي أبداً، وما لا يتّسع ينتقل إلى «⋯».
+      //
+      // والحراسةُ (`permission`) تُطبَّق على الزرّ الظاهر **وعلى مدخل «⋯»**
+      // معاً (موافقةُ مسؤولٍ عند غياب `tables_manage`) — فلا تُفلت بنقل الزرّ.
+      headerActionsBar: _headerActions(sections, scopeId, uiState, selectedTable),
       // شريطُ طلبات الضيوف فوق كلِّ شيء — يظهر حين يوجد ما ينتظر، ويختفي
       // تماماً حين لا يوجد. وفوقَ الأقسام لا داخلَها: الطلبُ قد يصل من طاولةٍ
       // في قسمٍ غيرِ المعروض الآن، فإخفاؤه مع القسم يُضيع النداء.
@@ -238,7 +185,13 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
                 ),
                 const SizedBox(width: Spacing.md),
                 Expanded(
-                  child: _buildMapOrGrid(repo, uiState, tables, scopeId),
+                  child: _buildMapOrGrid(
+                    repo,
+                    uiState,
+                    tables,
+                    scopeId,
+                    {for (final s in sections) s.id: s.name},
+                  ),
                 ),
                 const SizedBox(width: Spacing.md),
                 SizedBox(
@@ -280,6 +233,7 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
     TablesUIState uiState,
     List<RestaurantTable> tables,
     int? scopeId,
+    Map<int, String> sectionNames,
   ) {
     if (uiState.isVisualView) {
       if (scopeId == null) return _buildNoSections();
@@ -305,9 +259,10 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
       );
     }
 
-    final shown = uiState.statusFilter == 'all'
-        ? tables
-        : [for (final t in tables) if (t.status == uiState.statusFilter) t];
+    // 🔴 **اختيارُ حالةٍ يُميِّز ولا يُخفي** (خطة A.7): كل الطاولات تُرسَم دائماً
+    // وغيرُ المطابقة تُعتَّم، فيرى النادلُ الصالةَ كلَّها وحالةَ كلِّ طاولة.
+    final filter = uiState.statusFilter;
+    final shown = TablesGridModel.visibleTables(tables, filter);
 
     if (shown.isEmpty) {
       return  PicPosContentCard(
@@ -334,6 +289,10 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
           table: shown[index],
           restaurantRepo: repo,
           onInteraction: _openTable,
+          sectionName: sectionNames[shown[index].sectionId],
+          dimmed: TablesGridModel.isDimmed(shown[index].status, filter),
+          highlighted:
+              TablesGridModel.isHighlighted(shown[index].status, filter),
         ),
       ),
     );
@@ -347,69 +306,104 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
     widget.actions.openOrder(table);
   }
 
-  Widget _buildScopeMenu(
+  /// إجراءاتُ الرأس بأولويّاتها: إضافةُ طاولة (1) ← تبديلُ العرض (2) ← المنطقة
+  /// (3) ← الأقسام (4) ← المصمّم (5) ← «مزيد» (6). والترتيبُ المرئيُّ هو ترتيبُ
+  /// القائمة لا الأولويّة.
+  List<PicPosHeaderAction> _headerActions(
     List<TableSection> sections,
     int? scopeId,
-    bool isVisualView,
+    TablesUIState uiState,
+    RestaurantTable? selectedTable,
   ) {
-    return PopupMenuButton<int?>(
-      tooltip: tr('المنطقة'),
-      onSelected: (id) => setState(() => _sectionId = id),
-      itemBuilder: (context) => [
-        if (!isVisualView)
-           PopupMenuItem<int?>(value: null, child: Text(tr('كل المناطق'))),
-        for (final section in sections)
-          PopupMenuItem<int?>(value: section.id, child: Text(section.name)),
-      ],
-      // `IgnorePointer` لا زرٌّ معطَّل: زرٌّ بـ`onPressed: null` يبتلع الضغطةَ
-      // ولا ينفّذها، فلا تصل إلى `PopupMenuButton` فوقه ولا تُفتَح القائمة.
-      child: IgnorePointer(
-        child: OutlinedButton.icon(
-          onPressed: () {},
-          icon: const Icon(PhosphorIconsBold.mapPin, size: 18),
-          label: Text(_scopeLabel(sections, scopeId)),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.textSecondary,
-          ),
-        ),
+    return [
+      PicPosHeaderAction(
+        buttonKey: const Key('tables_add_table'),
+        label: tr('إضافة طاولة'),
+        icon: PhosphorIconsBold.plus,
+        priority: 1,
+        color: AppColors.success,
+        permission: PermissionCodes.tablesManage,
+        onPressed: () => widget.actions.addTable(sectionId: scopeId),
       ),
-    );
-  }
-
-  /// «مزيد من الخيارات» — الفعلان اللذان تركهما `railActions` عمداً خارج
-  /// الشريط، وكلاهما يمرّ بالمنفِّذ نفسِه.
-  ///
-  /// ولا `PermissionGuard` هنا ولا يلزم: `log` بلا صلاحيّةٍ بتصميمه
-  /// (`permissionForAction` تُرجع `null` — قراءةُ سجلٍّ لا تغيّر شيئاً)،
-  /// و`cancelOrder` يفحص `tables_cancel` صراحةً في معالجه قبل أن يمسّ
-  /// الخدمة. وحراسةُ مدخلِ قائمةٍ منبثقةٍ بلفّ نصِّه لا تمنع اختيارَه.
-  Widget _buildMoreMenu(RestaurantTable? selectedTable) {
-    return PopupMenuButton<String>(
-      tooltip: tr('مزيد من الخيارات'),
-      icon: const Icon(PhosphorIconsBold.dotsThreeOutline, size: 20),
-      onSelected: (value) {
-        final table = selectedTable;
-        if (table == null) return;
-        switch (value) {
-          case 'log':
-            widget.actions.run(table, TableAction.log);
-          case 'cancel':
-            widget.actions.run(table, TableAction.cancelOrder);
-        }
-      },
-      itemBuilder: (context) => [
-        PopupMenuItem<String>(
-          value: 'log',
-          enabled: selectedTable != null,
-          child:  Text(tr('سجل الطاولة')),
-        ),
-        PopupMenuItem<String>(
-          value: 'cancel',
-          enabled: selectedTable != null,
-          child:  Text(tr('إلغاء الطلب')),
-        ),
-      ],
-    );
+      PicPosHeaderAction(
+        label: tr('إدارة الأقسام'),
+        actionName: tr('إدارة أقسام الطاولات'),
+        icon: PhosphorIconsBold.mapPinArea,
+        priority: 4,
+        color: AppColors.primary,
+        permission: PermissionCodes.tablesManage,
+        onPressed: widget.actions.manageSections,
+      ),
+      // ⚠️ **وأكوادُ حساب الطاولات انتقلت إلى الإعدادات** (قسمُ ٧، بلاغُ
+      // المالك «قارئُ QR مكانُه مش شاشة الطاولات»): ورقةٌ تُطبَع مرّةً
+      // عند التجهيز ثمّ تُلصَق، فلا تزاحم أفعالَ النادل اليوميّة.
+      // والحراسةُ انتقلت معها بحرفها — راجع `TableBillQrLauncherRow`.
+      PicPosHeaderAction(
+        label: uiState.isVisualView ? tr('عرض الشبكة') : tr('عرض الخريطة'),
+        icon: uiState.isVisualView
+            ? PhosphorIconsBold.gridFour
+            : PhosphorIconsBold.mapTrifold,
+        priority: 2,
+        color: AppColors.primary,
+        // بلا مسٍّ لـ`_sectionId`: احتياطُ الخريطة محسوبٌ في `scopeId`، فكتابةُ
+        // أوّلِ قسمٍ هنا كانت تُخرج مَن اختار «كل المناطق» منها صامتاً.
+        onPressed: ref.read(tablesUIProvider.notifier).toggleView,
+      ),
+      // مصمّمُ القاعة — **في العرضَين كلَيهما** (يفتح شاشةً مستقلّة). الحراسةُ
+      // نفسُها في `buildTablesOpenDesignerButton` المثبَتةِ باختبارها.
+      PicPosHeaderAction(
+        buttonKey: const Key('tables_open_designer'),
+        label: tr('مصمم القاعة'),
+        icon: PhosphorIconsBold.squaresFour,
+        priority: 5,
+        color: AppColors.warning,
+        permission: PermissionCodes.tablesManage,
+        onPressed: () => ref
+            .read(screenNavigationProvider.notifier)
+            .open(ScreenId.floorPlanDesigner.navigationIndex),
+      ),
+      PicPosHeaderAction(
+        label: _scopeLabel(sections, scopeId),
+        tooltip: tr('المنطقة'),
+        icon: PhosphorIconsBold.mapPin,
+        priority: 3,
+        color: AppColors.textSecondary,
+        choices: [
+          if (!uiState.isVisualView)
+            PicPosHeaderChoice(
+              label: tr('كل المناطق'),
+              onSelected: () => setState(() => _sectionId = null),
+            ),
+          for (final section in sections)
+            PicPosHeaderChoice(
+              label: section.name,
+              onSelected: () => setState(() => _sectionId = section.id),
+            ),
+        ],
+      ),
+      // «مزيد من الخيارات» — الفعلان اللذان تركهما `railActions` عمداً خارج
+      // الشريط، وكلاهما يمرّ بالمنفِّذ نفسِه. بلا `permission`: `log` بلا
+      // صلاحيّةٍ بتصميمه، و`cancelOrder` يفحص `tables_cancel` في معالجه.
+      PicPosHeaderAction(
+        label: tr('مزيد من الخيارات'),
+        icon: PhosphorIconsBold.dotsThreeOutline,
+        iconOnly: true,
+        priority: 6,
+        choices: [
+          PicPosHeaderChoice(
+            label: tr('سجل الطاولة'),
+            enabled: selectedTable != null,
+            onSelected: () => widget.actions.run(selectedTable!, TableAction.log),
+          ),
+          PicPosHeaderChoice(
+            label: tr('إلغاء الطلب'),
+            enabled: selectedTable != null,
+            onSelected: () =>
+                widget.actions.run(selectedTable!, TableAction.cancelOrder),
+          ),
+        ],
+      ),
+    ];
   }
 
   Widget _buildNoSections() {

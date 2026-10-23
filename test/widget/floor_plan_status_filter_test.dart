@@ -12,6 +12,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ural_erp/core/theme/table_status_palette.dart';
 import 'package:ural_erp/data/database/database.dart';
 import 'package:ural_erp/data/providers/repository_providers.dart';
 import 'package:ural_erp/domain/models/table_status.dart';
@@ -86,12 +87,30 @@ void main() {
     expect(find.text('T3'), findsOneWidget);
   });
 
-  testWidgets('المرشِّحُ يحصر المرسومَ بالحالة المختارة', (tester) async {
+  // خطة الطاولات A.7: الاختيارُ يُميِّز ولا يُخفي — كانت هذه الحالةُ تؤكّد
+  // الإخفاء (`T2` غائبة) فصارت تؤكّد أنّ كلَّ الطاولات مرسومةٌ وغيرَ المطابقة
+  // معتَّمة.
+  testWidgets('المرشِّحُ يُعتِّم غيرَ المطابقة ولا يُخفيها', (tester) async {
     await _pump(tester, statusFilter: TableStatus.available);
     expect(find.text('T1'), findsOneWidget);
     expect(find.text('T3'), findsOneWidget);
-    expect(find.text('T2'), findsNothing,
-        reason: 'المشغولةُ رُسمت رغم اختيار «متاحة» — المرشِّحُ لم يصل الخريطة');
+    expect(find.text('T2'), findsOneWidget,
+        reason: 'المشغولةُ يجب أن تبقى مرسومةً — التمييزُ لا يُخفي');
+
+    double opacityOf(String name) => tester
+        .widget<Opacity>(find
+            .ancestor(of: find.text(name), matching: find.byType(Opacity))
+            .first)
+        .opacity;
+    expect(opacityOf('T2'), TableStatusPalette.dimmedOpacity);
+    expect(
+      find.ancestor(
+        of: find.text('T1'),
+        matching: find.byWidgetPredicate((w) => w is Opacity && w.opacity < 1),
+      ),
+      findsNothing,
+      reason: 'المطابقةُ لا تُعتَّم',
+    );
   });
 
   testWidgets('وضعُ التصميم يتجاهل المرشِّح — لا تُرتَّب خريطةٌ ناقصة',

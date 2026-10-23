@@ -2,8 +2,10 @@ import 'package:ural_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/design_system/spacing.dart';
+import '../../../core/theme/table_status_palette.dart';
 import '../../../domain/models/table_status.dart';
 import '../../picpos_shell/picpos_stat_tile.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import '../../screens/tables/widgets/table_status_info.dart';
 
 /// عدُّ الطاولات لكلِّ حالة — **بمدخلٍ لكلِّ حالةٍ ولو كان صفراً**.
@@ -41,11 +43,6 @@ class TablesStatusRail extends StatelessWidget {
   /// حالةٍ حقيقيّة في [TableStatus.all].
   static const String allKey = 'all';
 
-  /// لونُ بطاقة «عرض الكل» — رماديٌّ محايدٌ لا يُشبه لونَ أيّ حالةٍ حقيقيّة،
-  /// نفسُ الرمادي المستعمَل لمدخل «الكل» في `tables_filter_bar.dart`
-  /// (الشاشةُ القديمة) فلا يُخترَع لونٌ ثالث لنفس المعنى.
-  static const Color _allAccent = Color(0xFF94A3B8);
-
   @override
   Widget build(BuildContext context) {
     // مجموعُ الطاولات — لا `TableStatus.all.length` ولا عددُ الطاولات
@@ -56,13 +53,42 @@ class TablesStatusRail extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // اختيارُ حالةٍ **يُميِّز** طاولاتِها ويُعتِّم الباقي — لا يُخفي شيئاً.
+        // ارتفاعٌ ثابتٌ سواءٌ أُظهر زرُّ الإلغاء أم لا: لا يقفز العمودُ.
+        SizedBox(
+          height: 28,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  tr('تمييز الحالة'),
+                  style: TextStyle(fontSize: 11, color: context.picposMuted),
+                ),
+              ),
+              if (selected != null)
+                TextButton(
+                  key: const Key('tablesStatusClearHighlight'),
+                  onPressed: () => onSelect(null),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    minimumSize: const Size(0, 28),
+                  ),
+                  child: Text(
+                    tr('إلغاء التمييز'),
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ),
+            ],
+          ),
+        ),
         for (final status in TableStatus.all)
           Padding(
             padding: const EdgeInsets.only(bottom: Spacing.sm),
             child: _StatusTile(
               key: tileKey(status),
-              label: tableStatusLabel(status),
-              accent: tableStatusColor(status),
+              label: tableStatusInfoOf(context, status).label,
+              accent: tableStatusInfoOf(context, status).color,
               count: counts[status] ?? 0,
               isSelected: selected == status,
               onTap: () => onSelect(selected == status ? null : status),
@@ -74,7 +100,8 @@ class TablesStatusRail extends StatelessWidget {
         _StatusTile(
           key: tileKey(allKey),
           label: tr('عرض الكل'),
-          accent: _allAccent,
+          // لونٌ محايدٌ من الثيم لا يشبه لونَ أيّ حالة.
+          accent: TableStatusPalette.neutral(context),
           count: total,
           isSelected: selected == null,
           onTap: () => onSelect(null),

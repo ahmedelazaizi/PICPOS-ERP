@@ -24,6 +24,8 @@ void main() {
       ScreenId.dashboard: 'dashboard_access',
       ScreenId.offers: 'offers_view',
       ScreenId.tables: 'tables_view',
+      // F.6 (2026-10-18): الحجوزات على كودها هي لا على `tables_view`.
+      ScreenId.bookings: 'bookings_view',
       ScreenId.kitchen: 'kitchen_view',
       ScreenId.salesReturns: 'sales_return_view',
       ScreenId.purchaseReturns: 'purchases_return_view',

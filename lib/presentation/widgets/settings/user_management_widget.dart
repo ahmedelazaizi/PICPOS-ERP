@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 
 import '../../../core/design_system/typography.dart';
 import '../../../data/providers/providers.dart';
+import '../../shared_widgets/default_screen_dropdown.dart';
 import '../../../services/client_write_interceptor.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
 
@@ -291,18 +292,14 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                     ),
                     const SizedBox(height: 12),
                     // #10: Default screen selector
-                    DropdownButtonFormField<String>(
-                      initialValue: selectedScreen,
+                    DefaultScreenDropdown(
+                      roleId: selectedRole?.id,
+                      value: selectedScreen,
                       decoration:  InputDecoration(
                         labelText: tr('الشاشة الافتراضية'),
                         prefixIcon: const Icon(PhosphorIconsBold.monitor, size: 18),
                       ),
-                      items:  [
-                        DropdownMenuItem(value: 'pos', child: Text(tr('البيع السريع'))),
-                        DropdownMenuItem(value: 'dashboard', child: Text(tr('لوحة التحكم'))),
-                        DropdownMenuItem(value: 'tables', child: Text(tr('الطاولات'))),
-                      ],
-                      onChanged: (v) => setDialogState(() => selectedScreen = v ?? 'pos'),
+                      onChanged: (v) => setDialogState(() => selectedScreen = v ?? selectedScreen),
                     ),
                   ],
                 ),
@@ -469,18 +466,14 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
                 ),
                 const SizedBox(height: 12),
                 // #10: Default screen selector
-                DropdownButtonFormField<String>(
-                  initialValue: selectedScreen,
+                DefaultScreenDropdown(
+                  roleId: selectedRole?.id,
+                  value: selectedScreen,
                   decoration:  InputDecoration(
                     labelText: tr('الشاشة الافتراضية'),
                     prefixIcon: const Icon(PhosphorIconsBold.monitor, size: 18),
                   ),
-                  items:  [
-                    DropdownMenuItem(value: 'pos', child: Text(tr('البيع السريع'))),
-                    DropdownMenuItem(value: 'dashboard', child: Text(tr('لوحة التحكم'))),
-                    DropdownMenuItem(value: 'tables', child: Text(tr('الطاولات'))),
-                  ],
-                  onChanged: (v) => setDialogState(() => selectedScreen = v ?? 'pos'),
+                  onChanged: (v) => setDialogState(() => selectedScreen = v ?? selectedScreen),
                 ),
               ],
             ),

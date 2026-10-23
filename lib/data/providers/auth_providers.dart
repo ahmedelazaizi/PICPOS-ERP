@@ -18,6 +18,7 @@ import '../../services/websocket_sync_client.dart';
 import '../database/sync_interceptor.dart';
 import 'providers.dart';
 import 'e_invoicing_providers.dart';
+import 'screen_access_selectors.dart';
 import '../../services/shift_dialog_session_guard.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -793,7 +794,7 @@ final _kNavItemDefsShared = [
   // نطاقاتُ الملفّات · `ScreenConfig`) والشاشةُ **ما زالت غائبةً عن القائمة
   // الجانبيّة**: هذه القائمةُ مصدرٌ مستقلٌّ لا يُشتقّ من تلك الخمسة.
   // بلاغُ المالك 2026-08-23. والحارسُ وُسِّع ليقيسها.
-  const NavItemDef(icon: PhosphorIconsBold.calendarCheck, label: 'الحجوزات', permission: 'tables_view', index: 61, group: 'sales'),
+  const NavItemDef(icon: PhosphorIconsBold.calendarCheck, label: 'الحجوزات', permission: 'bookings_view', index: 61, group: 'sales'),
   const NavItemDef(icon: PhosphorIconsBold.tag, label: 'العروض', permission: 'offers_view', index: 2, group: 'sales'),
   const NavItemDef(icon: PhosphorIconsBold.arrowUUpLeft, label: 'مرتجع المبيعات', permission: 'sales_return_view', index: 44, group: 'sales'),
   // المرحلة و — PicPos وحدَها (‏[kPicPosOnlyNavIndexes]).
@@ -1099,42 +1100,16 @@ final userNavItemsProvider = FutureProvider<List<NavItemDef>>((ref) async {
 
   debugPrint('[NAV] allowedScreenIds from AppConfig: $allowedScreenIds');
 
-  for (final item in allNavItems) {
-    final screenId = ScreenId.fromIndex(item.index);
-    if (screenId == null || !allowedScreenIds.contains(screenId)) continue;
-
-    if (!navItemVisibleForBrand(item.index)) continue;
-    if (item.index == ScreenId.dashboard.navigationIndex && authState.isCashier && !authState.isAdmin) continue;
-
-    // Special handling for E-Invoicing
-    if (item.index == ScreenId.eInvoice.navigationIndex) {
-      if (activePlatform == null) {
-        if (!authState.isAdmin) continue;
-      }
-
-      String label = item.label;
-      if (activePlatform == 'eta') label = 'الفوترة الإلكترونية (مصر)';
-      if (activePlatform == 'jofotara') label = 'الفوترة الإلكترونية (الأردن)';
-
-      if (item.permission == null || userPermissions.contains(item.permission)) {
-        allowedItems.add(NavItemDef(
-          icon: item.icon,
-          label: label,
-          permission: item.permission,
-          index: item.index,
-          section: item.section,
-          group: item.group,
-        ));
-      }
-      continue;
-    }
-
-    if (item.permission == null ||
-        authState.hasSystemAdminBypass ||
-        userPermissions.contains(item.permission)) {
-      allowedItems.add(item);
-    }
-  }
+  // القرارُ كلُّه في `selectMenuItems` → `screenVisibleToUser` (B-6).
+  allowedItems.addAll(selectMenuItems(
+    navItems: allNavItems,
+    permissions: userPermissions,
+    bypass: authState.hasSystemAdminBypass,
+    eInvoicePlatform: activePlatform,
+    flavorAllowed: allowedScreenIds,
+    brandVisible: navItemVisibleForBrand,
+    hideDashboard: authState.isCashier && !authState.isAdmin,
+  ));
   debugPrint('[NAV] ✅ total allowed nav items: ${allowedItems.length} / ${allNavItems.length}');
   return allowedItems;
 });
@@ -1208,9 +1183,8 @@ const screenPermissionMap = <ScreenId, String>{
   ScreenId.salesReturns: 'sales_return_view',
   ScreenId.purchaseReturns: 'purchases_return_view',
   ScreenId.regions: 'settings_view',
-  // الحجوزاتُ تعرض عملاءَ ومبالغَ وتفتح مسارَ تفويترٍ — فصلاحيّتُها
-  // `tables_view` نفسُها: من يدير الطاولاتِ يدير المواعيد.
-  ScreenId.bookings: 'tables_view',
+  // الحجوزات: `bookings_view` (قرار المالك F.6)، وأُمنحت لكل دور يملك `tables_view`.
+  ScreenId.bookings: 'bookings_view',
   // ⚠️ `reports_view` عن قصد لا `settings_view` كأخواتها في مجموعة
   //    الحسابات: الشاشةُ تُفتَح اليومَ من شاشة التقارير، فهذا ما يحرسها
   //    فعلاً. واختيارُ كودٍ آخرَ يبدّل **مَن يرى القوائمَ المالية** صامتاً
@@ -1272,7 +1246,6 @@ final userAllowedScreensProvider = FutureProvider<List<int>>((ref) async {
   final repo = ref.read(authRepositoryProvider);
   final activePlatform = ref.watch(activeEInvoicePlatformProvider).value;
   final flavorAllowedScreenIds = AppConfig.allowedScreenIds.toSet();
-  final allowedScreens = <int>[];
 
   // SECURITY: Use the role recorded in the auth state at login, NOT the user's
   // current DB roleId — same rationale as in userNavItemsProvider above.
@@ -1288,31 +1261,16 @@ final userAllowedScreensProvider = FutureProvider<List<int>>((ref) async {
     userPermissions = const {};
   }
 
-  for (final entry in screenPermissionMap.entries) {
-    if (!flavorAllowedScreenIds.contains(entry.key)) continue;
-
-    // Check e-invoice specifically
-    if (entry.key == ScreenId.eInvoice) {
-      if (activePlatform == null && !authState.isAdmin) continue;
-    }
-
-    // System-admin bypass: grant access to all screens. حصريًا لصلاحية
-    // النظام الحقيقية (hasSystemAdminBypass) مش لأي دور اسمه فيه «مدير».
-    if (authState.hasSystemAdminBypass ||
-        userPermissions.contains(entry.value)) {
-      allowedScreens.add(entry.key.navigationIndex);
-    }
-  }
-
-  // مايبقاش المستخدم من غير أي شاشة يفتحها — بيقع في واجهة فاضية بلا مخرج.
-  // قبل كده كانت لوحة التحكم بتتحقن قسراً وده كان بيلغي `dashboard_access`
-  // تماماً؛ دلوقتي بتتحقن فقط لما مايبقاش فيه بديل خالص.
-  if (allowedScreens.isEmpty &&
-      flavorAllowedScreenIds.contains(ScreenId.dashboard)) {
-    allowedScreens.add(ScreenId.dashboard.navigationIndex);
-  }
-
-  return allowedScreens..sort();
+  // القرارُ في `selectAllowedScreenIndexes` → `screenVisibleToUser` (B-6).
+  // فارغةٌ ⇒ حالةُ «لا توجد شاشات متاحة لحسابك» (B-7): لوحةُ التحكم لم تعد
+  // تُحقَن قسراً لمن لا يملكها (كانت تفتح شاشةً غيرَ مسموحة).
+  return selectAllowedScreenIndexes(
+    navItems: kAllNavItemDefs,
+    permissions: userPermissions,
+    bypass: authState.hasSystemAdminBypass,
+    eInvoicePlatform: activePlatform,
+    flavorAllowed: flavorAllowedScreenIds,
+  );
 });
 
 // ═══════════════════════════════════════════════════════════════════════════

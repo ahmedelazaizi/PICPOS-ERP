@@ -114,21 +114,10 @@ class PermissionEnforcementRegistry {
     // — يجب حذفُها من هذه القائمة وتسجيلُ إنفاذٍ حقيقيٍّ لكلٍّ منها مع انتقالِ
     // شاشتِه للإنتاج (كلّ مهمّة تحضّر الإنفاذَ قبل الدمج). إذا مرّت سنة كاملة
     // بلا تقدّم، فأعِد النظرَ في الأولويات.
-    'bookings_view',
-    'bookings_add',
+    // ✅ شُطب الباقي (P2، 2026-10-18): منفَّذٌ في `bookings_picpos/` والخريطة.
+    //    وهذان بلا سطحٍ اليوم: لا تعديلَ لحجزٍ قائم ولا إسنادَ لاحقاً.
     'bookings_edit',
-    'bookings_cancel',
-    'bookings_status',
     'bookings_assign',
-    // ⚠️ و`bookings_deposit` خرجت من هنا في v167 (‏المرحلة ٣، 2026-08-27):
-    //    نقطةُ `/api/bookings/apply-deposit` تحرسها بـ
-    //    `ApiUserCtx.requirePermission`. وهي أوّلُ أكواد الحجوزات تنال
-    //    إنفاذاً حقيقيّاً — لأنّ خصمَ العربون حدثٌ **ماليّ** سبق شاشتَه.
-    //    والعشرةُ الباقيةُ على حالها حتّى تصل شاشاتُها.
-    'bookings_services_manage',
-    'bookings_resources_manage',
-    'bookings_reports',
-    'bookings_settings',
   };
 
   /// أكوادٌ **محروسةٌ حراسةً صحيحة** — في شاشةٍ لا يصل إليها PicPos.

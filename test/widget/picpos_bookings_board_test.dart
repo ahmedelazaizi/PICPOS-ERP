@@ -19,6 +19,12 @@ import 'package:ural_erp/domain/models/picpos_booking_view.dart';
 import 'package:ural_erp/presentation/bookings_picpos/screens/bookings_picpos_screen.dart';
 import 'package:ural_erp/presentation/bookings_picpos/widgets/bookings_settings_view.dart';
 
+const _allBookingPerms = <String>[
+  'bookings_view',
+  'bookings_reports',
+  'bookings_settings',
+];
+
 void main() {
   final day = DateTime(2026, 9, 1);
 
@@ -55,6 +61,7 @@ void main() {
     WidgetTester tester,
     List<BookingBoardRow> rows, {
     Size size = const Size(1920, 1080),
+    List<String> perms = _allBookingPerms,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
@@ -63,6 +70,10 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          // الوجهتان `التقارير`/`الإعدادات` تُخفيان حتى تصل صلاحياتُ المستخدم
+          // (بوّاباتُ الحجوزات)؛ فالتجهيزةُ تمنح الأكواد صراحةً. تجاوزٌ متزامن
+          // كي لا يبقى المزوّد loading.
+          currentUserPermissionsProvider.overrideWith((ref) => perms),
           bookingsBoardProvider.overrideWith((ref) => Stream.value(rows)),
           bookingBoardDayProvider.overrideWith(() => _FixedDay(day)),
           // ⚠️ لا بدّ من تبديل هذين أيضاً: بلا قاعدةٍ يبقيان `loading` أبداً،
@@ -210,6 +221,25 @@ void main() {
             reason: 'وجهةُ «${d.label}» فُتحت بلا محتواها — و«لم تنهر» وحدَها '
                 'تمرّ على وجهةٍ فارغة');
       }
+    });
+
+    testWidgets('بلا bookings_reports/settings: تبويباهما لا يظهران',
+        (tester) async {
+      await pump(tester, [row()], perms: const ['bookings_view']);
+
+      expect(find.text(BookingsDestination.board.label), findsWidgets);
+      expect(find.text(BookingsDestination.reports.label), findsNothing,
+          reason: 'مستخدمٌ بلا bookings_reports يرى تبويبَ التقارير');
+      expect(find.text(BookingsDestination.settings.label), findsNothing);
+    });
+
+    testWidgets('يملك bookings_reports وحده: التقارير تظهر والإعدادات لا',
+        (tester) async {
+      await pump(tester, [row()],
+          perms: const ['bookings_view', 'bookings_reports']);
+
+      expect(find.text(BookingsDestination.reports.label), findsOneWidget);
+      expect(find.text(BookingsDestination.settings.label), findsNothing);
     });
 
     testWidgets('قائمةُ الانتظارِ تعرض غيرَ المُسنَدين وحدَهم',
