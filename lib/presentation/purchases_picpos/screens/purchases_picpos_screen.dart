@@ -1,4 +1,5 @@
 import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:ural_erp/data/providers/financial_figures_providers.dart';
 import 'package:flutter/material.dart';
 import '../../../core/widgets/app_shortcuts.dart';
 import 'package:ural_erp/core/widgets/app_toast.dart';

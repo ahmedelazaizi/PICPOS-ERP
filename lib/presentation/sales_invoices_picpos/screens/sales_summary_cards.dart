@@ -55,8 +55,11 @@ Widget buildMaskedAmountKpiCard({
         dot: color,
         deltaPct: delta,
       );
-  return PermissionGuard(
-    permission: PermissionCodes.salesAmountsView,
+  return PermissionGuard.anyOf(
+    anyOf: const [
+      PermissionCodes.salesView,
+      PermissionCodes.salesAmountsView,
+    ],
     // ولا شارةَ اتّجاهٍ عند الحجب: النسبةُ مشتقّةٌ من مبلغَين، فمن يعرف أحدَ
     // الطرفين يستنتج الآخرَ منها — نفسُ قاعدة نسبة التحصيل في البطاقة الأمّ.
     fallback: tile(kMaskedValuePlaceholder),
@@ -263,8 +266,11 @@ class _SalesHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final net = total - returns;
-    return PermissionGuard(
-      permission: PermissionCodes.salesAmountsView,
+    return PermissionGuard.anyOf(
+      anyOf: const [
+        PermissionCodes.salesView,
+        PermissionCodes.salesAmountsView,
+      ],
       fallback: _body(context, masked: true, paidPct: 0, retPct: 0, net: net),
       child: _body(
         context,

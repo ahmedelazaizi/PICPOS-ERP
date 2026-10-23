@@ -45,10 +45,15 @@ class PurchasesTotalsBar extends ConsumerWidget {
         purchaseInvoicesControllerProvider.select((s) => s.totalReturns));
     final invoiceCount = ref.watch(
         purchaseInvoicesControllerProvider.select((s) => s.invoiceCount));
+    final canSeeFigures = ref
+            .watch(screenFiguresVisibilityProvider(ScreenId.purchases))
+            .value ??
+        false;
 
-    String money(double v) =>
-        '${v.toStringAsFixed(AppConstants.decimalPlaces)} '
-        '${AppConstants.currencySymbolEn}';
+    String money(double v) => canSeeFigures
+        ? '${v.toStringAsFixed(AppConstants.decimalPlaces)} '
+            '${AppConstants.currencySymbolEn}'
+        : '—';
 
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 6),

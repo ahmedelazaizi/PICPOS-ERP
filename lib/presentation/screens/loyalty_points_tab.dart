@@ -250,8 +250,9 @@ class _CustomerPointsTabState extends State<_CustomerPointsTab> {
                                       tr('عميل #{p0}', {'p0': pt.customerId}),
                                 ),
                               ),
-                              subtitle: Text(
-                                tr('مكتسب: {p0} | مستبدل: {p1}', {'p0': pt.totalEarned, 'p1': pt.totalRedeemed}),
+                              subtitle: PermissionMaskedText(
+                                 permission: PermissionCodes.loyaltyView,
+                                text: tr('مكتسب: {p0} | مستبدل: {p1}', {'p0': pt.totalEarned, 'p1': pt.totalRedeemed}),
                               ),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -267,8 +268,9 @@ class _CustomerPointsTabState extends State<_CustomerPointsTab> {
                                       ),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
-                                    child: Text(
-                                      tr('{p0} نقطة', {'p0': pt.currentBalance}),
+                                    child: PermissionMaskedText(
+                                       permission: PermissionCodes.loyaltyView,
+                                      text: tr('{p0} نقطة', {'p0': pt.currentBalance}),
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: AppColors.primary,
@@ -309,8 +311,9 @@ class _CustomerPointsTabState extends State<_CustomerPointsTab> {
   Widget _statChip(String label, String value, Color color) {
     return Column(
       children: [
-        Text(
-          value,
+        PermissionMaskedText(
+           permission: PermissionCodes.loyaltyView,
+          text: value,
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 18,

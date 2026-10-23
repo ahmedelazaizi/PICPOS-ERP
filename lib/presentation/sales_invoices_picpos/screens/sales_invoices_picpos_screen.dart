@@ -59,6 +59,7 @@ import '../../picpos_shell/picpos_attachments_panel.dart';
 import '../../../domain/models/distribution_model.dart';
 import '../../../web/web_write_guard.dart';
 import 'permanent_customer_dialog.dart';
+import '../../widgets/any_permission_masked_text.dart';
 
 // ── Part files (منسوخة حرفياً من lib/presentation/screens/widgets/sales_invoices/
 // — الشاشة الأصل `part of _SalesInvoicesScreenState` خاصة فما ينفعش تتعمل

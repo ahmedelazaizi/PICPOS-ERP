@@ -770,9 +770,6 @@ class _ProductRow extends ConsumerWidget {
                     ? null
                     : warehouseMap[product.warehouseId!],
               ),
-              // ⚠️ التكلفةُ قبل سعر البيع كما في التصميم — والحارسان
-              // (`buildProductCostPriceCell`/`...SalePriceCell`) بقيا على
-              // حالهما، فترتيبُ العرض تغيّر لا إنفاذُ الصلاحية.
               buildProductCostPriceCell(
                 costPrice: product.costPrice,
                 width: _kCostPriceColWidth,
@@ -781,15 +778,19 @@ class _ProductRow extends ConsumerWidget {
                 salePrice: product.salePrice,
                 width: _kSalePriceColWidth,
               ),
-              SizedBox(
-                width: _kMarginColWidth,
-                child: Center(
-                  child: _MarginBadge(
-                    salePrice: product.salePrice,
-                    costPrice: product.costPrice,
-                  ),
-                ),
-              ),
+              PermissionGuard(
+                permission: PermissionCodes.productsCostView,
+                fallback: _maskedCell(_kMarginColWidth),
+                child: SizedBox(
+                  width: _kMarginColWidth,
+                  child: Center(
+                    child: _MarginBadge(
+                      salePrice: product.salePrice,
+                      costPrice: product.costPrice,
+                    ),
+                   ),
+                 ),
+               ),
               buildProductAvgCostCell(
                 loading: avgCostState.loading,
                 value: avgCostState.value,

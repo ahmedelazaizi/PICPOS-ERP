@@ -49,13 +49,21 @@ import '../../../services/client_write_interceptor.dart';
 import '../../picpos_shell/picpos_dialog.dart';
 import '../../screens/parties/party_helpers.dart';
 import '../../screens/parties/providers/party_groups_controller.dart';
+import 'party_phone_dedupe.dart';
 
-/// حوارُ إضافة طرفٍ بهويّة PicPos.
-void showAddPartyDialogPicpos(
+/// حوارُ إضافة طرفٍ بهويّة PicPos. يُعيد **معرّفَ الطرف** المُنشأ (أو الموجودِ
+/// الذي اختاره المستخدمُ عند تكرار الهاتف)، و`null` عند الإلغاء — يعتمد عليه
+/// منتقي العميل (`CustomerPickerField`).
+Future<int?> showAddPartyDialogPicpos(
   BuildContext context,
   WidgetRef ref, {
   String initialType = 'customer',
-}) => _showPartyDialogPicpos(context, ref, initialType: initialType);
+  String? initialName,
+  String? initialPhone,
+}) => _showPartyDialogPicpos(context, ref,
+    initialType: initialType,
+    initialName: initialName,
+    initialPhone: initialPhone);
 
 /// نفسُ حوار PicPos، مع تهيئة بيانات الطرف ومسار التحديث القائم.
 void showEditPartyDialogPicpos(
@@ -64,15 +72,19 @@ void showEditPartyDialogPicpos(
   Party party,
 ) => _showPartyDialogPicpos(context, ref, party: party);
 
-void _showPartyDialogPicpos(
+Future<int?> _showPartyDialogPicpos(
   BuildContext context,
   WidgetRef ref, {
   Party? party,
   String initialType = 'customer',
+  String? initialName,
+  String? initialPhone,
 }) {
-  final nameController = TextEditingController(text: party?.name ?? '');
+  final nameController =
+      TextEditingController(text: party?.name ?? initialName ?? '');
   final codeController = TextEditingController(text: party?.code ?? '');
-  final phoneController = TextEditingController(text: party?.phone ?? '');
+  final phoneController =
+      TextEditingController(text: party?.phone ?? initialPhone ?? '');
   final addressController = TextEditingController(text: party?.address ?? '');
   final openingBalanceController = TextEditingController(text: '0');
   final creditLimitController = TextEditingController(
@@ -125,14 +137,17 @@ void _showPartyDialogPicpos(
   }
 
   var saving = false;
+  int? createdId;
 
-  showDialog<void>(
+  return showDialog<int?>(
     context: context,
     builder: (context) => Directionality(
       textDirection: Directionality.of(context),
       child: StatefulBuilder(
         builder: (context, setDialogState) {
           Future<void> save() async {
+            // علَمٌ متزامن: نقرتان قبل إعادة بناء الزرّ كانتا تُنشئان طرفَين (E-3).
+            if (saving) return;
             setDialogState(() => saving = true);
             if (nameController.text.isEmpty) {
               AppToast.show(
@@ -166,6 +181,22 @@ void _showPartyDialogPicpos(
                   selectedType == 'supplier' || selectedType == 'both';
               final isGlobal = selectedBranchIds.isEmpty;
               final branchIds = isGlobal ? null : selectedBranchIds.join(',');
+
+              // منعُ التكرار: هاتفٌ مسجَّلٌ لعميلٍ ⇒ استخدامُه أو الإنشاءُ عمداً.
+              if (party == null &&
+                  isCustomer &&
+                  phoneController.text.trim().isNotEmpty) {
+                final dup = await checkPhoneDuplicate(
+                    context, ref, phoneController.text.trim());
+                if (dup.cancelled) {
+                  if (context.mounted) setDialogState(() => saving = false);
+                  return;
+                }
+                if (dup.existingId != null) {
+                  if (context.mounted) Navigator.pop(context, dup.existingId);
+                  return;
+                }
+              }
 
               if (party != null) {
                 final updatedParty = party.copyWith(
@@ -215,7 +246,7 @@ void _showPartyDialogPicpos(
                       .updateParty(updatedParty);
                 }
               } else if (ref.read(isClientModeProvider)) {
-                await ClientWriteInterceptor.createParty(
+                createdId = await ClientWriteInterceptor.createParty(
                   name: nameController.text,
                   code: partyCode,
                   phone: phoneController.text.isEmpty
@@ -236,7 +267,7 @@ void _showPartyDialogPicpos(
                   costCenterId: selectedCostCenterId,
                 );
               } else {
-                await ref
+                createdId = await ref
                     .read(partiesRepositoryProvider)
                     .insertParty(
                   PartiesCompanion.insert(
@@ -313,7 +344,7 @@ void _showPartyDialogPicpos(
             } catch (_) {}
 
             if (context.mounted) {
-              Navigator.pop(context);
+              Navigator.pop(context, createdId ?? party?.id);
               AppToast.show(
                 context,
                 party != null

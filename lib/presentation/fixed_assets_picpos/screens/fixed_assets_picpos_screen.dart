@@ -39,6 +39,9 @@ import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/permissions/permission_codes.dart';
+import '../../widgets/masked_financial_figure.dart';
+import '../../../core/navigation/screen_id.dart';
+import '../../../data/providers/financial_figures_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
@@ -606,7 +609,6 @@ class _FixedAssetsPicposScreenState
     final accum = visible.fold<double>(0, (s, a) => s + figures(a).accum);
     final nearEnd = visible.where(_isNearEnd).length;
 
-    // ترقيمُ الصفحات — والصفحةُ تُقصّ إلى المدى بعد أيّ ترشيح.
     final pages = visible.isEmpty ? 1 : ((visible.length - 1) ~/ _perPage) + 1;
     final page = _page >= pages ? pages - 1 : _page;
     final from = page * _perPage;
@@ -618,14 +620,13 @@ class _FixedAssetsPicposScreenState
       children: [
         _assetFilters(context, cats, onDate),
         const SizedBox(height: 12),
-        // **شريطٌ نحيفٌ** بدل خمسِ بطاقات — التصميمُ يعطي الجدولَ الصفحةَ.
         PicPosTotalsBar(items: [
           PicPosTotal(label: tr('الأصول'), value: _ar(visible.length)),
-          PicPosTotal(label: tr('التكلفة'), value: _money0.format(cost)),
-          PicPosTotal(label: tr('مجمع الإهلاك'), value: _money0.format(accum)),
+          PicPosTotal(label: tr('التكلفة'), value: _figure(_money0.format(cost))),
+          PicPosTotal(label: tr('مجمع الإهلاك'), value: _figure(_money0.format(accum))),
           PicPosTotal(
               label: tr('صافي القيمة'),
-              value: _money0.format(cost - accum),
+              value: _figure(_money0.format(cost - accum)),
               emphasis: true),
           PicPosTotal(
             label: tr('قارب عمرها'),
@@ -670,28 +671,21 @@ class _FixedAssetsPicposScreenState
                       icon: PhosphorIconsBold.package,
                       tint: _isNearEnd(a) ? _warn : AppColors.primary),
                   PicPosTextCell(_locationOf(a)),
-                  PicPosTextCell(_money0.format(f.cost)),
-                  PicPosTextCell(_money0.format(f.accum)),
-                  PicPosTextCell(_money0.format(f.book), bold: true),
+                  PicPosTextCell(_figure(_money0.format(f.cost))),
+                  PicPosTextCell(_figure(_money0.format(f.accum))),
+                  PicPosTextCell(_figure(_money0.format(f.book)), bold: true),
                   PicPosPillCell(
                     _isActive(a)
                         ? (_isNearEnd(a) ? tr('قارب الانتهاء') : tr('قيد الاستخدام'))
                         : (a.status == 'sold' ? tr('بيع') : tr('مستبعد')),
                     _isActive(a) ? (_isNearEnd(a) ? _warn : _ok) : _idle,
                   ),
-                  // 👁 — البطاقة.
                   PicPosButtonCell(
                     tr('البطاقة'),
                     icon: PhosphorIconsBold.eye,
                     tint: AppColors.primary,
                     onPressed: () => setState(() => _openAssetId = a.id),
                   ),
-                  // ⋮ في التصميم — وصار فيه فعلٌ واحدٌ حقيقيٌّ (v175)، فبُني
-                  // زرّاً مسمّى لا قائمةً بعنصرٍ واحد.
-                  //
-                  // ⚠️ **ويُعطَّل لأصلٍ غيرِ نشط**: استبعادٌ ثانٍ يقيّد التكلفةَ
-                  //    والمجمَّعَ مرّةً أخرى، والقيدُ متّزنٌ فلا فحصَ اتّزانٍ
-                  //    يمسكه.
                   PicPosButtonCell(
                     _isActive(a) ? tr('طلب استبعاد') : '—',
                     icon: PhosphorIconsBold.trash,
@@ -713,9 +707,9 @@ class _FixedAssetsPicposScreenState
                   tr('{p0} أصول', {'p0': _ar(visible.length)}),
                   '',
                   '',
-                  _money0.format(cost),
-                  _money0.format(accum),
-                  _money0.format(cost - accum),
+                  _figure(_money0.format(cost)),
+                  _figure(_money0.format(accum)),
+                  _figure(_money0.format(cost - accum)),
                   '',
                   '',
                   '',
@@ -729,6 +723,12 @@ class _FixedAssetsPicposScreenState
 
   String _locationOf(FixedAssetData a) =>
       (a.location ?? '').trim().isEmpty ? tr('بلا موقع') : a.location!.trim();
+
+  String _figure(String value) => maskFinancialFigure(
+        ref.watch(screenFiguresVisibilityProvider(ScreenId.fixedAssets)).value ??
+            false,
+        value,
+      );
 
   Widget _assetFilters(
     BuildContext context,
@@ -1021,7 +1021,7 @@ class _FixedAssetsPicposScreenState
         _kpis([
           PicPosStatTile(
             label: tr('قسط الشهر'),
-            value: _money.format(monthTotal),
+            value: _figure(_money.format(monthTotal)),
             icon: PhosphorIconsBold.arrowDownRight,
             accent: _warn,
             caption: periodLabel,
@@ -1031,14 +1031,14 @@ class _FixedAssetsPicposScreenState
             value: tr('{p0} فئات', {'p0': _ar(rows.length - pendingCats)}),
             icon: PhosphorIconsBold.checkCircle,
             accent: _ok,
-            caption: tr('{p0} ج.م', {'p0': _money0.format(postedTotal)}),
+            caption: tr('{p0} ج.م', {'p0': _figure(_money0.format(postedTotal))}),
           ),
           PicPosStatTile(
             label: tr('بانتظار الترحيل'),
             value: tr('{p0} فئات', {'p0': _ar(pendingCats)}),
             icon: PhosphorIconsBold.clock,
             accent: pendingCats == 0 ? _ok : _err,
-            caption: tr('{p0} ج.م', {'p0': _money0.format(monthTotal - postedTotal)}),
+            caption: tr('{p0} ج.م', {'p0': _figure(_money0.format(monthTotal - postedTotal))}),
           ),
           PicPosStatTile(
             label: tr('أصول تُهلك'),
@@ -1101,7 +1101,7 @@ class _FixedAssetsPicposScreenState
                         : null,
                   ),
                   PicPosTextCell(_ar(assets.length)),
-                  PicPosTextCell(_money.format(amount), bold: true),
+                  PicPosTextCell(_figure(_money.format(amount)), bold: true),
                   PicPosTextCell(
                       accountById[cat?.depreciationAccountId] ?? tr('— غير مربوط'),
                       tint: cat?.depreciationAccountId == null ? _err : null),
@@ -1116,12 +1116,12 @@ class _FixedAssetsPicposScreenState
                   tr('{p0} فئات', {'p0': _ar(visible.length)}),
                   '',
                   _ar(visible.fold<int>(0, (s, e) => s + e.value.length)),
-                  _money.format(visible.fold<double>(
+                  _figure(_money.format(visible.fold<double>(
                       0,
                       (s, e) =>
                           s +
                           e.value.fold<double>(
-                              0, (x, a) => x + _monthlyDepreciation(a)))),
+                              0, (x, a) => x + _monthlyDepreciation(a))))),
                   '',
                   '',
                 ],
@@ -1319,19 +1319,19 @@ class _FixedAssetsPicposScreenState
           ),
           PicPosStatTile(
             label: tr('ثمن البيع'),
-            value: _money0.format(totalProceeds),
+            value: _figure(_money0.format(totalProceeds)),
             icon: PhosphorIconsBold.currencyCircleDollar,
             accent: _ok,
           ),
           PicPosStatTile(
             label: tr('القيمة الدفترية عند البيع'),
-            value: _money0.format(totalBook),
+            value: _figure(_money0.format(totalBook)),
             icon: PhosphorIconsBold.scales,
             accent: AppColors.primary,
           ),
           PicPosStatTile(
             label: tr('صافي الربح من البيع'),
-            value: _money0.format(totalProceeds - totalBook),
+            value: _figure(_money0.format(totalProceeds - totalBook)),
             icon: PhosphorIconsBold.trendUp,
             accent: totalProceeds - totalBook >= 0 ? _ok : _err,
             caption: tr('إيراد غير تشغيلي'),
@@ -1382,14 +1382,14 @@ class _FixedAssetsPicposScreenState
                 PicPosTextCell(a.disposalDate == null
                     ? '—'
                     : DateFormat('yyyy-MM-dd').format(a.disposalDate!)),
-                PicPosTextCell(_money0.format(a.purchasePrice)),
-                PicPosTextCell(_money0.format(a.accumulatedDepreciation)),
-                PicPosTextCell(_money0.format(_bookValue(a))),
-                PicPosTextCell(_money0.format(proceeds(a))),
+                PicPosTextCell(_figure(_money0.format(a.purchasePrice))),
+                PicPosTextCell(_figure(_money0.format(a.accumulatedDepreciation))),
+                PicPosTextCell(_figure(_money0.format(_bookValue(a)))),
+                PicPosTextCell(_figure(_money0.format(proceeds(a)))),
                 gain(a).abs() < 0.005
                     ?  PicPosTextCell(tr('لا ربح ولا خسارة'))
                     : PicPosTrendCell(
-                        '${_money0.format(gain(a).abs())} '
+                        '${_figure(_money0.format(gain(a).abs()))} '
                         '${gain(a) > 0 ? 'ربح' : 'خسارة'}',
                         up: gain(a) > 0),
                 PicPosPillCell(a.status == 'sold' ? tr('بيع') : tr('إعدام'),
@@ -1418,10 +1418,6 @@ class _FixedAssetsPicposScreenState
     );
   }
 
-  /// جدولُ الطلبات — **والمسوّدةُ تُفتَح بالنقر**.
-  ///
-  /// ⚠️ بلا هذا الجدول تختفي المسوّدةُ لحظةَ إغلاق اللوح: لا مدخلَ يعيد
-  ///    فتحَها، والأصلُ يبقى ممنوعاً من طلبٍ ثانٍ بسببها.
   Widget _disposalRequestsTable(List<AssetDisposalListRow> rows) {
     return PicPosDataTable(
       title: tr('طلبات الاستبعاد'),
@@ -1453,7 +1449,7 @@ class _FixedAssetsPicposScreenState
               PicPosTextCell(disposalMethodLabel(r.request.method)),
               PicPosTextCell(
                 disposalCarriesProceeds(r.request.method)
-                    ? _money0.format(r.request.disposalValue)
+                    ? _figure(_money0.format(r.request.disposalValue))
                     : '—',
               ),
               // ⚠️ «التحصيل» بلا معنًى لما لا ثمنَ له — وعرضُ «نقدي» على
@@ -1518,7 +1514,7 @@ class _FixedAssetsPicposScreenState
         icon: const Icon(PhosphorIconsBold.arrowDownRight, color: _warn),
         title: Text(tr('ترحيل إهلاك {periodLabel}', {'periodLabel': periodLabel})),
         content: Text(
-          tr('سيُقيَّد قسطُ {p0} أصلٍ بإجمالي {p1} — يخصم مصروفَ الإهلاك ويزيد مجمعَه. والأصولُ المُرحَّلةُ لهذا الشهر لا تُرحَّل مرّتين.', {'p0': _ar(pending.length), 'p1': _money.format(amount)}),
+          tr('سيُقيَّد قسطُ {p0} أصلٍ بإجمالي {p1} — يخصم مصروفَ الإهلاك ويزيد مجمعَه. والأصولُ المُرحَّلةُ لهذا الشهر لا تُرحَّل مرّتين.', {'p0': _ar(pending.length), 'p1': _figure(_money.format(amount))}),
         ),
         actions: [
           TextButton(

@@ -37,6 +37,12 @@ mixin _PurchaseReturnsPicposLogic<W extends ConsumerStatefulWidget>
     final invoiceItems = state.invoiceItems;
     final returnQtys   = Map<int, double>.from(state.returnQuantities);
     final returnTotal  = notifier.calculateReturnTotal();
+    final canSeeFigures = await ref.read(
+      screenFiguresVisibilityProvider(ScreenId.purchaseReturns).future,
+    );
+    final returnTotalLabel = canSeeFigures
+        ? returnTotal.toStringAsFixed(AppConstants.decimalPlaces)
+        : maskedFinancialFigure;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -57,7 +63,7 @@ mixin _PurchaseReturnsPicposLogic<W extends ConsumerStatefulWidget>
               Text(tr('فاتورة: {p0}', {'p0': invoice.invoiceNumber})),
               const SizedBox(height: 8),
               Text(
-                tr('إجمالي المرتجع: {p0} {p1}', {'p0': returnTotal.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolAr}),
+                tr('إجمالي المرتجع: {p0} {p1}', {'p0': returnTotalLabel, 'p1': AppConstants.currencySymbolAr}),
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
@@ -86,7 +92,9 @@ mixin _PurchaseReturnsPicposLogic<W extends ConsumerStatefulWidget>
       if (threshold > 0 && returnTotal > threshold && mounted) {
         final approved = await requestManagerApproval(
           context,
-          actionName: tr('اعتماد مرتجع مشتريات بقيمة {p0}', {'p0': returnTotal.toStringAsFixed(AppConstants.decimalPlaces)}),
+          actionName: tr('اعتماد مرتجع مشتريات بقيمة {p0}', {
+            'p0': canSeeFigures ? returnTotalLabel : maskedFinancialFigure,
+          }),
         );
         if (!approved) return false;
       }
@@ -137,7 +145,10 @@ mixin _PurchaseReturnsPicposLogic<W extends ConsumerStatefulWidget>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  tr('قيمة المرتجع: {p0} {p1}', {'p0': returnTotal.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolAr}),
+                  tr('قيمة المرتجع: {p0} {p1}', {
+                   'p0': returnTotalLabel,
+                   'p1': AppConstants.currencySymbolAr,
+                 }),
                   style: const TextStyle(fontSize: 15, color: AppColors.warning),
                 ),
                 const SizedBox(height: 20),

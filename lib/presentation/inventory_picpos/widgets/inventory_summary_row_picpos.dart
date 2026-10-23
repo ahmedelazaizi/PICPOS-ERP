@@ -12,8 +12,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/navigation/screen_id.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../../../data/providers/inventory_providers.dart';
+import '../../../data/providers/financial_figures_providers.dart';
 import '../../screens/inventory/widgets/inventory_summary_card.dart';
 import '../../../core/constants/app_constants.dart';
 
@@ -30,6 +32,10 @@ class InventorySummaryRowPicpos extends ConsumerWidget {
         final totalActive = s.activeCount;
         final lowStock = s.lowStockCount;
         final totalValue = s.totalValue;
+        final canSeeFigures = ref
+                .watch(screenFiguresVisibilityProvider(ScreenId.inventory))
+                .value ??
+            false;
 
         return Row(
           children: [
@@ -49,8 +55,9 @@ class InventorySummaryRowPicpos extends ConsumerWidget {
             const SizedBox(width: 16),
             InventorySummaryCard(
               title: tr('إجمالي قيمة المخزون'),
-              value:
-                  '${totalValue.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
+              value: canSeeFigures
+                  ? '${totalValue.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}'
+                  : '—',
               icon: PhosphorIconsBold.coins,
               color: AppColors.success,
             ),

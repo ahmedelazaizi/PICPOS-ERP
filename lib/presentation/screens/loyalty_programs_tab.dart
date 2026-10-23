@@ -117,7 +117,9 @@ class _ProgramsTab extends StatelessWidget {
                         p.name,
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      subtitle: Text(
+                      subtitle: PermissionMaskedText(
+                         permission: PermissionCodes.loyaltyView,
+                         text:
                         tr('{p0} نقطة/وحدة • استبدال: {p1} • أقل: {p2}', {'p0': p.pointsPerUnit, 'p1': p.redemptionRate, 'p2': p.minRedeemPoints}),
                       ),
                       trailing: Row(

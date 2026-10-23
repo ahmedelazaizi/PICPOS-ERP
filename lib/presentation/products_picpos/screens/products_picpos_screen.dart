@@ -20,6 +20,7 @@ import '../../../domain/models/picpos_product_view.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../picpos_shell/picpos_kpi_row.dart';
 import '../../widgets/dialogs/add_product_dialog.dart';
+import '../../widgets/dialogs/import_result_feedback.dart';
 import '../../widgets/permission_guard.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_content_card.dart';
@@ -100,8 +101,7 @@ class _ProductsPicposScreenState extends ConsumerState<ProductsPicposScreen> {
   Future<void> _importProducts() async {
     final result = await ref.read(excelServiceProvider).importProducts();
     if (!mounted) return;
-    AppToast.show(context, result.message,
-        type: result.success ? ToastType.success : ToastType.error);
+    await showImportResultFeedback(context, result);
     if (result.success) {
       ref.invalidate(allProductsProvider);
       ref.invalidate(posGridProductsProvider);

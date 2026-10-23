@@ -1,4 +1,5 @@
 import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:ural_erp/data/providers/financial_figures_providers.dart';
 // منطق منسوخ من unified_parties_screen.dart (monolith) — أي إصلاح منطقي
 // يتصلّح في المصدر أولاً ثم patch (مصيدة النسخ §٥.٨).
 //
@@ -48,9 +49,11 @@ import '../../picpos_shell/picpos_dialog.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
 import '../../picpos_shell/picpos_kpi_row.dart';
 import '../../shared_widgets/whatsapp_send_dialog.dart';
+import '../../widgets/permission_guard.dart';
 import '../../../domain/models/whatsapp_message.dart';
 import '../../../core/utils/number_utils.dart';
 import '../../../core/permissions/permission_codes.dart';
+import '../../../core/navigation/screen_id.dart';
 import '../../../domain/models/distribution_model.dart';
 import '../../distribution_picpos/distribution_picpos_providers.dart';
 import '../../distribution_picpos/screens/dm_routes_tab.dart'
@@ -130,8 +133,11 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
   /// هنا — وهنا وحدَه — يلتقي `Party` بـ[PicPosPartyCard]. الملفّاتُ الثلاثةُ
   /// الأخرى (البطاقات · الشريط · الشبكة) لا تعرف القاعدةَ إطلاقاً، فتُختبَر
   /// بلا فتحِ قاعدةٍ ولا حقنِ مزوِّد.
-  PicPosPartyCard _toCard(Party p,
-          [CustomerRouteInfo? route, String? systemRole]) =>
+  PicPosPartyCard _toCard(
+    Party p, [
+    CustomerRouteInfo? route,
+    String? systemRole,
+  ]) =>
       PicPosPartyCard(
         systemRole: systemRole,
         routeName: route?.routeName,
@@ -195,24 +201,39 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
           label:  Text(tr('استيراد')),
         ),
         const SizedBox(width: 12),
-        ElevatedButton.icon(
-          // فوركُ الحوار بهويّة PicPos — بلاغُ المالك 2026-08-22: الشاشةُ
-          // كانت على التصميم والحوارُ وحدَه بقي `AlertDialog` خاماً.
-          onPressed: () => showAddPartyDialogPicpos(
+        PermissionGuard.anyOf(
+          anyOf: const [
+            PermissionCodes.customersAdd,
+            PermissionCodes.suppliersAdd,
+          ],
+          allowManagerOverride: true,
+          actionName: tr('إضافة طرف'),
+          onGranted: () => showAddPartyDialogPicpos(
             context,
             ref,
             initialType: widget.scope == PicPosPartyFilter.supplier
                 ? 'supplier'
                 : 'customer',
           ),
-          icon: const Icon(PhosphorIconsBold.plus),
-          label:  Text(tr('إضافة')),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 12,
+          child: ElevatedButton.icon(
+            // فوركُ الحوار بهويّة PicPos — بلاغُ المالك 2026-08-22: الشاشةُ
+            // كانت على التصميم والحوارُ وحدَه بقي `AlertDialog` خاماً.
+            onPressed: () => showAddPartyDialogPicpos(
+              context,
+              ref,
+              initialType: widget.scope == PicPosPartyFilter.supplier
+                  ? 'supplier'
+                  : 'customer',
+            ),
+            icon: const Icon(PhosphorIconsBold.plus),
+            label: Text(tr('إضافة')),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 12,
+              ),
             ),
           ),
         ),
@@ -236,6 +257,15 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
   }
 
   Widget _buildLoaded(List<Party> rows) {
+    final figureScreen = widget.scope == PicPosPartyFilter.supplier
+        ? ScreenId.suppliers
+        : widget.scope == PicPosPartyFilter.customer
+            ? ScreenId.customers
+            : ScreenId.parties;
+    final canSeeFigures = ref
+            .watch(screenFiguresVisibilityProvider(figureScreen))
+            .value ??
+        false;
     // المرحلة و — قائمةُ العملاء تعرض المسارَ والمنطقةَ والمندوبَ المشتقّ.
     final showRoute = widget.scope == PicPosPartyFilter.customer;
     final routes = showRoute
@@ -280,7 +310,7 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        PartiesSummaryCards(kpis: kpis),
+        PartiesSummaryCards(kpis: kpis, canSeeFigures: canSeeFigures),
         const SizedBox(height: 12),
         PartiesFilterBar(
           controller: _searchController,
@@ -297,7 +327,11 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
         Expanded(
           child: PicPosContentCard(
             child: PartiesCardGrid(
-                parties: filtered, actions: actions, showRoute: showRoute),
+              parties: filtered,
+              actions: actions,
+              showRoute: showRoute,
+              canSeeFigures: canSeeFigures,
+            ),
           ),
         ),
       ],
@@ -313,8 +347,16 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
   // قائمةٌ أحدثُ بين الرسم والنقر. الصمتُ هنا أصحُّ من `!` تنهار.
   // ═══════════════════════════════════════════════════════════════════════
 
-  void _openStatement(Party? party) {
+  Future<void> _openStatement(Party? party) async {
     if (party == null) return;
+    final permission = party.isSupplier && !party.isCustomer
+        ? PermissionCodes.suppliersView
+        : PermissionCodes.customersView;
+    if (!await ensurePermission(ref, context, permission,
+        actionName: tr('فتح كشف الحساب'))) {
+      return;
+    }
+    if (!mounted) return;
     unawaited(DiagnosticLogger.log(
         'PARTIES-ACTION',
         'statement tap partyId=${party.id} name="${party.name}" '
@@ -337,8 +379,16 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
     }
   }
 
-  void _openEdit(Party? party) {
+  Future<void> _openEdit(Party? party) async {
     if (party == null) return;
+    final permission = party.isSupplier && !party.isCustomer
+        ? PermissionCodes.suppliersEdit
+        : PermissionCodes.customersEdit;
+    if (!await ensurePermission(ref, context, permission,
+        actionName: tr('تعديل الطرف'))) {
+      return;
+    }
+    if (!mounted) return;
     unawaited(DiagnosticLogger.log('PARTIES-ACTION',
         'edit tap partyId=${party.id} name="${party.name}"'));
     try {
@@ -356,6 +406,12 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
   /// مطالبةٍ يُنتج نصّاً بصفر — و`composeDueReminderMessage` ترفضه أصلاً.
   Future<void> _openWhatsApp(Party? party) async {
     if (party == null) return;
+    if (!await ensurePermission(ref, context,
+        PermissionCodes.customerMessageSend,
+        actionName: tr('إرسال رسالة واتساب'))) {
+      return;
+    }
+    if (!mounted) return;
 
     final shopName =
         await ref.read(databaseProvider).getSettingValue('company_name') ?? '';
@@ -412,8 +468,16 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
     );
   }
 
-  void _openVoucher(Party? party) {
+  Future<void> _openVoucher(Party? party) async {
     if (party == null) return;
+    final permission = party.isSupplier && !party.isCustomer
+        ? PermissionCodes.treasuryPaymentsCreate
+        : PermissionCodes.treasuryReceiptsCreate;
+    if (!await ensurePermission(ref, context, permission,
+        actionName: tr('إنشاء سند مالي'))) {
+      return;
+    }
+    if (!mounted) return;
     unawaited(DiagnosticLogger.log(
         'PARTIES-ACTION',
         'voucher tap partyId=${party.id} name="${party.name}" '
@@ -437,8 +501,16 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
     }
   }
 
-  void _openDelete(Party? party) {
+  Future<void> _openDelete(Party? party) async {
     if (party == null) return;
+    final permission = party.isSupplier && !party.isCustomer
+        ? PermissionCodes.suppliersDelete
+        : PermissionCodes.customersDelete;
+    if (!await ensurePermission(ref, context, permission,
+        actionName: tr('حذف الطرف'))) {
+      return;
+    }
+    if (!mounted) return;
     unawaited(DiagnosticLogger.log('PARTIES-ACTION',
         'delete tap partyId=${party.id} name="${party.name}"'));
     try {

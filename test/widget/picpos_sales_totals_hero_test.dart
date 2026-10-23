@@ -106,11 +106,12 @@ void main() {
     testWidgets('بلا صلاحية — لا مبلغَ ولا نسبةَ تُفشيه', (tester) async {
       await pump(tester, const []);
 
+      // القرار (2026-10): sales_view أو sales_amounts_view يكشف الأرقام.
       expect(
         tester
             .widget<PermissionGuard>(find.byType(PermissionGuard).first)
-            .permission,
-        PermissionCodes.salesAmountsView,
+            .anyOf,
+        containsAll([PermissionCodes.salesView, PermissionCodes.salesAmountsView]),
       );
 
       expect(find.text(money(total)), findsNothing);

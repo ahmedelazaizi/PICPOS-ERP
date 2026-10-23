@@ -15,9 +15,14 @@ Color _partiesMuted(BuildContext context) => picposMuted(context);
 /// يُبنى من [PicPosPartyKpis] المحسوبةِ على القائمة **الكاملة** لا المرشَّحة —
 /// راجع تعليقَ الصنف: عدّادٌ يتغيّر مع كلّ ضغطةِ بحثٍ لا يُعلِم بشيء.
 class PartiesSummaryCards extends StatelessWidget {
-  const PartiesSummaryCards({super.key, required this.kpis});
+  const PartiesSummaryCards({
+    super.key,
+    required this.kpis,
+    this.canSeeFigures = true,
+  });
 
   final PicPosPartyKpis kpis;
+  final bool canSeeFigures;
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +51,7 @@ class PartiesSummaryCards extends StatelessWidget {
         // صريحٌ قابلٌ للتصرّف.
         PicPosKpi(
           label: tr('تجاوزوا حد الائتمان'),
-          value: '${kpis.overLimitCount}',
+          value: canSeeFigures ? '${kpis.overLimitCount}' : '—',
           icon: PhosphorIconsBold.warning,
           tint: kpis.overLimitCount > 0 ? AppColors.error : AppColors.success,
         ),

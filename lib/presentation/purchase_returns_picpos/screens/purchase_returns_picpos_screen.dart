@@ -1,4 +1,5 @@
 import 'package:ural_erp/core/i18n/tr.dart';
+import 'package:ural_erp/data/providers/financial_figures_providers.dart';
 // ═══ ⚠️ والمرفقاتُ ليست هنا — بسببٍ بنيويٍّ لا تأجيل ═══
 //
 // بُنيت المرفقاتُ في v176 (§٨)، و`purchase_return` من الأنواع التسعة
@@ -17,6 +18,8 @@ import '../../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/navigation/screen_id.dart';
+import '../../../core/permissions/financial_figures_access.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/app_error_handler.dart';
 import '../../../core/widgets/app_toast.dart';

@@ -13,6 +13,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/navigation/screen_id.dart';
+import '../../../data/providers/financial_figures_providers.dart';
 import '../../../domain/repositories/inventory_repository.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../../screens/inventory/inventory_notifier.dart';
@@ -83,6 +85,10 @@ class _StockMovementsTableState
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(inventoryNotifierProvider);
+    final canSeeFigures = ref
+            .watch(screenFiguresVisibilityProvider(ScreenId.inventory))
+            .value ??
+        false;
 
     return widget.movementsAsync.when(
       data: (mvmts) {
@@ -112,7 +118,13 @@ class _StockMovementsTableState
           children: [
             _buildSummaryBar(context, mvmts),
             const Divider(height: 1),
-            Expanded(child: _buildTable(context, mvmts)),
+            Expanded(
+              child: _buildTable(
+                context,
+                mvmts,
+                canSeeFigures: canSeeFigures,
+              ),
+            ),
           ],
         );
       },
@@ -124,7 +136,11 @@ class _StockMovementsTableState
     );
   }
 
-  Widget _buildTable(BuildContext context, List<StockMovementData> movements) {
+  Widget _buildTable(
+    BuildContext context,
+    List<StockMovementData> movements, {
+    required bool canSeeFigures,
+  }) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final viewportWidth = constraints.maxWidth;
@@ -158,6 +174,7 @@ class _StockMovementsTableState
               isStriped: i.isOdd,
               productWidth: productWidth,
               notesWidth: notesWidth,
+              canSeeFigures: canSeeFigures,
               onNavigateToInvoice: widget.onNavigateToInvoice,
             );
           },
@@ -356,6 +373,7 @@ class _StockMovementRow extends StatelessWidget {
     required this.isStriped,
     required this.productWidth,
     required this.notesWidth,
+    required this.canSeeFigures,
     required this.onNavigateToInvoice,
   });
 
@@ -364,6 +382,7 @@ class _StockMovementRow extends StatelessWidget {
   final bool isStriped;
   final double productWidth;
   final double notesWidth;
+  final bool canSeeFigures;
   final Function(String, int) onNavigateToInvoice;
 
   @override
@@ -495,7 +514,9 @@ class _StockMovementRow extends StatelessWidget {
               child: Align(
                 alignment: AlignmentDirectional.centerEnd,
                 child: Text(
-                  m.unitCost.toStringAsFixed(AppConstants.decimalPlaces),
+                  canSeeFigures
+                      ? m.unitCost.toStringAsFixed(AppConstants.decimalPlaces)
+                      : '—',
                   style: const TextStyle(
                     fontWeight: FontWeight.w500,
                     fontSize: 12,

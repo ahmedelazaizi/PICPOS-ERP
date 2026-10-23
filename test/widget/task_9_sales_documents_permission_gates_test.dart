@@ -147,7 +147,13 @@ void main() {
           const [],
         );
 
-        expect(guardOf(tester).permission, PermissionCodes.salesAmountsView);
+        final guard = guardOf(tester);
+        if (guard.anyOf != null) {
+          expect(guard.anyOf, contains(PermissionCodes.salesView));
+          expect(guard.anyOf, contains(PermissionCodes.salesAmountsView));
+        } else {
+          expect(guard.permission, PermissionCodes.salesAmountsView);
+        }
         expect(find.text('9000.00'), findsNothing);
         // العنوان فاضل ظاهر — المستخدم يعرف إن فيه بيانات مش إنها صفر.
         expect(find.text('إجمالي المبيعات'), findsOneWidget);

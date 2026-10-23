@@ -52,11 +52,13 @@ class PartyCard extends StatelessWidget {
     super.key,
     required this.party,
     required this.actions,
+    this.canSeeFigures = true,
     this.showRoute = false,
   });
 
   final PicPosPartyCard party;
   final PartyCardActions actions;
+  final bool canSeeFigures;
 
   /// صفُّ «المسار · المنطقة · المندوب» — قائمةُ العملاء وحدَها.
   final bool showRoute;
@@ -86,7 +88,7 @@ class PartyCard extends StatelessWidget {
           ],
           const SizedBox(height: 11),
           _balanceRow(context, muted),
-          if (party.isOverLimit) ...[
+          if (canSeeFigures && party.isOverLimit) ...[
             const SizedBox(height: 11),
             _overLimitBanner(),
           ],
@@ -204,7 +206,7 @@ class PartyCard extends StatelessWidget {
                 ),
               ),
               Text(
-                party.balanceLabel,
+                canSeeFigures ? party.balanceLabel : '—',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -220,7 +222,7 @@ class PartyCard extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Text(
-          party.creditLimitLabel,
+          canSeeFigures ? party.creditLimitLabel : '—',
           style: TextStyle(
             fontSize: 10.5,
             fontWeight: FontWeight.w700,
@@ -405,11 +407,13 @@ class PartiesCardGrid extends StatelessWidget {
     super.key,
     required this.parties,
     required this.actions,
+    this.canSeeFigures = true,
     this.showRoute = false,
   });
 
   final List<PicPosPartyCard> parties;
   final PartyCardActions actions;
+  final bool canSeeFigures;
 
   /// قائمةُ العملاء تعرض مسارَ كلِّ عميلٍ ومنطقتَه ومندوبَه.
   final bool showRoute;
@@ -447,6 +451,7 @@ class PartiesCardGrid extends StatelessWidget {
             key: ValueKey(parties[i].id),
             party: parties[i],
             actions: actions,
+            canSeeFigures: canSeeFigures,
             showRoute: showRoute,
           ),
         );

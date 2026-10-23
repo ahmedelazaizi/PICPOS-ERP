@@ -73,6 +73,12 @@ mixin _SalesReturnsPicposLogic<W extends ConsumerStatefulWidget>
       );
       return false;
     }
+    final canSeeFigures = await ref.read(
+      screenFiguresVisibilityProvider(ScreenId.salesReturns).future,
+    );
+    final returnTotalLabel = canSeeFigures
+        ? notifier.calculateReturnTotal().toStringAsFixed(AppConstants.decimalPlaces)
+        : maskedFinancialFigure;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -97,7 +103,7 @@ mixin _SalesReturnsPicposLogic<W extends ConsumerStatefulWidget>
               ),
               const SizedBox(height: 8),
               Text(
-                tr('إجمالي الإرجاع: {p0} {p1}', {'p0': notifier.calculateReturnTotal().toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolAr}),
+                tr('إجمالي الإرجاع: {p0} {p1}', {'p0': returnTotalLabel, 'p1': AppConstants.currencySymbolAr}),
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ],
@@ -132,7 +138,11 @@ mixin _SalesReturnsPicposLogic<W extends ConsumerStatefulWidget>
       if (threshold > 0 && returnTotal > threshold && mounted) {
         final approved = await requestManagerApproval(
           context,
-          actionName: tr('اعتماد مرتجع بقيمة {p0}', {'p0': returnTotal.toStringAsFixed(AppConstants.decimalPlaces)}),
+          actionName: tr('اعتماد مرتجع بقيمة {p0}', {
+            'p0': canSeeFigures
+                ? returnTotal.toStringAsFixed(AppConstants.decimalPlaces)
+                : maskedFinancialFigure,
+          }),
         );
         if (!approved) return false;
       }
@@ -212,7 +222,12 @@ mixin _SalesReturnsPicposLogic<W extends ConsumerStatefulWidget>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  tr('قيمة المرتجع: {p0} {p1}', {'p0': returnTotal.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolAr}),
+                  tr('قيمة المرتجع: {p0} {p1}', {
+                     'p0': canSeeFigures
+                         ? returnTotal.toStringAsFixed(AppConstants.decimalPlaces)
+                         : maskedFinancialFigure,
+                     'p1': AppConstants.currencySymbolAr,
+                   }),
                   style: const TextStyle(
                     fontSize: 16,
                     color: AppColors.warning,
