@@ -20,7 +20,7 @@
                           mobile/ (Van) · mobile_admin/ · mobile_pos/   +   packages/
 ```
 
-- **قاعدة البيانات:** Drift فوق SQLite المشفَّر (SQLCipher)، وPostgreSQL اختياريًا؛ `schemaVersion` الحالي **195** (`lib/data/database/database.dart`).
+- **قاعدة البيانات:** Drift فوق SQLite المشفَّر (SQLCipher)، وPostgreSQL اختياريًا؛ `schemaVersion` الحالي **196** (`lib/data/database/database.dart`).
 - **الحالة:** Riverpod. **العلامة:** `--dart-define=APP_BRAND=picpos|uralcash` (`lib/core/config/brand.dart`، الافتراضي عند الغياب `uralcash`) و`APP_FLAVOR` (`lib/core/config/app_flavor.dart`).
 - **الأنظمة الفرعية:** المحاسبة (قيد مزدوج)، المخزون، الخزينة، POS، التوزيع، الموارد البشرية، الفوترة الإلكترونية (JoFotara/ETA)، الموازين والطباعة.
 

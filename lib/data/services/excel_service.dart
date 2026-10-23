@@ -4,6 +4,7 @@ import '../../core/tax/tax_rate_policy.dart';
 import '../../core/utils/file_utils.dart';
 import 'package:flutter/foundation.dart'
     show kIsWeb, kDebugMode, debugPrint, visibleForTesting;
+import '../../domain/entities/product_entity.dart';
 import '../../domain/repositories/i_products_repository.dart';
 import '../../domain/repositories/parties_repository.dart';
 import '../../domain/repositories/branch_repository.dart';
@@ -19,7 +20,9 @@ import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
 import 'bank_statement_row.dart';
 import 'numeric_cell_text.dart';
+import 'excel_import_result.dart';
 import 'xlsx_sanitizer.dart';
+export 'excel_import_result.dart';
 
 /// Excel Import/Export Service for Products, Customers, Suppliers, and Purchase Invoices
 // ═══════════════════════════════════════════════════════════════════════════
@@ -323,6 +326,7 @@ class ExcelService {
       final excel = Excel.decodeBytes(file);
 
       int imported = 0, updated = 0, errors = 0;
+      final rowErrors = <ImportRowError>[];
       String? lastError;
       final sheet = excel.tables[excel.tables.keys.first]!;
 
@@ -435,6 +439,7 @@ class ExcelService {
           final categoryId = await productRepo.getOrCreateCategory(categoryStr);
 
           final existing = await productRepo.getProductByCode(code);
+          await assertBarcodeFree(productRepo, barcodeStr, existing?.id);
 
           if (existing != null) {
             // Issue 5 (Feature 021): the legacy update path wrote
@@ -445,8 +450,10 @@ class ExcelService {
             // optionally adjust opening stock via the canonical adjustStock
             // path (handled in the post-update opening-stock block below).
             // Preserve existing.currentStock to avoid the silent overwrite.
-            await productRepo.updateProduct(
-              db.Product(
+            // Entity path (targeted write): rebuilding a full db.Product reset
+            // global_id to '' -> UNIQUE failure on the 2nd updated product.
+            await productRepo.updateProductFromEntity(
+              ProductEntity(
                 id: existing.id,
                 code: code,
                 name: name,
@@ -470,24 +477,15 @@ class ExcelService {
                 pricePerUnit: pricePerUnit > 0 ? pricePerUnit : null,
                 allowNegativeSale: allowNegativeSale,
                 productType: productType,
-                warehouseId: warehouseStr != null ? await _getWarehouseIdByName(warehouseStr) : null,
+                warehouseId: warehouseStr != null
+                    ? await _getWarehouseIdByName(warehouseStr)
+                    : null,
                 trackInventory: existing.trackInventory,
                 isActive: existing.isActive,
                 isLocked: existing.isLocked,
-                weightUnit: 'kg',
-                isKitchenSet: false,
-                itemTaxType: 'T1',
-                itemTaxSubtype: 'V009',
-                createdAt: DateTime.now(),
-                updatedAt: DateTime.now(),
-                sortOrder: 0,
-                globalId: '',
-                rowVersion: 0,
-                // v138: Excel imports run inside the server process when in
-                // server mode and through the interceptor in client mode;
-                // either way the row reflects an admin's deliberate add, so
-                // it stays server-canonical.
-                createdOnServer: true,
+                description: existing.description,
+                supplierId: existing.supplierId,
+                imageData: existing.imageData,
               ),
             );
             // Import modifiers for this product
@@ -642,6 +640,7 @@ class ExcelService {
           debugPrint('[ExcelImport] Row $i error: $e');
           lastError = e.toString();
           errors++;
+          rowErrors.add(ImportRowError.fromRow(i + 1, sheet.row(i), e));
         }
       }
       } // importRows
@@ -684,6 +683,7 @@ class ExcelService {
         imported: imported,
         updated: updated,
         errors: errors,
+        rowErrors: rowErrors,
       );
     } catch (e) {
       return ImportResult(success: false, message: 'خطأ أثناء الاستيراد: $e');
@@ -1902,22 +1902,6 @@ class ExcelService {
       return null;
     }
   }
-}
-
-class ImportResult {
-  final bool success;
-  final String message;
-  final int imported;
-  final int updated;
-  final int errors;
-
-  ImportResult({
-    required this.success,
-    required this.message,
-    this.imported = 0,
-    this.updated = 0,
-    this.errors = 0,
-  });
 }
 
 /// Internal parsed row for purchase invoice import

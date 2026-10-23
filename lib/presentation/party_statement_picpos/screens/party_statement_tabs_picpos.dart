@@ -228,6 +228,12 @@ List<_StatementTab> get _customerTabs => [
     icon: PhosphorIconsBold.identificationCard,
     note: tr('حد الائتمان ومدة السماح وسلوك السداد'),
   ),
+  (
+    id: 'reservations',
+    label: tr('الحجوزات'),
+    icon: PhosphorIconsBold.calendarCheck,
+    note: tr('حجوزات الخدمات والطاولات المرتبطة بهذا العميل'),
+  ),
 ];
 
 List<_StatementTab> get _supplierTabs => [
@@ -373,6 +379,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
   Future<_TabData> _matchSupplierTab();
   Future<_TabData> _papersTab();
   Future<_TabData> _profileTab();
+  Future<_TabData> _reservationsTab();
 
   Future<_TabData> loadTab(String id) {
     if (partyId == null) return Future.value(const _TabData());
@@ -383,6 +390,7 @@ mixin _StatementTabsMixin on ConsumerState<PartyStatementPicposScreen> {
       'match' => isSupplier ? _matchSupplierTab() : _matchCustomerTab(),
       'papers' => _papersTab(),
       'profile' => _profileTab(),
+      'reservations' => _reservationsTab(),
       _ => Future.value(const _TabData()),
     };
   }

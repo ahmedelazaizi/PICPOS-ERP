@@ -281,14 +281,14 @@ extension _ReportsPicposCards on _ReportsPicposScreenState {
       data: (k) {
         final cards = <Widget>[
           _kpiCard(PhosphorIconsBold.currencyCircleDollar, tr('مبيعات اليوم'),
-              _money(k.revenue.today), tr('ج.م'), k.revenue, AppColors.success),
+              _money(k.revenue.today), AppConstants.currencySymbolEn, k.revenue, AppColors.success),
           _kpiCard(PhosphorIconsBold.trendUp, tr('صافي الربح'),
-              _money(k.netProfit.today), tr('ج.م'), k.netProfit, AppColors.primary),
+              _money(k.netProfit.today), AppConstants.currencySymbolEn, k.netProfit, AppColors.primary),
           _kpiCard(PhosphorIconsBold.receipt, tr('عدد الفواتير'),
               k.invoices.today.toStringAsFixed(0), tr('فاتورة'), k.invoices,
               AppColors.info),
           _kpiCard(PhosphorIconsBold.arrowUUpLeft, tr('المرتجعات'),
-              _money(k.salesReturns.today), tr('ج.م'), k.salesReturns,
+              _money(k.salesReturns.today), AppConstants.currencySymbolEn, k.salesReturns,
               AppColors.error,
               upIsGood: false),
         ];

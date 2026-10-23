@@ -133,8 +133,8 @@ lib/
 8. ويب: الجدول لا يظهر في `/webdb` إلا بإضافته لسياسة `WebTablePolicy` (`lib/core/permissions/web_table_policy.dart`) — الافتراضي الرفض.
 
 ### 3.4 ترحيل جديد (Migration)
-1. ارفع `int get schemaVersion` في `database.dart` (الحالي **195**).
-2. أضف كتلة `if (from < N) { … }` في **نهاية** `_migrateEpoch3` في `lib/data/database/migrations/epoch_3.dart` (يعمل `_migrateEpoch3` دائمًا، أما epoch 1 فعند `from < 60` وepoch 2 عند `from < 81` — `database_migrations.dart`).
+1. ارفع `int get schemaVersion` في `database.dart` (الحالي **196**).
+2. أضف كتلة `if (from < N) { … }` في **نهاية** أحدث جزء `epoch_3_vNNN_vNNN.dart` (حاليًا `epoch_3_v196_v205.dart` — يُستدعى من `_migrateEpoch3` في `epoch_3.dart`) (يعمل `_migrateEpoch3` دائمًا، أما epoch 1 فعند `from < 60` وepoch 2 عند `from < 81` — `database_migrations.dart`).
 3. لفّ كل خطوة DDL بـ`_safeMigrate('vN …', () => …)`، وبصيغة idempotent (`IF NOT EXISTS`). `ADD COLUMN … UNIQUE` غير مسموح في SQLite: عمود عادي + فهرس فريد جزئي.
 4. تجنّب `m.alterTable` على جدول مُزامَن (`alter_table_sync_columns_guard_test`).
 5. أضف سطر التاريخ في `database_schema_history.dart` (تعليقات فقط).

@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 import 'package:ural_erp/core/constants/app_constants.dart';
 import 'package:ural_erp/core/utils/financial_utils.dart';
+export 'package:ural_erp/core/utils/money_field_text.dart';
 
 /// Number utility functions
 class NumberUtils {

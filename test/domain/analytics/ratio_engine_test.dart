@@ -126,6 +126,46 @@ void main() {
     expect(r.status, RatioStatus.bad);
   });
 
+  // C-7: two negatives must not grade "good". Convention: a negative
+  // denominator keeps the value but is graded bad.
+  test('ROE with a loss and negative equity is bad, not good', () {
+    const s = FinancialSnapshot(netIncome: -10, equity: -50);
+    final r = byKey(RatioEngine.profitability(s))['roe']!;
+    expect(r.value, closeTo(20, 1e-9)); // (-10 / -50) x 100: the trap value
+    expect(r.status, RatioStatus.bad);
+  });
+
+  test('ROE with a profit and negative equity is bad', () {
+    const s = FinancialSnapshot(netIncome: 10, equity: -50);
+    expect(byKey(RatioEngine.profitability(s))['roe']!.status, RatioStatus.bad);
+  });
+
+  test('ROE with positive equity is graded as before', () {
+    const s = FinancialSnapshot(netIncome: 15, equity: 100);
+    expect(byKey(RatioEngine.profitability(s))['roe']!.status, RatioStatus.good);
+  });
+
+  test('ROE with zero equity stays unknown', () {
+    const s = FinancialSnapshot(netIncome: 15, equity: 0);
+    final r = byKey(RatioEngine.profitability(s))['roe']!;
+    expect(r.value, isNull);
+    expect(r.status, RatioStatus.unknown);
+  });
+
+  test('OCF / net income with a net loss is bad even when both are negative',
+      () {
+    const s = FinancialSnapshot(operatingCashFlow: -20, netIncome: -10);
+    final r = byKey(RatioEngine.cashFlow(s))['cash_flow_to_net_income']!;
+    expect(r.value, closeTo(2, 1e-9)); // (-20 / -10): would grade "good"
+    expect(r.status, RatioStatus.bad);
+  });
+
+  test('OCF / net income with positive profit is graded as before', () {
+    const s = FinancialSnapshot(operatingCashFlow: 12, netIncome: 10);
+    expect(byKey(RatioEngine.cashFlow(s))['cash_flow_to_net_income']!.status,
+        RatioStatus.good);
+  });
+
   test('safeDiv', () {
     expect(safeDiv(1, 0), isNull);
     expect(safeDiv(double.nan, 2), isNull);

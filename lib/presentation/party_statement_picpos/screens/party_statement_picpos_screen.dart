@@ -48,8 +48,10 @@ import '../../../core/logging/diagnostic_logger.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/file_utils.dart' show fileUtils;
 import '../../../core/widgets/app_toast.dart';
+import '../../../data/providers/customer_picker_providers.dart';
 import '../../../data/providers/providers.dart';
 import '../../../data/providers/screen_navigation_provider.dart';
+import '../widgets/party_reservations_tab.dart';
 // «عرض المستند» يُعاد على **نفس** خريطة «المستند المصدر» في اليومية العامة:
 // المفرداتُ واحدةٌ (`sales_invoice` · `safe_transaction` · `commercial_paper` …)
 // والقاعدةُ واحدة — ما ليس في الخريطة لا يُعرَض له زرّ.
@@ -82,6 +84,7 @@ part 'party_statement_ledger_picpos.dart';
 part 'party_statement_aging_picpos.dart';
 part 'party_statement_matching_picpos.dart';
 part 'party_statement_profile_picpos.dart';
+part 'party_statement_reservations_picpos.dart';
 part 'party_statement_tables_picpos.dart';
 part 'party_statement_export_picpos.dart';
 part 'party_followup_dialog_picpos.dart';
@@ -116,6 +119,7 @@ class _PartyStatementPicposScreenState
         _StatementAgingMixin,
         _StatementMatchingMixin,
         _StatementProfileMixin,
+        _StatementReservationsMixin,
         _StatementExportMixin {
   late final TabController _tabs;
   late DateTimeRange _range;

@@ -1,4 +1,5 @@
 import 'package:ural_erp/core/i18n/tr.dart';
+import '../../../widgets/dialogs/import_result_feedback.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
 
@@ -254,11 +255,7 @@ class ProductSearchHeader extends ConsumerWidget {
         onPressed: () async {
           final result = await ref.read(excelServiceProvider).importProducts();
           if (context.mounted) {
-            AppToast.show(
-              context,
-              result.message,
-              type: result.success ? ToastType.success : ToastType.error,
-            );
+            showImportResultFeedback(context, result);
             if (result.success) {
               ref.invalidate(allProductsProvider);
               // Spec 150 BUG-1: also refresh the POS grid's bounded stream.

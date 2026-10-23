@@ -119,8 +119,8 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
     nameController = TextEditingController(text: p.name);
     codeController = TextEditingController(text: p.code);
     barcodeController = TextEditingController(text: p.barcode);
-    salePriceController = TextEditingController(text: p.salePrice.toString());
-    costPriceController = TextEditingController(text: p.costPrice.toString());
+    salePriceController = TextEditingController(text: p.salePrice.fieldText);
+    costPriceController = TextEditingController(text: p.costPrice.fieldText);
     minStockController = TextEditingController(text: p.minStock.toString());
     shelfDaysController = TextEditingController(
       text: p.defaultShelfDays.toString(),
@@ -129,23 +129,23 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
       text: p.alertDaysBefore.toString(),
     );
     pricePerUnitController = TextEditingController(
-      text: p.pricePerUnit?.toString() ?? '',
+      text: p.pricePerUnit?.fieldText ?? '',
     );
     // علَم «معفى» يصل مع `_refreshFromDatabase` (عمود خام خارج الكيان).
     taxController = ProductTaxController(
       ProductTaxChoice.fromStored(taxRate: p.taxRate, taxExempt: false),
     );
     priceTalabatController = TextEditingController(
-      text: p.priceTalabat.toString(),
+      text: p.priceTalabat.fieldText,
     );
     priceCareemController = TextEditingController(
-      text: p.priceCareem.toString(),
+      text: p.priceCareem.fieldText,
     );
     priceAshyaeController = TextEditingController(
-      text: p.priceAshyae.toString(),
+      text: p.priceAshyae.fieldText,
     );
     wholesalePriceController = TextEditingController(
-      text: p.wholesalePrice.toString(),
+      text: p.wholesalePrice.fieldText,
     );
     scalePluNumberController = TextEditingController(
       text: p.scalePluNumber?.toString() ?? '',
@@ -191,16 +191,16 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
       nameController.text = fresh.name;
       codeController.text = fresh.code;
       barcodeController.text = fresh.barcode ?? '';
-      salePriceController.text = fresh.salePrice.toString();
-      costPriceController.text = fresh.costPrice.toString();
+      salePriceController.text = fresh.salePrice.fieldText;
+      costPriceController.text = fresh.costPrice.fieldText;
       minStockController.text = fresh.minStock.toString();
       shelfDaysController.text = fresh.defaultShelfDays.toString();
       alertDaysController.text = fresh.alertDaysBefore.toString();
-      pricePerUnitController.text = fresh.pricePerUnit?.toString() ?? '';
-      priceTalabatController.text = fresh.priceTalabat.toString();
-      priceCareemController.text = fresh.priceCareem.toString();
-      priceAshyaeController.text = fresh.priceAshyae.toString();
-      wholesalePriceController.text = fresh.wholesalePrice.toString();
+      pricePerUnitController.text = fresh.pricePerUnit?.fieldText ?? '';
+      priceTalabatController.text = fresh.priceTalabat.fieldText;
+      priceCareemController.text = fresh.priceCareem.fieldText;
+      priceAshyaeController.text = fresh.priceAshyae.fieldText;
+      wholesalePriceController.text = fresh.wholesalePrice.fieldText;
       scalePluNumberController.text = fresh.scalePluNumber?.toString() ?? '';
       trackExpiry = fresh.trackExpiry;
       scaleType = fresh.scaleType ?? 'count';
@@ -224,9 +224,9 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
           _warehousePriceRows.add(_EditWarehousePriceRow(
             warehouseId: wp.warehouseId,
             existingId: wp.id,
-            salePrice: wp.salePrice > 0 ? wp.salePrice.toString() : '',
-            costPrice: wp.costPrice > 0 ? wp.costPrice.toString() : '',
-            wholesalePrice: wp.wholesalePrice > 0 ? wp.wholesalePrice.toString() : '',
+            salePrice: wp.salePrice > 0 ? wp.salePrice.fieldText : '',
+            costPrice: wp.costPrice > 0 ? wp.costPrice.fieldText : '',
+            wholesalePrice: wp.wholesalePrice > 0 ? wp.wholesalePrice.fieldText : '',
           ));
         }
       });
@@ -251,7 +251,7 @@ class _ProductEditDialogState extends ConsumerState<ProductEditDialog>
             // (الحفظ بيمسح الوحدات ويعيد إدراجها).
             // نفس صيغة حقل المعامل فوق (‏toString) — بتدور ذهاباً وإياباً بأمان
             // مع tryParseLocale، على عكس الصيغ اللي بتحطّ فواصل آلاف.
-            salePrice: u.salePrice > 0 ? u.salePrice.toString() : null,
+            salePrice: u.salePrice > 0 ? u.salePrice.fieldText : null,
           ));
           if (u.isDefaultSale) _defaultUnitIndex = i;
         }

@@ -29,8 +29,8 @@ import '../../data/database/sync_interceptor.dart';
 import '../../services/sync_event_bus.dart';
 import '../pos/providers/cart_controller.dart';
 import '../pos/providers/cfd_controller.dart';
-import '../../domain/models/app_close_cart_gate.dart';
-import '../widgets/dialogs/cart_not_empty_close_dialog.dart';
+import '../../core/navigation/dirty_screens_registry.dart';
+import 'app_shell_close_action.dart';
 import '../pos/logic/open_shift_gate.dart';
 import '../widgets/inactivity_detector.dart';
 import '../../main_desktop.dart'
@@ -315,53 +315,14 @@ class _AppShellState extends ConsumerState<AppShell> {
     );
   }
 
-  /// #3: Show exit application confirmation dialog
-  void _showExitConfirmation() {
-    // #B2: منعُ الخروجَ هنا وسلّةُ البيع عامرة. هذا زرٌّ يدويٌّ («إغلاق
-    // البرنامج») ينتهي بـ`platform.exitApp()` (`exit(0)` بعد نسخة احتياطية)
-    // مباشرةً — بلا مرورٍ بـ`onWindowClose` في `app_main_screen.dart` ولا
-    // بـ`windowManager` إطلاقاً — فحارسُ `onWindowClose` وحده لا يغطّيه.
-    final cartItemCount = ref.read(cartControllerProvider).items.length;
-    if (shouldBlockAppCloseForCart(cartItemCount)) {
-      showCartNotEmptyCloseBlockedDialog(context);
-      return;
-    }
-
-    showDialog(
-      context: context,
-      builder: (context) => Directionality(
-        textDirection: Directionality.of(context),
-        child: AlertDialog(
-          title:  Row(
-            children: [
-              const Icon(PhosphorIconsBold.power, color: AppColors.error),
-              const SizedBox(width: 8),
-              Text(tr('إغلاق البرنامج')),
-            ],
-          ),
-          content:  Text(
-            tr('هل تريد إغلاق البرنامج بالكامل؟ سيتم عمل نسخة احتياطية تلقائياً.'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child:  Text(tr('إلغاء')),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-              onPressed: () async {
-                Navigator.pop(context);
-                // Perform final backup before exit
-                await _performAutoBackup(isManual: true);
-                platform.exitApp();
-              },
-              child:  Text(tr('إغلاق وبالنسخ الاحتياطي')),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  /// #3: manual «إغلاق البرنامج» — see app_shell_close_action.dart.
+  void _showExitConfirmation() => runCloseAppAction(
+        context: context,
+        cartItemCount: ref.read(cartControllerProvider).items.length,
+        registry: ref.read(dirtyScreensRegistryProvider),
+        backup: () => _performAutoBackup(isManual: true),
+        exitApp: platform.exitApp,
+      );
 
   /// Automated backup logic
   Future<void> _performAutoBackup({bool isManual = false}) async {
