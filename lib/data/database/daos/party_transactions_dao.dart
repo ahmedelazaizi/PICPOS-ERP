@@ -30,6 +30,8 @@ extension PartyTransactionsDao on AppDatabase {
         ..where(
           (i) =>
               i.customerId.equals(partyId) &
+              i.isDeleted.equals(false) &
+              i.status.isNotIn(const ['voided', 'cancelled']) &
               i.invoiceDate.isBetween(Variable(from), Variable(to)),
         );
       if (branchId != null) {
@@ -72,6 +74,8 @@ extension PartyTransactionsDao on AppDatabase {
         ..where(
           (i) =>
               i.supplierId.equals(partyId) &
+              i.isDeleted.equals(false) &
+              i.status.isNotIn(const ['voided', 'cancelled']) &
               i.invoiceDate.isBetween(Variable(from), Variable(to)),
         );
       if (branchId != null) {
@@ -112,6 +116,7 @@ extension PartyTransactionsDao on AppDatabase {
     final stQuery = select(safeTransactions).join([
       innerJoin(safes, safes.id.equalsExp(safeTransactions.safeId))
     ])..where(safeTransactions.partyId.equals(partyId) &
+              safeTransactions.deletedAt.isNull() &
               safeTransactions.createdAt.isBetween(Variable(from), Variable(to)) &
               // 🔴 سندُ الشيك مستندٌ لا حركة — راجع [getPartyTransactions].
               safeTransactions.transactionType
@@ -418,23 +423,23 @@ extension PartyTransactionsDao on AppDatabase {
       // يضعه **دائناً**؛ و`SUM(total)` بلا شرطٍ كانت تضعه مديناً — فينحرف
       // الافتتاحيُّ بضعف قيمة المرتجع.
       final pastSales = await customSelect(
-        "SELECT COALESCE(SUM(CASE WHEN sale_type = 'return' THEN -total ELSE total END), 0) as amt FROM sales_invoices WHERE customer_id = ? AND invoice_date < ? $branchOfWarehouse",
+        "SELECT COALESCE(SUM(CASE WHEN sale_type = 'return' THEN -total ELSE total END), 0) as amt FROM sales_invoices WHERE customer_id = ? AND is_deleted = ${sqlBool(false)} AND status NOT IN ('voided', 'cancelled') AND invoice_date < ? $branchOfWarehouse",
         variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
       ).getSingle();
       // Include the settlement discount: a receipt voucher reduces the
       // customer's AR by (amount + discount), so the opening balance must too
       // — matching the discount statement line emitted in the window above.
       final pastReceipts = await customSelect(
-        "SELECT COALESCE(SUM(t.amount + COALESCE(t.discount, 0)), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type IN ('receipt', 'transfer_receipt') AND t.created_at < ? $branchOfJoinedSafe",
+        "SELECT COALESCE(SUM(t.amount + COALESCE(t.discount, 0)), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.deleted_at IS NULL AND t.transaction_type IN ('receipt', 'transfer_receipt') AND t.created_at < ? $branchOfJoinedSafe",
         variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
       ).getSingle();
       final pastPayments = await customSelect(
-        "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type IN ('payment', 'transfer_payment') AND t.created_at < ? $branchOfJoinedSafe",
+        "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.deleted_at IS NULL AND t.transaction_type IN ('payment', 'transfer_payment') AND t.created_at < ? $branchOfJoinedSafe",
         variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
       ).getSingle();
 
       final pastSalesReturnMemos = await customSelect(
-        "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t WHERE t.party_id = ? AND t.transaction_type = 'memo' AND t.category = 'sales_return_balance' AND t.created_at < ? $branchOfMemoSafe",
+        "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t WHERE t.party_id = ? AND t.deleted_at IS NULL AND t.transaction_type = 'memo' AND t.category = 'sales_return_balance' AND t.created_at < ? $branchOfMemoSafe",
         variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
       ).getSingle();
       // Customer balance = sales − receipts − cash refunds − balance adjustments from returns
@@ -447,11 +452,11 @@ extension PartyTransactionsDao on AppDatabase {
 
     if (party.isSupplier) {
       final pastPurchases = await customSelect(
-        'SELECT COALESCE(SUM(total), 0) as amt FROM purchase_invoices WHERE supplier_id = ? AND invoice_date < ? $branchOfWarehouse',
+        'SELECT COALESCE(SUM(total), 0) as amt FROM purchase_invoices WHERE supplier_id = ? AND is_deleted = ${sqlBool(false)} AND status NOT IN (\'voided\', \'cancelled\') AND invoice_date < ? $branchOfWarehouse',
         variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
       ).getSingle();
       final pastPurchaseReturnMemos = await customSelect(
-        "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t WHERE t.party_id = ? AND t.transaction_type = 'memo' AND t.category = 'purchase_return_balance' AND t.created_at < ? $branchOfMemoSafe",
+        "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t WHERE t.party_id = ? AND t.deleted_at IS NULL AND t.transaction_type = 'memo' AND t.category = 'purchase_return_balance' AND t.created_at < ? $branchOfMemoSafe",
         variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
       ).getSingle();
 
@@ -468,11 +473,11 @@ extension PartyTransactionsDao on AppDatabase {
         // the supplier by (amount + discount), so the opening balance must too
         // — matching the discount statement line emitted in the window above.
         final pastPayments = await customSelect(
-          "SELECT COALESCE(SUM(t.amount + COALESCE(t.discount, 0)), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type IN ('payment', 'transfer_payment') AND t.created_at < ? $branchOfJoinedSafe",
+          "SELECT COALESCE(SUM(t.amount + COALESCE(t.discount, 0)), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.deleted_at IS NULL AND t.transaction_type IN ('payment', 'transfer_payment') AND t.created_at < ? $branchOfJoinedSafe",
           variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
         ).getSingle();
         final pastReceipts = await customSelect(
-          "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.transaction_type IN ('receipt', 'transfer_receipt') AND t.created_at < ? $branchOfJoinedSafe",
+          "SELECT COALESCE(SUM(t.amount), 0) as amt FROM safe_transactions t JOIN safes s ON t.safe_id = s.id WHERE t.party_id = ? AND t.deleted_at IS NULL AND t.transaction_type IN ('receipt', 'transfer_receipt') AND t.created_at < ? $branchOfJoinedSafe",
           variables: [Variable(partyId), dateVar(from), if (branchId != null) Variable(branchId)],
         ).getSingle();
         // Supplier balance = purchases − payments − cash receipts from supplier − balance adjustments from returns

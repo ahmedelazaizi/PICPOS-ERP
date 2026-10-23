@@ -77,8 +77,10 @@ extension PurchaseSummaryDao on AppDatabase {
 
     final head = await customSelect(
       'SELECT COUNT(*) AS n, '
-      'COALESCE(SUM(total), 0) AS total, '
-      'COALESCE(SUM(paid), 0) AS paid, '
+      // Cancelled invoices stay in the COUNT (they have their own status chip)
+      // but carry no money: audit B RPT-007.
+      "COALESCE(SUM(CASE WHEN LOWER(status) = 'cancelled' THEN 0 ELSE total END), 0) AS total, "
+      "COALESCE(SUM(CASE WHEN LOWER(status) = 'cancelled' THEN 0 ELSE paid END), 0) AS paid, "
       "SUM(CASE WHEN LOWER(status) IN ('paid','completed') "
       'THEN 1 ELSE 0 END) AS n_paid, '
       "SUM(CASE WHEN LOWER(status) = 'partial' "
@@ -98,7 +100,7 @@ extension PurchaseSummaryDao on AppDatabase {
       'SELECT COALESCE(SUM(ABS(sm.quantity) * sm.unit_cost), 0) AS total '
       'FROM stock_movements sm '
       'JOIN purchase_invoices pi ON pi.id = sm.reference_id '
-      "WHERE sm.reference_type = 'purchase_return' AND $retScope",
+      "WHERE sm.reference_type = 'purchase_return' AND sm.deleted_at IS NULL AND $retScope",
       variables: retVars,
       readsFrom: {stockMovements, purchaseInvoices},
     ).getSingle();

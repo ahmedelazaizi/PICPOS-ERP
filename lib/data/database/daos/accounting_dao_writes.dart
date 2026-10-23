@@ -478,7 +478,7 @@ extension AccountingDaoWritesExt on AppDatabase {
       }
 
       // Generate entry number
-      final entryNumber = await _generateEntryNumber();
+      final entryNumber = await _generateEntryNumber(date);
 
       // Resolve the fiscal year from the entry date, not from today's year.
       // Back-dated entries must remain in the fiscal year that contains [date].
@@ -1647,7 +1647,7 @@ extension AccountingDaoWritesExt on AppDatabase {
             date: DateTime.now(),
             lines: reverseLines,
             referenceType: newReferenceType,
-            referenceId: referenceId,
+            referenceId: entry.id, // ACC-008: one reversal key per source entry
             isAutoPosted: true,
             costCenterId: entry.costCenterId,
             branchId: entry.branchId,

@@ -10,6 +10,7 @@ import 'guest_order_requests.dart';
 import '../domain/models/table_order_totals.dart';
 import '../domain/models/table_status.dart';
 import '../domain/models/tax_rate_bounds.dart';
+import 'table_reservation_client_push.dart';
 
 /// انتقالٌ ممنوعٌ في آلة حالات الطاولة. رسالتُه تُعرَض للمستخدم كما هي.
 class TableTransitionException implements Exception {
@@ -200,7 +201,7 @@ class TableSessionService {
     required int? userId,
     required String userName,
   }) async {
-    await _db.createReservation(
+    final reservationId = await _db.createReservation(
       tableId: tableId,
       customerName: customerName,
       customerPhone: customerPhone,
@@ -209,6 +210,7 @@ class TableSessionService {
       partySize: partySize,
       notes: notes,
     );
+    await pushTableReservation(_db, reservationId); // DATA-001 (client mode)
     final table = await _table(tableId);
     await _log(
       userId: userId,

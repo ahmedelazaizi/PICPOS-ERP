@@ -117,11 +117,11 @@ extension DatabaseStartup on AppDatabase {
     // Phase 5: One-time data patches (CRITICAL: Must block queries to prevent FormatExceptions)
     await _runStartupPatches();
 
-    // Phase 6: Deferred background tasks (non-blocking) — ONLY truly
-    // long-running / non-critical work (backup scheduling) stays in the
-    // microtask. Anything that mutates schema or seed data now runs on the
-    // synchronous path above.
-    Future.microtask(() async {
+    // Phase 6: Deferred background tasks (non-blocking) — ONLY long-running /
+    // non-critical work; anything mutating schema or seed data runs above.
+    // Root zone: a microtask from beforeOpen inherits drift's closed before-open
+    // zone ('Bad state: No element' on the isolate connection) and never ran.
+    scheduleDeferredPhase(executor, () async {
       await _scheduleDeferredTasks();
       debugPrint('[Startup] ✅ Deferred phase 6 complete');
     });

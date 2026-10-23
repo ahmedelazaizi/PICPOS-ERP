@@ -14,6 +14,7 @@ import '../../domain/models/receipt_qr_decision.dart'
 import 'connection.dart';
 import 'pg_compat_sql.dart';
 import 'wal_checkpoint.dart';
+import 'cash_flow_manual_classifier.dart';
 import '../../domain/models/return_original_link.dart';
 import '../../domain/models/invoice_due_date.dart';
 import '../../domain/models/account_facts.dart';
@@ -315,10 +316,9 @@ part 'tables/api_key_tables.dart';
 part 'tables/report_builder_tables.dart';
 part 'tables/booking_tables.dart';
 part 'tables/attachment_tables.dart';
+part 'table_reservation_sync.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════
 // DATABASE CLASS
-// ═══════════════════════════════════════════════════════════════════════════
 
 @DriftDatabase(
   tables: [

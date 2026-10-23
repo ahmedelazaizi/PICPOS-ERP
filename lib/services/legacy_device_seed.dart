@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 
+import 'legacy_identifiers.dart';
+
 /// البذرةُ القديمةُ المشتقّةُ من معرّف الجهاز — **ليست سرًّا**.
 ///
 /// نُقل إليها منطقُ `SecurityService.getDatabaseEncryptionKey` (الفرع المشتقّ)
@@ -33,13 +35,9 @@ class LegacyDeviceSeed {
 
   /// الاشتقاقُ الصرفُ من [uniqueId] (حرفيًّا كما كان في `SecurityService`).
   static String deriveFor(String uniqueId) {
-    // Obfuscated pepper split into segments to hinder static analysis
-    final p1 = String.fromCharCodes([85, 114, 97, 108, 67, 97, 115, 104]); // Ural
-    final p2 = String.fromCharCodes(
-        [95, 83, 101, 99, 117, 114, 105, 116, 121]); // Security
-    final p3 = String.fromCharCodes(
-        [95, 80, 101, 112, 112, 101, 114, 95, 118, 50]); // Pepper_v2
-    final pepper = '$p1$p2$p3';
+    // Same bytes as always (pinned by test/unit/legacy_identifiers_test.dart),
+    // assembled at runtime so the old product name is not in the binary.
+    final pepper = LegacyIdentifiers.devicePepper;
 
     final rawKey = '$uniqueId:$pepper';
     return sha256.convert(utf8.encode(rawKey)).toString();

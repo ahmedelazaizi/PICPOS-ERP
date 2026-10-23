@@ -93,6 +93,7 @@ POST /api/safes/set-default
 POST /api/journals
 POST /api/landed-costs/apply
 POST /api/floor-plan
+POST /api/table-reservations
 POST /api/attachments
 POST /api/attachments/delete
 GET /api/attachments/<globalId>

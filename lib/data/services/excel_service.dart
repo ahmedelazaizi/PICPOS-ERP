@@ -346,7 +346,7 @@ class ExcelService {
           // Parse all columns matching the new template (19 columns)
           final code = row[0]?.value.toString() ?? '';
           final name = row.length > 1 ? row[1]?.value.toString() ?? '' : '';
-          final barcodeStr = row.length > 2 ? row[2]?.value?.toString() : null;
+          final barcodeStr = row.length > 2 ? row[2]?.value?.toString().trim() : null;
           final categoryStr = row.length > 3
               ? row[3]?.value?.toString() ?? 'عام'
               : 'عام';
@@ -1339,15 +1339,18 @@ class ExcelService {
                 ? itemRow.unitCost - (itemRow.discount / itemRow.quantity)
                 : itemRow.unitCost;
 
+            // DATA-006: same normalisation + ladder check as the product import.
+            final rate = _normalizeTaxRate(itemRow.taxRate);
+            TaxRatePolicy.assertAllowed(rate);
             final lineTotal = itemRow.quantity * actualUnitCost;
-            final taxAmount = lineTotal * (itemRow.taxRate / 100);
+            final taxAmount = lineTotal * (rate / 100);
 
             items.add(PurchaseItemParams(
               productId: product.id,
               quantity: itemRow.quantity,
               unitCost: actualUnitCost,
               salePrice: product.salePrice,
-              taxRate: itemRow.taxRate,
+              taxRate: rate,
               taxAmount: taxAmount,
             ));
           }

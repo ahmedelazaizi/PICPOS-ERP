@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ural_erp/data/database/database.dart';
+import 'package:ural_erp/domain/entities/accounting_entities.dart';
 
 void main() {
   late AppDatabase db;
@@ -323,6 +324,50 @@ void main() {
     expect((await db.select(db.journalEntries).get()).length,
         entriesAfterFirstRun.length);
     await expectBalanced();
+  });
+
+  test('ACC-005: a failing reversal rolls the main revaluation back; retry mirrors it',
+      () async {
+    await purchase(total: 100, paid: 0, date: DateTime(2026, 1, 31));
+    // A pre-existing auto-posted reversal for the same period key makes the
+    // DB-level dedup index reject the reversal insert.
+    final cash = (await db.accountingDao.getAccountByCode('1111'))!;
+    final other = (await db.accountingDao.getAccountByCode('311'))!;
+    final blocker = await db.accountingDao.createJournalEntry(
+      description: 'blocker',
+      date: DateTime(2026, 2, 1),
+      lines: [
+        JournalLine(accountId: cash.id, debit: 1),
+        JournalLine(accountId: other.id, credit: 1),
+      ],
+      referenceType: 'fx_revaluation_reversal',
+      referenceId: 202601,
+      isAutoPosted: true,
+      allowRepost: true,
+    );
+    await expectLater(
+      db.revalueOpenForeignBalances(
+          asOf: DateTime(2026, 1, 31), rates: {currencyId: 52}, userId: userId),
+      throwsA(anything),
+    );
+    final mainAfterFailure = await (db.select(db.journalEntries)
+          ..where((e) => e.globalId.equals('fx-revaluation:2026-01')))
+        .get();
+    expect(mainAfterFailure, isEmpty,
+        reason: 'the main entry must not survive a failed reversal');
+
+    await (db.delete(db.journalEntryLines)..where((l) => l.entryId.equals(blocker))).go();
+    await (db.delete(db.journalEntries)..where((e) => e.id.equals(blocker))).go();
+    final r = await db.revalueOpenForeignBalances(
+        asOf: DateTime(2026, 1, 31), rates: {currencyId: 52}, userId: userId);
+    final main = await (db.select(db.journalEntryLines)
+          ..where((l) => l.entryId.equals(r.journalEntryId))).get();
+    final rev = await (db.select(db.journalEntryLines)
+          ..where((l) => l.entryId.equals(r.reversalJournalEntryId))).get();
+    double sum(Iterable<JournalEntryLine> ls, double Function(JournalEntryLine) f) =>
+        ls.fold(0.0, (s, l) => s + f(l));
+    expect(sum(rev, (l) => l.debit), closeTo(sum(main, (l) => l.credit), 0.001));
+    expect(sum(rev, (l) => l.credit), closeTo(sum(main, (l) => l.debit), 0.001));
   });
 
   test('local-currency settlement creates no realized FX entry', () async {

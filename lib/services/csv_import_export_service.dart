@@ -8,6 +8,25 @@ import 'package:ural_erp/domain/repositories/i_products_repository.dart';
 import 'package:ural_erp/domain/repositories/parties_repository.dart';
 import 'package:ural_erp/data/database/database.dart';
 
+/// CSV cell quoting + formula-injection guard (audit B DATA-007).
+///
+/// A cell that starts with `= + - @` TAB or CR is executed as a formula by Excel
+/// / LibreOffice when the file is opened: prefix a `'` so it is shown as text.
+/// Plain numbers (`-5`, `+3.5`) are left alone — they are data, and a `'`
+/// would corrupt a re-import of a negative balance.
+@visibleForTesting
+String escapeCsvCell(String value) {
+  if (value.isNotEmpty &&
+      '=+-@\t\r'.contains(value[0]) &&
+      double.tryParse(value.trim()) == null) {
+    value = "'$value";
+  }
+  if (value.contains(',') || value.contains('"') || value.contains('\n')) {
+    return '"${value.replaceAll('"', '""')}"';
+  }
+  return value;
+}
+
 /// B4 — CSV Import/Export service for products and parties.
 class CsvImportExportService {
   final IProductRepository productRepo;
@@ -206,12 +225,7 @@ class CsvImportExportService {
     return row[index];
   }
 
-  String _esc(String value) {
-    if (value.contains(',') || value.contains('"') || value.contains('\n')) {
-      return '"${value.replaceAll('"', '""')}"';
-    }
-    return value;
-  }
+  String _esc(String value) => escapeCsvCell(value);
 
   Future<String?> _saveFile(String defaultName, String content) async {
     final dir = await FilePicker.getDirectoryPath();

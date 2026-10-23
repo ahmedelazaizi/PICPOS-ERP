@@ -19,6 +19,7 @@ import '../../core/logging/diagnostic_logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database.dart';
 import '../../services/invoice_integrity_service.dart';
+import 'sales_summary_queries.dart';
 import 'sales_transaction_orchestrator.dart';
 
 /// Sales repository implementation
@@ -755,30 +756,12 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
     required DateTime fromDate,
     required DateTime toDate,
   }) async {
-    final start = DateTime(fromDate.year, fromDate.month, fromDate.day);
-    final end = DateTime(
-      toDate.year,
-      toDate.month,
-      toDate.day,
-    ).add(const Duration(days: 1));
-
-    final totalSales = await db.getTotalSales(from: start, to: end);
-    final invoiceCount = await db.getSalesCount(from: start, to: end);
-
-    final result = await db
-        .customSelect(
-          'SELECT COALESCE(SUM(paid), 0) as paid FROM sales_invoices WHERE invoice_date BETWEEN ? AND ?',
-          variables: [Variable(start), Variable(end)],
-          readsFrom: {db.salesInvoices},
-        )
-        .getSingle();
-    final totalPaid = (result.data['paid'] as num?)?.toDouble() ?? 0.0;
-
+    final raw = await querySalesSummary(db, fromDate: fromDate, toDate: toDate);
     return SalesSummaryData(
-      totalSales: totalSales,
-      totalPaid: totalPaid,
-      totalDue: totalSales - totalPaid,
-      invoiceCount: invoiceCount,
+      totalSales: raw.totalSales,
+      totalPaid: raw.totalPaid,
+      totalDue: raw.totalSales - raw.totalPaid,
+      invoiceCount: raw.invoiceCount,
     );
   }
 

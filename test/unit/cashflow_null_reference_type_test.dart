@@ -33,13 +33,16 @@ void main() {
   test('قيدٌ نقديّ بلا reference_type: الإغلاقُ = رصيدُ الأستاذ = افتتاحُ الفترة التالية',
       () async {
     final cash = (await db.getAccountByCode('1111'))!;
+    // ACC-006: the counter-account of the NULL-reference entry must not be equity/LT
+    // (that is financing now) for it to stay in operating — use other revenue 4121.
     final equity = (await db.getAccountByCode('311'))!;
+    final otherIncome = (await db.getAccountByCode('4121'))!;
     await db.createJournalEntry(
       description: 'قيد يدويّ بلا مرجع',
       date: DateTime(2026, 8, 10),
       lines: [
         JournalLine(accountId: cash.id, debit: 700.0, description: 'نقد'),
-        JournalLine(accountId: equity.id, credit: 700.0, description: 'رأس مال'),
+        JournalLine(accountId: otherIncome.id, credit: 700.0, description: 'إيراد'),
       ],
     );
     // وقيدٌ بمرجعٍ مصنَّف إلى جواره، كي لا يمرّ الاختبارُ بالصدفة.

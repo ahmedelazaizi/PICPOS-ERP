@@ -512,32 +512,27 @@ extension BookingsDao on AppDatabase {
         ),
       );
 
-      // ── العربونُ مالٌ حقيقيّ (‏ق-٢، قرارُ المالك 2026-08-22) ────────────
-      // كان عموداً يُذكَر في سجلّ النشاط فقط: لا حركةَ خزنةٍ ولا قيد. فمن
-      // دفع ٣٠٠ عربوناً كان النقدُ في الدرج ورصيدُ الخزنة لا يعرف والدفاترُ
-      // لا تعرف.
-      //
-      // والمقابلُ **حسابُ التزامٍ** `2134` لا إيراد: قبضُ العربون ليس بيعاً،
-      // والاعترافُ بالإيراد يقع عند التفويتر. ولو تُرك للتصنيف الافتراضيّ
-      // لسقط على `4299` (إيراد) — بل و**أُنشئ** إن لم يوجد.
-      //
-      // و`skipPartyBalance` عن قصد: الالتزامُ يُطفأ عند التفويتر بـ«مدين
-      // الالتزام / دائن حساب العميل»، فتحريكُ الرصيد هنا أيضاً يعدّ الدفعةَ
-      // مرّتين (‏قرارُ المالك 2026-08-23).
-      //
-      // ⚠️ وداخلَ نفسِ المعاملة: حجزٌ نجح وعربونُه فشل يترك مالاً مقبوضاً
-      //    بلا أثرٍ في أيّ دفتر — وهو أسوأُ من رفض الحجز.
+      // العربونُ مالٌ حقيقيّ (ق-٢): حركةُ خزنةٍ + قيدٌ مقابلُه حسابُ التزامٍ
+      // 2134 لا إيراد (الاعترافُ بالإيراد عند التفويتر)، وskipPartyBalance: الالتزامُ
+      // يُطفأ عند التفويتر. داخلَ المعاملة كي لا يبقى مالٌ مقبوضٌ بلا أثرٍ دفتريّ.
       if (depositAmount > 0) {
+        // ACC-004: fail closed — never fall through to revenue 4299 / party AR.
+        if (partyId == null) {
+          throw StateError('عربون الحجز يتطلب عميلاً مسجَّلاً');
+        }
         final advances = await getAccountByCode(
           AccountingDaoReadsExt.accountPurposes['customer_advances']!,
         );
+        if (advances == null) {
+          throw StateError('حساب سلف العملاء (2134) غير موجود');
+        }
         await createReceiptVoucher(
           amount: depositAmount,
           category: 'booking_deposit',
           description: 'عربون حجز #$bookingId — $customerName',
           partyId: partyId,
           userId: createdBy,
-          linkedAccountId: advances?.id,
+          linkedAccountId: advances.id,
           skipPartyBalance: true,
           operatingBranchId: branchId,
         );

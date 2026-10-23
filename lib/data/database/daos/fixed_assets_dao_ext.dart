@@ -419,16 +419,10 @@ extension FixedAssetsDao on AppDatabase {
   // ─────────────────────────────────────────────────────────────────────────
 
   /// Calculate and post monthly depreciation for all active assets
-  Future<int> runMonthlyDepreciation(DateTime periodDate, {int? costCenterId}) async {
-    // v166 — على عميلٍ: يُطلَب من الخادم ولا يُحسَب هنا.
-    //
-    // الترحيلُ دفعةٌ على **كلّ** أصلٍ نشط، ومفتاحُ إزالة التكرار داخلَ
-    // القاعدة `(assetId, periodDate)` يحمي القاعدةَ الواحدةَ لا الاثنتين.
-    // فجهازان يشغّلانه لنفس الشهر يُنتجان مجموعتَي قيودٍ كاملتَين على
-    // الخادم — إهلاكٌ مضاعفٌ لشهرٍ واحد. ولذلك الطالبُ واحدٌ والمنفّذُ واحد.
-    //
-    // ويُرسَل التاريخُ لا قائمةُ الأصول: قائمةُ العميل قد تنقص أصولاً لم
-    // تصله بعد، والخادمُ يعرف أصولَه كلَّها.
+  Future<int> runMonthlyDepreciation(DateTime periodDate, {int? costCenterId, List<String>? failures}) async {
+    // v166 — على عميلٍ: يُطلَب من الخادم ولا يُحسَب هنا. مفتاحُ إزالة التكرار
+    // (assetId, periodDate) يحمي القاعدةَ الواحدةَ لا الاثنتين، فجهازان لنفس
+    // الشهر = إهلاكٌ مضاعف. يُرسَل التاريخُ لا قائمةُ الأصول (الخادمُ يعرف أصولَه).
     if (SyncInterceptor.isClientMode) {
       await SyncInterceptor.instance?.submitAssetDepreciationRun(
         <String, dynamic>{
@@ -448,86 +442,86 @@ extension FixedAssetsDao on AppDatabase {
       fixedAssets,
     )..where((a) => a.status.equals('active'))).get();
 
+    final monthStart = DateTime(periodDate.year, periodDate.month);
+    final nextMonth = DateTime(periodDate.year, periodDate.month + 1);
     for (final asset in activeAssets) {
-      // Check if already depreciated for this month
-      final existing =
-          await (select(assetDepreciations)
-                ..where((d) => d.assetId.equals(asset.id))
-                ..where((d) => d.periodDate.equals(periodDate)))
-              .getSingleOrNull();
+      // Already depreciated this month — ANY day (ACC-003: API dates aren't normalised)
+      final existing = await (select(assetDepreciations)
+            ..where((d) => d.assetId.equals(asset.id))
+            ..where((d) => d.periodDate.isBiggerOrEqualValue(monthStart) &
+                d.periodDate.isSmallerThanValue(nextMonth))
+            ..limit(1))
+          .getSingleOrNull();
       if (existing != null) continue;
+      // ACC-001: nothing before the in-service month.
+      if (monthStart.isBefore(DateTime(asset.purchaseDate.year, asset.purchaseDate.month))) continue;
 
       final depreciableAmount = asset.purchasePrice - asset.salvageValue;
-      double monthlyDepreciation;
+      final remaining = depreciableAmount - asset.accumulatedDepreciation;
+      double monthly;
 
       if (asset.depreciationMethod == 'declining_balance') {
         // Double declining balance
         final rate = 2 / (asset.usefulLifeYears * 12);
-        final bookValue = asset.purchasePrice - asset.accumulatedDepreciation;
-        monthlyDepreciation = bookValue * rate;
-        if (asset.accumulatedDepreciation + monthlyDepreciation >
-            depreciableAmount) {
-          monthlyDepreciation =
-              depreciableAmount - asset.accumulatedDepreciation;
-        }
+        monthly = (asset.purchasePrice - asset.accumulatedDepreciation) * rate;
       } else {
         // Straight-line
-        monthlyDepreciation = depreciableAmount / (asset.usefulLifeYears * 12);
+        monthly = depreciableAmount / (asset.usefulLifeYears * 12);
       }
+      // ACC-001: both methods stop at the salvage value.
+      if (monthly > remaining) monthly = remaining;
 
-      if (monthlyDepreciation <= 0) continue;
+      if (monthly <= 0.000001) continue; // fully depreciated (status stays 'active')
 
-      final newAccumulated =
-          asset.accumulatedDepreciation + monthlyDepreciation;
+      final newAccumulated = asset.accumulatedDepreciation + monthly;
       final newBookValue = asset.purchasePrice - newAccumulated;
 
-      // All three writes are atomic: journal entry + depreciation record + asset update.
-      // Each asset commits independently — a failure here skips only this asset.
+      // Atomic per asset: JE + depreciation row + card update.
       try {
         await transaction(() async {
           // Auto-post: Dr: 6213 مصروفات الإهلاك - إداري, Cr: مجمع إهلاك (category account)
-          int? journalEntryId;
           final depExpenseAccount = await _assetGetAccountByCode('6213');
           final accumDepAccount = await _getCategoryDepreciationAccount(asset.categoryId);
-          if (depExpenseAccount != null && accumDepAccount != null) {
-            journalEntryId = await accountingDao.createJournalEntry(
-              date: periodDate,
-              description:
-                  'إهلاك أصل: ${asset.name} — ${periodDate.month}/${periodDate.year}',
-              lines: [
-                JournalLine(
-                  accountId: depExpenseAccount.id,
-                  debit: monthlyDepreciation,
-                  credit: 0,
-                  description: 'مصروف إهلاك',
-                ),
-                JournalLine(
-                  accountId: accumDepAccount.id,
-                  debit: 0,
-                  credit: monthlyDepreciation,
-                  description: 'مجمع إهلاك',
-                ),
-              ],
-              referenceType: 'asset_depreciation',
-              referenceId: asset.id,
-              isAutoPosted: true,
-              costCenterId: costCenterId,
-              branchId: await _resolveBranchFromCostCenter(costCenterId),
-            );
+          // ACC-002: fail closed (no register advance without a JE).
+          if (depExpenseAccount == null || accumDepAccount == null) {
+            throw StateError('missing 6213/category account');
           }
+          final journalEntryId = await accountingDao.createJournalEntry(
+            date: periodDate,
+            description:
+                'إهلاك أصل: ${asset.name} — ${periodDate.month}/${periodDate.year}',
+            lines: [
+              JournalLine(
+                accountId: depExpenseAccount.id,
+                debit: monthly,
+                credit: 0,
+                description: 'مصروف إهلاك',
+              ),
+              JournalLine(
+                accountId: accumDepAccount.id,
+                debit: 0,
+                credit: monthly,
+                description: 'مجمع إهلاك',
+              ),
+            ],
+            referenceType: 'asset_depreciation',
+            referenceId: asset.id,
+            isAutoPosted: true,
+            costCenterId: costCenterId,
+            branchId: await _resolveBranchFromCostCenter(costCenterId),
+          );
 
           // Record depreciation entry
           await into(assetDepreciations).insert(
             AssetDepreciationsCompanion.insert(
               assetId: asset.id,
               periodDate: periodDate,
-              depreciationAmount: monthlyDepreciation,
+              depreciationAmount: monthly,
               accumulatedDepreciation: newAccumulated,
               bookValue: newBookValue,
               journalEntryId: Value(journalEntryId),
-              // v166 — الصفُّ يُزامَن، فيحتاج هويّةً. والمفتاحُ الطبيعيُّ
-              // `(assetId, periodDate)` يمنع التكرارَ داخلَ القاعدة، لكنّه
-              // لا يُغني عن هويّةٍ تعبر الأجهزة.
+              // v166 — الصفُّ يُزامَن، فيحتاج هويّةً (المفتاحُ الطبيعيُّ
+              // `(assetId, periodDate)` لا يعبر الأجهزة).
               globalId: Value(UuidV7.generate()),
             ),
           );
@@ -539,13 +533,13 @@ extension FixedAssetsDao on AppDatabase {
         });
         count++;
       } catch (e) {
-        // Log and continue — already-processed assets are not rolled back
+        // ACC-002: reported to the caller.
+        failures?.add('${asset.name}: $e');
         debugPrint('runMonthlyDepreciation: failed for asset ${asset.id} (${asset.name}): $e');
       }
     }
     return count;
   }
-
   // ─────────────────────────────────────────────────────────────────────────
   // DISPOSAL, TRANSFER & REVALUATION
   // ─────────────────────────────────────────────────────────────────────────

@@ -52,7 +52,8 @@ void main() {
     await gl.post(DateTime(2026, 8, 10), [('623', 300, 0), ('1111', 0, 300)],
         branchId: brA, refType: 'expense');
     // Manual cash entry: reference_type IS NULL (operating, must not vanish).
-    await gl.post(DateTime(2026, 8, 12), [('1111', 700, 0), ('311', 0, 700)],
+    // (counter 4121, not equity: a manual entry vs equity is financing — ACC-006)
+    await gl.post(DateTime(2026, 8, 12), [('1111', 700, 0), ('4121', 0, 700)],
         refType: null);
     await gl.post(DateTime(2026, 8, 15), [('1121', 800, 0), ('4121', 0, 800)],
         branchId: brB, refType: 'sale');
@@ -172,9 +173,10 @@ void main() {
 
     test('unscoped', () async {
       final r = await computeFinancialAnalytics(db, (from: from, to: to));
-      // revenue 1000 + 800; expense 300; cash 5000+1000-300+700.
-      expect(r.current.revenue, closeTo(1800, 1e-6));
-      expect(r.current.netIncome, closeTo(1500, 1e-6));
+      // revenue 1000 + 700 (manual, counter 4121) + 800; expense 300;
+      // cash 5000+1000-300+700.
+      expect(r.current.revenue, closeTo(2500, 1e-6));
+      expect(r.current.netIncome, closeTo(2200, 1e-6));
       expect(r.current.cash, closeTo(6400, 1e-6));
       expect(r.current.receivables, closeTo(800, 1e-6));
       expect(r.prior.revenue, closeTo(0, 1e-6)); // July has no revenue
@@ -184,9 +186,9 @@ void main() {
     test('branch-restricted to A (own + NULL-branch entries)', () async {
       final r = await computeFinancialAnalytics(db, (from: from, to: to),
           allowedBranchIds: {brA});
-      // B's 800 sale is invisible; A: revenue 1000, expense 300.
-      expect(r.current.revenue, closeTo(1000, 1e-6));
-      expect(r.current.netIncome, closeTo(700, 1e-6));
+      // B's 800 sale is invisible; A: revenue 1000 + 700 (NULL-branch manual), expense 300.
+      expect(r.current.revenue, closeTo(1700, 1e-6));
+      expect(r.current.netIncome, closeTo(1400, 1e-6));
       expect(r.current.cash, closeTo(6400, 1e-6));
       expect(r.budgetAvailable, isFalse);
     });

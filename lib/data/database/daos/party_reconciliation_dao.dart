@@ -39,107 +39,68 @@ extension PartyReconciliationDao on AppDatabase {
           .map((id) =>
               "(',' || COALESCE(p.branch_ids, '') || ',') LIKE '%,$id,%'")
           .join(' OR ');
-      scopeClause = ' AND (p.is_global = 1 OR $ors)';
+      scopeClause = ' AND (p.is_global = ${sqlBool(true)} OR $ors)';
     }
-    // Drift stores DateTime as Unix **seconds** (BIGINT) — see [dateVar] in
-    // database.dart. So the comparison is `julianday(col, 'unixepoch')`.
-    // القسمةُ على ألفٍ هنا كانت تقع **مرّتين** (drift + SQL) فينهار كلُّ تاريخٍ
-    // إلى ١٩٧٠ ويصير عمرُه ~٢٠٬٠٠٠ يوم ⇒ كلُّ فاتورةٍ غير مسدَّدة في خانة ٩٠+.
+    // Drift stores DateTime as Unix **seconds** (BIGINT) — see [dateVar]. The
+    // age is plain epoch-seconds arithmetic (identical to [_agedBalances]) so
+    // the SQL is portable: no julianday(), no scalar MAX(a, b) (RPT-003 — the
+    // old text failed on PostgreSQL). Integer division also closes the
+    // 30 < age < 31 gap the fractional julianday difference left between buckets.
     final asOf = dateVar(asOfDate);
+    final boolFalse = sqlBool(false);
+    final boolTrue = sqlBool(true);
 
-    if (customersOnly) {
-      // AR aging — join sales_invoices on customer_id
-      final rows = await customSelect('''
-        SELECT
-          p.id,
-          p.name,
-          p.balance,
-          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(COALESCE(si.due_date, si.invoice_date), 'unixepoch') <= 30
-            THEN MAX(si.total - si.paid - COALESCE(si.rounding_adjustment, 0), 0) ELSE 0 END), 0) AS bucket_0_30,
-          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(COALESCE(si.due_date, si.invoice_date), 'unixepoch') BETWEEN 31 AND 60
-            THEN MAX(si.total - si.paid - COALESCE(si.rounding_adjustment, 0), 0) ELSE 0 END), 0) AS bucket_31_60,
-          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(COALESCE(si.due_date, si.invoice_date), 'unixepoch') BETWEEN 61 AND 90
-            THEN MAX(si.total - si.paid - COALESCE(si.rounding_adjustment, 0), 0) ELSE 0 END), 0) AS bucket_61_90,
-          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(COALESCE(si.due_date, si.invoice_date), 'unixepoch') > 90
-            THEN MAX(si.total - si.paid - COALESCE(si.rounding_adjustment, 0), 0) ELSE 0 END), 0) AS bucket_90_plus
-        FROM parties p
-        LEFT JOIN sales_invoices si
-          ON si.customer_id = p.id
-          AND si.status NOT IN ('returned', 'cancelled')
-          AND si.is_deleted = 0
-          -- ⚠️ مستندُ المرتجع **ليس ديناً على العميل**. يعيش في نفس الجدول
-          -- بـ`sale_type = 'return'` وبإجماليٍّ موجب و`paid = 0`، فشرطُ
-          -- «المتبقي > صفر» أدناه يلتقطه ويحسبه **مديونيّةً**: مرتجعٌ بـ٨٠٠
-          -- كان يَزيد أعمارَ العميل ٨٠٠ بدل أن ينقصها — انعكاسُ إشارةٍ كامل
-          -- على تقريرٍ يُبنى عليه قرارُ التحصيل ووقفُ التعامل.
-          -- والصيغةُ نفسُها مستعملةٌ في تسعةِ استعلاماتٍ أخرى عبر المستودع
-          -- (`sales_analytics_dao` · `accounting_reports_dao` · وأعلى هذا
-          -- الملفّ) — هذا الاستعلامُ أغفلها وحدَه.
+    final a = customersOnly ? 'si' : 'pi';
+    final age = '(? - COALESCE($a.due_date, $a.invoice_date)) / 86400';
+    final open = customersOnly
+        ? '($a.total - $a.paid - COALESCE($a.rounding_adjustment, 0))'
+        : '($a.total - $a.paid)';
+    final remaining = 'CASE WHEN $open > 0 THEN $open ELSE 0 END';
+    // Returned/cancelled/voided documents are not debt (RPT-002 b/c); a sales
+    // return document (sale_type = 'return') is never a receivable.
+    final join = customersOnly
+        ? '''sales_invoices si ON si.customer_id = p.id
+          AND si.status NOT IN ('returned', 'cancelled', 'voided')
+          AND si.is_deleted = $boolFalse
           AND (si.sale_type IS NULL OR si.sale_type != 'return')
           AND si.paid + COALESCE(si.rounding_adjustment, 0) < si.total
-          AND si.invoice_date <= ?
-        WHERE p.is_active = 1
-          AND p.is_customer = 1
-          AND p.balance > 0.01
-          $scopeClause
-        GROUP BY p.id
-        ORDER BY p.balance DESC
-      ''', variables: [
-        asOf, asOf, asOf, asOf, asOf,
-      ], readsFrom: {parties, salesInvoices}).get();
-
-      return rows.map((r) => ArAgingRow(
-        partyId:      r.data['id'] as int,
-        partyName:    r.data['name'] as String,
-        totalBalance: (r.data['balance'] as num).toDouble(),
-        bucket0_30:   (r.data['bucket_0_30'] as num).toDouble(),
-        bucket31_60:  (r.data['bucket_31_60'] as num).toDouble(),
-        bucket61_90:  (r.data['bucket_61_90'] as num).toDouble(),
-        bucket90Plus: (r.data['bucket_90_plus'] as num).toDouble(),
-      )).toList();
-    } else {
-      // AP aging — join purchase_invoices on supplier_id
-      final rows = await customSelect('''
+          AND si.invoice_date <= ?'''
+        : '''purchase_invoices pi ON pi.supplier_id = p.id
+          AND pi.status NOT IN ('returned', 'cancelled', 'voided')
+          AND pi.is_deleted = $boolFalse
+          AND pi.paid < pi.total
+          AND pi.invoice_date <= ?''';
+    final rows = await customSelect('''
         SELECT
           p.id,
           p.name,
           p.balance,
-          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(COALESCE(pi.due_date, pi.invoice_date), 'unixepoch') <= 30
-            THEN MAX(pi.total - pi.paid, 0) ELSE 0 END), 0) AS bucket_0_30,
-          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(COALESCE(pi.due_date, pi.invoice_date), 'unixepoch') BETWEEN 31 AND 60
-            THEN MAX(pi.total - pi.paid, 0) ELSE 0 END), 0) AS bucket_31_60,
-          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(COALESCE(pi.due_date, pi.invoice_date), 'unixepoch') BETWEEN 61 AND 90
-            THEN MAX(pi.total - pi.paid, 0) ELSE 0 END), 0) AS bucket_61_90,
-          COALESCE(SUM(CASE WHEN julianday(?, 'unixepoch') - julianday(COALESCE(pi.due_date, pi.invoice_date), 'unixepoch') > 90
-            THEN MAX(pi.total - pi.paid, 0) ELSE 0 END), 0) AS bucket_90_plus
+          COALESCE(SUM(CASE WHEN $age <= 30 THEN $remaining ELSE 0 END), 0) AS bucket_0_30,
+          COALESCE(SUM(CASE WHEN $age BETWEEN 31 AND 60 THEN $remaining ELSE 0 END), 0) AS bucket_31_60,
+          COALESCE(SUM(CASE WHEN $age BETWEEN 61 AND 90 THEN $remaining ELSE 0 END), 0) AS bucket_61_90,
+          COALESCE(SUM(CASE WHEN $age > 90 THEN $remaining ELSE 0 END), 0) AS bucket_90_plus
         FROM parties p
-        LEFT JOIN purchase_invoices pi
-          ON pi.supplier_id = p.id
-          AND pi.is_deleted = 0
-          AND pi.paid < pi.total
-          AND pi.invoice_date <= ?
-        WHERE p.is_active = 1
-          AND p.is_supplier = 1
+        LEFT JOIN $join
+        WHERE p.is_active = $boolTrue
+          AND p.${customersOnly ? 'is_customer' : 'is_supplier'} = $boolTrue
           AND p.balance > 0.01
           $scopeClause
-        GROUP BY p.id
+        GROUP BY p.id, p.name, p.balance
         ORDER BY p.balance DESC
       ''', variables: [
-        asOf, asOf, asOf, asOf, asOf,
-      ], readsFrom: {parties, purchaseInvoices}).get();
+      asOf, asOf, asOf, asOf, asOf,
+    ], readsFrom: {parties, customersOnly ? salesInvoices : purchaseInvoices}).get();
 
-      return rows.map((r) => ArAgingRow(
-        partyId:      r.data['id'] as int,
-        partyName:    r.data['name'] as String,
-        totalBalance: (r.data['balance'] as num).toDouble(),
-        bucket0_30:   (r.data['bucket_0_30'] as num).toDouble(),
-        bucket31_60:  (r.data['bucket_31_60'] as num).toDouble(),
-        bucket61_90:  (r.data['bucket_61_90'] as num).toDouble(),
-        bucket90Plus: (r.data['bucket_90_plus'] as num).toDouble(),
-      )).toList();
-    }
+    return rows.map((r) => ArAgingRow(
+      partyId:      r.data['id'] as int,
+      partyName:    r.data['name'] as String,
+      totalBalance: (r.data['balance'] as num).toDouble(),
+      bucket0_30:   (r.data['bucket_0_30'] as num).toDouble(),
+      bucket31_60:  (r.data['bucket_31_60'] as num).toDouble(),
+      bucket61_90:  (r.data['bucket_61_90'] as num).toDouble(),
+      bucket90Plus: (r.data['bucket_90_plus'] as num).toDouble(),
+    )).toList();
   }
-
   // ═══ M-05/M-06: تقادم الذمم (دائنة/مدينة) — مصدرٌ واحد للصيغتين ═══
   /// Aged payables: supplier balances in 0-30 / 31-60 / 61-90 / 90+ buckets.
   /// الحصر **بالفاتورة** لا بالطرف (عكس [getArAgingReport]) — راجع `_agedBalances`.
@@ -264,7 +225,7 @@ extension PartyReconciliationDao on AppDatabase {
   Future<ArReconciliation?> getArReconciliation() async {
     // 1. Sum of all customer card balances
     final customerBalances = await (select(parties)
-          ..where((p) => p.isCustomer.equals(true) & p.isActive.equals(true)))
+          ..where((p) => p.isCustomer.equals(true) & p.deletedAt.isNull()))
         .get();
     final totalCardBalance = customerBalances.fold(0.0, (sum, p) => sum + p.balance);
 

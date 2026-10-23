@@ -6,6 +6,7 @@ import '../../domain/repositories/restaurant_repository.dart';
 import '../../core/utils/uuid_v7.dart';
 import '../database/sync_interceptor.dart';
 import '../../services/client_write_interceptor.dart';
+import '../../services/table_reservation_client_push.dart';
 
 class RestaurantRepositoryImpl implements IRestaurantRepository {
   final AppDatabase _db;
@@ -131,21 +132,29 @@ class RestaurantRepositoryImpl implements IRestaurantRepository {
     required DateTime reservationTime,
     required int partySize,
     String? notes,
-  }) => _db.createReservation(
-    tableId: tableId,
-    customerName: customerName,
-    customerPhone: customerPhone,
-    reservationTime: reservationTime,
-    partySize: partySize,
-    notes: notes,
-  );
+  }) async {
+    final id = await _db.createReservation(
+      tableId: tableId,
+      customerName: customerName,
+      customerPhone: customerPhone,
+      reservationTime: reservationTime,
+      partySize: partySize,
+      notes: notes,
+    );
+    await pushTableReservation(_db, id); // audit B DATA-001 (client mode)
+  }
 
   @override
-  Future<void> cancelReservation(int id) => _db.cancelReservation(id);
+  Future<void> cancelReservation(int id) async {
+    await _db.cancelReservation(id);
+    await pushTableReservation(_db, id);
+  }
 
   @override
-  Future<void> seatReservation(int id, {int? userId, double taxRate = 0}) =>
-      _db.seatReservation(id, userId: userId, taxRate: taxRate);
+  Future<void> seatReservation(int id, {int? userId, double taxRate = 0}) async {
+    await _db.seatReservation(id, userId: userId, taxRate: taxRate);
+    await pushTableReservation(_db, id);
+  }
 
   @override
   Future<void> transferTableOrder(int sourceTableId, int targetTableId) =>

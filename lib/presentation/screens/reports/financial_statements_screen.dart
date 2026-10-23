@@ -904,6 +904,7 @@ class _FinancialStatementsScreenState
               _buildReportLine(tr('مدفوعات للموردين'), -(op['paymentsToSuppliers'] as num).toDouble()),
               _buildReportLine(tr('الرواتب والأجور'), -(op['salaries'] as num).toDouble()),
               _buildReportLine(tr('المصاريف التشغيلية'), -(op['expenses'] as num).toDouble()),
+              _buildReportLine(tr('أخرى'), (op['otherNet'] as num?)?.toDouble() ?? 0),
               const Divider(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -929,6 +930,7 @@ class _FinancialStatementsScreenState
               _buildSectionTitle(tr('ثالثاً: الأنشطة التمويلية')),
               _buildReportLine(tr('شيكات محصلة'), (fin['checksCollected'] as num).toDouble()),
               _buildReportLine(tr('شيكات مصدرة'), -(fin['checksIssued'] as num).toDouble()),
+              _buildReportLine(tr('أخرى'), (fin['otherNet'] as num?)?.toDouble() ?? 0),
               const Divider(),
               _buildReportLine(tr('صافي التدفق التمويلي'), (fin['net'] as num).toDouble(), isBold: true),
               const SizedBox(height: 24),

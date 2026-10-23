@@ -32,26 +32,46 @@ String _asciiDigits(String input) {
 /// المفتاحُ يُنزَع إن سبقه `+`/`00` صراحةً، أو إن كان طولُ الرقم يدلّ على أنّه
 /// دوليّ (مفتاح + 9 خاناتٍ على الأقل) — فلا يُقتطع `20` من رقمٍ محليٍّ قصير.
 /// يعيد `''` إن قلّ الرقمُ عن [kMinPhoneDigits] (لا يُعدّ هاتفاً).
-String normalizePhone(String? raw) {
-  if (raw == null) return '';
+String normalizePhone(String? raw) => _split(raw).national;
+
+/// مفتاحُ الدولة إن **حمله الرقمُ** (بـ`+` أو `00` صراحةً أو بطولٍ دوليّ)، وإلا
+/// `null`. (‏DATA-002) المطابقةُ تُقارِن المفتاحَ **فقط حين يحمله الرقمان**: عميلٌ
+/// `+966 50…` و`+971 50…` شخصان، أمّا `050…` المحليُّ فيُطابِق أيَّهما (قاعدةُ
+/// المالك F.1: نزعُ مفتاح الدولة)، لأنّ الرقم المحليَّ لا يحمل دولةً نقارنها.
+/// الجزءُ الوطنيُّ [normalizePhone] لا يتغيّر.
+String? phoneCountryCode(String? raw) => _split(raw).countryCode;
+
+/// هل الرقمان لا يتعارضان دولةً؟ (غيابُ المفتاح عند أيٍّ منهما ⇒ متوافقان.)
+bool phoneCountryCompatible(String? a, String? b) {
+  final ca = phoneCountryCode(a);
+  final cb = phoneCountryCode(b);
+  return ca == null || cb == null || ca == cb;
+}
+
+({String national, String? countryCode}) _split(String? raw) {
+  if (raw == null) return (national: '', countryCode: null);
   final text = raw.trim();
-  if (text.isEmpty) return '';
+  if (text.isEmpty) return (national: '', countryCode: null);
   final explicitIntl = text.startsWith('+') ||
       text.startsWith('00') ||
       text.startsWith('٠٠') ||
       text.startsWith('۰۰');
   var d = _asciiDigits(text);
   if (d.startsWith('00')) d = d.substring(2);
-  if (d.isEmpty) return '';
+  if (d.isEmpty) return (national: '', countryCode: null);
+  String? country;
   for (final cc in kPhoneCountryCodes) {
     if (!d.startsWith(cc)) continue;
     if (explicitIntl || d.length >= cc.length + 9) {
       d = d.substring(cc.length);
+      country = cc;
     }
     break;
   }
   d = d.replaceFirst(RegExp(r'^0+'), '');
-  return d.length < kMinPhoneDigits ? '' : d;
+  return d.length < kMinPhoneDigits
+      ? (national: '', countryCode: null)
+      : (national: d, countryCode: country);
 }
 
 /// آخرُ 9 خاناتٍ من الرقم القياسيّ — مفتاحُ بحثٍ سريعٌ في SQL (`LIKE '%…'`).
@@ -63,7 +83,9 @@ String phoneTail9(String? raw) {
 /// هل الرقمان لهاتفٍ واحد؟ (فارغٌ لا يطابق شيئاً.)
 bool samePhone(String? a, String? b) {
   final na = normalizePhone(a);
-  return na.isNotEmpty && na == normalizePhone(b);
+  return na.isNotEmpty &&
+      na == normalizePhone(b) &&
+      phoneCountryCompatible(a, b);
 }
 
 /// تطبيعُ الاسم للمطابقة التامة: قصٌّ، طيُّ المسافات، أحرفٌ صغيرة، ونزعُ

@@ -152,6 +152,22 @@ void main() {
         isEmpty);
   });
 
+  test('DATA-008: a barcode padded with spaces is trimmed, so it still collides',
+      () async {
+    await importRows(_twentyRows(await warehouseName()));
+    final dup = (await (db.select(db.products)
+              ..where((p) => p.code.equals('P2')))
+            .getSingle())
+        .barcode!;
+    final r = await importRows([
+      _header,
+      _row('PAD1', 'مسافات', '$dup  ', 'عام'),
+    ]);
+    expect(r.errors, 1, reason: r.message);
+    expect(await (db.select(db.products)..where((p) => p.code.equals('PAD1'))).get(),
+        isEmpty);
+  });
+
   test('existing code taking another product\'s barcode: clear per-row error',
       () async {
     await importRows(_twentyRows(await warehouseName()));

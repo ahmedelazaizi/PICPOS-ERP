@@ -215,6 +215,31 @@ extension FxRevaluationDao on AppDatabase {
       );
     }
 
+    // Retry after a half-done run (main committed by an older build, reversal
+    // missing): mirror the STORED main lines, never today's recomputed ones.
+    if (existing != null) {
+      final stored = await (select(journalEntryLines)
+            ..where((l) => l.entryId.equals(existing.id)))
+          .get();
+      final mirrored = [
+        for (final l in stored)
+          JournalLine(accountId: l.accountId, debit: l.debit, credit: l.credit),
+      ];
+      final reversalId = await _postFxReversal(
+        lines: mirrored,
+        monthEnd: monthEnd,
+        periodKey: periodKey,
+        baseGlobalId: baseGlobalId,
+        userId: userId,
+      );
+      return FxRevaluationResult(
+        periodKey: periodKey,
+        totalAdjustment: stored.fold<double>(0, (s, l) => s + l.debit),
+        journalEntryId: existing.id,
+        reversalJournalEntryId: reversalId,
+      );
+    }
+
     final accountAdjustments = <int, double>{};
     var totalFx = 0.0;
     var fxDebit = 0.0;
@@ -307,17 +332,42 @@ extension FxRevaluationDao on AppDatabase {
       throw StateError('لا توجد أرصدة أجنبية مفتوحة لإعادة تقييمها في الفترة المحددة.');
     }
 
-    final entryId = existing?.id ?? await accountingDao.createJournalEntry(
-      description: 'إعادة تقييم أرصدة العملات الأجنبية — $periodKey',
-      date: monthEnd,
-      lines: lines,
-      referenceType: 'fx_revaluation',
-      referenceId: monthEnd.year * 100 + monthEnd.month,
-      isAutoPosted: true,
-      allowRepost: true,
-      createdBy: userId,
-      globalId: baseGlobalId,
-    );
+    // ACC-005: main entry + reversal commit together or not at all.
+    return transaction(() async {
+      final entryId = existing?.id ?? await accountingDao.createJournalEntry(
+        description: 'إعادة تقييم أرصدة العملات الأجنبية — $periodKey',
+        date: monthEnd,
+        lines: lines,
+        referenceType: 'fx_revaluation',
+        referenceId: monthEnd.year * 100 + monthEnd.month,
+        isAutoPosted: true,
+        allowRepost: true,
+        createdBy: userId,
+        globalId: baseGlobalId,
+      );
+      final reversalId = await _postFxReversal(
+        lines: lines,
+        monthEnd: monthEnd,
+        periodKey: periodKey,
+        baseGlobalId: baseGlobalId,
+        userId: userId,
+      );
+      return FxRevaluationResult(
+        periodKey: periodKey,
+        totalAdjustment: totalFx,
+        journalEntryId: entryId,
+        reversalJournalEntryId: reversalId,
+      );
+    });
+  }
+
+  Future<int> _postFxReversal({
+    required List<JournalLine> lines,
+    required DateTime monthEnd,
+    required String periodKey,
+    required String baseGlobalId,
+    required int userId,
+  }) {
     final reversalLines = lines
         .map((line) => JournalLine(
               accountId: line.accountId,
@@ -326,7 +376,7 @@ extension FxRevaluationDao on AppDatabase {
               description: 'عكس إعادة تقييم $periodKey',
             ))
         .toList();
-    final reversalId = await accountingDao.createJournalEntry(
+    return accountingDao.createJournalEntry(
       description: 'عكس إعادة تقييم العملات الأجنبية — $periodKey',
       date: DateTime(monthEnd.year, monthEnd.month + 1, 1),
       lines: reversalLines,
@@ -336,12 +386,6 @@ extension FxRevaluationDao on AppDatabase {
       allowRepost: true,
       createdBy: userId,
       globalId: '$baseGlobalId-reversal',
-    );
-    return FxRevaluationResult(
-      periodKey: periodKey,
-      totalAdjustment: totalFx,
-      journalEntryId: entryId,
-      reversalJournalEntryId: reversalId,
     );
   }
 }

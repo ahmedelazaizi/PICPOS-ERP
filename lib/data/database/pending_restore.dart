@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart' show debugPrint, visibleForTesting;
 import 'package:path/path.dart' as p;
 
 import '../../services/db_key_manager.dart';
+import '../../services/sqlcipher_engine.dart' show DbInspection;
+import 'schema_version_limit.dart';
 
 /// هل [file] نسخةٌ قابلةٌ للفتح بأحد المفاتيح المعروفة وسليمةٌ؟
 typedef BackupOpener = Future<bool> Function(File file);
@@ -36,12 +38,19 @@ class PendingRestore {
       final m = DbKeyManager.production();
       final key = await m.findOpeningKey(file, dbName: dbName);
       if (key == null) return false;
-      return (await m.engine.inspect(file, key)).quickCheckOk;
+      return acceptInspection(await m.engine.inspect(file, key));
     } catch (e) {
       debugPrint('[RESTORE] verification failed: ${e.runtimeType}');
       return false;
     }
   }
+
+  /// BKP-002: a backup is restorable only if it passes quick_check AND was
+  /// written by this build or an older one — a newer schema would be opened by
+  /// a build that cannot understand it (see MIG-001).
+  static bool acceptInspection(DbInspection i,
+          {int maxSchemaVersion = kMaxSupportedSchemaVersion}) =>
+      i.quickCheckOk && i.userVersion <= maxSchemaVersion;
 
   static Future<void> _deleteSidecars(String path) async {
     for (final s in ['$path-wal', '$path-shm']) {

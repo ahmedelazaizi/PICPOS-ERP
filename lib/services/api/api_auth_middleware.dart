@@ -3,6 +3,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:shelf/shelf.dart';
 
+import '../legacy_identifiers.dart';
 import 'api_session_token.dart';
 import 'api_user_context.dart';
 import 'api_web_session_handler.dart';
@@ -140,11 +141,12 @@ class ApiAuthMiddleware {
   /// Called once at server startup. The token is derived from the machine's
   /// unique identifier so it's stable across restarts but unique per machine.
   static String generateToken(String machineSeed) {
-    // ⚠ ملح تشفير — ثابت حرفي بشكل مقصود. **ممنوع** يتحول لـ `Brand.name`
+    // ⚠ ملح تشفير — قيمة ثابتة بشكل مقصود. **ممنوع** يتحول لـ `Brand.name`
     // أو أي قيمة مرتبطة بالعلامة: التوكن مشتق منه، فتغييره بيبطّل كل توكنز
-    // الأجهزة المقترنة القائمة وتحتاج إقران من جديد. يفضل 'UralCash' مهما
-    // كانت العلامة اللي بتتبني.
-    const salt = 'UralCash-API-v1';
+    // الأجهزة المقترنة القائمة وتحتاج إقران من جديد. البايتات مطابقة تمامًا
+    // للقيمة القديمة (يثبّتها test/unit/legacy_identifiers_test.dart) لكنها
+    // تُركَّب وقت التشغيل فلا يظهر اسم المنتج القديم نصًّا في الـbinary.
+    final salt = LegacyIdentifiers.apiTokenSalt;
     final bytes = utf8.encode('$machineSeed:$salt');
     final digest = sha256.convert(bytes);
     _activeToken = digest.toString().substring(0, 32);

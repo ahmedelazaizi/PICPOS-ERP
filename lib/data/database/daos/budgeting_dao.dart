@@ -82,6 +82,7 @@ extension BudgetingDao on AppDatabase {
         FROM journal_entry_lines l
         JOIN journal_entries e ON l.entry_id = e.id
         WHERE l.account_id = ? AND e.entry_date BETWEEN ? AND ?
+          AND e.is_posted = ${sqlBool(true)} AND e.is_deleted = ${sqlBool(false)}
       ''';
       final variables = <Variable>[
         Variable(budget.accountId),
@@ -202,14 +203,16 @@ extension BudgetingDao on AppDatabase {
       final lastYearEnd = DateTime(now.year - 1, now.month + i + 1, 0, 23, 59, 59);
 
       final inflows = await customSelect(
-        '''SELECT COALESCE(SUM(total), 0) as amount FROM sales_invoices
-           WHERE invoice_date BETWEEN ? AND ?''',
+        '''SELECT COALESCE(SUM(CASE WHEN sale_type = 'return' THEN -total ELSE total END), 0) as amount FROM sales_invoices
+           WHERE invoice_date BETWEEN ? AND ? AND is_deleted = ${sqlBool(false)}
+             AND status NOT IN ('cancelled', 'voided')''',
         variables: [dateVar(lastYearStart), dateVar(lastYearEnd)],
       ).getSingle();
 
       final outflows = await customSelect(
         '''SELECT COALESCE(SUM(total), 0) as amount FROM purchase_invoices
-           WHERE invoice_date BETWEEN ? AND ?''',
+           WHERE invoice_date BETWEEN ? AND ? AND is_deleted = ${sqlBool(false)}
+             AND status NOT IN ('cancelled', 'voided', 'returned')''',
         variables: [dateVar(lastYearStart), dateVar(lastYearEnd)],
       ).getSingle();
 

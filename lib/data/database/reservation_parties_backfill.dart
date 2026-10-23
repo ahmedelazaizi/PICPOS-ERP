@@ -137,7 +137,12 @@ extension ReservationPartiesBackfill on AppDatabase {
     final rows = await _bfCollectRows(res);
     final groups = <String, List<_BfRow>>{};
     for (final r in rows) {
-      groups.putIfAbsent(normalizePhone(r.phone), () => []).add(r);
+      // DATA-002: explicit different country codes never share a group.
+      groups
+          .putIfAbsent(
+              '${phoneCountryCode(r.phone) ?? ''}|${normalizePhone(r.phone)}',
+              () => [])
+          .add(r);
     }
     res.rows = rows.length;
 
@@ -158,6 +163,16 @@ extension ReservationPartiesBackfill on AppDatabase {
       } catch (e) {
         res.failedGroups++;
         debugPrint('[ReservationParties] group ${entry.key} failed: $e');
+        // MIG-005(c): the in-memory maps were updated inside the rolled-back
+        // transaction — rebuild them so no later group links to a ghost party id.
+        byPhone.clear();
+        byName.clear();
+        for (final p in await _bfLoadCustomers()) {
+          final pk = normalizePhone(p.phone);
+          if (pk.isNotEmpty) byPhone.putIfAbsent(pk, () => []).add(p);
+          final nk = normalizePersonName(p.name);
+          if (nk.isNotEmpty) byName.putIfAbsent(nk, () => []).add(p);
+        }
       }
     }
   }
@@ -198,22 +213,48 @@ extension ReservationPartiesBackfill on AppDatabase {
   }
 
   Future<void> _bfProcessGroup(
-    String phoneKey,
+    String groupKey,
     List<_BfRow> group,
     Map<String, List<_BfParty>> byPhone,
     Map<String, List<_BfParty>> byName,
     ReservationPartiesBackfillResult res,
   ) async {
     final rawPhone = group.first.phone;
+    final phoneKey = groupKey.substring(groupKey.indexOf('|') + 1);
+    final groupCountry = groupKey.substring(0, groupKey.indexOf('|'));
     // أحدثُ اسمٍ غيرِ فارغ يمثّل المجموعة (الصفوفُ مرتّبةٌ بالأقدم أولاً).
     final repName = group.lastWhere((r) => r.name.isNotEmpty,
         orElse: () => _BfRow('', 0, rawPhone, rawPhone)).name;
 
     int partyId;
     var byNameFill = false;
-    final samePhoneParties = byPhone[phoneKey];
+    // Same national number AND no conflicting explicit country code.
+    final samePhoneParties = byPhone[phoneKey]
+        ?.where((p) {
+      final pc = phoneCountryCode(p.phone);
+      return groupCountry.isEmpty || pc == null || pc == groupCountry;
+    }).toList();
     if (samePhoneParties != null && samePhoneParties.isNotEmpty) {
       partyId = samePhoneParties.first.id; // (أ)
+      // MIG-005(b): several customers share this phone — the lowest id wins,
+      // and every other one is recorded for the owner to review.
+      for (final other in samePhoneParties.skip(1)) {
+        final n = await customUpdate(
+          'INSERT INTO party_dedup_suspects '
+          '(new_party_id, existing_party_id, name, new_phone, '
+          'existing_phone, reason) VALUES (?, ?, ?, ?, ?, ?) '
+          'ON CONFLICT DO NOTHING',
+          variables: [
+            Variable<int>(other.id),
+            Variable<int>(partyId),
+            Variable<String>(other.name),
+            Variable<String>(other.phone ?? ''),
+            Variable<String>(samePhoneParties.first.phone ?? ''),
+            const Variable<String>('multiple_phone_matches'),
+          ],
+        );
+        if (n > 0) res.suspects++;
+      }
     } else {
       final nameKey = normalizePersonName(repName);
       // نسخةٌ: القائمةُ الأصل تُضاف إليها نتيجةُ الإنشاء أدناه، فلا يُسجَّل

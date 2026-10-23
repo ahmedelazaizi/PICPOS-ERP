@@ -61,6 +61,10 @@ double monthlyDepreciation({
     }
   } else {
     monthly = depreciable / (usefulLifeYears * 12);
+    // Audit B ACC-001: straight-line stops at the salvage value too.
+    if (accumulatedDepreciation + monthly > depreciable) {
+      monthly = depreciable - accumulatedDepreciation;
+    }
   }
 
   return monthly > 0 ? monthly : 0;

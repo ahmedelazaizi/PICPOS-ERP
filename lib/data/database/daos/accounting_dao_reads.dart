@@ -157,15 +157,11 @@ extension AccountingDaoReadsExt on AppDatabase {
     }
   }
 
-  /// PIR D-07: Atomic entry number generation using DocumentSequences table.
-  ///
-  /// Replaces the racy MAX+1 approach with a serialised counter that is safe
-  /// under concurrent writes. The sequence key is `JE-YYYY` so the counter
-  /// resets each calendar year, preserving the `JE-2026-00001` output format.
-  /// Wrapped in a transaction so the read-increment-write triple is atomic
-  /// (SQLite serialises concurrent transactions).
-  Future<String> _generateEntryNumber() async {
-    final now = DateTime.now();
+  /// PIR D-07: atomic entry number from DocumentSequences (JE-YYYY, resets
+  /// yearly). ACC-009: the year is the ENTRY date's, not today's (back-dated
+  /// December entries posted in January stay in their year).
+  Future<String> _generateEntryNumber([DateTime? forDate]) async {
+    final now = forDate ?? DateTime.now();
     final seqPrefix = 'JE-${now.year}';
     final displayPrefix = '$seqPrefix-';
 

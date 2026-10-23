@@ -644,6 +644,15 @@ extension AccountingReportsDao on AppDatabase {
     );
 
     // ─── Operating Activities (IAS 7.14) ─────────────────────────────────
+    // ACC-006: only engine-written types are summed per type here; manual /
+    // unknown entries are classified per entry by counter-account below.
+    const knownOperating = {
+      'cash_sale', 'credit_sale', 'sale', 'sales_invoice', 'sale_return',
+      'sales_return', 'purchase', 'purchase_invoice', 'purchase_return',
+      'salary', 'payroll', 'op_expense', 'expense', 'operational_expense',
+      'receipt', 'payment',
+    };
+    final knownOperatingRefTypes = sqlRefTypeList(knownOperating);
     final operatingResults = await customSelect(
       '''
       SELECT je.reference_type,
@@ -654,7 +663,7 @@ extension AccountingReportsDao on AppDatabase {
       INNER JOIN accounts a ON a.id = jel.account_id
       WHERE $cashBankFilter
         AND je.entry_date BETWEEN ? AND ? AND je.is_posted = $boolTrue AND je.is_deleted = ${sqlBool(false)} $ccFilter $brFilter$azFilter
-        AND (je.reference_type IS NULL OR je.reference_type NOT IN ($nonOperatingRefTypes))
+        AND je.reference_type IN ($knownOperatingRefTypes)
       GROUP BY je.reference_type
       ''',
       variables: [dateVar(from), dateVar(to), ...ccVars, ...brVars, ...azVars],
@@ -709,15 +718,52 @@ extension AccountingReportsDao on AppDatabase {
         case 'payment':
           otherPayments += credits;
           break;
-        default:
-          // Manual JEs and unclassified
-          otherReceipts += debits;
-          otherPayments += credits;
       }
 
       operatingInflow += debits;
       operatingOutflow += credits;
     }
+
+    // Manual / unclassified entries: classify by counter-account (IAS 7).
+    final manualRows = await customSelect(
+      '''
+      SELECT je.id AS eid, SUM(jel.debit) AS total_debit, SUM(jel.credit) AS total_credit
+      FROM journal_entry_lines jel
+      INNER JOIN journal_entries je ON je.id = jel.entry_id
+      WHERE $cashBankFilter
+        AND je.entry_date BETWEEN ? AND ? AND je.is_posted = $boolTrue AND je.is_deleted = ${sqlBool(false)} $ccFilter $brFilter$azFilter
+        AND (je.reference_type IS NULL OR je.reference_type NOT IN ($knownOperatingRefTypes, $nonOperatingRefTypes))
+      GROUP BY je.id
+      ''',
+      variables: [dateVar(from), dateVar(to), ...ccVars, ...brVars, ...azVars],
+      readsFrom: {journalEntryLines, journalEntries},
+    ).get();
+    final manualActivity = await classifyManualCashEntries(
+      this,
+      manualRows.map((r) => r.read<int>('eid')),
+      cashBankIds,
+    );
+    double manualOpIn = 0, manualOpOut = 0, manualInvIn = 0, manualInvOut = 0;
+    double manualFinIn = 0, manualFinOut = 0;
+    for (final r in manualRows) {
+      final d = (r.data['total_debit'] as num?)?.toDouble() ?? 0;
+      final c = (r.data['total_credit'] as num?)?.toDouble() ?? 0;
+      switch (manualActivity[r.read<int>('eid')] ?? ManualCashActivity.operating) {
+        case ManualCashActivity.transfer:
+          break; // cash <-> bank: not a cash flow of the entity
+        case ManualCashActivity.investing:
+          manualInvIn += d;
+          manualInvOut += c;
+        case ManualCashActivity.financing:
+          manualFinIn += d;
+          manualFinOut += c;
+        case ManualCashActivity.operating:
+          manualOpIn += d;
+          manualOpOut += c;
+      }
+    }
+    operatingInflow += manualOpIn;
+    operatingOutflow += manualOpOut;
 
     final netOperating = operatingInflow - operatingOutflow;
 
@@ -743,6 +789,8 @@ extension AccountingReportsDao on AppDatabase {
       investingInflow = investingResults.first.data['total_debit'] as double? ?? 0;
       investingOutflow = investingResults.first.data['total_credit'] as double? ?? 0;
     }
+    investingInflow += manualInvIn;
+    investingOutflow += manualInvOut;
     final netInvesting = investingInflow - investingOutflow;
 
     // ─── Financing Activities (IAS 7.17) ──────────────────────────────────
@@ -767,7 +815,8 @@ extension AccountingReportsDao on AppDatabase {
       financingInflow = financingResults.first.data['total_debit'] as double? ?? 0;
       financingOutflow = financingResults.first.data['total_credit'] as double? ?? 0;
     }
-    final netFinancing = financingInflow - financingOutflow;
+    final netFinancing =
+        financingInflow + manualFinIn - financingOutflow - manualFinOut;
 
     // ─── Opening & Closing Balances ──────────────────────────────────────
     final openingResult = await customSelect(
@@ -793,6 +842,9 @@ extension AccountingReportsDao on AppDatabase {
         'receiptsFromCustomers': otherReceipts,
         'purchasesCash': purchasesCash,
         'paymentsToSuppliers': otherPayments,
+        'otherOperatingReceipts': manualOpIn,
+        'otherOperatingPayments': manualOpOut,
+        'otherNet': manualOpIn - manualOpOut,
         'salaries': salaries,
         'expenses': expenses,
         'totalInflow': operatingInflow,
@@ -807,6 +859,9 @@ extension AccountingReportsDao on AppDatabase {
       'financing': {
         'checksCollected': financingInflow,
         'checksIssued': financingOutflow,
+        'otherInflows': manualFinIn,
+        'otherOutflows': manualFinOut,
+        'otherNet': manualFinIn - manualFinOut,
         'net': netFinancing,
       },
       'openingBalance': openingBalance,
@@ -837,6 +892,7 @@ extension AccountingReportsDao on AppDatabase {
     final azFilter = az.filter;
     final azVars = az.vars;
     final boolTrue = sqlBool(true);
+    final boolFalse = sqlBool(false);
 
     // Build warehouse filter for VAT queries
     // Since VAT accounts are in GL, we must join with the source invoice (ref_id)
@@ -916,7 +972,7 @@ extension AccountingReportsDao on AppDatabase {
       FROM journal_entry_lines l
       JOIN journal_entries e ON l.entry_id = e.id
       JOIN accounts a ON l.account_id = a.id
-      WHERE a.code = ? AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue $ccFilter $brFilter$azFilter $outputWhFilter
+      WHERE a.code = ? AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue AND e.is_deleted = $boolFalse $ccFilter $brFilter$azFilter $outputWhFilter
       ''',
       variables: [Variable(outputVatCode), dateVar(from), dateVar(to), ...ccVars, ...brVars, ...azVars, ...outputWhVars],
       readsFrom: {journalEntryLines, journalEntries, accounts, salesInvoices},
@@ -929,7 +985,7 @@ extension AccountingReportsDao on AppDatabase {
       FROM journal_entry_lines l
       JOIN journal_entries e ON l.entry_id = e.id
       JOIN accounts a ON l.account_id = a.id
-      WHERE a.code = ? AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue $ccFilter $brFilter$azFilter $inputWhFilter
+      WHERE a.code = ? AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue AND e.is_deleted = $boolFalse $ccFilter $brFilter$azFilter $inputWhFilter
       ''',
       variables: [Variable(inputVatCode), dateVar(from), dateVar(to), ...ccVars, ...brVars, ...azVars, ...inputWhVars],
       readsFrom: {journalEntryLines, journalEntries, accounts, purchaseInvoices},
@@ -942,7 +998,7 @@ extension AccountingReportsDao on AppDatabase {
       FROM journal_entry_lines l
       JOIN journal_entries e ON l.entry_id = e.id
       JOIN accounts a ON l.account_id = a.id
-      WHERE a.code = ? AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue $ccFilter $brFilter$azFilter $outputWhFilter
+      WHERE a.code = ? AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue AND e.is_deleted = $boolFalse $ccFilter $brFilter$azFilter $outputWhFilter
       ''',
       variables: [Variable(salesCode), dateVar(from), dateVar(to), ...ccVars, ...brVars, ...azVars, ...outputWhVars],
       readsFrom: {journalEntryLines, journalEntries, accounts, salesInvoices},
@@ -958,7 +1014,7 @@ extension AccountingReportsDao on AppDatabase {
       FROM journal_entry_lines l
       JOIN journal_entries e ON l.entry_id = e.id
       JOIN accounts a ON l.account_id = a.id
-      WHERE a.code = ? AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue $ccFilter $brFilter$azFilter $inputWhFilter
+      WHERE a.code = ? AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue AND e.is_deleted = $boolFalse $ccFilter $brFilter$azFilter $inputWhFilter
         AND e.reference_type IN ('purchase', 'purchase_invoice')
       ''',
       variables: [Variable(inventoryCode), dateVar(from), dateVar(to), ...ccVars, ...brVars, ...azVars, ...inputWhVars],
@@ -1123,6 +1179,7 @@ extension AccountingReportsDao on AppDatabase {
     final azFilter = az.filter;
     final azVars = az.vars;
     final boolTrue = sqlBool(true);
+    final boolFalse = sqlBool(false);
 
     final rows = await customSelect(
       '''
@@ -1134,7 +1191,7 @@ extension AccountingReportsDao on AppDatabase {
       FROM accounts a
       JOIN journal_entry_lines l ON a.id = l.account_id
       JOIN journal_entries e ON l.entry_id = e.id
-      WHERE e.entry_date <= ? AND e.is_posted = $boolTrue $ccFilter $brFilter$azFilter
+      WHERE e.entry_date <= ? AND e.is_posted = $boolTrue AND e.is_deleted = $boolFalse $ccFilter $brFilter$azFilter
       GROUP BY a.id
       ORDER BY a.code
       ''',
@@ -1191,6 +1248,7 @@ extension AccountingReportsDao on AppDatabase {
     Set<int>? allowedBranchIds,
   }) async {
     final boolTrue = sqlBool(true);
+    final boolFalse = sqlBool(false);
     // FIL-5: previously an ad-hoc `AND je.branch_id = ?` which EXCLUDED
     // global (NULL-branch) JEs — inconsistent with _buildBranchFilter's
     // convention everywhere else. Routed through the shared helper so
@@ -1227,9 +1285,9 @@ extension AccountingReportsDao on AppDatabase {
       -- invoice row (one per JE) and reporting a false debit/credit mismatch.
       -- The purchase query below correctly matches only 'purchase'.
       LEFT JOIN journal_entries je ON je.reference_type IN ('sale', 'cash_sale', 'credit_sale')
-        AND je.reference_id = si.id $brFilter$azFilter
+        AND je.reference_id = si.id AND je.is_deleted = $boolFalse $brFilter$azFilter
       LEFT JOIN journal_entry_lines jel ON jel.entry_id = je.id
-      WHERE si.invoice_date BETWEEN ? AND ?${brSi.filter}${azSi.filter}
+      WHERE si.is_deleted = $boolFalse AND si.invoice_date BETWEEN ? AND ?${brSi.filter}${azSi.filter}
       GROUP BY si.id, si.invoice_number, si.invoice_date, si.total, si.paid,
                si.status, je.id, je.entry_number, je.is_posted
       ORDER BY si.invoice_date DESC
@@ -1249,9 +1307,9 @@ extension AccountingReportsDao on AppDatabase {
              'purchase' as source_type
       FROM purchase_invoices pi
       LEFT JOIN journal_entries je ON je.reference_type = 'purchase'
-        AND je.reference_id = pi.id $brFilter$azFilter
+        AND je.reference_id = pi.id AND je.is_deleted = $boolFalse $brFilter$azFilter
       LEFT JOIN journal_entry_lines jel ON jel.entry_id = je.id
-      WHERE pi.created_at BETWEEN ? AND ?${brPi.filter}${azPi.filter}
+      WHERE pi.is_deleted = $boolFalse AND pi.created_at BETWEEN ? AND ?${brPi.filter}${azPi.filter}
       GROUP BY pi.id, pi.invoice_number, pi.created_at, pi.total, pi.paid,
                je.id, je.entry_number, je.is_posted
       ORDER BY pi.created_at DESC
@@ -1271,7 +1329,7 @@ extension AccountingReportsDao on AppDatabase {
       LEFT JOIN journal_entry_lines jel ON jel.entry_id = je.id
       WHERE je.entry_date BETWEEN ? AND ?
         AND je.reference_type IN ('sale', 'cash_sale', 'credit_sale', 'sales_return', 'purchase')
-        AND je.is_posted = $boolTrue
+        AND je.is_posted = $boolTrue AND je.is_deleted = $boolFalse
         $brFilter$azFilter
         AND je.reference_id NOT IN (
           SELECT id FROM sales_invoices WHERE invoice_date BETWEEN ? AND ?
@@ -1459,6 +1517,7 @@ extension AccountingReportsDao on AppDatabase {
       FROM purchase_invoices
       WHERE invoice_date >= ? AND invoice_date < ?
         AND is_deleted = $boolFalse
+        AND status NOT IN ('cancelled', 'voided')
     ''', variables: [startVar, endVar],
         readsFrom: {purchaseInvoices}).getSingle();
 

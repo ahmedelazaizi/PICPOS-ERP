@@ -163,8 +163,12 @@ void main() {
   });
 
   test('الإنشاءُ يكتب سطرَه بالفعل والمبلغ', () async {
+    // Audit B ACC-004: a deposit requires a registered customer.
+    final partyId = await db.insertParty(PartiesCompanion.insert(
+        name: 'سارة', isCustomer: const Value(true)));
     final id = await service.create(
       customerName: 'سارة',
+      partyId: partyId,
       serviceId: serviceId,
       resourceId: resourceA,
       startsAt: at10,

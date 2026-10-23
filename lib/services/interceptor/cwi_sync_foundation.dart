@@ -98,6 +98,26 @@ class _CwiSyncFoundation {
       ),
     );
   }
+  // ── Table reservations (audit B DATA-001) ─────────────────────
+
+  /// Snapshot كاملٌ للحجز بمعرّفات عالميّة: إعادةُ إرساله بعد انقطاعٍ
+  /// تُعيد نفسَ الصفّ (الخادمُ يطابق بـglobalId).
+  static Future<void> submitTableReservation(
+      Map<String, dynamic> document) async {
+    if (!SyncInterceptor.isClientMode) return;
+    debugPrint('[ClientInterceptor] Routing table reservation to server');
+    await ClientWriteInterceptor._tryOrQueueVoid(
+      tableName: 'table_reservations',
+      operation: 'upsert',
+      payload: Map<String, dynamic>.from(document),
+      serverCall: (reqIdemKey) =>
+          ClientWriteInterceptor._proxy.submitTableReservation(
+        document,
+        idempotencyKey: reqIdemKey,
+      ),
+    );
+  }
+
   // ── Attachments (v176 / §٨) ──────────────────────────────────
 
   /// مرفقٌ واحدٌ ببايتاتِه — **والحمولةُ تدخل صندوقَ الصادر كما هي إن

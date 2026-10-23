@@ -80,6 +80,7 @@ extension ApiHandlerWriteRoutes on ApiHandler {
     router.post('/api/landed-costs/apply', _data.postLandedCostApply);
     // v174 / قسمُ ٧ — مخطَّطُ القاعة يصل **مستنداً واحداً**.
     router.post('/api/floor-plan', _data.postFloorPlan);
+    router.post('/api/table-reservations', _data.postTableReservation);
     // v176 / §٨ — المرفقات: رفعٌ وحذفٌ وجلبٌ كسولٌ للبايتات.
     router.post('/api/attachments', _data.postAttachment);
     router.post('/api/attachments/delete', _data.postAttachmentDelete);

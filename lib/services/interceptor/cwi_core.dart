@@ -132,6 +132,8 @@ class ClientWriteInterceptor implements SyncInterceptor {
       _CwiTradingPurchases.closeSafe(safeId, userId: userId, cashAmount: cashAmount, bankAmount: bankAmount, notes: notes, closeEventGid: closeEventGid);
   static Future<void> submitFloorPlan(Map<String, dynamic> document) =>
       _CwiSyncFoundation.submitFloorPlan(document);
+  static Future<void> submitTableReservation(Map<String, dynamic> document) =>
+      _CwiSyncFoundation.submitTableReservation(document);
   static Future<void> submitAttachment(Map<String, dynamic> document) =>
       _CwiSyncFoundation.submitAttachment(document);
   static Future<void> submitAttachmentDelete(Map<String, dynamic> document) =>

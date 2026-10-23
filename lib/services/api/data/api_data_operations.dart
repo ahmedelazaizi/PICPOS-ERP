@@ -265,6 +265,42 @@ extension ApiDataOperationsRoutes on ApiDataHandler {
     }
   }
 
+  /// POST /api/table-reservations — audit B DATA-001.
+  ///
+  /// لقطةٌ كاملةٌ لحجز طاولةٍ من عميل، تُطابَق بـglobalId (idempotent).
+  /// طاولةٌ لم تصل بعدُ ⇒ 409 + retry فيعيد طابورُ العميل المحاولة.
+  Future<Response> postTableReservation(Request request) async {
+    try {
+      final perm = await ApiUserCtx.requirePermission(
+          request, db, PermissionCodes.tablesReserve);
+      if (perm != null) return perm;
+
+      return await ApiHandlerBase.withBroadcast<Response>(
+        endpointLabel: 'postTableReservation',
+        tables: const {'table_reservations', 'restaurant_tables'},
+        body: () async {
+          final data =
+              json.decode(await request.readAsString()) as Map<String, dynamic>;
+          try {
+            final id = await applyTableReservationSnapshot(db, data);
+            return jsonResponse({'success': true, 'serverId': id});
+          } on TableReservationDependencyMissing catch (e) {
+            return jsonResponse(
+                {'success': false, 'error': e.message, 'retry': true},
+                statusCode: 409);
+          } on ArgumentError catch (e) {
+            return jsonResponse(
+                {'success': false, 'error': '${e.message}'},
+                statusCode: 400);
+          }
+        },
+      );
+    } catch (e, st) {
+      debugPrint('[API] postTableReservation failed: $e\n$st');
+      return ApiErrors.failJson(e, st);
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
   // MANUFACTURING — حدثٌ على أمرِ إنتاجٍ واردٌ من عميل (v166 / المرحلة ٢)
   // ═══════════════════════════════════════════════════════════════════════

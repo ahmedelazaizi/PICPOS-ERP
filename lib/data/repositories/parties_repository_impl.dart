@@ -117,8 +117,8 @@ class PartiesRepositoryImpl implements IPartiesRepository {
         .customSelect(
           'SELECT COALESCE(SUM(total - paid), 0) as receivable '
           'FROM sales_invoices '
-          'WHERE customer_id = ? AND status != ?',
-          variables: [Variable(partyId), const Variable('cancelled')],
+          'WHERE customer_id = ? AND status NOT IN (?, ?) AND is_deleted = ${_db.sqlBool(false)}',
+          variables: [Variable(partyId), const Variable('cancelled'), const Variable('voided')],
           readsFrom: {_db.salesInvoices},
         )
         .getSingle();
@@ -128,8 +128,8 @@ class PartiesRepositoryImpl implements IPartiesRepository {
         .customSelect(
           'SELECT COALESCE(SUM(total - paid), 0) as payable '
           'FROM purchase_invoices '
-          'WHERE supplier_id = ? AND status != ?',
-          variables: [Variable(partyId), const Variable('cancelled')],
+          'WHERE supplier_id = ? AND status NOT IN (?, ?) AND is_deleted = ${_db.sqlBool(false)}',
+          variables: [Variable(partyId), const Variable('cancelled'), const Variable('voided')],
           readsFrom: {_db.purchaseInvoices},
         )
         .getSingle();
@@ -139,7 +139,7 @@ class PartiesRepositoryImpl implements IPartiesRepository {
         .customSelect(
           'SELECT COALESCE(SUM(amount), 0) as total_receipts '
           'FROM safe_transactions '
-          'WHERE party_id = ? AND transaction_type = ?',
+          'WHERE party_id = ? AND transaction_type = ? AND deleted_at IS NULL',
           variables: [Variable(partyId), const Variable('receipt')],
           readsFrom: {_db.safeTransactions},
         )
@@ -150,7 +150,7 @@ class PartiesRepositoryImpl implements IPartiesRepository {
         .customSelect(
           'SELECT COALESCE(SUM(amount), 0) as total_payments '
           'FROM safe_transactions '
-          'WHERE party_id = ? AND transaction_type = ?',
+          'WHERE party_id = ? AND transaction_type = ? AND deleted_at IS NULL',
           variables: [Variable(partyId), const Variable('payment')],
           readsFrom: {_db.safeTransactions},
         )

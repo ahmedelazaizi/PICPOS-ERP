@@ -100,7 +100,7 @@ extension CycleCountDao on AppDatabase {
         COALESCE(
           (SELECT SUM(ABS(sm.quantity) * sm.unit_cost) 
            FROM stock_movements sm 
-           WHERE sm.product_id = p.id 
+           WHERE sm.product_id = p.id AND sm.deleted_at IS NULL
              AND sm.warehouse_id = ?
              AND sm.created_at > ?),
           0
@@ -315,6 +315,10 @@ extension CycleCountDao on AppDatabase {
     if (toDate != null) {
       whereClause += " AND ci.counted_at <= ?";
       vars.add(Variable(toDate));
+    }
+    if (warehouseId != null) {
+      whereClause += " AND ct.plan_id IN (SELECT id FROM cycle_count_plans WHERE warehouse_id = ?)";
+      vars.add(Variable(warehouseId));
     }
 
     final results = await customSelect(

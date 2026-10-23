@@ -6,12 +6,16 @@ class DepreciationResult {
   final int assetsProcessed;
   final String? error;
 
-  DepreciationResult.success({required this.assetsProcessed})
+  /// Per-asset posting failures (audit B ACC-002) — assets that did NOT advance.
+  final List<String> failures;
+
+  DepreciationResult.success({required this.assetsProcessed, this.failures = const []})
       : isSuccess = true,
         error = null;
 
   DepreciationResult.failure(this.error)
       : isSuccess = false,
+        failures = const [],
         assetsProcessed = 0;
 }
 
@@ -25,8 +29,9 @@ class RunDepreciationUseCase {
   /// Returns the number of assets processed
   Future<DepreciationResult> execute(DateTime periodDate, {int? costCenterId}) async {
     try {
-      final count = await _db.runMonthlyDepreciation(periodDate, costCenterId: costCenterId);
-      return DepreciationResult.success(assetsProcessed: count);
+      final failures = <String>[];
+      final count = await _db.runMonthlyDepreciation(periodDate, costCenterId: costCenterId, failures: failures);
+      return DepreciationResult.success(assetsProcessed: count, failures: failures);
     } catch (e) {
       return DepreciationResult.failure(e.toString());
     }

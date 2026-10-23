@@ -129,6 +129,16 @@ extension OfflineSyncWorkerReplayFinance on OfflineSyncWorker {
         }
         throw StateError('Unhandled op $operation for table $table');
 
+      // Audit B DATA-001 — full snapshot, idempotent by global id.
+      case 'table_reservations':
+        if (operation == 'upsert') {
+          return proxy.submitTableReservation(
+            payload,
+            idempotencyKey: idempotencyKey,
+          );
+        }
+        throw StateError('Unhandled op $operation for table $table');
+
       case 'attachments':
         // v176 / §٨ — ورقةٌ رُفعت والشبكةُ مقطوعة. والحمولةُ
         // **تحمل البايتاتِ نفسَها** (base64) لا مسارَ ملفٍّ على

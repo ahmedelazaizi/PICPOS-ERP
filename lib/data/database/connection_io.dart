@@ -17,6 +17,7 @@ import 'package:drift_postgres/drift_postgres.dart';
 import 'package:postgres/postgres.dart' as pg;
 import 'pg_config.dart';
 import 'pg_compat_sql.dart';
+import 'test_connection_marker.dart';
 
 /// اسم ملف الداتابيز = `<العلامة>_<flavor>.db`.
 ///
@@ -332,14 +333,12 @@ Future<String?> testPostgresConnection(PostgresConfig config) async {
 /// نوع الـ setup callback ووقت فتح الاتصال (برّه أي transaction). من غير
 /// ده كان أي حذف يخالف قيد أجنبي بينجح في الاختبار ويفشل عند العميل بـ
 /// `SqliteException(787): FOREIGN KEY constraint failed` — فئة كاملة من
-/// الباجات كانت غير مرئية للاختبارات. اختبار محتاج FK مطفي (محاكاة سكيما
-/// قديمة مثلاً) بيطفّيه محلياً بـ `PRAGMA foreign_keys = OFF`.
+/// الباجات كانت غير مرئية للاختبارات. اختبار محتاج FK مطفي بيطفّيه
+/// محلياً بـ `PRAGMA foreign_keys = OFF`.
 QueryExecutor openTestConnection() {
-  return NativeDatabase.memory(
-    setup: (database) {
-      database.execute('PRAGMA foreign_keys = ON;');
-    },
-  );
+  return markTestExecutor(NativeDatabase.memory(
+    setup: (d) => d.execute('PRAGMA foreign_keys = ON;'),
+  ));
 }
 
 /// Get the current database file path

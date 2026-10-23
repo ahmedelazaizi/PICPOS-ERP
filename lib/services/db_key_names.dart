@@ -1,3 +1,5 @@
+import 'legacy_identifiers.dart';
+
 /// أسماءُ مفاتيح التخزين الآمن الخاصّة بمفتاح قاعدة البيانات (المرحلة ب).
 ///
 /// ⚠️ **لماذا `__` لا `::` كما في المسودّة.** على ويندوز يكتب
@@ -11,8 +13,16 @@
 class DbKeyNames {
   DbKeyNames._();
 
+
   /// مفتاحُ الفتحة الاحتياطيّ القديم (`SecurityService`) — مرشّحُ قراءةٍ فقط.
-  static const String legacyFallback = 'ural_db_fallback_enc_key';
+  ///
+  /// الاسمُ القديم (من إصدارات سابقة) يُقرأ ويُرحَّل إلى هذا الاسم عبر
+  /// `StorageKeyMigration` — انظر [legacyFallbackOld].
+  static const String legacyFallback = 'picpos_db_fallback_enc_key';
+
+  /// اسمُ المفتاح الاحتياطيّ في إصداراتٍ سابقة (مصدرُ ترحيلٍ للقراءة فقط).
+  static String get legacyFallbackOld =>
+      LegacyIdentifiers.dbFallbackStorageKey;
 
   static String safe(String dbFileName) =>
       dbFileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
@@ -35,5 +45,6 @@ class DbKeyNames {
   static bool isProtected(String key) =>
       key.startsWith('db_key_') ||
       key.startsWith('db_recovery_') ||
-      key == legacyFallback;
+      key == legacyFallback ||
+      key == legacyFallbackOld;
 }
