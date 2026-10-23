@@ -25,8 +25,9 @@ import '../helpers/library_source.dart';
 
 /// مواضعُ PicPos التي تفتح كشفَ الحساب — الخمسةُ المقيسةُ 2026-08-26.
 const _picposEntryPoints = <String, int>{
-  // زرّا الترويسة («كشف حساب عميل»/«كشف حساب مورد») + فتحُ كشفِ طرفٍ بعينه.
-  'lib/presentation/parties_picpos/screens/parties_picpos_screen.dart': 3,
+  // زرّا الترويسة («كشف حساب عميل»/«كشف حساب مورد») صارا يمرّان بدالّةٍ واحدةٍ
+  // محروسةٍ (_openHeaderStatement — AUTHZ-003) + فتحُ كشفِ طرفٍ بعينه.
+  'lib/presentation/parties_picpos/screens/parties_picpos_screen.dart': 2,
   // مدخلا مركز التقارير.
   'lib/presentation/reports_picpos/screens/reports_picpos_screen.dart': 2,
 };
@@ -89,7 +90,7 @@ void main() {
         isEmpty,
         reason: 'توصيلُ كشف الحساب انكسر:\n${missing.join("\n")}',
       );
-      expect(total, 5,
+      expect(total, 4,
           reason: 'مواضعُ توصيل PicPos صارت $total لا ٥ — '
               'إن كان الموضعُ الجديدُ مقصوداً فحدِّثِ الجدولَ أعلاه بوعي');
     });

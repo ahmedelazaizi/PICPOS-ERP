@@ -9,6 +9,7 @@ import 'api_web_session_handler.dart';
 import 'lan_pairing_api_handler.dart';
 import 'lan_pairing_service.dart';
 import 'client_address.dart';
+import 'constant_time.dart';
 import 'path_prefix_match.dart';
 import 'web_session_guard.dart';
 
@@ -159,7 +160,7 @@ class ApiAuthMiddleware {
         await pairing.verifyDeviceToken(token: token, deviceId: deviceId)) {
       return true;
     }
-    if (token == _activeToken) {
+    if (_tokenMatches(token)) {
       return pairing == null || await pairing.legacyAllowed();
     }
     return false;
@@ -167,6 +168,10 @@ class ApiAuthMiddleware {
 
   /// Get the currently active token (for sharing with clients via health check).
   static String? get activeToken => _activeToken;
+
+  /// SEC-006: constant-time comparison with the legacy shared bearer.
+  static bool _tokenMatches(String token) =>
+      _activeToken != null && ConstantTime.equals(token, _activeToken!);
 
   /// E-02 (§3.3): علمُ جاهزيةٍ مستقلٌّ عن الـbearer القديم. يُضبط في
   /// `startServer` بعد تهيئة `ServerSecrets` و`LanPairingService`، فيُقبل
@@ -286,7 +291,7 @@ class ApiAuthMiddleware {
         if (pairing != null &&
             await pairing.verifyDeviceToken(token: token, deviceId: deviceId)) {
           await pairing.recordSeen(deviceId: deviceId, name: deviceName, ip: ip);
-        } else if (token == _activeToken) {
+        } else if (_tokenMatches(token)) {
           if (pairing != null) {
             if (!await pairing.legacyAllowed()) {
               return _json(403, 'انتهت فترة المفتاح القديم. يجب إقران هذا الجهاز أولاً.');

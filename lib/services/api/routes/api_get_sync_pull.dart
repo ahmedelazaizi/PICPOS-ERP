@@ -42,6 +42,23 @@ extension ApiHandlerSyncPull on ApiHandler {
         );
       }
 
+      // SYNC-001: client-schema handshake (refuse too-old clients; strip
+      // columns the client's schema doesn't have, below).
+      final clientSchema = ClientSchemaGate.parse(
+          request.headers[ClientSchemaGate.headerName]);
+      if (ClientSchemaGate.isTooOld(clientSchema)) {
+        return Response(
+          426,
+          body: jsonEncode({
+            'error': 'Client is too old — please upgrade the application',
+            'code': 'client_upgrade_required',
+            'minClientSchema': ClientSchemaGate.minSupported,
+            'hostSchema': _db.schemaVersion,
+          }),
+          headers: const {'content-type': 'application/json'},
+        );
+      }
+
       final sinceStr = request.requestedUri.queryParameters['since'];
       final int? since = sinceStr == null ? null : int.tryParse(sinceStr);
 
@@ -164,6 +181,12 @@ extension ApiHandlerSyncPull on ApiHandler {
           vars.addAll(scopedCostCenterIds.map(Variable.withInt));
         }
       }
+      // SEC-008: parties are scoped by is_global / branch_ids (no branch_id).
+      if (table == 'parties' && branchScope != null) {
+        final (sqlCond, condVars) = PartyVisibility.sqlCondition(branchScope);
+        conditions.add(sqlCond);
+        vars.addAll(condVars);
+      }
       if (cursorActive) {
         conditions.add('(COALESCE(last_modified_at, 0) > ? OR '
             '(COALESCE(last_modified_at, 0) = ? AND id > ?))');
@@ -246,9 +269,16 @@ extension ApiHandlerSyncPull on ApiHandler {
         pairingOpen: ApiAuthMiddleware.isPairingOpen,
         hasIdentity: ApiUserCtx.userIdOf(request) != null,
       );
+      // SEC-008: no balances / credit limits for a caller with no verified
+      // identity. Such a pull must not advance the client's watermark (the
+      // rows would otherwise stay balance-less after login).
+      final tokenlessParties =
+          table == 'parties' && ApiUserCtx.userIdOf(request) == null;
       final denied = <String>{
         ...?alwaysDeniedColumns[table],
         if (!serveCredentials) ...?credentialColumns[table],
+        if (tokenlessParties) ...PartyVisibility.balanceColumns,
+        ...ClientSchemaGate.columnsToStrip(table, clientSchema),
       };
 
       final jsonRows = rows.map((r) {
@@ -319,7 +349,8 @@ extension ApiHandlerSyncPull on ApiHandler {
         // table, and the next poll picks up from the same watermark.
         'hasMore': hasMore,
         'limit': limit,
-        'serverTime': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        'serverTime':
+            tokenlessParties ? null : DateTime.now().millisecondsSinceEpoch ~/ 1000,
       });
     } catch (e, st) {
       debugPrint('[API] /api/sync/pull failed: $e\n$st');

@@ -1,5 +1,5 @@
 name: ural_erp
-description: "UralCash ERP - نظام إدارة موارد المؤسسات"
+description: "PicPos ERP - نظام إدارة موارد المؤسسات"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -135,9 +135,13 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/i18n/en.json
-    - assets/i18n/catalog_ar.json
-    # لوجو UralCash — في الجذر لأسباب تاريخية؛ الكود بيوصله عبر
-    # Brand.logoAsset مش بسلسلة مكتوبة.
+    # `catalog_ar.json` (خريطة مفتاح→مصدر، أداة تطوير فقط) لم يعد يُحزم: لا يقرؤه
+    # أي كود وقت التشغيل وهو يكشف بنية الشيفرة (BRAND-002).
+    # ⚠ `logo.PNG` أصلٌ للعلامة البديلة فقط (Brand.logoAsset عند غير PicPos). Flutter
+    # لا يدعم أصولاً مشروطة بالعلامة على Windows، فيبقى مُعلَناً ليعمل المنتج البديل
+    # واختباراته؛ وتحذفه سكربتات بناء PicPos من الحزمة الناتجة
+    # (tool\prune_picpos_bundle.ps1 من build_picpos.bat ومن CI)، ويفحص
+    # test/structural/brand_artifact_guard_test.dart أن الحزمة خالية منه.
     - logo.PNG
     # أصول العلامات المستقلة — ملفات مفردة، **مش** المجلد.
     #

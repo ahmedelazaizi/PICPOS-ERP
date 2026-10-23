@@ -21,6 +21,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../picpos_shell/picpos_kpi_row.dart';
 import '../../widgets/dialogs/add_product_dialog.dart';
 import '../../widgets/dialogs/import_result_feedback.dart';
+import '../../widgets/export_figures_gate.dart';
 import '../../widgets/permission_guard.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_content_card.dart';
@@ -92,6 +93,7 @@ class _ProductsPicposScreenState extends ConsumerState<ProductsPicposScreen> {
   }
 
   Future<void> _exportProducts() async {
+    if (!await ensureProductExportFigures(ref, context)) return;
     final path = await ref.read(excelServiceProvider).exportProductsTemplate();
     if (path != null && mounted) {
       AppToast.show(context, tr('تم تصدير النموذج: {path}', {'path': path}), type: ToastType.success);

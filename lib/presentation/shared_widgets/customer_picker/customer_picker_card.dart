@@ -5,7 +5,9 @@ import 'package:ural_erp/core/i18n/tr.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/permissions/permission_codes.dart';
+import '../../../core/navigation/screen_id.dart';
 import '../../../data/providers/customer_picker_providers.dart';
+import '../../../data/providers/financial_figures_providers.dart';
 import '../../widgets/permission_guard.dart';
 
 /// بطاقةُ العميل المختار: الهاتف (مقنَّعٌ بلا `customers_view`) والعنوان
@@ -37,6 +39,10 @@ class CustomerPickerCard extends ConsumerWidget {
         .take(3)
         .toList();
     final decimals = AppConstants.decimalPlaces;
+    // RPT-006: balance / credit-limit hint only with the customers view code.
+    final canSeeFigures =
+        ref.watch(screenFiguresVisibilityProvider(ScreenId.customers)).value ??
+            false;
 
     return Container(
       key: const ValueKey('customer_picker_card'),
@@ -65,7 +71,7 @@ class CustomerPickerCard extends ConsumerWidget {
               ),
               if (deleted)
                 _chip(context, tr('عميل محذوف'), scheme.error)
-              else if (party != null && party.balance > 0)
+              else if (canSeeFigures && party != null && party.balance > 0)
                 _chip(context, tr('عليه دين'), scheme.tertiary),
               IconButton(
                 key: const ValueKey('customer_picker_clear'),
@@ -98,9 +104,11 @@ class CustomerPickerCard extends ConsumerWidget {
               context,
               PhosphorIconsBold.wallet,
               Text(
-                '${tr('الرصيد')}: ${party.balance.toStringAsFixed(decimals)} '
-                '${AppConstants.currencySymbol}'
-                '${party.creditLimit > 0 && party.balance > party.creditLimit ? '  ·  ${tr('تجاوز الحد الائتماني')}' : ''}',
+                canSeeFigures
+                    ? '${tr('الرصيد')}: ${party.balance.toStringAsFixed(decimals)} '
+                        '${AppConstants.currencySymbol}'
+                        '${party.creditLimit > 0 && party.balance > party.creditLimit ? '  ·  ${tr('تجاوز الحد الائتماني')}' : ''}'
+                    : '${tr('الرصيد')}: $kMaskedValuePlaceholder',
                 style: const TextStyle(fontSize: 12.5),
               ),
             ),

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../services/client_write_interceptor.dart';
 import '../../services/delta_pull_service.dart';
+import '../../services/login_lockout_store.dart';
 import '../../services/login_rate_limiter.dart';
 import '../../services/network_service.dart';
 import '../../services/server_proxy.dart';
@@ -241,6 +242,7 @@ class AuthRepositoryImpl implements IAuthRepository {
   @override
   Future<UserWithRole?> authenticateUser(String username, String password) async {
     // Rate limiting: check if user is locked out
+    await LoginLockoutStore.ensureAttached(db); // SEC-009: persisted lockouts
     final lockout = LoginRateLimiter.getLockoutRemaining(username);
     if (lockout != null) {
       final minutes = lockout.inMinutes + 1;

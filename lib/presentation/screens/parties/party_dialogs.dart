@@ -11,6 +11,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../data/providers/providers.dart';
 import '../../../services/client_write_interceptor.dart';
 import '../../../data/database/sync_interceptor.dart';
+import 'party_excel_actions.dart';
 import 'party_helpers.dart';
 import 'providers/party_groups_controller.dart';
 
@@ -998,9 +999,9 @@ void showExcelOptionsDialog(
               onTap: () {
                 Navigator.pop(context);
                 if (isExport) {
-                  _exportTemplate(context, ref, isSupplier: false);
+                  exportPartiesTemplateAction(context, ref, isSupplier: false);
                 } else {
-                  _importData(context, ref, isSupplier: false);
+                  importPartiesAction(context, ref, isSupplier: false);
                 }
               },
             ),
@@ -1014,9 +1015,9 @@ void showExcelOptionsDialog(
               onTap: () {
                 Navigator.pop(context);
                 if (isExport) {
-                  _exportTemplate(context, ref, isSupplier: true);
+                  exportPartiesTemplateAction(context, ref, isSupplier: true);
                 } else {
-                  _importData(context, ref, isSupplier: true);
+                  importPartiesAction(context, ref, isSupplier: true);
                 }
               },
             ),
@@ -1031,54 +1032,4 @@ void showExcelOptionsDialog(
       ),
     ),
   );
-}
-
-Future<void> _exportTemplate(BuildContext context, WidgetRef ref, {bool isSupplier = false}) async {
-  final service = ref.read(excelServiceProvider);
-  final path = await service.exportPartiesTemplate(isSupplier);
-  if (path != null && context.mounted) {
-    AppToast.show(
-      context,
-      tr('تم تصدير النموذج بنجاح: {path}', {'path': path}),
-      type: ToastType.success,
-    );
-    try {
-      final auth = ref.read(authProvider);
-      final activityLogRepo = ref.read(activityLogRepositoryProvider);
-      await activityLogRepo.logActivity(
-        userId: auth.user?.id,
-        userName: auth.user?.displayName ?? tr('مستخدم'),
-        action: 'export_template',
-        entityType: 'party',
-        description: tr('تصدير قالب {p0}', {'p0': isSupplier ? tr('موردين') : tr('عملاء')}),
-      );
-    } catch (_) {}
-  }
-}
-
-Future<void> _importData(BuildContext context, WidgetRef ref, {bool isSupplier = false}) async {
-  final service = ref.read(excelServiceProvider);
-  final result = await service.importParties(isSupplier);
-  if (context.mounted) {
-    AppToast.show(
-      context,
-      result.message,
-      type: result.success == true ? ToastType.success : ToastType.error,
-    );
-    if (result.success) {
-      ref.invalidate(allPartiesProvider);
-      try {
-        final auth = ref.read(authProvider);
-        final activityLogRepo = ref.read(activityLogRepositoryProvider);
-        await activityLogRepo.logActivity(
-          userId: auth.user?.id,
-          userName: auth.user?.displayName ?? tr('مستخدم'),
-          action: 'import_data',
-          entityType: 'party',
-          description:
-              tr('استيراد بيانات {p0} من Excel', {'p0': isSupplier ? tr('موردين') : tr('عملاء')}),
-        );
-      } catch (_) {}
-    }
-  }
 }

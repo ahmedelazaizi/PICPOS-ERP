@@ -177,10 +177,8 @@ void main() {
     );
 
     test(
-      'admin self-heal restores a physically deleted bootstrap row',
+      'SEC-001: a physically deleted bootstrap row is NOT re-created as admin/admin',
       () async {
-        // Server's local DB has lost the id=1 row entirely (production
-        // observed: a corrupt cleanup pass removed orphaned rows).
         await seedRole(id: 1, name: 'مدير النظام', isSystem: false);
         await seedRole(id: 2, name: 'كاشير', isSystem: false);
         await seedUser(id: 2, username: 'cashier_a', roleId: 2);
@@ -188,81 +186,41 @@ void main() {
               UserBranchAccessCompanion.insert(userId: 2, branchId: 2),
             );
         // No row inserted for id=1.
+        final before = (await fx.db.select(fx.db.users).get()).length;
 
-        final response = await callGetUsers(branchId: 2);
-        final users = (response['users'] as List).cast<Map<String, dynamic>>();
-        // Asserted BY USERNAME, not by id=1. The self-heal deliberately stopped
-        // forcing id=1 after 2026-05-10, when doing so made drift_postgres
-        // reject the INSERT against an already-advanced sequence and broke
-        // every /api/users response. The contract is "a canonical admin row
-        // exists and is in the response", not "it sits at id 1".
-        final adminPresent = users.any((u) => u['username'] == 'admin');
-        expect(
-          adminPresent,
-          isTrue,
-          reason:
-              'admin self-heal must restore the admin row when it is missing '
-              'and include it in the response. Without this, a corrupt server '
-              'keeps shipping admin-less responses forever.',
-        );
+        await callGetUsers(branchId: 2);
 
-        // Confirm the persisted row is canonical and usable.
-        final stored = await (fx.db.select(fx.db.users)
-              ..where((u) => u.username.equals('admin'))
-              ..limit(1))
-            .getSingleOrNull();
-        expect(stored, isNotNull);
-        expect(stored!.isActive, isTrue);
+        // Audit 2026-10-23 SEC-001: a known-password system-admin must never
+        // be silently created. Recovery is an explicit operator action.
+        final after = await fx.db.select(fx.db.users).get();
+        expect(after.length, before);
+        expect(after.where((u) => u.username == 'admin'), isEmpty);
       },
     );
 
     test(
-      'healed admin is included even when the sequence puts it at id != 1',
+      'an admin that lives at id != 1 is still included (resolved by username)',
       () async {
-        // The scenario the literal `1` in `_getUsers`'s allowed-id set cannot
-        // cover. `_ensureBootstrapAdminOnce` stopped forcing id=1 on
-        // 2026-05-10 (forcing it made drift_postgres reject the INSERT against
-        // an advanced sequence and broke every /api/users response), so on any
-        // server whose users sequence has moved the restored admin lands
-        // somewhere else entirely.
-        //
-        // Push the sequence forward so the heal cannot land on 1, then deny the
-        // healed row both other routes into the set: no userBranchAccess row
-        // for this branch, and its role NOT flagged isSystemRole. If the only
-        // guarantee is the literal, the admin is dropped from the response —
-        // Feature 011 / Issue 9 all over again.
+        // The literal `1` in `_getUsers`'s allowed-id set cannot cover an admin
+        // sitting elsewhere. Deny it both other routes into the set: no
+        // userBranchAccess row for this branch, and a role NOT flagged
+        // isSystemRole (Feature 011 / Issue 9).
         await seedRole(id: 1, name: 'مدير النظام', isSystem: false);
         await seedRole(id: 2, name: 'كاشير', isSystem: false);
         await seedUser(id: 2, username: 'cashier_a', roleId: 2);
         await fx.db.into(fx.db.userBranchAccess).insert(
               UserBranchAccessCompanion.insert(userId: 2, branchId: 2),
             );
-        // No admin row at all — the heal must create one.
-        await fx.db.customStatement(
-          "SELECT setval('users_id_seq', 500, true)",
-        );
+        await seedUser(id: 500, username: 'admin', roleId: 1);
 
         final response = await callGetUsers(branchId: 2);
         final users = (response['users'] as List).cast<Map<String, dynamic>>();
 
-        final stored = await (fx.db.select(fx.db.users)
-              ..where((u) => u.username.equals('admin'))
-              ..limit(1))
-            .getSingleOrNull();
-        expect(stored, isNotNull,
-            reason: 'precondition: the heal must have created an admin row.');
-        expect(stored!.id, isNot(1),
-            reason: 'precondition: the sequence was advanced so the healed '
-                'admin must NOT be at id=1 — otherwise this test silently '
-                'measures the same thing as the previous one.');
-
         expect(
           users.any((u) => u['username'] == 'admin'),
           isTrue,
-          reason: 'the healed admin sits at id=${stored.id}, has no branch '
-              'access row and no system role, so the literal `1` in the '
-              'allowed-id set does not cover it. /api/users must resolve the '
-              'bootstrap admin by username, not by hardcoded id.',
+          reason: '/api/users must resolve the bootstrap admin by username, '
+              'not by hardcoded id.',
         );
       },
     );

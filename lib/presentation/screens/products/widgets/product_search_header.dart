@@ -11,6 +11,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/entities/product_entity.dart';
 import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/permissions/permission_codes.dart';
+import '../../../widgets/export_figures_gate.dart';
 import '../../../widgets/permission_guard.dart';
 import '../../../products/providers/products_controller.dart';
 import '../../../widgets/dialogs/add_product_dialog.dart';
@@ -229,6 +230,7 @@ class ProductSearchHeader extends ConsumerWidget {
       actionName: tr('تصدير الأصناف'),
       child: OutlinedButton.icon(
         onPressed: () async {
+          if (!await ensureProductExportFigures(ref, context)) return;
           final path = await ref
               .read(excelServiceProvider)
               .exportProductsTemplate();

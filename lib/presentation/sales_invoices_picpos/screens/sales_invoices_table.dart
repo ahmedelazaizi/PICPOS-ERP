@@ -600,8 +600,8 @@ class _InvoiceCard extends StatelessWidget {
             flex: _kColTotal,
             child: Align(
               alignment: AlignmentDirectional.centerEnd,
-              child: AnyPermissionMaskedText(
-                anyOf: kSalesFiguresCodes,
+              child: AllPermissionsMaskedText(
+                allOf: kSalesFiguresCodes,
                 text: invoice.total.toStringAsFixed(AppConstants.decimalPlaces),
                 style: TextStyle(
                   fontSize: 14,
@@ -738,8 +738,8 @@ class _CollectionCell extends StatelessWidget {
             ? AppColors.warning
             : AppColors.success;
 
-    return PermissionGuard.anyOf(
-      anyOf: kSalesFiguresCodes,
+    return PermissionGuard.allOf(
+      allOf: kSalesFiguresCodes,
       fallback: _body(context, muted, masked: true, remainingColor: muted),
       child: _body(context, muted,
           masked: false, remainingColor: remainingColor),

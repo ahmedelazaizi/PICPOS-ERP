@@ -13,10 +13,28 @@ import 'package:archive/archive.dart';
 /// built-ins. Only `xl/styles.xml` is touched; every other zip entry is copied
 /// as is. Never throws: on any problem (not a zip, no styles.xml, nothing to
 /// change, malformed content) the ORIGINAL bytes are returned.
-Uint8List? sanitizeXlsxBytes(Uint8List? bytes) {
+/// SEC-016: size / entry limits against zip bombs. A file over any limit is
+/// REFUSED (returns null = no usable file), not passed on to the decoder.
+const int kMaxXlsxBytes = 25 * 1024 * 1024;
+const int kMaxXlsxEntries = 5000;
+const int kMaxXlsxUncompressedBytes = 200 * 1024 * 1024;
+
+Uint8List? sanitizeXlsxBytes(
+  Uint8List? bytes, {
+  int maxBytes = kMaxXlsxBytes,
+  int maxEntries = kMaxXlsxEntries,
+  int maxUncompressed = kMaxXlsxUncompressedBytes,
+}) {
   if (bytes == null) return null;
+  if (bytes.length > maxBytes) return null;
   try {
     final archive = ZipDecoder().decodeBytes(bytes);
+    if (archive.files.length > maxEntries) return null;
+    var declared = 0;
+    for (final f in archive.files) {
+      declared += f.size;
+    }
+    if (declared > maxUncompressed) return null;
     final styles = archive.findFile('xl/styles.xml');
     if (styles == null) return bytes;
     final xml = utf8.decode(styles.content as List<int>);

@@ -37,6 +37,10 @@ class CashDrawerServiceIO implements CashDrawerService {
     }
   }
 
+  /// SEC-015: printer names containing cmd/shell metacharacters are rejected.
+  static bool isSafePrinterName(String name) =>
+      name.isNotEmpty && !RegExp(r'[&|<>^"%!\r\n`;`]').hasMatch(name);
+
   /// Open drawer on Windows using Windows Print Spooler API (winspool.drv)
   /// This sends raw ESC/POS bytes directly through the printer spooler,
   /// which works with any locally installed printer without network sharing.
@@ -53,7 +57,9 @@ class CashDrawerServiceIO implements CashDrawerService {
 
       // Create temp file with ESC/POS command
       final tempDir = Directory.systemTemp;
-      final tempFile = File('${tempDir.path}\\drawer_cmd.bin');
+      // SEC-015: unique temp file (no fixed, guessable path).
+      final tempFile = File(
+          '${tempDir.path}\\drawer_cmd_${DateTime.now().microsecondsSinceEpoch}.bin');
       await tempFile.writeAsBytes(_openDrawerCommand);
 
       // Primary Method: Use Windows Print Spooler API via PowerShell
@@ -139,6 +145,14 @@ if (\$result) { exit 0 } else { exit 1 }
         if (await tempFile.exists()) await tempFile.delete();
         debugPrint('CashDrawer: SUCCESS via Spooler API');
         return true;
+      }
+
+      // SEC-015: the fallbacks go through cmd /c, which re-parses
+      // metacharacters — never pass them an unvetted printer name.
+      if (!isSafePrinterName(printer)) {
+        debugPrint('CashDrawer: unsafe printer name — fallbacks skipped');
+        if (await tempFile.exists()) await tempFile.delete();
+        return false;
       }
 
       // Fallback Method 1: Try copy /b to network share (requires printer sharing)

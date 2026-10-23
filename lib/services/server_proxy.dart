@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'tls_trust.dart';
+import 'api/client_schema_gate.dart';
 import '../web/web_session.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ural_erp/data/database/sync_interceptor.dart';
@@ -156,6 +157,8 @@ class ServerProxy {
         'Authorization': 'Bearer $_apiToken',
       if (deviceId != null && deviceId.isNotEmpty) 'X-Device-Id': deviceId,
       'X-Session-Token': ?sessionToken,
+      if (ClientSchemaGate.clientSchemaVersion != null) // SYNC-001
+        'X-Client-Schema': '${ClientSchemaGate.clientSchemaVersion}',
     };
   }
 

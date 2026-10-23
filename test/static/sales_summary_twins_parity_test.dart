@@ -45,7 +45,8 @@ void main() {
 
   test('كلا التوأمين يحجب المبالغ بـ`sales_amounts_view` عينِه', () {
     twins.forEach((name, src) {
-      expect(src.contains('PermissionCodes.salesAmountsView'), isTrue,
+      // AUTHZ-004: كلا التوأمين يشترط الكودين معاً عبر kSalesFiguresCodes.
+      expect(src.contains('kSalesFiguresCodes'), isTrue,
           reason: '$name لا يحجب مبالغَ الإجماليات — أو يحجبها بكودٍ آخر. '
               'الصلاحيةُ واحدةٌ في القاعدة، فلا يصحّ أن يرى مستخدمٌ على فورك '
               'ما يُحجَب عنه على الآخر');

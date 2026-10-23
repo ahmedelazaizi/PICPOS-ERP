@@ -208,23 +208,23 @@ class SalesInvoicesTable extends ConsumerWidget {
                   // sales_amounts_view — الإجمالي والمدفوع والمتبقي. المتبقي
                   // مشتقّ من الاتنين، فسيبانه مكشوف كان بيسرّبهم.
                   DataCell(
-                    PermissionMaskedText(
-                      permission: PermissionCodes.salesAmountsView,
+                    AllPermissionsMaskedText(
+                      allOf: kSalesFiguresCodes,
                       text: invoice.total
                           .toStringAsFixed(AppConstants.decimalPlaces),
                     ),
                   ),
                   DataCell(
-                    PermissionMaskedText(
-                      permission: PermissionCodes.salesAmountsView,
+                    AllPermissionsMaskedText(
+                      allOf: kSalesFiguresCodes,
                       text: invoice.paid
                           .toStringAsFixed(AppConstants.decimalPlaces),
                       style: const TextStyle(color: AppColors.success),
                     ),
                   ),
                   DataCell(
-                    PermissionMaskedText(
-                      permission: PermissionCodes.salesAmountsView,
+                    AllPermissionsMaskedText(
+                      allOf: kSalesFiguresCodes,
                       text: remaining
                           .toStringAsFixed(AppConstants.decimalPlaces),
                       style: TextStyle(

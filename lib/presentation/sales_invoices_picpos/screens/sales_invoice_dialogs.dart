@@ -138,7 +138,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
                   const Divider(height: 24),
 
                   // Margin Analysis
-                  Consumer(
+                  SalesInvoiceMarginGate(child: Consumer(
                     builder: (context, ref, child) {
                       final analysisStream = ref.watch(invoiceProfitAnalysisStreamProvider(invoice.id!));
                       return analysisStream.when(
@@ -156,7 +156,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
                         error: (_, _) => const SizedBox.shrink(),
                       );
                     },
-                  ),
+                  )),
 
                    Text(
                     tr('الأصناف:'),
@@ -169,68 +169,9 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
                       style: const TextStyle(color: AppColors.textMuted),
                     )
                   else
-                    DataTable(
-                      columnSpacing: 20,
-                      columns:  [
-                        DataColumn(label: Text(tr('الصنف'))),
-                        DataColumn(label: Text(tr('الوحدة'))),
-                        DataColumn(label: Text(tr('الكمية'))),
-                        DataColumn(label: Text(tr('السعر'))),
-                        DataColumn(label: Text(tr('الإجمالي'))),
-                      ],
-                      rows: items
-                          .map(
-                            (item) => DataRow(
-                              cells: [
-                                DataCell(Text(item.displayName)),
-                                DataCell(Text(item.item.unitName ?? tr('قطعة'))),
-                                DataCell(
-                                  Text(item.item.quantity.toStringAsFixed(AppConstants.decimalPlaces)),
-                                ),
-                                DataCell(
-                                  Text(item.item.unitPrice.toStringAsFixed(AppConstants.decimalPlaces)),
-                                ),
-                                DataCell(
-                                  Text(item.item.total.toStringAsFixed(AppConstants.decimalPlaces)),
-                                ),
-                              ],
-                            ),
-                          )
-                          .toList(),
-                    ),
+                    SalesInvoiceItemsTable(items: [for (final i in items) InvoiceItemRow(name: i.displayName, unit: i.item.unitName, quantity: i.item.quantity, unitPrice: i.item.unitPrice, total: i.item.total)]),
                   const SizedBox(height: 16),
-                  // كتلة المجاميع محاذاة لآخر الصف ومحدودة العرض — الأرقام
-                  // تحت بعضها تتقارن بالعين، بخلاف الأسطر العريضة اللي كانت
-                  // بتباعد التسمية عن القيمة لعرض الديالوج كله.
-                  Align(
-                    alignment: AlignmentDirectional.centerEnd,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 300),
-                      child: Column(
-                        children: [
-                          _totalRow(tr('المجموع الفرعي'), invoice.subtotal),
-                          if (invoice.discountAmount != 0)
-                            _totalRow(tr('الخصم'), invoice.discountAmount,
-                                color: AppColors.warning),
-                          if (invoice.taxAmount != 0)
-                            _totalRow(tr('الضريبة'), invoice.taxAmount),
-                          const Divider(height: 18),
-                          _totalRow(tr('الإجمالي'), invoice.total,
-                              emphasize: true),
-                          _totalRow(tr('المدفوع'), invoice.paid,
-                              color: AppColors.success),
-                          _totalRow(
-                            tr('المتبقي'),
-                            invoice.total - invoice.paid,
-                            color: (invoice.total - invoice.paid) > 0.001
-                                ? AppColors.error
-                                : AppColors.success,
-                            emphasize: (invoice.total - invoice.paid) > 0.001,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  SalesInvoiceTotalsBlock(invoice: invoice),
                   const SizedBox(height: 16),
                   const Divider(height: 1),
                   const SizedBox(height: 12),
@@ -272,30 +213,6 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
             style:
                 const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
       ],
-    );
-  }
-
-  /// سطر في كتلة المجاميع. القيم متنسّقة كعملة مش `toStringAsFixed` خام.
-  Widget _totalRow(
-    String label,
-    double value, {
-    Color? color,
-    bool emphasize = false,
-  }) {
-    final style = TextStyle(
-      fontSize: emphasize ? 15 : 13,
-      fontWeight: emphasize ? FontWeight.bold : FontWeight.w500,
-      color: color,
-    );
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: style),
-          Text(NumberUtils.formatCurrency(value), style: style),
-        ],
-      ),
     );
   }
 

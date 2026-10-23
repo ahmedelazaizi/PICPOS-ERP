@@ -10,8 +10,19 @@ void main() {
       canSeeScreenFigures(['sales_create'], ScreenId.salesInvoices),
       isFalse,
     );
+    // AUTHZ-004: sales_view وحدَه لا يكشف أرقامَ الفواتير، ولا
+    // sales_amounts_view وحدَه؛ كلاهما معاً يكشف.
     expect(
       canSeeScreenFigures(['sales_view'], ScreenId.salesInvoices),
+      isFalse,
+    );
+    expect(
+      canSeeScreenFigures(['sales_amounts_view'], ScreenId.salesInvoices),
+      isFalse,
+    );
+    expect(
+      canSeeScreenFigures(
+          ['sales_view', 'sales_amounts_view'], ScreenId.salesInvoices),
       isTrue,
     );
     expect(

@@ -10,6 +10,7 @@ import '../../core/widgets/shimmer_loading.dart';
 import '../../data/providers/providers.dart';
 import '../../services/client_write_interceptor.dart';
 import '../widgets/enhanced_components.dart';
+import 'parties/party_data_gate.dart';
 import 'party_statement_screen.dart';
 import '../../core/constants/app_constants.dart';
 import 'widgets/dialogs/party_edit_dialog.dart';
@@ -115,6 +116,10 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
   }
 
   Future<void> _exportTemplate() async {
+    if (!await ensurePartyDataAccess(ref, context, PartyDataAction.export,
+        isSupplier: false)) {
+      return;
+    }
     final service = ref.read(excelServiceProvider);
     final path = await service.exportPartiesTemplate(false);
     if (path != null && mounted) {
@@ -128,6 +133,10 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
   }
 
   Future<void> _importData() async {
+    if (!await ensurePartyDataAccess(ref, context, PartyDataAction.import,
+        isSupplier: false)) {
+      return;
+    }
     final service = ref.read(excelServiceProvider);
     final result = await service.importParties(false);
     if (mounted) {

@@ -20,8 +20,8 @@ Widget buildMaskedAmountKpiCard({
         color: color,
         style: KpiStyle.gradient,
       );
-  return PermissionGuard(
-    permission: PermissionCodes.salesAmountsView,
+  return PermissionGuard.allOf(
+    allOf: kSalesFiguresCodes,
     fallback: card(kMaskedValuePlaceholder),
     child: card(value),
   );

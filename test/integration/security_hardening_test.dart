@@ -183,8 +183,8 @@ void main() {
     });
   });
 
-  group('S-04 إعادة إنشاء admin عبر API', () {
-    test('admin المُعاد إنشاؤه يُجبَر على تغيير كلمة المرور', () async {
+  group('S-04 / SEC-001: no admin/admin re-creation through the API', () {
+    test('a missing admin is NOT silently re-created (audit SEC-001)', () async {
       ApiAuthMiddleware.setToken('bearer-xyz');
       final db = AppDatabase.forTesting();
       addTearDown(() async {
@@ -207,8 +207,8 @@ void main() {
       final admin = await (db.select(db.users)
             ..where((u) => u.username.equals('admin')))
           .getSingleOrNull();
-      expect(admin, isNotNull, reason: 'المسار الاحتياطي يعيد إنشاءه');
-      expect(admin!.forcePasswordChange, isTrue);
+      expect(admin, isNull,
+          reason: 'a known-password system admin must never be auto-created');
     });
   });
 }

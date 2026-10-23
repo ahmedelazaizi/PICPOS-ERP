@@ -30,7 +30,13 @@ class ApiSessionToken {
   // أي قيمة مرتبطة بالعلامة: مفتاح التوقيع مشتق منه، فتغييره بيبطّل كل
   // جلسات المستخدمين القائمة فوراً. يفضل 'UralCash' مهما كانت العلامة.
   static const String _salt = 'UralCash-Session-v1';
-  static const Duration _ttl = Duration(days: 30);
+  // SEC-003: كانت 30 يوماً. 12 ساعة + إعادة السكّ التلقائية من العميل
+  // (ServerProxy يحتفظ بالإثبات في الذاكرة) + إبطال فوري عند التعطيل/القفل/
+  // تغيير كلمة المرور (revokeUser) وفحص is_active/is_locked في كل طلب.
+  static const Duration _ttl = Duration(hours: 12);
+
+  /// مدّة الرموز القديمة (قبل iat) — لاشتقاق وقت إصدارها من exp.
+  static const Duration _legacyTtl = Duration(days: 30);
 
   /// Server-only HMAC key. NEVER sent to a client. Null until the server calls
   /// [deriveKey] at startup — [verify] returns null while unset (fail-closed).
@@ -92,7 +98,7 @@ class ApiSessionToken {
     final now = nowMs ?? DateTime.now().millisecondsSinceEpoch;
     final exp = now + _ttl.inMilliseconds;
     final payload =
-        base64Url.encode(utf8.encode(jsonEncode({'uid': userId, 'exp': exp})));
+        base64Url.encode(utf8.encode(jsonEncode({'uid': userId, 'exp': exp, 'iat': now})));
     return '$payload.${_sign(payload)}';
   }
 
@@ -118,6 +124,10 @@ class ApiSessionToken {
       if (uid is! int || uid <= 0 || exp is! int) return null;
       final now = nowMs ?? DateTime.now().millisecondsSinceEpoch;
       if (now >= exp) return null;
+      final iatRaw = map['iat'];
+      final iat = iatRaw is int ? iatRaw : exp - _legacyTtl.inMilliseconds;
+      final revokedAt = _userRevokedAtMs[uid];
+      if (revokedAt != null && iat <= revokedAt) return null;
       return uid;
     } catch (_) {
       return null;

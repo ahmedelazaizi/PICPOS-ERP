@@ -66,18 +66,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
                     tr('التاريخ'),
                     (invoice.createdAt ?? invoice.invoiceDate).toString().substring(0, 10),
                   ),
-                  _detailRow(
-                    tr('المجموع الفرعي'),
-                    invoice.subtotal.toStringAsFixed(AppConstants.decimalPlaces),
-                  ),
-                  _detailRow(tr('الخصم'), invoice.discountAmount.toStringAsFixed(AppConstants.decimalPlaces)),
-                  _detailRow(tr('الضريبة'), invoice.taxAmount.toStringAsFixed(AppConstants.decimalPlaces)),
-                  _detailRow(tr('الإجمالي'), invoice.total.toStringAsFixed(AppConstants.decimalPlaces)),
-                  _detailRow(tr('المدفوع'), invoice.paid.toStringAsFixed(AppConstants.decimalPlaces)),
-                  _detailRow(
-                    tr('المتبقي'),
-                    (invoice.total - invoice.paid).toStringAsFixed(AppConstants.decimalPlaces),
-                  ),
+                  SalesInvoiceTotalsBlock(invoice: invoice),
                   _detailRow(tr('الحالة'), invoice.status.name),
                   // Branch / Warehouse / Cost center context — resolves
                   // branch via warehouse FK so admin viewing a server-side
@@ -110,7 +99,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
                   const Divider(height: 24),
                   
                   // Margin Analysis
-                  Consumer(
+                  SalesInvoiceMarginGate(child: Consumer(
                     builder: (context, ref, child) {
                       final analysisStream = ref.watch(invoiceProfitAnalysisStreamProvider(invoice.id!));
                       return analysisStream.when(
@@ -128,7 +117,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
                         error: (_, _) => const SizedBox.shrink(),
                       );
                     },
-                  ),
+                  )),
 
                    Text(
                     tr('الأصناف:'),
@@ -141,35 +130,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
                       style: const TextStyle(color: AppColors.textMuted),
                     )
                   else
-                    DataTable(
-                      columnSpacing: 20,
-                      columns:  [
-                        DataColumn(label: Text(tr('الصنف'))),
-                        DataColumn(label: Text(tr('الوحدة'))),
-                        DataColumn(label: Text(tr('الكمية'))),
-                        DataColumn(label: Text(tr('السعر'))),
-                        DataColumn(label: Text(tr('الإجمالي'))),
-                      ],
-                      rows: items
-                          .map(
-                            (item) => DataRow(
-                              cells: [
-                                DataCell(Text(item.displayName)),
-                                DataCell(Text(item.item.unitName ?? tr('قطعة'))),
-                                DataCell(
-                                  Text(item.item.quantity.toStringAsFixed(AppConstants.decimalPlaces)),
-                                ),
-                                DataCell(
-                                  Text(item.item.unitPrice.toStringAsFixed(AppConstants.decimalPlaces)),
-                                ),
-                                DataCell(
-                                  Text(item.item.total.toStringAsFixed(AppConstants.decimalPlaces)),
-                                ),
-                              ],
-                            ),
-                          )
-                          .toList(),
-                    ),
+                    SalesInvoiceItemsTable(items: [for (final i in items) InvoiceItemRow(name: i.displayName, unit: i.item.unitName, quantity: i.item.quantity, unitPrice: i.item.unitPrice, total: i.item.total)]),
                 ],
               ),
             ),

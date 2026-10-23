@@ -9,7 +9,15 @@ extension ApiHandlerDirectoryGets on ApiHandler {
 
   Future<Response> _getParties(Request request) async {
     try {
-      final parties = await _db.select(_db.parties).get();
+      // SEC-008: branch scope + no balances without a verified identity.
+      final hasIdentity = ApiUserCtx.userIdOf(request) != null;
+      final scope = await _resolveBranchScope(request);
+      final parties = (await _db.select(_db.parties).get())
+          .where((p) =>
+              scope == null ||
+              PartyVisibility.visible(
+                  isGlobal: p.isGlobal, branchIds: p.branchIds, scope: scope))
+          .toList();
       // Include `code`, `globalId`, `accountId`, `groupId` so the client's
       // sync strategy can dedupe by `globalId` and reflect the authoritative
       // code that the server generated (e.g. CUST-00001). Dropping these
@@ -28,8 +36,8 @@ extension ApiHandlerDirectoryGets on ApiHandler {
               'isSupplier': p.isSupplier,
               'isDeliveryCompany': p.isDeliveryCompany,
               'isFavorite': p.isFavorite,
-              'balance': p.balance,
-              'creditLimit': p.creditLimit,
+              if (hasIdentity) 'balance': p.balance,
+              if (hasIdentity) 'creditLimit': p.creditLimit,
               'paymentTermsDays': p.paymentTermsDays,
               'fixedDiscount': p.fixedDiscount,
               'priceLevel': p.priceLevel,

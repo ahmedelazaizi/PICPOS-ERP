@@ -15,7 +15,6 @@ import '../../../core/logging/diagnostic_logger.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../services/dual_approval_service.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/utils/number_utils.dart';
 import '../../../core/utils/financial_utils.dart';
 import '../../../core/widgets/app_state_view.dart';
 
@@ -60,6 +59,7 @@ import '../../../domain/models/distribution_model.dart';
 import '../../../web/web_write_guard.dart';
 import 'permanent_customer_dialog.dart';
 import '../../widgets/any_permission_masked_text.dart';
+import '../../widgets/sales_invoice_figures.dart';
 
 // ── Part files (منسوخة حرفياً من lib/presentation/screens/widgets/sales_invoices/
 // — الشاشة الأصل `part of _SalesInvoicesScreenState` خاصة فما ينفعش تتعمل

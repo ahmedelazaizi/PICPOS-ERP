@@ -60,6 +60,8 @@ app.*.map.json
 # والملفُّ كان يسقط بـ`*.ps1` أعلاه — أي يقرأ المشغِّلُ اسمَ أداةٍ غيرِ
 # موجودة. وهذا **عينُ العطل** الذي كُتب البندُ لإصلاحه.
 !scripts/*.ps1
+# tool/prune_picpos_bundle.ps1 is called by build_picpos.bat and CI; it must be tracked.
+!tool/*.ps1
 tmp_*
 *.tmp
 
@@ -213,3 +215,11 @@ tools/postgresql-*-windows-x64.exe
 *.keystore
 key.properties
 google-services.json
+
+# Audit SEC-012: operational logs / scratch output must never be committed
+picpos_login_log_server.txt
+*login_log*.txt
+all_*.txt
+font_*.txt
+orig5.txt
+flutter_*.log

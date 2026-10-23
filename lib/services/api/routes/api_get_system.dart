@@ -12,6 +12,9 @@ extension ApiHandlerSystemGets on ApiHandler {
     return _json({
       'status': 'ok',
       'version': AppConstants.appVersion,
+      // SYNC-001: client-schema handshake (not secret).
+      'schemaVersion': _db.schemaVersion,
+      'minClientSchema': ClientSchemaGate.minSupported,
       'serverTime': DateTime.now().toIso8601String(),
       'uptime': ns.serverStartTime != null
           ? DateTime.now().difference(ns.serverStartTime!).inSeconds

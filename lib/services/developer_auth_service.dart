@@ -29,6 +29,7 @@
 
 import 'package:flutter/foundation.dart';
 
+import '../core/config/support_env.dart';
 import '../data/repositories/settings_repository_cached.dart';
 import 'api/server_login_throttle.dart';
 import 'audit_log.dart';
@@ -157,7 +158,7 @@ class DeveloperAuthService {
     required DeveloperAuthService service,
   }) async {
     final fromCli = args.contains('--reset-dev-password');
-    final fromEnv = env['URAL_RESET_DEV_PASSWORD'] == '1';
+    final fromEnv = supportEnvFlag(env, 'RESET_DEV_PASSWORD');
     if (!fromCli && !fromEnv) return;
     await service.clear();
     debugPrint('[DEV-AUTH] recovery flag observed — developer password cleared');

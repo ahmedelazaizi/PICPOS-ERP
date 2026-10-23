@@ -148,9 +148,10 @@ void main() {
         );
 
         final guard = guardOf(tester);
-        if (guard.anyOf != null) {
-          expect(guard.anyOf, contains(PermissionCodes.salesView));
-          expect(guard.anyOf, contains(PermissionCodes.salesAmountsView));
+        // AUTHZ-004: كلا الكودين معاً (sales_view وحدَه لا يكشف).
+        if (guard.allOf != null) {
+          expect(guard.allOf, contains(PermissionCodes.salesView));
+          expect(guard.allOf, contains(PermissionCodes.salesAmountsView));
         } else {
           expect(guard.permission, PermissionCodes.salesAmountsView);
         }

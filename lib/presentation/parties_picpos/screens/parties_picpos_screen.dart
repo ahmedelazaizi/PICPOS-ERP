@@ -41,6 +41,7 @@ import '../dialogs/add_party_dialog_picpos.dart';
 import '../../party_statement_picpos/screens/party_statement_picpos_screen.dart';
 import '../../treasury/widgets/receipt_voucher_dialog.dart';
 import '../../treasury/widgets/payment_voucher_dialog.dart';
+import '../../screens/parties/party_data_gate.dart';
 import '../../screens/parties/party_dialogs.dart';
 import '../../screens/parties/party_groups_screen.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
@@ -162,12 +163,7 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
       icon: PhosphorIconsBold.usersThree,
       headerActions: [
         OutlinedButton.icon(
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const PartyStatementPicposScreen(),
-            ),
-          ),
+          onPressed: () => _openHeaderStatement(supplier: false),
           icon: const Icon(PhosphorIconsBold.user, size: 18),
           label:  Text(tr('كشف حساب عميل')),
           style: OutlinedButton.styleFrom(
@@ -176,12 +172,7 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
         ),
         const SizedBox(width: 8),
         OutlinedButton.icon(
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const PartyStatementPicposScreen(isSupplier: true),
-            ),
-          ),
+          onPressed: () => _openHeaderStatement(supplier: true),
           icon: const Icon(PhosphorIconsBold.truck, size: 18),
           label:  Text(tr('كشف حساب مورد')),
           style: OutlinedButton.styleFrom(
@@ -346,6 +337,21 @@ class _PartiesPicposScreenState extends ConsumerState<PartiesPicposScreen> {
   // والحارسُ `party == null` جديدٌ: خريطةُ المعرّفات قد لا تجد صفّاً لو بُثّت
   // قائمةٌ أحدثُ بين الرسم والنقر. الصمتُ هنا أصحُّ من `!` تنهار.
   // ═══════════════════════════════════════════════════════════════════════
+
+  /// AUTHZ-003: the header statement buttons need the screen's view code.
+  Future<void> _openHeaderStatement({required bool supplier}) async {
+    if (!await ensurePartyDataAccess(ref, context, PartyDataAction.statement,
+        isSupplier: supplier)) {
+      return;
+    }
+    if (!mounted) return;
+    unawaited(Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PartyStatementPicposScreen(isSupplier: supplier),
+      ),
+    ));
+  }
 
   Future<void> _openStatement(Party? party) async {
     if (party == null) return;

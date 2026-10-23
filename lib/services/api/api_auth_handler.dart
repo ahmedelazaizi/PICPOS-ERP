@@ -60,6 +60,15 @@ class ApiAuthHandler extends ApiHandlerBase {
         lc.contains('مسؤول');
   }
 
+  /// 403 returned instead of a session when `force_password_change` is set.
+  Response _passwordChangeRequired() => jsonResponse(
+        {
+          'error': 'password change required',
+          'code': 'password_change_required',
+        },
+        statusCode: 403,
+      );
+
   /// `POST /api/auth/verify-admin`
   ///
   /// Body: `{ "username": "...", "password": "..." }`
@@ -106,6 +115,10 @@ class ApiAuthHandler extends ApiHandlerBase {
       // pairing) — clear the failed-attempt counter so a legitimate operator
       // is never locked out by their own successful logins.
       ServerLoginThrottle.recordSuccess(throttleKey);
+
+      // SEC-002: a default/temporary-credential account must change its
+      // password first — it never gets to prove "admin" over the API.
+      if (result.user.forcePasswordChange) return _passwordChangeRequired();
 
       final roleName = result.role?.name;
       if (!_roleIsAdmin(roleName)) {
@@ -199,6 +212,10 @@ class ApiAuthHandler extends ApiHandlerBase {
         return errorResponse('Invalid credentials', statusCode: 401);
       }
       ServerLoginThrottle.recordSuccess(throttleKey);
+
+      // SEC-002: no session for accounts still on default/temporary
+      // credentials. The change must happen on the host first.
+      if (result.user.forcePasswordChange) return _passwordChangeRequired();
 
       final token = ApiSessionToken.mint(result.user.id);
       return jsonResponse({

@@ -85,8 +85,15 @@ void main() {
         canSeeScreenFigures({'pos_access', 'sales_create'}, ScreenId.salesInvoices),
         isFalse,
       );
+      // AUTHZ-004: sales_view وحدَه لا يكشف أرقامَ الفواتير — يلزم معه
+      // sales_amounts_view.
       expect(
         canSeeScreenFigures({'pos_access', 'sales_view'}, ScreenId.salesInvoices),
+        isFalse,
+      );
+      expect(
+        canSeeScreenFigures(
+            {'pos_access', 'sales_view', 'sales_amounts_view'}, ScreenId.salesInvoices),
         isTrue,
       );
     });

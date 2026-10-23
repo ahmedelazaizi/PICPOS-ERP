@@ -441,9 +441,8 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                           // الشرط `const` فبيتحسم وقت الترجمة والفرع التاني
                           // بيتشال من الـ snapshot أصلاً. وقيمة UralCash
                           // متروكة بالحرف عشان شكله ما يتغيّرش.
-                          Brand.isPicPos
-                              ? tr('مرحباً بك في {p0}', {'p0': Brand.name})
-                              : tr('مرحباً بك في URAL-ERP'),
+                          tr('مرحباً بك في {p0}',
+                              {'p0': Brand.isPicPos ? Brand.name : 'URAL-ERP'}),
                           style: TextStyle(
                             fontSize: 21,
                             fontWeight: FontWeight.bold,

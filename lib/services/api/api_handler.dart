@@ -24,11 +24,12 @@ import 'package:shelf_router/shelf_router.dart';
 import 'package:drift/drift.dart';
 import '../../data/database/database.dart';
 import '../network_service.dart';
-import '../security_service.dart';
 import '../sync/strategies/setting_sync_strategy.dart'
     show isServerSecretSettingKey;
 import 'api_auth_middleware.dart';
 import 'api_user_context.dart';
+import 'client_schema_gate.dart';
+import 'party_visibility.dart';
 import 'api_handler_base.dart' show WsSubscriberInfo, ApiHandlerBase;
 import 'api_sales_handler.dart';
 import 'api_data_handler.dart';

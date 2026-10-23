@@ -27,10 +27,18 @@ const screenFigurePermissionCodes = <ScreenId, List<String>>{
   ScreenId.eInvoice: ['einvoice_view'],
 };
 
+/// Screens whose figures need EVERY listed code (AUTHZ-004): the screen's view
+/// permission AND a dedicated amounts permission that used to gate the figures
+/// on its own before `d2272da0`. `sales_view` alone must not reveal them.
+const screenFigureAllOfCodes = <ScreenId, List<String>>{
+  ScreenId.salesInvoices: ['sales_view', 'sales_amounts_view'],
+};
+
 /// Whether [permissions] may see monetary figures on [screen].
 ///
 /// System administrators bypass the registry; all other users need either the
-/// screen's primary permission or an explicitly registered figure permission.
+/// screen's primary permission or an explicitly registered figure permission
+/// (or, for screens in [screenFigureAllOfCodes], all of the listed codes).
 bool canSeeScreenFigures(
   Iterable<String> permissions,
   ScreenId screen, {
@@ -38,8 +46,19 @@ bool canSeeScreenFigures(
 }) {
   if (bypass) return true;
   final held = permissions is Set<String> ? permissions : permissions.toSet();
+  final allOf = screenFigureAllOfCodes[screen];
+  if (allOf != null) return allOf.every(held.contains);
   return screenFigurePermissionCodes[screen]?.any(held.contains) ?? false;
 }
+
+/// RPT-006: the products template carries cost AND sale prices and doubles as
+/// the import template, so it cannot be exported "masked" without corrupting a
+/// re-import. It therefore requires both figure codes (or the admin bypass).
+bool canExportProductFigures(Iterable<String> permissions,
+        {bool bypass = false}) =>
+    bypass ||
+    (permissions.contains('products_price_view') &&
+        permissions.contains('products_cost_view'));
 
 /// A stable placeholder used by non-widget figure formatters and exports.
 const maskedFinancialFigure = '—';

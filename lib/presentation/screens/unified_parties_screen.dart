@@ -11,6 +11,7 @@ import '../../data/providers/providers.dart';
 import 'party_statement_screen.dart';
 import '../treasury/widgets/receipt_voucher_dialog.dart';
 import '../treasury/widgets/payment_voucher_dialog.dart';
+import 'parties/party_data_gate.dart';
 import 'parties/party_helpers.dart';
 import 'parties/party_dialogs.dart';
 import 'parties/party_groups_screen.dart';
@@ -131,12 +132,20 @@ class _UnifiedPartiesScreenState extends ConsumerState<UnifiedPartiesScreen> {
         ),
         const Spacer(),
         OutlinedButton.icon(
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const PartyStatementScreen(isCustomer: true),
-            ),
-          ),
+          onPressed: () async {
+            if (!await ensurePartyDataAccess(
+                ref, context, PartyDataAction.statement,
+                isSupplier: false)) {
+              return;
+            }
+            if (!context.mounted) return;
+            unawaited(Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const PartyStatementScreen(isCustomer: true),
+              ),
+            ));
+          },
           icon: const Icon(PhosphorIconsBold.user, size: 18),
           label:  Text(tr('كشف حساب عميل')),
           style: OutlinedButton.styleFrom(
@@ -145,12 +154,20 @@ class _UnifiedPartiesScreenState extends ConsumerState<UnifiedPartiesScreen> {
         ),
         const SizedBox(width: 8),
         OutlinedButton.icon(
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const PartyStatementScreen(isSupplier: true),
-            ),
-          ),
+          onPressed: () async {
+            if (!await ensurePartyDataAccess(
+                ref, context, PartyDataAction.statement,
+                isSupplier: true)) {
+              return;
+            }
+            if (!context.mounted) return;
+            unawaited(Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const PartyStatementScreen(isSupplier: true),
+              ),
+            ));
+          },
           icon: const Icon(PhosphorIconsBold.truck, size: 18),
           label:  Text(tr('كشف حساب مورد')),
           style: OutlinedButton.styleFrom(

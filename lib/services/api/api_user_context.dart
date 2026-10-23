@@ -72,6 +72,15 @@ class ApiUserCtx {
         headers: const {'content-type': 'application/json'},
       );
     }
+    // SEC-003: a stateless token must not outlive its account. Deactivated,
+    // locked or deleted users lose API access on the very next request.
+    if (!await isUserLive(db, userId)) {
+      return Response(
+        401,
+        body: '{"error":"Session no longer valid"}',
+        headers: const {'content-type': 'application/json'},
+      );
+    }
     // Bootstrap admins use the same permission path as every other user;
     // critical financial codes remain explicit for segregation of duties.
     final ok = await db.userHasPermission(userId, code);
@@ -83,6 +92,15 @@ class ApiUserCtx {
       );
     }
     return null;
+  }
+
+  /// SEC-003: whether [userId] exists, is active and is not locked.
+  static Future<bool> isUserLive(AppDatabase db, int userId) async {
+    final row = await (db.select(db.users)
+          ..where((u) => u.id.equals(userId))
+          ..limit(1))
+        .getSingleOrNull();
+    return row != null && row.isActive && !row.isLocked;
   }
 
   /// يحسم **من يفعل** الطلبَ: هويّةُ الجلسة هي المرجع، وادّعاءُ الجسم

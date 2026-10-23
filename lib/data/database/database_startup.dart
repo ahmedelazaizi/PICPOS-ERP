@@ -645,11 +645,8 @@ extension DatabaseStartup on AppDatabase {
         if (rows.isNotEmpty) {
           final salt = rows.first.data['password_salt']?.toString() ?? '';
           final hash = rows.first.data['password_hash']?.toString() ?? '';
-          // Argon2-aware verify. New users get Argon2id hashes (passwordSalt
-          // empty, salt embedded in PHC string), so the legacy
-          // verifyPassword(...) which assumes PBKDF2 would always report a
-          // freshly-seeded admin as "broken" — triggering a reset that
-          // undoes the seeder. Use the unified verifier instead.
+          // Argon2-aware verify (PBKDF2-only verifyPassword would report a
+          // freshly-seeded Argon2id admin as "broken" and undo the seeder).
           final verifyResult = await SecurityService.verifyPasswordFull(
               'admin', salt, hash);
           final ok = verifyResult.verified;
@@ -661,7 +658,8 @@ extension DatabaseStartup on AppDatabase {
             final boolFalse = sqlBool(false);
             await customStatement(
               'UPDATE users SET password_hash = ?, password_salt = ?, '
-              'is_active = $boolTrue, is_locked = $boolFalse WHERE username = ?',
+              'is_active = $boolTrue, is_locked = $boolFalse, '
+              'force_password_change = $boolTrue WHERE username = ?',
               [newHash, newSalt, 'admin'],
             );
             debugPrint('[Startup] ✅ Post-seed admin password reset applied');
@@ -859,7 +857,8 @@ extension DatabaseStartup on AppDatabase {
           // Use sqlBool() so the same statement works on both backends.
           final boolTrue = sqlBool(true);
           await customStatement(
-            'UPDATE users SET password_hash = ?, password_salt = ?, is_active = $boolTrue WHERE username = ?',
+            // SEC-011: force rotation of the healed known password.
+            'UPDATE users SET password_hash = ?, password_salt = ?, is_active = $boolTrue, force_password_change = $boolTrue WHERE username = ?',
             [hash, salt, 'admin'],
           );
           logLines.add('Wrote via raw SQL: hash.len=${hash.length}, salt.len=${salt.length}');

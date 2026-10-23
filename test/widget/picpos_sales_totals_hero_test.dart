@@ -91,7 +91,10 @@ void main() {
   group('بطاقةُ إجماليات المبيعات الرئيسيّة', () {
     testWidgets('بالصلاحية — المعادلةُ الأربعةُ كاملةً بأرقامها',
         (tester) async {
-      await pump(tester, const [PermissionCodes.salesAmountsView]);
+      await pump(tester, const [
+        PermissionCodes.salesView,
+        PermissionCodes.salesAmountsView,
+      ]);
 
       expect(find.text(money(total)), findsWidgets,
           reason: 'الإجماليُّ يظهر — كبيراً وفي شريط المعادلة');
@@ -106,11 +109,12 @@ void main() {
     testWidgets('بلا صلاحية — لا مبلغَ ولا نسبةَ تُفشيه', (tester) async {
       await pump(tester, const []);
 
-      // القرار (2026-10): sales_view أو sales_amounts_view يكشف الأرقام.
+      // القرار (AUTHZ-004، 2026-10): الأرقام تتطلّب sales_view **و**
+      // sales_amounts_view معاً — الأخير بوّابةٌ أشدُّ كانت مستقلّةً قبل d2272da0.
       expect(
         tester
             .widget<PermissionGuard>(find.byType(PermissionGuard).first)
-            .anyOf,
+            .allOf,
         containsAll([PermissionCodes.salesView, PermissionCodes.salesAmountsView]),
       );
 
@@ -125,6 +129,18 @@ void main() {
       expect(find.text('صافي المبيعات'), findsOneWidget);
       expect(find.text('المحصّل'), findsOneWidget);
     });
+
+    for (final perms in [
+      const [PermissionCodes.salesView],
+      const [PermissionCodes.salesAmountsView],
+    ]) {
+      testWidgets('AUTHZ-004: كودٌ واحدٌ وحدَه ($perms) لا يكشف الأرقام',
+          (tester) async {
+        await pump(tester, perms);
+        expect(find.text(money(total)), findsNothing);
+        expect(find.text(money(total - returns)), findsNothing);
+      });
+    }
 
     // شريطُ النِّسَب السفليُّ يرسم **عرضَه** من نفس الأرقام. فحجبُ النصِّ
     // وحدَه لا يكفي: مسطرةٌ على الشاشة تقرأ ٥٠٪ من طول القطعة الزرقاء كما
@@ -142,7 +158,10 @@ void main() {
 
     testWidgets('بالصلاحية — الشريطُ يرسم القطعَ فعلاً (ضابطٌ للاختبار السابق)',
         (tester) async {
-      await pump(tester, const [PermissionCodes.salesAmountsView]);
+      await pump(tester, const [
+        PermissionCodes.salesView,
+        PermissionCodes.salesAmountsView,
+      ]);
 
       // ضابط: لولاه لمرّ اختبارُ الحجب على شريطٍ لا يُرسم أصلاً.
       // ‏٥٠٪ محصَّل و٢٠٪ مرتجع من عرضٍ ٤٣٦ ⇒ ٢١٨ و٨٧٫٢ تقريباً.

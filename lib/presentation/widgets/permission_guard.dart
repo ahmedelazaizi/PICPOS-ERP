@@ -5,8 +5,10 @@ import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/permissions/manager_approval_rules.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../../data/providers/providers.dart';
+import '../../services/login_rate_limiter.dart';
 import '../../services/manager_approval_cache.dart';
 
 /// النص اللي بيتعرض بدل المبلغ لما صلاحية العرض ناقصة.
@@ -601,6 +603,16 @@ class _ManagerOverrideDialogState
       return;
     }
 
+    // SEC-009: bounded attempts for the override dialog, per requesting user.
+    final limitKey = 'override:${ref.read(authProvider).user?.id}';
+    final locked = LoginRateLimiter.getLockoutRemaining(limitKey);
+    if (locked != null) {
+      setState(() => _errorMessage = tr(
+          'محاولات فاشلة كثيرة — أعد المحاولة بعد {p0} دقيقة',
+          {'p0': locked.inMinutes + 1}));
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -613,6 +625,7 @@ class _ManagerOverrideDialogState
       final userWithRole = await authRepo.authenticateByPasswordOrCard(password);
 
       if (userWithRole == null) {
+        LoginRateLimiter.recordFailure(limitKey);
         setState(() {
           _isLoading = false;
           _errorMessage = tr('كلمة المرور غير صحيحة');
@@ -625,31 +638,21 @@ class _ManagerOverrideDialogState
         userWithRole.user.id,
       );
 
-      // SYSTEM ADMIN BYPASS: مدير النظام لديه صلاحية كاملة
-      // EXCEPT for critical financial operations — segregation of duties
-      final isSystemAdmin =
-          userPermissions.contains('system_admin') ||
-          userPermissions.contains('*');
-      final isCriticalOp =
-          PermissionCodes.criticalFinancialOps.contains(widget.permission);
+      // AUTHZ-001 four-eyes: approver = ANOTHER user with an unconditional
+      // grant ([ManagerApprovalRules]).
+      final approverId = userWithRole.user.id;
+      final requesterId = ref.read(authProvider).user?.id;
+      final approved = ManagerApprovalRules.canApprove(
+        approverId: approverId,
+        requesterId: requesterId,
+        approverPermissions: userPermissions,
+        permission: widget.permission,
+      );
 
-      if ((isSystemAdmin && !isCriticalOp) || userPermissions.contains(widget.permission)) {
-        // Success! An admin has authorized this SINGLE action.
-        //
-        // Do NOT call `authProvider.notifier.elevate(...)` here — that used
-        // to leak the authorization into session-wide state, so every
-        // subsequent `PermissionGuard` in the tree started passing silently
-        // until the user logged out. The contract of this dialog is pure:
-        // validate the password, return `true`, and let the caller run
-        // exactly one action. Next gated tap triggers a fresh prompt.
-        //
-        // ManagerApprovalCache: stamp this permission with a 60-second,
-        // single-use approval token. The downstream defence-in-depth
-        // checks (e.g. `_userHasPermissionFresh` inside
-        // `_processPaymentAndSave`) consume the token so the cashier
-        // doesn't get prompted a SECOND time for the same logical action
-        // (button → payment → save). The token is consumed on first
-        // read, so it can't authorise any later, distinct action.
+      if (approved) {
+        // Authorizes this SINGLE action only: no session-wide `elevate`. The
+        // 60s single-use ManagerApprovalCache token spares a second prompt for
+        // the same logical action (button → payment → save).
         ManagerApprovalCache.instance
             .grant(widget.permission, scope: widget.scope);
         if (mounted) {
@@ -659,7 +662,9 @@ class _ManagerOverrideDialogState
         setState(() {
           _isLoading = false;
           _errorMessage =
-              tr('المستخدم "{p0}" ليس لديه صلاحية لهذا الإجراء', {'p0': userWithRole.user.displayName});
+              approverId == requesterId
+                  ? tr('لا يمكنك الموافقة على إجراءٍ طلبتَه بنفسك — يلزم مسؤولٌ آخر')
+                  : tr('المستخدم "{p0}" ليس لديه صلاحية لهذا الإجراء', {'p0': userWithRole.user.displayName});
         });
       }
     } catch (e) {

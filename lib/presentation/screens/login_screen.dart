@@ -895,8 +895,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   /// Vendor contact strip pinned at the bottom — phone, website, email pills
-  /// + social icons + © line. Mirrors the "About" panel in the Settings
-  /// dialog so the dev contact info has a consistent home.
+  /// + social icons + © line (same data as Settings > About).
   ///
   /// Values come from [Brand]; a brand that declares none renders nothing at
   /// all. Printing another product's support number on this screen is worse
@@ -913,7 +912,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             color: Colors.white.withValues(alpha: 0.18),
           ),
           Text(
-            tr('تطوير: Ural Technology'),
+            tr('تطوير: {p0}', {'p0': Brand.vendorName}),
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.92),
               fontWeight: FontWeight.w700,
@@ -928,18 +927,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             children: [
               _contactPill(
                 icon: PhosphorIconsBold.phone,
-                label: '+962797990989',
-                onTap: () => _launch('tel:+962797990989'),
+                label: Brand.vendorPhone,
+                onTap: () => _launch('tel:${Brand.vendorPhone}'),
               ),
               _contactPill(
                 icon: PhosphorIconsBold.globe,
-                label: 'www.uraljo.com',
-                onTap: () => _launch('https://www.uraljo.com'),
+                label: Brand.vendorWebsite,
+                onTap: () => _launch('https://${Brand.vendorWebsite}'),
               ),
               _contactPill(
                 icon: PhosphorIconsBold.envelope,
-                label: 'info@uraljo.com',
-                onTap: () => _launch('mailto:info@uraljo.com'),
+                label: Brand.vendorEmail,
+                onTap: () => _launch('mailto:${Brand.vendorEmail}'),
               ),
             ],
           ),
@@ -950,25 +949,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               _socialDot(
                 icon: PhosphorIconsBold.whatsappLogo,
                 color: const Color(0xFF25D366),
-                onTap: () => _launch('https://wa.me/962797990989'),
+                onTap: () => _launch(Brand.vendorWhatsappUrl),
               ),
               const SizedBox(width: 10),
               _socialDot(
                 icon: PhosphorIconsBold.instagramLogo,
                 color: const Color(0xFFE4405F),
-                onTap: () => _launch('https://instagram.com/uraltechnology'),
+                onTap: () => _launch(Brand.vendorInstagramUrl),
               ),
               const SizedBox(width: 10),
               _socialDot(
                 icon: PhosphorIconsBold.facebookLogo,
                 color: const Color(0xFF1877F2),
-                onTap: () => _launch('https://facebook.com/uraltechnology'),
+                onTap: () => _launch(Brand.vendorFacebookUrl),
               ),
             ],
           ),
           const SizedBox(height: 10),
           Text(
-            '© Ural Technology ${DateTime.now().year}',
+            '© ${Brand.vendorName} ${DateTime.now().year}',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.65),
               fontSize: 11,

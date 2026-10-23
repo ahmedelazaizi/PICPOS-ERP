@@ -8,7 +8,9 @@ import '../core/logging/diagnostic_logger.dart';
 import 'conflict_resolution_service.dart';
 import 'delta_pull_column_filter.dart';
 import 'id_namespace_service.dart';
-import 'security_service.dart';
+import 'api/client_schema_gate.dart';
+import 'delta_pull_failure_tracker.dart';
+import 'unusable_credential.dart';
 import 'server_proxy.dart';
 import 'sync_event_bus.dart';
 
@@ -565,8 +567,11 @@ class DeltaPullService {
       (branchScopedPullTables.contains(table) ||
           branchScopedMasterPullTables.contains(table));
 
+  final DeltaPullFailureTracker _pullFailures = DeltaPullFailureTracker();
+
   void initialize(AppDatabase db) {
     _db = db;
+    ClientSchemaGate.clientSchemaVersion = db.schemaVersion; // SYNC-001
     _blobSchema = null;
     _columnFilter.reset();
     ConflictResolutionService.instance.initialize(db);
@@ -653,6 +658,7 @@ class DeltaPullService {
       // next pull safely re-fetches from the same point (upserts are
       // idempotent).
       var totalApplied = 0;
+      _pullFailures.begin(table); // SYNC-002
       int? cursorTs;
       int? cursorId;
       int? serverTime;
@@ -753,7 +759,13 @@ class DeltaPullService {
         // فقط عن القاعدة، ومختبَر مباشرة بدل تخمينه من محتوى المجموعتين.
         final withhold = shouldWithholdWatermark(table,
             hasSessionToken: ServerProxy.instance.hasSessionToken());
-        if (!withhold) {
+        // SYNC-002: row failures hold the watermark (bounded).
+        final hold = _pullFailures.decide(table);
+        if (hold.forced) {
+          unawaited(DiagnosticLogger.log('SYNC-ALERT',
+              'DeltaPull $table: rows keep failing — watermark advanced anyway'));
+        }
+        if (!withhold && hold.advance) {
           await _saveWatermark(table, serverTime);
         }
       }
@@ -1136,6 +1148,7 @@ class DeltaPullService {
         applied = true;
       } catch (e) {
         debugPrint('[DeltaPull] in-place update $table local=$localId server=$serverId: $e');
+        _pullFailures.recordRowFailure(table); // SYNC-002
       }
       if (applied) await _resignInvoiceRow(table, localId);
       return;
@@ -1273,27 +1286,18 @@ class DeltaPullService {
             }
           }
 
-          // No usable local credentials — generate a temp password so login
-          // is possible. Username + "123" matches the convention used by
-          // UserSyncStrategy for the same scenario, keeping behavior
-          // consistent across the two sync paths.
+          // SEC-004: no usable local credentials — store an UNUSABLE random
+          // credential (same as UserSyncStrategy), never `<username>123`.
           if (hashToUse == null &&
               username != null &&
               username.isNotEmpty &&
               !username.startsWith('__dup_')) {
-            final tempPassword = '${username}123';
-            saltToUse = SecurityService.generateSalt();
-            hashToUse = await SecurityService.hashPasswordArgon2(tempPassword);
-            // ⚠️ الكلمة المؤقتة **متوقَّعة** (‏`<username>123`) وأسماء
-            //    المستخدمين بتتبعت في `GET /api/users` — يعني مش محتاجة كسر
-            //    أصلاً، بتتجرّب على شاشة الدخول على طول. Argon2 ما بيحلّش
-            //    التوقّع؛ ده بند مفتوح للمالك (التنصيب المؤقت المطلوب:
-            //    قفل الحساب لحد ما الخادم يبعت اعتماداً حقيقياً).
-            //    اللي اتقفل هنا: الكلمة نفسها ما بقتش بتتكتب في اللوج —
-            //    `debugPrint` بيروح لملف تشخيص على القرص.
+            final unusable = await UnusableCredential.mint();
+            saltToUse = unusable.salt;
+            hashToUse = unusable.hash;
             debugPrint('[DeltaPull] users id=${row['id']} '
-                'username="$username": no usable credentials — minted temp '
-                'password + forcePasswordChange=true');
+                'username="$username": no usable credentials — stored an '
+                'unusable credential + forcePasswordChange=true');
           }
 
           if (hashToUse != null && saltToUse != null) {
@@ -1326,6 +1330,7 @@ class DeltaPullService {
       applied = true;
     } catch (e) {
       debugPrint('[DeltaPull] upsert $table id=${row['id']}: $e');
+      _pullFailures.recordRowFailure(table); // SYNC-002
     }
 
     if (applied) await _resignInvoiceRow(table, localId ?? serverId);

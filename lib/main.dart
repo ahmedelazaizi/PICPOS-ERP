@@ -21,6 +21,7 @@ import 'core/i18n/locale_provider.dart';
 import 'core/i18n/tr.dart';
 import 'core/auth/admin_password_heal.dart';
 import 'core/config/brand.dart';
+import 'core/config/support_env.dart';
 import 'core/config/business_profile_provider.dart';
 import 'core/config/feature_key.dart';
 import 'core/config/industry_tables_policy.dart';
@@ -716,15 +717,12 @@ void main() async {
     // 1b. CLI / env recovery flag for the *admin* user password.
     //
     // Recovery scenarios:
-    //   * Fresh PostgreSQL server install where the seed reported success
-    //     but the admin user ended up with a broken salt/hash (rare — seen
-    //     when the provisioning transaction half-committed on a
-    //     connection hiccup).
+    //   * Fresh PostgreSQL install whose seed left a broken admin salt/hash.
     //   * Operator forgot the admin password or someone changed it.
     //
     // Recognised signals:
     //   * CLI arg   `--reset-admin-password`
-    //   * Env var   `URAL_RESET_ADMIN_PASSWORD=1`
+    //   * Env var   `<PREFIX>_RESET_ADMIN_PASSWORD=1` (support_env.dart)
     //
     // Behaviour: deletes any row where `username='admin'` and inserts a
     // fresh one with `username=admin`, `password=admin`, role = "مدير
@@ -735,14 +733,14 @@ void main() async {
       final args = Platform.executableArguments;
       final env = Platform.environment;
       final fromCli = args.contains('--reset-admin-password');
-      final fromEnv = env['URAL_RESET_ADMIN_PASSWORD'] == '1';
+      final fromEnv = supportEnvFlag(env, 'RESET_ADMIN_PASSWORD');
       // `--purge-users` is the nuclear option: wipe EVERY user row so the
       // next boot's self-heal + seeder run from scratch and create a
       // pristine admin/admin account. Use when `--reset-admin-password`
       // alone doesn't recover login (e.g. the users table has a
       // duplicate/corrupted admin row that the reset helper misses).
       final purgeUsers = args.contains('--purge-users') ||
-          env['URAL_PURGE_USERS'] == '1';
+          supportEnvFlag(env, 'PURGE_USERS');
 
       if (purgeUsers) {
         // Use print (stdout) so the message is visible in PowerShell on
@@ -794,7 +792,7 @@ void main() async {
     //
     // Recognised signals:
     //   * CLI arg `--reset-setup-wizard`
-    //   * Env var `URAL_RESET_SETUP_WIZARD=1`
+    //   * Env var `<PREFIX>_RESET_SETUP_WIZARD=1` (support_env.dart)
     //
     // Why this exists: an install can land in a stuck state where no
     // developer password is set (e.g. wizard never completed cleanly, or
@@ -818,7 +816,7 @@ void main() async {
       final args = Platform.executableArguments;
       final env = Platform.environment;
       final fromCli = args.contains('--reset-setup-wizard');
-      final fromEnv = env['URAL_RESET_SETUP_WIZARD'] == '1';
+      final fromEnv = supportEnvFlag(env, 'RESET_SETUP_WIZARD');
       if (fromCli || fromEnv) {
         debugPrint('[STARTUP] 🔑 --reset-setup-wizard observed — clearing setup flags + dev password');
         await sharedDb.customStatement(

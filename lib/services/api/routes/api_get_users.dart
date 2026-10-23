@@ -230,29 +230,20 @@ extension ApiHandlerUserGets on ApiHandler {
         return;
       }
 
-      // Genuinely missing — INSERT without forcing an id, letting the
-      // autoincrement sequence assign one. The default password is
-      // 'admin' so the operator can log in and rotate.
-      final salt = SecurityService.generateSalt();
-      final passwordHash = await SecurityService.hashPasswordArgon2('admin');
-      await _db.into(_db.users).insertOnConflictUpdate(
-            UsersCompanion.insert(
-              username: 'admin',
-              passwordHash: passwordHash,
-              passwordSalt: Value(salt),
-              displayName: 'مدير النظام',
-              roleId: const Value(1),
-              isActive: const Value(true),
-              isLocked: const Value(false),
-              // S-04: known password => must be rotated at first login.
-              forcePasswordChange: const Value(true),
-              defaultScreen: const Value('pos'),
-            ),
-          );
+      // SEC-001 (audit 2026-10-23): NEVER auto-create a known-password account.
+      // The old code inserted `admin`/`admin` with the system-admin role when no
+      // row was *named* `admin` — which happens as soon as the owner renames the
+      // built-in admin (id 1). The bootstrap admin is identified by id 1, not by
+      // its username: a renamed id-1 row is healthy and is left untouched. If the
+      // row is genuinely absent we only raise an alert; recovery is an explicit
+      // operator action (restore / reset), never a silent default credential.
       await DiagnosticLogger.log(
-        'SYNC-WARN',
-        'admin-self-heal triggered: inserted fresh admin row '
-            '(autoincrement id; no explicit id=1)',
+        'SECURITY',
+        id1Row != null
+            ? 'bootstrap admin renamed (id=1 present) — no admin account '
+                're-created'
+            : 'bootstrap admin (id=1) is missing — NOT re-creating a '
+                'default admin/admin account; restore or reset it explicitly',
       );
     } catch (e, stack) {
       // Worst case: log + continue. The materialize-set clause in

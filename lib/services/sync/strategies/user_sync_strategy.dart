@@ -2,7 +2,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart';
 import 'package:ural_erp/data/database/database.dart';
-import 'package:ural_erp/services/security_service.dart';
+import 'package:ural_erp/services/unusable_credential.dart';
 import 'package:ural_erp/services/sync/sync_strategy.dart';
 import 'package:ural_erp/services/sync_event_bus.dart';
 
@@ -126,14 +126,14 @@ class UserSyncStrategy extends SyncStrategy {
         pinToSave = servePin ?? deactivatedDuplicate.pin;
         debugPrint('[UserSync] Preserved password from offline duplicate for "$username"');
       } else {
-        // No password available anywhere — generate temporary
-        // ⚠️ متوقَّعة — شوف نفس التعليق في `delta_pull_service.dart`.
-        final tempPassword = '${username}123';
-        saltToSave = SecurityService.generateSalt();
-        hashToSave = await SecurityService.hashPasswordArgon2(tempPassword);
+        // SEC-004: no password anywhere — store an UNUSABLE random credential
+        // (never the guessable `<username>123`); a real one arrives later.
+        final unusable = await UnusableCredential.mint();
+        saltToSave = unusable.salt;
+        hashToSave = unusable.hash;
         pinToSave = servePin;
         debugPrint('[UserSync] New user "$username" synced without password — '
-            'temporary password set, forcePasswordChange enabled');
+            'unusable credential stored, forcePasswordChange enabled');
       }
 
       final forceChange = !serveCredsValid &&

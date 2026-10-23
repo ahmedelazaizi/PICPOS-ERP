@@ -998,12 +998,12 @@ class ExcelService {
             final existing = await partyRepo.getPartyByName(name, isSupplier);
 
             if (existing != null) {
+              // DATA-003: balance is ledger-backed — never overwritten here.
               await partyRepo.updateParty(
                 existing.copyWith(
                   phone: Value(phone),
                   address: Value(address),
                   taxId: Value(taxId),
-                  balance: openingBalance,
                 ),
               );
               updated++;
@@ -1046,7 +1046,6 @@ class ExcelService {
                   creditLimit: creditLimit,
                   fixedDiscount: fixedDiscount,
                   priceLevel: priceLevel,
-                  balance: openingBalance,
                 ),
               );
               updated++;
