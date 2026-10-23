@@ -1,0 +1,43 @@
+# Axis C: Test and check evidence
+
+- **Version under test:** `d69be1eafc7d82b924723dfdbb53960b7e33acdb` (branch `feat/tables-reservations-permissions`). HEAD was re-checked unchanged before writing.
+- **Artifact under test:** `D:\PICPOS-ERP\FlavorBuilds\PicPos\` (written 2026-10-23 03:14:34, 65 files, 82.4 MB; `PicPos.exe` FileVersion `3.9.2+277`) and `installer\output\PicPos-Setup-3.9.2.277.exe` (47.7 MB, 2026-10-23 03:15). It is *assumed* that this build was produced from HEAD (HEAD was committed at 03:08), but that was not proven.
+- **Environment:** Windows (owner dev machine), PowerShell, git. The only Dart command run was `dart pub outdated` (permitted once). No `flutter` command, no app launch, no DB opened.
+- **Rule:** only checks this auditor ran are marked PASS or FAIL. Earlier QA evidence is cited as **[prior]**, and its status is taken from its own logs.
+
+| ID | Check | Command / method | Status | Result / evidence |
+|---|---|---|---|---|
+| T-C-01 | Record version and tree state | `git rev-parse HEAD`; `git status --short`; `git log -5` | PASS | Result: HEAD `d69be1ea`, untracked files only (listed in PROJECT_BASELINE-C). During the audit another session created `docs/audits/2026-10-23-release-audit/axis-B-data-accounting/`, which was left untouched. |
+| T-C-02 | Brand term inventory (tracked files) | `git grep -I -i -c` for `uralcash`, `ural_erp`, `monexia`, `avalon`, `nexplay`, `legal_erp`, `يورال`, `uraljo`; `git grep -P -I -i '(?<![a-z])ural(?!_erp)'`; non-comment literal listing for `lib/` | PASS (check executed) | Result: counts are in FINDINGS-C (BRAND). `nexplay` and `legal_erp` have 0 hits. The mobile apps and server are clean. |
+| T-C-03 | **Shipped artifact brand scan** | PowerShell: every file in `FlavorBuilds\PicPos` decoded as Latin-1 and UTF-16LE, case-insensitive search for `uralcash`, `ural_erp`, `monexia`, `ural technology`, `uraljo`, `ural-erp`, `ural cash`, `ural_` | **FAIL** (forbidden content present) | `data\app.so`: `uralcash`=2 (`UralCash-ERP-Integrity-v1`, `UralCash-API-v1`), `ural_erp`=1503 (package URIs), plus `ural_*` storage keys and `URAL_*` env names. `flutter_assets\assets\i18n\en.json`: "ural technology" 2, "ural-erp" 2, "ural cash" 1. `catalog_ar.json`: "ural technology" 1, "ural-erp" 1. Found 0: `Monexia`, `uraljo`, and "Ural Technology" in `app.so` (UralCash branches tree-shaken). `MaterialIcons` "ural_" = false positive. → BRAND-002, BRAND-005 |
+| T-C-04 | Shipped image assets | Listing of `flutter_assets`; SHA-256 compare with repo `logo.PNG`; visual inspection | **FAIL** | Result: `flutter_assets\logo.PNG` matches the repo root hash and shows the "Ural Information Technology / شركة جبال الأورال" logo. The PicPos logo is also present. → BRAND-001 |
+| T-C-05 | Exe version resource | `(Get-Item PicPos.exe).VersionInfo` | PASS | Result: CompanyName, FileDescription and ProductName = `PicPos`, LegalCopyright `Copyright (C) 2026 PicPos…`, OriginalFilename `PicPos.exe`, FileVersion `3.9.2+277`. |
+| T-C-06 | Authenticode signatures | `Get-AuthenticodeSignature` on the setup exe, `PicPos.exe`, `sqlite3.dll` | **FAIL** (requirement for public release) | Result: all three NotSigned. → REL-002 |
+| T-C-07 | SQLCipher engine in the artifact | Byte search for `sqlcipher` in `FlavorBuilds\PicPos\sqlite3.dll` | PASS | 162 occurrences. Applies to the locally built artifact only; the CI artifact was not checked (REL-001). |
+| T-C-08 | Installer uncompressed sections brand scan | Byte search in `PicPos-Setup-3.9.2.277.exe` | NOT_APPLICABLE / inconclusive | Result: 0 hits, but the payload is LZMA-compressed, so this proves nothing about the packed files. The packed content is inferred from `[Files] Source: "{#ReleaseDir}\*"` to equal T-C-03/04. Unpacking with innounp or a VM install was NOT_RUN (no tool available). |
+| T-C-09 | Image review of brand assets | `read_image` on `logo.PNG`, `assets/brand/picpos/logo.png`, `web/icons/Icon-512.png`, `mobile_pos/assets/icon/legacy.png`; hash comparison of the `.ico` files | PASS (check executed) | `logo.PNG` = Ural. PicPos logo OK. Web icons = default Flutter logo (not UralCash, but not PicPos either; noted in BRAND-010 scope). Mobile icon = PicPos. Hashes: `app_icon_uralcash.ico` == root `icon.ico` (A1B1…); `app_icon.ico` == `app_icon_picpos.ico` (E6A1…). `.bmp` wizard images not viewable with the tool, so they were judged by name and generator source only. |
+| T-C-10 | CI workflow content | Read `.github/workflows/ci.yml` (reader plus re-check of lines 620-700); count of `APP_BRAND`/`BRAND_` | PASS (check executed) | Result: 0 brand defines; the release job publishes the zip. → BRAND-003, REL-001, ARCH-006 |
+| T-C-11 | Private key tracking | `git ls-files tools/picpos-activation`; `git log --all -- tools/picpos-activation/license_private_key.txt` | PASS | Result: not tracked and never committed (REL-009). The file contents were not read. |
+| T-C-12 | Signing material tracked | `git ls-files` filter for `key.properties`, `.jks`, `.keystore`, `.pfx` | PASS | None tracked. |
+| T-C-13 | Dependency licences (root lockfile) | Parse `pubspec.lock` (204 entries); read the LICENSE head of each hosted package in `%LOCALAPPDATA%\Pub\Cache\hosted\pub.dev` | PASS (no copyleft that affects Windows) | Result: BSD 127, MIT 51, Apache 18, MPL-2.0 2 (`dbus`, `gtk`; first auto-classified as AGPL by a regex, then corrected by reading the files). → DEP-003. The mobile and server lockfiles were NOT_RUN. |
+| T-C-14 | Dependency freshness | `dart pub outdated --no-dev-dependencies` (once, after `Get-Process dart,flutter_tester,flutter` showed none running) | PASS (executed, exit 0, 23 s) | Result: `sqlcipher_flutter_libs` latest `0.7.0+eol`, 30 direct deps not on latest, discontinued `js` and `screen_retriever_*`. `pubspec.lock` and `pubspec.yaml` unchanged afterwards (`git status`). Full output was saved to `%TEMP%\pub_outdated_C.txt` (outside the repo). → DEP-001/002 |
+| T-C-15 | Runtime data dirs on this machine | `Get-ChildItem $env:APPDATA` (names only) | PASS (observation) | Result: `PicPos\PicPos`, `Monexia\UralCash ERP` (Aug 2026), `Ural Information Technology\Ural-Medixa`. → BRAND-011 |
+| T-C-16 | Currency chip vs engine mapping | Code read: `step_company_info.dart:51-58`, `CurrencyInfo.fromCode`, `SystemCurrencyNotifier.setCurrency` | PASS (check executed) → defect found | Result: 4 of the 6 chips map to JOD (UX-001). No runtime repro was run. |
+| T-C-17 | Trial watermark determinism | Code read of `trial_state`, `license_service`, `app_main_screen_lifecycle`, print generators | NOT_RUN at runtime (code-read only) | Predicted defect REL-005. A runtime repro needs the app launched and a print preview, which is out of the read-only scope. |
+| T-C-18 | GUI journeys | Read `D:\qa\reports\G1.md`, `G1b.md`, `G2.md`; viewed `G1b-01-launch.png`, `G1b-01-currency.png`, `G1b-02-dashboard.png` | [prior] partial | Result: login, wizard and dashboard are PicPos-branded on screen. "Dashboard" appears in English (UX-006). EGP and 14% are preselected (UX-004). Most money journeys are BLOCKED in prior QA (Arabic input automation). |
+| T-C-19 | Analyzer | [prior] `D:\qa\logs4\S0_analyze.log` | [prior] 2 infos | `use_build_context_synchronously` ×2 (ARCH-004). Not re-run (flutter commands not permitted). |
+| T-C-20 | Test suites | [prior] `D:\qa\logs4\_summary.txt` | [prior] PASS | S1 main +10018 ~19; S2 scenarios +61; S3 integration +1018 ~27; S4 brand (APP_BRAND=picpos) +13; S5 e2e +2 (log tail); S6 PG +92. These were not re-run by this auditor. |
+| T-C-21 | File-size ratchet | — | NOT_RUN | Needs `flutter test`. Q-review F-2 emulation passed at that time [prior]. |
+| T-C-22 | Clean-machine install, upgrade-over, uninstall | — | NOT_RUN | Needs a VM. Required before release (REL-002/003). |
+| T-C-23 | Android APK build, signing and size | — | NOT_RUN | Needs flutter. The signing configuration was assessed from Gradle files (REL-004). |
+| T-C-24 | Downgrade (old app over newer DB) | — | NOT_RUN | Needs a launch (REL-003). |
+| T-C-25 | Contrast, keyboard and focus, small screens | Screenshots only | NOT_RUN (instrumented) | Visual impression from the 3 screenshots: adequate contrast on the login and dashboard, small grey helper text on the wizard. No measurement was taken. |
+
+## Files created by this axis
+- `docs/audits/2026-10-23-release-audit/axis-C-product-ux-release/FINDINGS-C.md`
+- `…/COVERAGE-C.md`
+- `…/TEST-EVIDENCE-C.md` (this file)
+- `…/PROJECT_BASELINE-C.md`
+- Outside the repo: `%TEMP%\pub_outdated_C.txt` (tool output).
+
+No product file was modified. `dart pub outdated` may refresh `.dart_tool/`, which is git-ignored; tracked files were verified unchanged.
