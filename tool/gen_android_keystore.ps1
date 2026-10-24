@@ -77,9 +77,12 @@ foreach ($app in $Apps) {
     Write-Host "keystore exists, kept: $jks (use -Force to replace - this destroys the old key!)"
   } else {
     if (Test-Path $jks) { Remove-Item $jks -Force }
+    # keytool prints progress on stderr; 'Stop' would turn that into a terminating error.
+    $prevEap = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
     & $keytoolPath -genkeypair -v -storetype PKCS12 -keystore $jks -alias $alias `
       -keyalg RSA -keysize 4096 -validity $ValidityDays -dname $DistinguishedName `
-      -storepass $sp -keypass $kp
+      -storepass $sp -keypass $kp 2>&1 | Out-Null
+    $ErrorActionPreference = $prevEap
     if ($LASTEXITCODE -ne 0) { throw "keytool failed for $app (exit $LASTEXITCODE)" }
     Write-Host "created $jks (alias $alias)"
   }
