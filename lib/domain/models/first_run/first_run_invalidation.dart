@@ -18,6 +18,12 @@ enum FirstRunField {
   branchRole,
   adminPassword,
   branchUser,
+
+  /// أيُّ حقلٍ من حقول PostgreSQL (المضيف · المنفذ · القاعدة · المستخدم · الكلمة).
+  postgres,
+
+  /// الفرعُ المختار من الفروع المزامَنة.
+  branchSelection,
 }
 
 /// مسارٌ جديدٌ: يصفّر التحقّقاتِ والتقدّمَ ويعود إلى الخطوة ١.
@@ -52,7 +58,10 @@ FirstRunDraft invalidate(FirstRunDraft d, FirstRunField field) {
         checks: c.copyWith(storageChecked: false, firstSyncDone: false),
       );
     case FirstRunField.branchUser:
+    case FirstRunField.branchSelection:
       return d.copyWith(checks: c.copyWith(accountVerified: false));
+    case FirstRunField.postgres:
+      return d.copyWith(checks: c.copyWith(provisioned: false));
     case FirstRunField.adminPassword:
       return d; // كلمةُ المرور تُفحص مباشرةً من الأسرار، لا علمَ مخزَّن.
   }

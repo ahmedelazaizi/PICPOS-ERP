@@ -47,9 +47,41 @@ String firstRunIssueText(FirstRunIssue issue) => switch (issue) {
         tr('أكمل المزامنة الأولى قبل بدء التشغيل.'),
       FirstRunIssue.accountNotVerified =>
         tr('تحقق من حساب الفرع المعتمد أولًا.'),
+      FirstRunIssue.pgHostRequired => tr('أدخل عنوان خادم PostgreSQL.'),
+      FirstRunIssue.pgPortInvalid => tr('أدخل منفذ PostgreSQL صحيحًا بين 1 و65535.'),
+      FirstRunIssue.pgDatabaseRequired => tr('أدخل اسم قاعدة البيانات.'),
+      FirstRunIssue.pgUserRequired => tr('أدخل اسم مستخدم PostgreSQL.'),
+      FirstRunIssue.userPasswordShort =>
+        tr('كلمة المرور الأولية لكل مستخدم يجب أن تكون 8 أحرف على الأقل.'),
+      FirstRunIssue.userPasswordWeak =>
+        tr('كلمة المرور الأولية يجب ألا تساوي admin ولا اسم الدخول.'),
+      FirstRunIssue.userPasswordDuplicate =>
+        tr('لا تتكرر كلمة المرور الأولية بين مستخدمين.'),
+      FirstRunIssue.offlineDaysInvalid =>
+        tr('اختر مدة سماح صحيحة للدخول دون اتصال.'),
+      FirstRunIssue.branchNotSelected => tr('اختر فرع هذا الجهاز.'),
+      FirstRunIssue.mirrorAdminRequired => tr('أدخل اسم مدير السيرفر الرئيسي.'),
     };
 
-String firstRunStepTitle(FirstRunStep step) => switch (step) {
+String firstRunStepTitle(FirstRunStep step, [FirstRunPath? path]) {
+  if (path == FirstRunPath.hq) {
+    switch (step) {
+      case FirstRunStep.company:
+        return tr('الشركة والفروع');
+      case FirstRunStep.storage:
+        return tr('قاعدة البيانات (PostgreSQL)');
+      case FirstRunStep.users:
+        return tr('المستخدمون والصلاحيات');
+      case FirstRunStep.prep:
+        return tr('افتراضيات المقر');
+      default:
+        break;
+    }
+  }
+  return _stepTitle(step);
+}
+
+String _stepTitle(FirstRunStep step) => switch (step) {
       FirstRunStep.mode => tr('طريقة التشغيل'),
       FirstRunStep.company => tr('الشركة والنشاط'),
       FirstRunStep.link => tr('الربط بالرئيسي'),
@@ -81,6 +113,7 @@ String firstRunPathTitle(FirstRunPath p) => switch (p) {
       FirstRunPath.standalone => tr('نسخة مستقلة على جهاز واحد'),
       FirstRunPath.hq => tr('سيرفر رئيسي لشركة وفروع'),
       FirstRunPath.branch => tr('فرع تابع للسيرفر الرئيسي'),
+      FirstRunPath.mirror => tr('نسخة مرآة للسيرفر الرئيسي'),
     };
 
 String firstRunPathSubtitle(FirstRunPath p) => switch (p) {
@@ -90,4 +123,6 @@ String firstRunPathSubtitle(FirstRunPath p) => switch (p) {
         tr('إدارة الشركة والفروع والمستخدمين واستقبال المزامنة من الفروع.'),
       FirstRunPath.branch =>
         tr('يحفظ بياناته محليًا، ويعمل أونلاين وأوفلاين، ثم يزامن مع الرئيسي.'),
+      FirstRunPath.mirror =>
+        tr('تعرض بيانات المقر وتعمل كجهاز مدير؛ تتطلب اتصالًا بالسيرفر الرئيسي.'),
     };

@@ -2,9 +2,8 @@
 // مُعلَنة، تذييلٌ بـ«السابق/التالي/إنهاء»، وزرُّ دليلٍ. تحلّ محلّ المعالج القديم
 // في بوّابة الإقلاع (‏`buildFirstRunEntry`).
 //
-// ⚠️ **المقرّ والفرع (P5/P6 لم تُنفَّذ بعد):** بطاقتاهما ظاهرتان، و«التالي» عليهما
-// يفتح المعالجَ الحاليَّ (`SetupWizardScreen`) خلف الشريط نفسه مع زرّ رجوع —
-// مؤقتاً حتى تُبنى خطواتُهما الجديدة. والمرآة كذلك (خيارٌ متقدّم).
+import 'dart:io' show exit;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'
     show KeyDownEvent, LogicalKeyboardKey;
@@ -17,28 +16,35 @@ import '../../../core/theme/app_colors.dart';
 import '../../../domain/models/first_run/first_run_path.dart';
 import '../../../domain/models/first_run/first_run_steps.dart';
 import '../../../domain/models/first_run/first_run_validation.dart';
-import '../../../domain/models/setup_step_order.dart';
-import '../../../services/network_service.dart';
 import '../../picpos_shell/picpos_surface.dart';
-import '../setup_wizard_screen.dart';
 import 'first_run_controller.dart';
 import 'first_run_guide_dialog.dart';
 import 'first_run_success_page.dart';
 import 'first_run_texts.dart';
+import 'steps/step_account.dart';
 import 'steps/step_company.dart';
+import 'steps/step_first_sync.dart';
+import 'steps/step_link.dart';
 import 'steps/step_mode.dart';
 import 'steps/step_prep.dart';
 import 'steps/step_review.dart';
+import 'steps/step_storage_branch.dart';
 import 'steps/step_storage_local.dart';
+import 'steps/step_storage_pg.dart';
+import 'steps/step_users_hq.dart';
 import 'steps/step_users_local.dart';
 import 'widgets/first_run_callout.dart';
 import 'widgets/first_run_stepper.dart';
 
 class FirstRunSetupScreen extends ConsumerStatefulWidget {
-  const FirstRunSetupScreen({super.key, this.onStart});
+  const FirstRunSetupScreen({super.key, this.onStart, this.onRestart});
 
   /// «ابدأ الاستخدام» — الافتراضيُّ ينتقل إلى `MainScreen`.
   final VoidCallback? onStart;
+
+  /// إعادة التشغيل الآن (المقر: PostgreSQL يحتاج إقلاعا جديدا). الافتراضي يُنهي
+  /// العملية؛ هذه الشاشة تسبق تسجيل الدخول فلا سلة بيع قائمة تُفقد.
+  final VoidCallback? onRestart;
 
   @override
   ConsumerState<FirstRunSetupScreen> createState() =>
@@ -46,9 +52,6 @@ class FirstRunSetupScreen extends ConsumerStatefulWidget {
 }
 
 class _FirstRunSetupScreenState extends ConsumerState<FirstRunSetupScreen> {
-  /// مسارٌ لم يُنقل بعد (‏hq/branch/mirror) يعمل عبر المعالج القديم.
-  NetworkMode? _legacy;
-
   void _start() {
     if (widget.onStart != null) {
       widget.onStart!();
@@ -62,13 +65,6 @@ class _FirstRunSetupScreenState extends ConsumerState<FirstRunSetupScreen> {
 
   void _onNext(FirstRunUiState s) {
     final ctl = ref.read(firstRunControllerProvider.notifier);
-    if (s.draft.currentStep == FirstRunStep.mode &&
-        s.draft.path != FirstRunPath.standalone) {
-      setState(() => _legacy = s.draft.path == FirstRunPath.hq
-          ? NetworkMode.server
-          : NetworkMode.client);
-      return;
-    }
     if (s.draft.currentStep == FirstRunStep.review) {
       ctl.finish();
     } else {
@@ -97,17 +93,27 @@ class _FirstRunSetupScreenState extends ConsumerState<FirstRunSetupScreen> {
     return KeyEventResult.handled;
   }
 
-  Widget _stepBody(FirstRunUiState s) => switch (s.draft.currentStep) {
-        FirstRunStep.mode => StepMode(
-            onOpenMirror: () => setState(() => _legacy = NetworkMode.mirror),
-          ),
-        FirstRunStep.company => const StepCompany(),
-        FirstRunStep.storage => const StepStorageLocal(),
-        FirstRunStep.users => const StepUsersLocal(),
-        FirstRunStep.prep => const StepPrep(),
-        FirstRunStep.review => const StepReview(),
-        _ => const SizedBox.shrink(),
-      };
+  Widget _stepBody(FirstRunUiState s) {
+    final path = s.draft.path;
+    return switch (s.draft.currentStep) {
+      FirstRunStep.mode => const StepMode(),
+      FirstRunStep.company => const StepCompany(),
+      FirstRunStep.storage => switch (path) {
+          FirstRunPath.hq => const StepStoragePg(),
+          FirstRunPath.branch => const StepStorageBranch(),
+          _ => const StepStorageLocal(),
+        },
+      FirstRunStep.users => path == FirstRunPath.hq
+          ? const StepUsersHq()
+          : const StepUsersLocal(),
+      FirstRunStep.prep => const StepPrep(),
+      FirstRunStep.link => const StepLink(),
+      FirstRunStep.firstSync => const StepFirstSync(),
+      FirstRunStep.account => const StepAccount(),
+      FirstRunStep.review => const StepReview(),
+      FirstRunStep.success => const SizedBox.shrink(),
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -123,57 +129,24 @@ class _FirstRunSetupScreenState extends ConsumerState<FirstRunSetupScreen> {
         child: Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: SafeArea(
-            child: _legacy != null
-                ? _legacyHost()
-                : s.loading
-                    ? const Center(child: CircularProgressIndicator())
-                    : s.committed
-                        ? FirstRunSuccessPage(onStart: _start)
-                        : _shell(context, s),
+            child: s.loading
+                ? const Center(child: CircularProgressIndicator())
+                : s.committed
+                    ? FirstRunSuccessPage(
+                        onStart: _start,
+                        onRestart: widget.onRestart ?? () => exit(0),
+                      )
+                    : _shell(context, s),
           ),
         ),
       ),
     );
   }
 
-  Widget _legacyHost() {
-    return Column(
-      children: [
-        Container(
-          color: context.picposCard,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          child: Row(
-            children: [
-              TextButton.icon(
-                key: const Key('first_run_legacy_back'),
-                onPressed: () => setState(() => _legacy = null),
-                icon: const Icon(Icons.arrow_back, size: 18),
-                label: Text(tr('العودة إلى الإعداد الجديد')),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  tr('هذا المسار يعمل بالمعالج الحالي مؤقتًا.'),
-                  style: TextStyle(color: context.picposMuted, fontSize: 12.5),
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: SetupWizardScreen(
-            initialMode: _legacy,
-            initialStep: SetupStepIds.company,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _shell(BuildContext context, FirstRunUiState s) {
     final d = s.draft;
     final steps = stepsFor(d.path);
-    final titles = [for (final st in steps) firstRunStepTitle(st)];
+    final titles = [for (final st in steps) firstRunStepTitle(st, d.path)];
     final step = d.currentStep;
     final issue = validateStep(step, d, s.secrets);
     final isReview = step == FirstRunStep.review;
@@ -234,7 +207,7 @@ class _FirstRunSetupScreenState extends ConsumerState<FirstRunSetupScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          firstRunStepTitle(step),
+          firstRunStepTitle(step, d.path),
           key: const Key('first_run_step_title'),
           style: TextStyle(
             fontSize: 21,

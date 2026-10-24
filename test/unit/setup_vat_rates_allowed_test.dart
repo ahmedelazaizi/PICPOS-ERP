@@ -4,25 +4,25 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:picpos_erp/core/tax/tax_rate_policy.dart';
-import 'package:picpos_erp/presentation/screens/setup_wizard_screen.dart';
+import 'package:picpos_erp/domain/models/first_run/first_run_currency.dart';
 
 void main() {
   const owner = <double>[0, 1, 2, 4, 5, 10, 14, 15, 16];
 
   test('قائمةُ المعالج هي قائمةُ المالك بالضبط، وتشمل 14 و15', () {
-    expect(kSetupAllowedVatRates, owner);
-    expect(kSetupAllowedVatRates, containsAll(<double>[14, 15]));
+    expect(kFirstRunVatRates, owner);
+    expect(kFirstRunVatRates, containsAll(<double>[14, 15]));
   });
 
   test('كلُّ نسبةٍ في المعالج مقبولةٌ في سياسة الضريبة (صنف · Excel · API)', () {
     TaxRatePolicy.resetForTests();
-    for (final r in kSetupAllowedVatRates) {
+    for (final r in kFirstRunVatRates) {
       expect(TaxRatePolicy.isAllowed(r), isTrue, reason: 'النسبة $r');
     }
   });
 
   test('السلّمان متطابقان — لا نسبةَ تُقبل في أحدهما وتُرفض في الآخر', () {
-    expect(TaxRatePolicy.defaultAllowedRates, kSetupAllowedVatRates);
+    expect(TaxRatePolicy.defaultAllowedRates, kFirstRunVatRates);
     expect(TaxRatePolicy.defaultAllowedRates, owner);
   });
 }

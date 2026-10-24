@@ -15,6 +15,24 @@ import '../../data/database/connection.dart'
 import '../../data/database/database_barrel.dart';
 import '../../data/database/pg_config.dart';
 
+export '../../data/database/pg_config.dart' show PostgresConfig;
+
+/// إعدادُ الاتصال من حقول المعالج — الطبقةُ الأعلى لا تستورد `data/database`.
+PostgresConfig buildPostgresConfig({
+  required String host,
+  required String port,
+  required String database,
+  required String username,
+  required String password,
+}) =>
+    PostgresConfig(
+      host: host.trim(),
+      port: int.tryParse(port.trim()) ?? 5432,
+      database: database.trim(),
+      username: username.trim(),
+      password: password,
+    );
+
 /// حالةُ صفٍّ واحدٍ من صفوف التهيئة.
 enum ProvisionStatus { pending, running, ok, failed }
 

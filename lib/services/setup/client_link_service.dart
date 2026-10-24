@@ -34,6 +34,12 @@ enum ClientLinkOutcome {
 
   /// المرآة: تحقّق المديرُ.
   paired,
+
+  /// الإقرانُ برمز الجهاز ناجحٌ والخادمُ يردّ.
+  devicePaired,
+
+  /// رفض الخادمُ الرمزَ أو تعذّر الإقران.
+  pairFailed,
 }
 
 class ClientLinkResult {
@@ -53,10 +59,37 @@ class ClientLinkResult {
 
   bool get ok =>
       outcome == ClientLinkOutcome.connected ||
-      outcome == ClientLinkOutcome.paired;
+      outcome == ClientLinkOutcome.paired ||
+      outcome == ClientLinkOutcome.devicePaired;
 }
 
-class ClientLinkService {
+/// ما يحتاجه المعالجُ من خدمة الربط — واجهةٌ تُحقن بنسخةٍ مزيّفة في الاختبار.
+abstract interface class ClientLinkPort {
+  /// إقرانُ الجهاز برمز الخادم (‏8 أحرف) ثم فحصُ وصوله. لا تغيير نمطٍ ولا مزامنة.
+  Future<ClientLinkResult> pairDevice({
+    required String address,
+    required int port,
+    required String code,
+    String? deviceName,
+  });
+
+  /// تعيين النمط client ثم المزامنة الأولى (تُمسح البيانات المزروعة قبلها).
+  Future<ClientLinkResult> connectAndSync({
+    required String address,
+    required int port,
+    required Future<bool> Function() confirmRePair,
+    void Function(String message)? onProgress,
+  });
+
+  Future<ClientLinkResult> pairMirror({
+    required String host,
+    required int port,
+    required String adminUsername,
+    required String adminPassword,
+  });
+}
+
+class ClientLinkService implements ClientLinkPort {
   ClientLinkService({
     required this.db,
     required this.loadBranches,
@@ -81,6 +114,46 @@ class ClientLinkService {
     }
   }
 
+  @override
+  Future<ClientLinkResult> pairDevice({
+    required String address,
+    required int port,
+    required String code,
+    String? deviceName,
+  }) async {
+    try {
+      final paired = await _network.pairLanClient(
+        address: address,
+        port: port,
+        code: code,
+        deviceName: deviceName,
+      );
+      if (paired['success'] != true) {
+        return ClientLinkResult(
+          ClientLinkOutcome.pairFailed,
+          message: tr('❌ تعذّر إقران الجهاز: {p0}', {'p0': paired['error']}),
+        );
+      }
+      final probe = await _network.testServerConnection(address, port);
+      if (probe['success'] != true) {
+        return ClientLinkResult(
+          ClientLinkOutcome.connectFailed,
+          message: tr('❌ فشل الاتصال بالسيرفر: {p0}', {'p0': probe['error']}),
+        );
+      }
+      return ClientLinkResult(
+        ClientLinkOutcome.devicePaired,
+        message: tr('✅ تم إقران الجهاز بالسيرفر الرئيسي'),
+      );
+    } catch (e) {
+      return ClientLinkResult(
+        ClientLinkOutcome.error,
+        message: tr('❌ خطأ: {e}', {'e': e}),
+      );
+    }
+  }
+
+  @override
   Future<ClientLinkResult> connectAndSync({
     required String address,
     required int port,
@@ -163,6 +236,7 @@ class ClientLinkService {
 
   /// مصافحةُ المرآة: يتحقّق من وصول HQ ويخزّن الرمز ويسجّل هويّة الخادم في
   /// `MirrorState`. تفعيلُ النمط نفسُه مؤجَّلٌ إلى الإنهاء (Spec 097).
+  @override
   Future<ClientLinkResult> pairMirror({
     required String host,
     required int port,

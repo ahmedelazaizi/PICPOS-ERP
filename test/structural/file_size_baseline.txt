@@ -128,7 +128,6 @@ lib/presentation/screens/scale_plu/scale_logic.dart 50782
 lib/presentation/screens/settings/cfd_settings_card.dart 36890
 lib/presentation/screens/settings/network_mode_settings.dart 32034
 lib/presentation/screens/settings_screen.dart 62826
-lib/presentation/screens/setup_wizard_screen.dart 63233
 lib/presentation/screens/tables/split_table_dialog.dart 36476
 lib/presentation/screens/tables/table_operations.dart 41834
 lib/presentation/screens/users_management_screen.dart 33744

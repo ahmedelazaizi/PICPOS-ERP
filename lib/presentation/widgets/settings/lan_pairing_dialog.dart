@@ -1,8 +1,11 @@
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/app_toast.dart';
+import '../../../data/providers/auth_providers.dart';
+import '../../../services/permission_enforcer.dart';
 import '../../../services/api/lan_pairing_service.dart';
 import '../../../services/network_service.dart';
 import 'lan_transport_section.dart';
@@ -11,24 +14,37 @@ import 'lan_transport_section.dart';
 /// the dependency tree has no QR widget package, while the payload remains
 /// available for copy/paste into a scanner or support tool.
 class LanPairingDialog extends StatelessWidget {
-  const LanPairingDialog({super.key, required this.offer, this.service});
+  const LanPairingDialog({super.key, required this.offer, this.service, this.actorUserId});
 
   final PairingOffer offer;
   final LanPairingService? service;
 
+  /// The signed-in user; the service re-checks devices_pair_manage for them.
+  final int? actorUserId;
+
   static Future<void> showServer(BuildContext context) async {
-    final offer = NetworkService.instance.issueLanPairingCode();
+    final actor = ProviderScope.containerOf(context).read(authProvider).user?.id;
+    PairingOffer? issued;
+    try {
+      issued = await NetworkService.instance.issueLanPairingCode(actorUserId: actor);
+    } on PermissionDeniedException catch (e) {
+      if (context.mounted) AppToast.show(context, e.message, type: ToastType.error);
+      return;
+    }
+    final offer = issued;
     if (offer == null) {
       if (context.mounted) {
         AppToast.show(context, tr('شغّل السيرفر أولاً'), type: ToastType.error);
       }
       return;
     }
+    if (!context.mounted) return;
     await showDialog<void>(
       context: context,
       builder: (_) => LanPairingDialog(
         offer: offer,
         service: NetworkService.instance.lanPairingService,
+        actorUserId: actor,
       ),
     );
   }
@@ -118,7 +134,7 @@ class LanPairingDialog extends StatelessWidget {
                                       icon: const Icon(Icons.block),
                                       tooltip: tr('إلغاء الإقران'),
                                       onPressed: () async {
-                                        await service!.revoke(device.deviceId);
+                                        await service!.revoke(device.deviceId, actorUserId: actorUserId);
                                         if (context.mounted) {
                                           Navigator.pop(context);
                                           await showServer(context);

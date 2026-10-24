@@ -131,7 +131,7 @@ void main() {
           makeCode: () => 'PAIR1234',
         );
         ApiAuthMiddleware.setPairingService(pairing);
-        pairing.issuePairingCode(serverHost: 'h', port: 1);
+        await pairing.issuePairingCode(actorUserId: 1, serverHost: 'h', port: 1);
         final paired = await pairing.pair(
           const LanPairingRequest(
             code: 'PAIR1234',

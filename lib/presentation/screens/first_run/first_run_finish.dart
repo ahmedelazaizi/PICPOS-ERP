@@ -13,8 +13,12 @@ import '../../../core/config/feature_key.dart';
 import '../../../core/i18n/tr.dart';
 import '../../../domain/models/first_run/first_run_currency.dart';
 import '../../../domain/models/first_run/first_run_draft.dart';
+import '../../../domain/models/first_run/first_run_path.dart';
 import '../../../services/network_service.dart';
+import '../../../services/setup/server_provisioning_service.dart';
+import '../../../services/setup/server_setup_writer.dart';
 import '../setup_wizard/setup_finish_runner.dart';
+import 'first_run_finish_server.dart';
 
 /// واجهةُ التشغيل — تُحقن في الاختبار.
 typedef FirstRunFinisher = Future<SetupRunResult> Function(
@@ -30,7 +34,7 @@ SetupEInvoiceCountry _eInvoice(FirstRunEInvoice? e) => switch (e) {
       _ => SetupEInvoiceCountry.none,
     };
 
-/// المسار المستقلّ (‏P3). المقرّ والفرع يمرّان بالمعالج القديم حتى P5/P6.
+/// المسار المستقلّ (‏P3) — مدخلُ SetupFinishRunner.
 SetupDraft toSetupDraft(FirstRunDraft d, FirstRunSecrets s) {
   final profile = BusinessProfile.values.byName(d.pack.profileName);
   return SetupDraft(
@@ -95,9 +99,20 @@ Future<void> runExtras(FirstRunDraft d, SetupPersistence p) async {
   }
 }
 
-/// المنفِّذ الافتراضيّ: مشغّلٌ واحدٌ يعيش بين المحاولات ليتذكّر ما نجح.
-FirstRunFinisher defaultFinisher() {
+/// المنفِّذ الافتراضيّ: المستقلّ بمشغّلٍ واحدٍ يعيش بين المحاولات ليتذكّر ما
+/// نجح، والمقرّ/الفرع/المرآة بالمنفّذ المرتبط بخادم (‏serverBoundFinisher).
+FirstRunFinisher defaultFinisher({
+  required ServerSetupWriter writer,
+  required ServerProvisioningService provisioning,
+}) {
   final runner = SetupFinishRunner();
-  return (draft, secrets, persistence, {onStage}) =>
-      runner.run(toSetupDraft(draft, secrets), persistence, onStage: onStage);
+  final serverBound =
+      serverBoundFinisher(writer: writer, provisioning: provisioning);
+  return (draft, secrets, persistence, {onStage}) {
+    if (draft.path == FirstRunPath.standalone) {
+      return runner.run(toSetupDraft(draft, secrets), persistence,
+          onStage: onStage);
+    }
+    return serverBound(draft, secrets, persistence, onStage: onStage);
+  };
 }

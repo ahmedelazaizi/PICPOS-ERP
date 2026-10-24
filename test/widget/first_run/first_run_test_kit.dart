@@ -17,7 +17,11 @@ import 'package:picpos_erp/presentation/screens/first_run/first_run_setup_screen
 import 'package:picpos_erp/presentation/screens/setup_wizard/setup_finish_runner.dart';
 import 'package:picpos_erp/presentation/screens/setup_wizard/setup_persistence_riverpod.dart';
 import 'package:picpos_erp/services/network_service.dart';
+import 'package:picpos_erp/services/setup/branch_account_verifier.dart';
+import 'package:picpos_erp/services/setup/client_link_service.dart';
 import 'package:picpos_erp/services/setup/first_run_storage_probe.dart';
+import 'package:picpos_erp/services/setup/server_provisioning_service.dart';
+import 'package:picpos_erp/services/setup/server_setup_writer.dart';
 
 class FakeLocaleNotifier extends UserLocaleNotifier {
   @override
@@ -64,10 +68,19 @@ class RecordingPersistence implements SetupPersistence, SetupTablesPort {
   String? developerPassword;
   String? currency;
 
+  /// الفروع المزامَنة في «القاعدة المحلية» (‏للمسار الفرعي).
+  List<Branche> branches = [];
+  int? clientBranchId;
+  String? deploymentFailure;
+
+  /// خطٌّ زمنيٌّ مشتركٌ مع بقيّة المزيّفات (‏يضبطه الحاضنُ) لقياس الترتيب.
+  List<String>? timeline;
+
   @override
   Future<void> saveSetting(String key, String value) async {
     if (key == failOnKey) throw StateError('disk full');
     calls.add('save:$key');
+    timeline?.add('save:$key');
     settings[key] = value;
   }
 
@@ -90,7 +103,7 @@ class RecordingPersistence implements SetupPersistence, SetupTablesPort {
   }
 
   @override
-  Future<List<Branche>> getAllBranches() async => const [];
+  Future<List<Branche>> getAllBranches() async => branches;
   @override
   Future<void> updateBranch(Branche branch) async {}
   @override
@@ -139,11 +152,15 @@ class RecordingPersistence implements SetupPersistence, SetupTablesPort {
   @override
   Future<String?> commitDeploymentMode(NetworkMode mode, int port) async {
     calls.add('mode:${mode.name}');
-    return null;
+    timeline?.add('mode:${mode.name}');
+    return deploymentFailure;
   }
 
   @override
-  Future<void> saveClientBranchId(int branchId) async {}
+  Future<void> saveClientBranchId(int branchId) async {
+    clientBranchId = branchId;
+    calls.add('clientBranch:$branchId');
+  }
   @override
   Future<int> createFiscalYear(String n, DateTime s, DateTime e) async {
     calls.add('fiscal:$n');
@@ -179,6 +196,183 @@ class RecordingPersistence implements SetupPersistence, SetupTablesPort {
   }
 }
 
+Branche testBranch(int id, String name, String code) => Branche(
+      id: id,
+      name: name,
+      code: code,
+      address: null,
+      phone: null,
+      isActive: true,
+      costCenterId: null,
+      globalId: 'g$id',
+      regionId: null,
+      isSystemDefault: false,
+      lastModifiedAt: null,
+      deletedAt: null,
+      originClientId: null,
+      rowVersion: 0,
+    );
+
+/// تهيئةُ PostgreSQL مزيّفة: تسجّل النداءات وتفشل عند الطلب.
+class FakeProvisioning extends ServerProvisioningService {
+  FakeProvisioning(this.events);
+  final List<String> events;
+  String? testError;
+  String? provisionError;
+  PostgresConfig? lastConfig;
+  int armed = 0;
+
+  @override
+  Future<String?> testConnection(PostgresConfig cfg) async {
+    lastConfig = cfg;
+    events.add('pg-test');
+    return testError;
+  }
+
+  @override
+  Future<ProvisionOutcome> provision(
+    PostgresConfig cfg, {
+    void Function(int index, ProvisionStatus status, String? detail)? onStep,
+  }) async {
+    lastConfig = cfg;
+    events.add('pg-provision');
+    for (var i = 0; i < 6; i++) {
+      onStep?.call(i, ProvisionStatus.running, null);
+      if (provisionError != null && i == 1) {
+        onStep?.call(i, ProvisionStatus.failed, provisionError);
+        return ProvisionOutcome.failure(provisionError!);
+      }
+      onStep?.call(i, ProvisionStatus.ok, null);
+    }
+    return const ProvisionOutcome.success();
+  }
+
+  @override
+  Future<void> armPostgresMode(PostgresConfig cfg) async {
+    armed++;
+    events.add('pg-arm');
+  }
+}
+
+/// كاتبُ بيانات الخادم المزيّف: يحفظ آخر مدخل ويفشل عند الطلب.
+class FakeServerWriter extends ServerSetupWriter {
+  FakeServerWriter(this.events);
+  final List<String> events;
+  ServerSetupInput? lastInput;
+  PostgresConfig? lastConfig;
+  Object? failWith;
+  int writes = 0;
+
+  @override
+  Future<ServerSetupReport> write(PostgresConfig cfg, ServerSetupInput input) async {
+    events.add('server-write');
+    if (failWith != null) throw failWith!;
+    writes++;
+    lastInput = input;
+    lastConfig = cfg;
+    return const ServerSetupReport(branchIds: {}, createdUsers: 0, updatedUsers: 0);
+  }
+}
+
+/// ربطُ الفرع المزيّف: الإقران والمزامنة بنتائج قابلة للضبط.
+class FakeLink implements ClientLinkPort {
+  FakeLink(this.events);
+  final List<String> events;
+  bool pairOk = true;
+  bool online = true;
+  bool syncOk = true;
+  List<Branche> branches = [testBranch(7, 'فرع عمّان', 'AMM')];
+  String? lastCode;
+  String? lastAddress;
+  String? lastDeviceName;
+  int syncCalls = 0;
+  String? mirrorAdmin;
+
+  @override
+  Future<ClientLinkResult> pairDevice({
+    required String address,
+    required int port,
+    required String code,
+    String? deviceName,
+  }) async {
+    events.add('pair');
+    lastCode = code;
+    lastAddress = '$address:$port';
+    lastDeviceName = deviceName;
+    return pairOk
+        ? const ClientLinkResult(ClientLinkOutcome.devicePaired, message: 'paired')
+        : const ClientLinkResult(ClientLinkOutcome.pairFailed, message: 'bad code');
+  }
+
+  @override
+  Future<ClientLinkResult> connectAndSync({
+    required String address,
+    required int port,
+    required Future<bool> Function() confirmRePair,
+    void Function(String message)? onProgress,
+  }) async {
+    events.add('sync');
+    syncCalls++;
+    if (!online) {
+      return const ClientLinkResult(ClientLinkOutcome.connectFailed,
+          message: 'no route to host');
+    }
+    if (!syncOk) {
+      return const ClientLinkResult(ClientLinkOutcome.syncFailed,
+          message: 'sync failed');
+    }
+    return ClientLinkResult(ClientLinkOutcome.connected,
+        branches: branches, message: 'synced');
+  }
+
+  @override
+  Future<ClientLinkResult> pairMirror({
+    required String host,
+    required int port,
+    required String adminUsername,
+    required String adminPassword,
+  }) async {
+    events.add('pair-mirror');
+    mirrorAdmin = adminUsername;
+    return adminPassword == 'Mirror#Pass1'
+        ? const ClientLinkResult(ClientLinkOutcome.paired, message: 'mirror ok')
+        : const ClientLinkResult(ClientLinkOutcome.error, message: 'bad admin');
+  }
+}
+
+/// التحقّق من الحساب المزيّف: كلمة `Good#Pass1` وحدها تنجح.
+class FakeVerifier implements BranchAccountVerifierPort {
+  FakeVerifier(this.events);
+  final List<String> events;
+  int? lastBranchId;
+  String? lastUser;
+  bool serverSession = true;
+
+  @override
+  Future<AccountVerification> verify({
+    required String username,
+    required String password,
+    required int branchId,
+  }) async {
+    events.add('verify');
+    lastBranchId = branchId;
+    lastUser = username;
+    if (password != 'Good#Pass1') {
+      return const AccountVerification.failure('wrong password');
+    }
+    if (!serverSession) {
+      return const AccountVerification.failure('no server session');
+    }
+    return const AccountVerification.success(
+      userId: 12,
+      displayName: 'كاشير عمّان',
+      roleName: 'كاشير',
+      permissionCount: 14,
+      topPermissions: ['pos_access', 'pos_save', 'pos_print'],
+    );
+  }
+}
+
 late Map<String, String> englishCatalog;
 
 void loadEnglishCatalog() {
@@ -202,12 +396,24 @@ class FirstRunHarness {
     FakeProbe? probe,
   })  : settings = settings ?? MemorySettings(),
         persistence = persistence ?? RecordingPersistence(),
-        probe = probe ?? FakeProbe();
+        probe = probe ?? FakeProbe() {
+    provisioning = FakeProvisioning(events);
+    writer = FakeServerWriter(events);
+    link = FakeLink(events);
+    verifier = FakeVerifier(events);
+    this.persistence.timeline = events;
+  }
 
   final MemorySettings settings;
   final RecordingPersistence persistence;
   final FakeProbe probe;
+  final List<String> events = [];
+  late final FakeProvisioning provisioning;
+  late final FakeServerWriter writer;
+  late final FakeLink link;
+  late final FakeVerifier verifier;
   bool started = false;
+  bool restarted = false;
   late ProviderContainer container;
 
   FirstRunDraftStore makeStore() => FirstRunDraftStore(
@@ -226,6 +432,16 @@ class FirstRunHarness {
         firstRunStorageProbeProvider.overrideWithValue(probe),
         userLocaleProvider.overrideWith(FakeLocaleNotifier.new),
         setupPersistenceProvider.overrideWithValue(persistence),
+        serverProvisioningServiceProvider.overrideWithValue(provisioning),
+        serverSetupWriterProvider.overrideWithValue(writer),
+        clientLinkPortProvider.overrideWithValue(link),
+        branchAccountVerifierProvider.overrideWithValue(verifier),
+        firstRunRolesProvider.overrideWith((ref) async => const [
+              FirstRunRoleOption(2, 'كاشير'),
+              FirstRunRoleOption(7, 'مدير فرع'),
+            ]),
+        firstRunLocalAddressesProvider
+            .overrideWith((ref) async => const ['192.168.1.20']),
       ];
 
   Future<void> pump(
@@ -243,7 +459,10 @@ class FirstRunHarness {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: dark ? ThemeMode.dark : ThemeMode.light,
-          home: FirstRunSetupScreen(onStart: () => started = true),
+          home: FirstRunSetupScreen(
+            onStart: () => started = true,
+            onRestart: () => restarted = true,
+          ),
         ),
       ),
     );

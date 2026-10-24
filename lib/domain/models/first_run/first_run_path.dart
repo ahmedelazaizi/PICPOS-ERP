@@ -14,6 +14,9 @@ enum FirstRunPath {
 
   /// فرعٌ تابعٌ للسيرفر الرئيسيّ (‏NetworkMode.client).
   branch,
+
+  /// نسخةُ مرآةٍ لسيرفر المقرّ (‏NetworkMode.mirror) — خيارٌ متقدّم: ربطٌ بمدير ثم مراجعة.
+  mirror,
 }
 
 /// دورُ الجهاز داخل الفرع.

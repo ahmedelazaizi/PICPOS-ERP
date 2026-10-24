@@ -36,10 +36,10 @@ const _okSecrets = FirstRunSecrets(
 
 void main() {
   group('الخطوات', () {
-    test('ست خطوات لكل مسار، بلا تفعيل، ونجاح خارج المسار', () {
+    test('ست خطوات لكل مسار رئيسي (والمرآة ثلاث)، بلا تفعيل، ونجاح خارج المسار', () {
       for (final p in FirstRunPath.values) {
         final steps = stepsFor(p);
-        expect(steps, hasLength(6), reason: p.name);
+        expect(steps, hasLength(p == FirstRunPath.mirror ? 3 : 6), reason: p.name);
         expect(steps.first, FirstRunStep.mode);
         expect(steps.last, FirstRunStep.review);
         expect(steps, isNot(contains(FirstRunStep.success)));
@@ -167,7 +167,7 @@ void main() {
       FirstRunIssue? users(List<FirstRunUserRow> rows) => validateStep(
             FirstRunStep.users,
             withBranch.copyWith(hqUsers: rows),
-            _okSecrets,
+            _okSecrets.copyWith(userPasswords: {0: 'Branch#Pass1'}),
           );
       expect(users([const FirstRunUserRow(name: 'س', username: 'c1', roleId: 2, scope: 'BR-1')]),
           isNull);

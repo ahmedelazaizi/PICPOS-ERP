@@ -6,12 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/i18n/tr.dart';
 import '../../../../domain/models/first_run/first_run_packs.dart';
+import '../../../../domain/models/first_run/first_run_path.dart';
 import '../../../picpos_shell/picpos_surface.dart';
 import '../first_run_controller.dart';
 import '../widgets/first_run_callout.dart';
 import '../widgets/first_run_choice_card.dart';
 import '../widgets/first_run_field.dart';
 import 'step_company_finance.dart';
+import 'step_company_hq_branches.dart';
 
 String _packTitle(FirstRunPack p) => switch (p) {
       FirstRunPack.pos => tr('نقطة بيع فقط'),
@@ -164,6 +166,7 @@ class StepCompany extends ConsumerWidget {
         ),
         const SizedBox(height: 20),
         const StepCompanyFinance(),
+        if (d.path == FirstRunPath.hq) const HqBranchesSection(),
         const SizedBox(height: 12),
         Text(
           tr('يمكن تعديل هذا لاحقًا من الإعدادات › معلومات الشركة.'),

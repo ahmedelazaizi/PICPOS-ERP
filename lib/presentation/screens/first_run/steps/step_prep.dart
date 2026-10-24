@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/i18n/tr.dart';
 import '../../../../domain/models/first_run/first_run_packs.dart';
+import '../../../../domain/models/first_run/first_run_path.dart';
 import '../../../picpos_shell/picpos_surface.dart';
 import '../first_run_controller.dart';
 import '../widgets/first_run_callout.dart';
@@ -27,15 +28,17 @@ class StepPrep extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        FirstRunField(
-          key: const Key('first_run_cashbox_name'),
-          label: tr('اسم الصندوق الرئيسي (اختياري)'),
-          value: d.cashBoxName,
-          hint: tr('يُترك كما هو إن لم تكتب شيئًا'),
-          onChanged: (v) => ctl.update((x) => x.copyWith(cashBoxName: v)),
-        ),
+        // صناديقُ المقرّ تُدار بعد البدء (لا تُنشأ ولا تُسمّى لكل فرع في الإعداد).
+        if (d.path != FirstRunPath.hq)
+          FirstRunField(
+            key: const Key('first_run_cashbox_name'),
+            label: tr('اسم الصندوق الرئيسي (اختياري)'),
+            value: d.cashBoxName,
+            hint: tr('يُترك كما هو إن لم تكتب شيئًا'),
+            onChanged: (v) => ctl.update((x) => x.copyWith(cashBoxName: v)),
+          ),
         if (d.pack.hasTables) ...[
-          const SizedBox(height: 18),
+          if (d.path != FirstRunPath.hq) const SizedBox(height: 18),
           Text(
             tr('طريقة خدمة المطعم'),
             style: TextStyle(

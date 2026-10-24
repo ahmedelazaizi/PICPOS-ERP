@@ -47,7 +47,20 @@ enum FirstRunIssue {
   serverNotProvisioned,
   firstSyncPending,
   accountNotVerified,
+  pgHostRequired,
+  pgPortInvalid,
+  pgDatabaseRequired,
+  pgUserRequired,
+  userPasswordShort,
+  userPasswordWeak,
+  userPasswordDuplicate,
+  offlineDaysInvalid,
+  branchNotSelected,
+  mirrorAdminRequired,
 }
+
+/// مدد السماح المقبولة للدخول دون اتصال (أيام) — النموذج §0.3.
+const List<int> kFirstRunOfflineDays = [1, 3, 7, 14, 30];
 
 /// سببُ فشل أوّل خطوةٍ في [validateAll].
 class FirstRunStepIssue {
@@ -72,11 +85,8 @@ FirstRunIssue? validateStep(
     case FirstRunStep.company:
       return _company(d);
     case FirstRunStep.storage:
-      if (!d.checks.storageChecked) return FirstRunIssue.storageNotChecked;
-      if (d.path == FirstRunPath.hq && !d.checks.provisioned) {
-        return FirstRunIssue.serverNotProvisioned;
-      }
-      return null;
+      if (d.path == FirstRunPath.hq) return _postgres(d);
+      return d.checks.storageChecked ? null : FirstRunIssue.storageNotChecked;
     case FirstRunStep.users:
       return _users(d, s);
     case FirstRunStep.prep:
@@ -95,13 +105,31 @@ FirstRunIssue? validateStep(
       if (port == null || port < 1 || port > 65535) {
         return FirstRunIssue.portInvalid;
       }
-      if (d.deviceName.trim().isEmpty) return FirstRunIssue.deviceNameRequired;
+      if (d.path == FirstRunPath.mirror) {
+        if (d.accountUsername.trim().isEmpty) {
+          return FirstRunIssue.mirrorAdminRequired;
+        }
+      } else if (d.deviceName.trim().isEmpty) {
+        return FirstRunIssue.deviceNameRequired;
+      }
       return d.checks.linked ? null : FirstRunIssue.linkNotVerified;
     case FirstRunStep.firstSync:
-      return d.checks.firstSyncDone ? null : FirstRunIssue.firstSyncPending;
+      if (!d.checks.firstSyncDone) return FirstRunIssue.firstSyncPending;
+      return d.selectedBranchId == null ? FirstRunIssue.branchNotSelected : null;
     case FirstRunStep.account:
       return d.checks.accountVerified ? null : FirstRunIssue.accountNotVerified;
   }
+}
+
+FirstRunIssue? _postgres(FirstRunDraft d) {
+  if (d.pgHost.trim().isEmpty) return FirstRunIssue.pgHostRequired;
+  final port = int.tryParse(d.pgPort.trim());
+  if (port == null || port < 1 || port > 65535) {
+    return FirstRunIssue.pgPortInvalid;
+  }
+  if (d.pgDatabase.trim().isEmpty) return FirstRunIssue.pgDatabaseRequired;
+  if (d.pgUser.trim().isEmpty) return FirstRunIssue.pgUserRequired;
+  return d.checks.provisioned ? null : FirstRunIssue.serverNotProvisioned;
 }
 
 FirstRunIssue? _company(FirstRunDraft d) {
@@ -145,7 +173,12 @@ FirstRunIssue? _users(FirstRunDraft d, FirstRunSecrets s) {
     return FirstRunIssue.developerPasswordMismatch;
   }
   if (d.path == FirstRunPath.hq) {
+    if (!kFirstRunOfflineDays.contains(d.offlineDays)) {
+      return FirstRunIssue.offlineDaysInvalid;
+    }
     final names = <String>{kFirstRunAdminUsername};
+    // الخادمُ يرفض كلمتين متطابقتين لمستخدمين مختلفين (‏DuplicatePasswordException).
+    final passwords = <String>{p};
     final scopes = <String>{
       'HQ',
       'ALL',
@@ -163,6 +196,14 @@ FirstRunIssue? _users(FirstRunDraft d, FirstRunSecrets s) {
       if (!scopes.contains(_norm(u.scope))) {
         return FirstRunIssue.userScopeInvalid;
       }
+      final pw = s.userPasswords[u.rowId] ?? '';
+      if (pw.length < kFirstRunPasswordMin) return FirstRunIssue.userPasswordShort;
+      final lower = pw.toLowerCase();
+      if (lower == kFirstRunAdminUsername ||
+          lower == u.username.trim().toLowerCase()) {
+        return FirstRunIssue.userPasswordWeak;
+      }
+      if (!passwords.add(pw)) return FirstRunIssue.userPasswordDuplicate;
     }
   }
   return null;

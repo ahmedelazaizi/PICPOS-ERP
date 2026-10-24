@@ -289,4 +289,13 @@ Map<String, PermissionCategory> get permissionCategories => {
       'parties_credit_limit_bypass': tr('تجاوز الحد الائتماني'),
     },
   ),
+  'warehouse_mobile':  PermissionCategory(
+    name: tr('تطبيق المخازن والأجهزة'),
+    icon: PhosphorIconsBold.deviceMobile,
+    color: AppColors.info,
+    permissions: {
+      'devices_pair_manage': tr('ربط وإقران الأجهزة وإلغاء ربطها'),
+      'warehouse_mobile_access': tr('استعمال تطبيق المخازن على الهاتف'),
+    },
+  ),
 };

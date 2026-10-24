@@ -82,7 +82,6 @@ void main() {
       'lib/presentation/screens/settings/widgets/add_user_dialog.dart',
       // TODO(spec): migrate through a repository
       'lib/presentation/screens/settings/widgets/server_perms_toggle_dialog.dart',
-      'lib/presentation/screens/setup_wizard_screen.dart',
       'lib/presentation/screens/tables/floor_plan_designer.dart',
       'lib/presentation/screens/tables/merge_table_dialog.dart',
       'lib/presentation/screens/tables/qr_menu_dialog.dart',

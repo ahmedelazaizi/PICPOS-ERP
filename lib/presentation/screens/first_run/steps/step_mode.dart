@@ -30,10 +30,7 @@ Future<void> setFirstRunLanguage(WidgetRef ref, String code) async {
 }
 
 class StepMode extends ConsumerWidget {
-  const StepMode({super.key, required this.onOpenMirror});
-
-  /// المرآةُ تُفتح في المعالج القديم حتى P6.
-  final VoidCallback onOpenMirror;
+  const StepMode({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -45,6 +42,12 @@ class StepMode extends ConsumerWidget {
       FirstRunPath.hq: Icons.dns_outlined,
       FirstRunPath.branch: Icons.store_outlined,
     };
+    // المرآةُ خيارٌ متقدّم تحت الطيّ لا بطاقةٌ رئيسية.
+    const mainPaths = [
+      FirstRunPath.standalone,
+      FirstRunPath.hq,
+      FirstRunPath.branch,
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -66,7 +69,7 @@ class StepMode extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 16),
-        for (final p in FirstRunPath.values) ...[
+        for (final p in mainPaths) ...[
           FirstRunChoiceCard(
             key: Key('first_run_path_${p.name}'),
             icon: icons[p]!,
@@ -84,15 +87,6 @@ class StepMode extends ConsumerWidget {
             tone: FirstRunTone.warning,
             icon: Icons.warning_amber_rounded,
           ),
-        if (path != FirstRunPath.standalone)
-          Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: FirstRunCallout(
-              key: const Key('first_run_legacy_note'),
-              title: tr('سيُكمل هذا المسار بالمعالج الحالي مؤقتًا.'),
-              body: tr('خطوات الخادم والفرع الجديدة قيد التنفيذ؛ سيفتح «التالي» معالج الخادم/الربط الحالي.'),
-            ),
-          ),
         const SizedBox(height: 10),
         FirstRunCallout(
           key: const Key('first_run_license_note'),
@@ -105,16 +99,17 @@ class StepMode extends ConsumerWidget {
           data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
           child: ExpansionTile(
             key: const Key('first_run_advanced'),
+            initiallyExpanded: path == FirstRunPath.mirror,
             tilePadding: EdgeInsets.zero,
             title: Text(tr('خيارات متقدمة')),
             children: [
               FirstRunChoiceCard(
                 key: const Key('first_run_path_mirror'),
                 icon: Icons.copy_all_outlined,
-                title: tr('نسخة مرآة للسيرفر الرئيسي'),
-                subtitle: tr('تعرض بيانات المقر وتعمل كجهاز مدير؛ تفتح معالج المرآة الحالي.'),
-                selected: false,
-                onTap: onOpenMirror,
+                title: firstRunPathTitle(FirstRunPath.mirror),
+                subtitle: firstRunPathSubtitle(FirstRunPath.mirror),
+                selected: path == FirstRunPath.mirror,
+                onTap: () => ctl.selectPathTo(FirstRunPath.mirror),
               ),
             ],
           ),

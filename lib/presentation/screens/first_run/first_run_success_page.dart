@@ -6,27 +6,31 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/i18n/tr.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../domain/models/first_run/first_run_path.dart';
 import '../../../domain/models/first_run/first_run_steps.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import 'first_run_controller.dart';
+import 'first_run_providers.dart';
+import 'first_run_success_info.dart';
 import 'first_run_texts.dart';
 import 'widgets/first_run_callout.dart';
 
 class FirstRunSuccessPage extends ConsumerWidget {
-  const FirstRunSuccessPage({super.key, required this.onStart});
+  const FirstRunSuccessPage({super.key, required this.onStart, this.onRestart});
 
   final VoidCallback onStart;
+
+  /// المقرّ: PostgreSQL يحتاج إقلاعاً جديداً — «إعادة التشغيل الآن» بدل البدء.
+  final VoidCallback? onRestart;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(firstRunControllerProvider);
-    final next = <(IconData, String)>[
-      (Icons.login, tr('ادخل بحساب المسؤول (admin) وكلمة المرور التي اخترتها.')),
-      (Icons.inventory_2_outlined, tr('أضف أصنافك وأسعارها من شاشة الأصناف.')),
-      (Icons.group_add_outlined, tr('أنشئ مستخدميك وصلاحياتهم من الإعدادات.')),
-      (Icons.print_outlined, tr('جهّز الطابعة من الإعدادات › الطابعات.')),
-      (Icons.verified_outlined, tr('فعّل النسخة من الإعدادات › حول.')),
-    ];
+    final path = s.draft.path;
+    final next = successNextSteps(path);
+    final addresses = path == FirstRunPath.hq
+        ? (ref.watch(firstRunLocalAddressesProvider).value ?? const <String>[])
+        : const <String>[];
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 640),
@@ -59,7 +63,8 @@ class FirstRunSuccessPage extends ConsumerWidget {
                 s.draft.companyName.trim(),
                 style: TextStyle(fontSize: 15, color: context.picposMuted),
               ),
-              const SizedBox(height: 20),
+              SuccessConnectionCard(draft: s.draft, addresses: addresses),
+              const SizedBox(height: 12),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
@@ -109,12 +114,20 @@ class FirstRunSuccessPage extends ConsumerWidget {
                 ),
               ],
               const SizedBox(height: 24),
-              FilledButton.icon(
-                key: const Key('first_run_start'),
-                onPressed: onStart,
-                icon: const Icon(Icons.arrow_forward),
-                label: Text(tr('ابدأ الاستخدام')),
-              ),
+              if (path == FirstRunPath.hq)
+                FilledButton.icon(
+                  key: const Key('first_run_restart'),
+                  onPressed: onRestart,
+                  icon: const Icon(Icons.restart_alt),
+                  label: Text(tr('إعادة التشغيل الآن')),
+                )
+              else
+                FilledButton.icon(
+                  key: const Key('first_run_start'),
+                  onPressed: onStart,
+                  icon: const Icon(Icons.arrow_forward),
+                  label: Text(tr('ابدأ الاستخدام')),
+                ),
             ],
           ),
         ),

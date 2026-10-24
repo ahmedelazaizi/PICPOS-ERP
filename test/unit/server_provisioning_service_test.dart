@@ -1,7 +1,6 @@
 // P0 (خطة إعادة تصميم الإعداد الأول): الخدمةُ المستخرجةُ من step_provisioning
 // تُرجع نتيجةً وتبثّ تقدّماً — ولا ترسم ولا تنهي العملية.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:picpos_erp/data/database/pg_config.dart';
 import 'package:picpos_erp/services/setup/server_provisioning_service.dart';
 
 PostgresConfig _cfg() => const PostgresConfig(

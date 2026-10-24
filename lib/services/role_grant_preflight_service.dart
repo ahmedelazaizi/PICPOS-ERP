@@ -23,6 +23,7 @@ import 'package:drift/drift.dart';
 
 import '../core/permissions/role_grant_matrix.dart';
 import '../data/database/database.dart';
+import 'warehouse_roles_seeder.dart';
 
 /// بصمةُ مصفوفة المنح المطبَّقة على هذا التنصيب.
 const String kRoleGrantMatrixFingerprint = 'role_grant_matrix_fingerprint';
@@ -222,6 +223,8 @@ class RoleGrantPreflightService {
   /// أيَّ نزعٍ صريحٍ من المشغّل. لزرّ «منح الصلاحيات الافتراضية» الذي يطلبه
   /// المستخدمُ بنفسه. ومسارُ الإقلاع ينادي [grantMissingDefaultsOnce].
   Future<int> grantMissingDefaults() async {
+    // Plan 2026-10-23 §B.4: the warehouse roles must exist before the scan.
+    await ensureWarehouseRoles(db);
     // Ensure every code referenced by the matrix is present as a
     // permissions-table row BEFORE we try to grant any.
     await db.syncAllPermissions();

@@ -31,6 +31,7 @@ import '../../../core/config/runtime_config_snapshot.dart';
 import '../../../core/i18n/tr.dart';
 import '../../../data/providers/providers.dart';
 import '../../../services/network_service.dart';
+import 'setup_client_branch.dart';
 
 /// بلدُ الفوترة الإلكترونيّة — يقرّر أيَّ منصّةٍ تظهر في شاشاتها.
 enum SetupEInvoiceCountry { jordan, egypt, none }
@@ -184,6 +185,8 @@ abstract interface class SetupTablesPort {
 
 /// مراحلُ التشغيل كما تعرضها المراجعة.
 enum SetupRunStage {
+  /// المقرّ: كتابةُ بيانات الإعداد في قاعدة PostgreSQL (‏معاملة واحدة).
+  serverData,
   settings,
   branch,
   cashBanks,
@@ -197,6 +200,7 @@ enum SetupRunStage {
 
 extension SetupRunStageLabel on SetupRunStage {
   String get label => switch (this) {
+        SetupRunStage.serverData => tr('بيانات الشركة والفروع والمستخدمين على الخادم'),
         SetupRunStage.settings => tr('حفظ بيانات الشركة والإعدادات الأساسية'),
         SetupRunStage.branch => tr('الفرع والمخزن الرئيسيان'),
         SetupRunStage.cashBanks => tr('الصناديق والحسابات البنكية'),
@@ -211,7 +215,7 @@ extension SetupRunStageLabel on SetupRunStage {
 
 /// نتيجةُ محاولةٍ واحدة.
 class SetupRunResult {
-  const SetupRunResult._({
+  const SetupRunResult({
     required this.ok,
     this.failedStage,
     this.error,
@@ -400,7 +404,7 @@ class SetupFinishRunner {
       );
       if (failure != null) {
         // BUG 5 + 7 + 1 (Spec 125): لا حالةَ جزئيّةً — يقف ولا يكمل.
-        return SetupRunResult._(
+        return SetupRunResult(
           ok: false,
           failedStage: stage,
           error: failure,
@@ -450,13 +454,13 @@ class SetupFinishRunner {
       if (!await p.rehydrateRuntimeConfigCache()) {
         warnings.add(tr('تعذّر تحديث ذاكرة الإعدادات المؤقتة'));
       }
-      return SetupRunResult._(
+      return SetupRunResult(
         ok: true,
         warnings: warnings,
         failedUsers: failedUsers,
       );
     } catch (e) {
-      return SetupRunResult._(
+      return SetupRunResult(
         ok: false,
         failedStage: stage,
         error: '$e',
@@ -583,39 +587,10 @@ class SetupFinishRunner {
   Future<void> _clientBranch(SetupDraft d, SetupPersistence p) async {
     final branchId = d.selectedClientBranchId;
     if (d.networkMode != NetworkMode.client || branchId == null) return;
-    await p.saveClientBranchId(branchId);
-    final warehouses = await p.getWarehousesByBranch(branchId);
-    final clientWarehouseId = warehouses.isEmpty
-        ? null
-        : warehouses.where((w) => w.isDefault).map((w) => w.id).firstOrNull ??
-            warehouses.first.id;
-    if (clientWarehouseId != null) {
-      await p.saveSetting(
-        'pos_default_warehouse_branch_$branchId',
-        clientWarehouseId.toString(),
-      );
-      await p.saveSetting(
-        'pos_default_warehouse_id',
-        clientWarehouseId.toString(),
-      );
-    }
-    Branche? selected;
-    for (final b in d.syncedBranches) {
-      if (b.id == branchId) {
-        selected = b;
-        break;
-      }
-    }
-    final code = selected?.code?.trim() ?? '';
-    if (code.isEmpty) return;
-    await p.saveSetting('invoice_code_prefix', '$code-POS');
-    await p.saveSetting('prefix_sales_pos', '$code-POS');
-    await p.saveSetting('prefix_sales_manual', '$code-SINV');
-    await p.saveSetting('prefix_sales_return', '$code-SRET');
-    await p.saveSetting('prefix_purchase', '$code-PINV');
-    await p.saveSetting('prefix_purchase_return', '$code-PRET');
-    await p.saveSetting('prefix_receipt_voucher', '$code-RCPT');
-    await p.saveSetting('prefix_payment_voucher', '$code-PMT');
-    await p.saveSetting('prefix_quotation', '$code-QUOT');
+    await writeClientBranchSettings(
+      p,
+      branchId: branchId,
+      syncedBranches: d.syncedBranches,
+    );
   }
 }

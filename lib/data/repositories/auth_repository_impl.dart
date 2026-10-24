@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/i18n/tr.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../services/auth/offline_login_policy.dart';
 import '../../services/client_write_interceptor.dart';
 import '../../services/delta_pull_service.dart';
 import '../../services/login_lockout_store.dart';
@@ -55,11 +57,22 @@ class AuthRepositoryImpl implements IAuthRepository {
   /// network-backed fetch.
   final UserBranchAccessFetcher _fetchUserBranchAccess;
 
+  /// سياسةُ الدخول دون اتصال (P7) — قابلةٌ للحقن في الاختبار.
+  late final OfflineLoginPolicy _offlinePolicy;
+
   AuthRepositoryImpl(
     this.db, {
     UserBranchAccessFetcher? fetchUserBranchAccess,
+    OfflineLoginPolicy? offlinePolicy,
   }) : _fetchUserBranchAccess =
-            fetchUserBranchAccess ?? _defaultFetchUserBranchAccess;
+            fetchUserBranchAccess ?? _defaultFetchUserBranchAccess {
+    _offlinePolicy = offlinePolicy ??
+        OfflineLoginPolicy(
+          store: SecureOfflineLoginStore(),
+          readGraceDays: () async =>
+              int.tryParse(await db.getSettingValue('offline_login_grace_days') ?? ''),
+        );
+  }
 
   @override
   Stream<List<UserWithRole>> watchAllUsers() => db.watchAllUsers();
@@ -259,6 +272,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       // Spec 151 (P1-8) — mint a signed server session token while the
       // plaintext credential is still in scope (client/mirror mode only).
       await _acquireServerSession(result, username: username, password: password);
+      await _enforceOfflineLoginPolicy(result);
     } else {
       final remaining = LoginRateLimiter.recordFailure(username);
       if (remaining == 0) {
@@ -271,6 +285,40 @@ class AuthRepositoryImpl implements IAuthRepository {
     return result;
   }
 
+  /// P7 — جهازُ فرعٍ (عميل/مرآة): جلسةُ الخادم الناجحة تجدّد مدةَ السماح؛ وبدونها
+  /// (‏الخادمُ غيرُ متاح) يُرفض الدخولُ إن انقضت المدةُ منذ آخر تحقّق ناجح أو رُجعت
+  /// ساعةُ الجهاز. مستخدمٌ بلا طابعٍ قطّ (‏مثبَّتٌ قبل هذا الإصدار) يُسمح له ويبدأ
+  /// عدُّه من أوّل اتصال — لئلّا يُقفل الكاشيرُ حتى يتصل مرّة. فشلُ التخزين الآمن لا
+  /// يمنع الدخول (‏يُسجَّل فقط).
+  Future<void> _enforceOfflineLoginPolicy(UserWithRole result) async {
+    if (!SyncInterceptor.isClientMode) return;
+    final id = result.user.id;
+    final OfflineLoginVerdict verdict;
+    try {
+      if (ServerProxy.instance.hasSessionToken(id)) {
+        await _offlinePolicy.recordVerified(id);
+        return;
+      }
+      verdict = await _offlinePolicy.check(id);
+    } catch (e) {
+      debugPrint('[Auth] offline login policy unavailable: $e');
+      return;
+    }
+    switch (verdict.decision) {
+      case OfflineLoginDecision.expired:
+        throw StateError(tr(
+          'انتهت مدة الدخول دون اتصال ({p0} يومًا). اتصل بالرئيسي لتجديد التحقق.',
+          {'p0': verdict.graceDays},
+        ));
+      case OfflineLoginDecision.clockRolledBack:
+        throw StateError(
+            tr('تعذّر التحقق من وقت الجهاز. اتصل بالرئيسي لتجديد التحقق.'));
+      case OfflineLoginDecision.allowed:
+      case OfflineLoginDecision.neverVerified:
+        return;
+    }
+  }
+
   @override
   Future<UserWithRole?> authenticateByCardCode(String cardCode) async {
     final result = await db.authenticateByCardCode(cardCode);
@@ -278,6 +326,7 @@ class AuthRepositoryImpl implements IAuthRepository {
       await _verifyBranchAccess(result);
       // Spec 151 (P1-8) — POS card-swipe → session token via cardCode.
       await _acquireServerSession(result, cardCode: cardCode);
+      await _enforceOfflineLoginPolicy(result);
     }
     return result;
   }
@@ -302,6 +351,7 @@ class AuthRepositoryImpl implements IAuthRepository {
           password: input,
         );
       }
+      await _enforceOfflineLoginPolicy(result);
     }
     return result;
   }

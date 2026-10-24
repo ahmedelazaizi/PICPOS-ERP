@@ -7,6 +7,7 @@ import '../../../../core/constants/app_constants.dart' show CurrencyInfo;
 import '../../../../core/i18n/tr.dart';
 import '../../../../domain/models/first_run/first_run_currency.dart';
 import '../../../../domain/models/first_run/first_run_packs.dart';
+import '../../../../domain/models/first_run/first_run_path.dart';
 import '../../../../domain/models/first_run/first_run_steps.dart';
 import '../../../../domain/models/first_run/first_run_validation.dart';
 import '../../setup_wizard/setup_finish_runner.dart';
@@ -14,6 +15,7 @@ import '../first_run_controller.dart';
 import '../first_run_texts.dart';
 import '../widgets/first_run_callout.dart';
 import '../widgets/first_run_summary.dart';
+import 'step_review_server.dart';
 
 String _packName(FirstRunPack p) => switch (p) {
       FirstRunPack.pos => tr('نقطة بيع فقط'),
@@ -39,9 +41,13 @@ class StepReview extends ConsumerWidget {
     final steps = stepsFor(d.path);
     void edit(FirstRunStep step) => ctl.jumpToStep(steps.indexOf(step));
     final currency = d.currency.isEmpty ? '—' : CurrencyInfo.fromCode(d.currency).nameAr;
+    final company = reviewIsCompanyPath(d.path);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (d.path == FirstRunPath.branch) ...reviewBranchSections(d, edit),
+        if (d.path == FirstRunPath.mirror) ...reviewMirrorSections(d, edit),
+        if (company) ...[
         FirstRunSummarySection(
           title: tr('الشركة والنشاط'),
           editKey: const Key('first_run_edit_company'),
@@ -66,17 +72,20 @@ class StepReview extends ConsumerWidget {
             (tr('السنة المالية'), '${d.fiscalYear}'),
           ],
         ),
-        FirstRunSummarySection(
-          title: tr('البيانات والمسؤول'),
-          editKey: const Key('first_run_edit_users'),
-          onEdit: () => edit(FirstRunStep.users),
-          rows: [
-            (tr('مكان البيانات'), s.storage?.path ?? '—'),
-            (tr('المسؤول'), kFirstRunAdminUsername),
-            (tr('كلمة المرور'), '••••••••'),
-          ],
-        ),
-        if (d.currency.isNotEmpty)
+        if (d.path == FirstRunPath.standalone)
+          FirstRunSummarySection(
+            title: tr('البيانات والمسؤول'),
+            editKey: const Key('first_run_edit_users'),
+            onEdit: () => edit(FirstRunStep.users),
+            rows: [
+              (tr('مكان البيانات'), s.storage?.path ?? '—'),
+              (tr('المسؤول'), kFirstRunAdminUsername),
+              (tr('كلمة المرور'), '••••••••'),
+            ],
+          ),
+        if (d.path == FirstRunPath.hq) ...reviewHqSections(d, edit),
+        ],
+        if (company && d.currency.isNotEmpty)
           FirstRunCallout(
             key: const Key('first_run_currency_confirm'),
             title: tr('العملة: {p0} — لا يمكن تغييرها بعد أول فاتورة.',

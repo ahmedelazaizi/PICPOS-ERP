@@ -97,6 +97,18 @@ void main() {
     expect(src.contains('SetupWizardScreen'), isFalse);
   });
 
+  test('المعالج الجديد لا يفتح المعالج القديم لأي مسار (مقر/فرع/مرآة)', () {
+    for (final f in Directory('lib/presentation/screens/first_run')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.dart'))) {
+      final s = f.readAsStringSync();
+      expect(s.contains('SetupWizardScreen'), isFalse, reason: f.path);
+      expect(s.contains('setup_wizard_screen.dart'), isFalse, reason: f.path);
+      expect(s.contains('_legacy'), isFalse, reason: f.path);
+    }
+  });
+
   test('ملفات المعالج الجديد بلا أي ذكر لعلامة أخرى', () {
     for (final root in ['lib/presentation/screens/first_run', 'lib/services/setup', 'lib/domain/models/first_run']) {
       for (final f in Directory(root).listSync(recursive: true).whereType<File>()) {

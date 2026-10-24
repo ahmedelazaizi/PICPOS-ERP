@@ -38,6 +38,9 @@ class FirstRunUserRow {
     required this.username,
     this.roleId,
     this.scope = 'HQ',
+    this.rowId = 0,
+    this.roleName,
+    this.forceChange = true,
   });
 
   final String name;
@@ -45,11 +48,42 @@ class FirstRunUserRow {
   final int? roleId;
   final String scope;
 
+  /// مفتاحُ السطر الثابت — تُربط به كلمةُ المرور الأوليّة في [FirstRunSecrets].
+  final int rowId;
+
+  /// اسمُ الدور وقتَ الاختيار: الخادمُ يحلّ الدورَ بالاسم لا برقمٍ محلّيّ.
+  final String? roleName;
+
+  /// يُلزم بتغيير كلمته الأوّليّة عند أوّل دخول (الافتراضيّ). الخادمُ لا يمنح جلسةً
+  /// لحسابٍ ملزَمٍ بالتغيير، فإيقافه يتيح لجهاز الفرع اعتمادَ الحساب في الإعداد.
+  final bool forceChange;
+
+  FirstRunUserRow copyWith({
+    String? name,
+    String? username,
+    int? roleId,
+    String? scope,
+    String? roleName,
+    bool? forceChange,
+  }) =>
+      FirstRunUserRow(
+        name: name ?? this.name,
+        username: username ?? this.username,
+        roleId: roleId ?? this.roleId,
+        scope: scope ?? this.scope,
+        rowId: rowId,
+        roleName: roleName ?? this.roleName,
+        forceChange: forceChange ?? this.forceChange,
+      );
+
   Map<String, Object?> toJson() => {
         'name': name,
         'username': username,
         'roleId': roleId,
         'scope': scope,
+        'rowId': rowId,
+        'roleName': roleName,
+        'forceChange': forceChange,
       };
 
   factory FirstRunUserRow.fromJson(Map<String, Object?> j) => FirstRunUserRow(
@@ -57,6 +91,9 @@ class FirstRunUserRow {
         username: (j['username'] as String?) ?? '',
         roleId: j['roleId'] as int?,
         scope: (j['scope'] as String?) ?? 'HQ',
+        rowId: (j['rowId'] as int?) ?? 0,
+        roleName: j['roleName'] as String?,
+        forceChange: j['forceChange'] is bool ? j['forceChange'] as bool : true,
       );
 }
 
@@ -68,7 +105,16 @@ class FirstRunSecrets {
     this.developerPassword = '',
     this.developerPasswordConfirm = '',
     this.pairingCode = '',
+    this.pgPassword = '',
+    this.accountPassword = '',
+    this.userPasswords = const {},
   });
+
+  /// كلمةُ مرور PostgreSQL وكلمةُ حساب الفرع/مدير المرآة وكلماتُ مستخدمي
+  /// المقرّ الأوليّة (بمفتاح rowId) — كلُّها في الذاكرة فقط.
+  final String pgPassword;
+  final String accountPassword;
+  final Map<int, String> userPasswords;
 
   final String adminPassword;
   final String adminPasswordConfirm;
@@ -82,8 +128,14 @@ class FirstRunSecrets {
     String? developerPassword,
     String? developerPasswordConfirm,
     String? pairingCode,
+    String? pgPassword,
+    String? accountPassword,
+    Map<int, String>? userPasswords,
   }) =>
       FirstRunSecrets(
+        pgPassword: pgPassword ?? this.pgPassword,
+        accountPassword: accountPassword ?? this.accountPassword,
+        userPasswords: userPasswords ?? this.userPasswords,
         adminPassword: adminPassword ?? this.adminPassword,
         adminPasswordConfirm: adminPasswordConfirm ?? this.adminPasswordConfirm,
         developerPassword: developerPassword ?? this.developerPassword,
@@ -158,6 +210,14 @@ class FirstRunDraft {
     this.port = '8080',
     this.deviceName = '',
     this.branchRole = BranchDeviceRole.first,
+    this.pgHost = 'localhost',
+    this.pgPort = '5432',
+    this.pgDatabase = 'picpos',
+    this.pgUser = 'postgres',
+    this.selectedBranchId,
+    this.selectedBranchName = '',
+    this.selectedBranchCode = '',
+    this.accountUsername = '',
     this.branches = const [],
     this.hqUsers = const [],
     this.offlineDays = 7,
@@ -211,7 +271,19 @@ class FirstRunDraft {
   final String deviceName;
   final BranchDeviceRole branchRole;
 
-  // ── مسار المقرّ (‏P5) ──
+  /// الفرعُ المختار من الفروع المزامَنة (‏يظهر بعد المزامنة الأولى).
+  final int? selectedBranchId;
+  final String selectedBranchName;
+  final String selectedBranchCode;
+
+  /// اسمُ المستخدم المعتمد للتحقّق (‏الفرع) أو مديرُ المرآة. **لا كلمةَ مرور.**
+  final String accountUsername;
+
+  // ── مسار المقرّ (‏P5): اتصالُ PostgreSQL — كلمةُ المرور في الأسرار ──
+  final String pgHost;
+  final String pgPort;
+  final String pgDatabase;
+  final String pgUser;
   final List<FirstRunBranchRow> branches;
   final List<FirstRunUserRow> hqUsers;
   final int offlineDays;
@@ -254,6 +326,15 @@ class FirstRunDraft {
     String? port,
     String? deviceName,
     BranchDeviceRole? branchRole,
+    String? pgHost,
+    String? pgPort,
+    String? pgDatabase,
+    String? pgUser,
+    int? selectedBranchId,
+    bool clearSelectedBranch = false,
+    String? selectedBranchName,
+    String? selectedBranchCode,
+    String? accountUsername,
     List<FirstRunBranchRow>? branches,
     List<FirstRunUserRow>? hqUsers,
     int? offlineDays,
@@ -291,6 +372,16 @@ class FirstRunDraft {
         port: port ?? this.port,
         deviceName: deviceName ?? this.deviceName,
         branchRole: branchRole ?? this.branchRole,
+        pgHost: pgHost ?? this.pgHost,
+        pgPort: pgPort ?? this.pgPort,
+        pgDatabase: pgDatabase ?? this.pgDatabase,
+        pgUser: pgUser ?? this.pgUser,
+        selectedBranchId: clearSelectedBranch
+            ? null
+            : (selectedBranchId ?? this.selectedBranchId),
+        selectedBranchName: selectedBranchName ?? this.selectedBranchName,
+        selectedBranchCode: selectedBranchCode ?? this.selectedBranchCode,
+        accountUsername: accountUsername ?? this.accountUsername,
         branches: branches ?? this.branches,
         hqUsers: hqUsers ?? this.hqUsers,
         offlineDays: offlineDays ?? this.offlineDays,
@@ -331,6 +422,14 @@ class FirstRunDraft {
         'port': port,
         'deviceName': deviceName,
         'branchRole': branchRole.name,
+        'pgHost': pgHost,
+        'pgPort': pgPort,
+        'pgDatabase': pgDatabase,
+        'pgUser': pgUser,
+        'selectedBranchId': selectedBranchId,
+        'selectedBranchName': selectedBranchName,
+        'selectedBranchCode': selectedBranchCode,
+        'accountUsername': accountUsername,
         'branches': [for (final b in branches) b.toJson()],
         'hqUsers': [for (final u in hqUsers) u.toJson()],
         'offlineDays': offlineDays,
@@ -391,6 +490,16 @@ class FirstRunDraft {
       deviceName: s('deviceName'),
       branchRole:
           pick(BranchDeviceRole.values, raw['branchRole'], BranchDeviceRole.first),
+      pgHost: s('pgHost').isEmpty ? 'localhost' : s('pgHost'),
+      pgPort: s('pgPort').isEmpty ? '5432' : s('pgPort'),
+      pgDatabase: s('pgDatabase').isEmpty ? 'picpos' : s('pgDatabase'),
+      pgUser: s('pgUser').isEmpty ? 'postgres' : s('pgUser'),
+      selectedBranchId: raw['selectedBranchId'] is int
+          ? raw['selectedBranchId'] as int
+          : null,
+      selectedBranchName: s('selectedBranchName'),
+      selectedBranchCode: s('selectedBranchCode'),
+      accountUsername: s('accountUsername'),
       branches: [
         if (raw['branches'] is List)
           for (final e in raw['branches'] as List)

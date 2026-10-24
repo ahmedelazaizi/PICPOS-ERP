@@ -41,8 +41,6 @@ const Map<String, String> _libLiteralAllowList = {
       'alternate-brand values behind `isPicPos ?` const forks',
   'lib/core/config/support_env.dart': 'const-folded env prefix fork',
   'lib/core/theme/app_theme.dart': 'designLanguage const fork',
-  'lib/presentation/screens/setup_wizard_screen.dart':
-      'welcome title const fork',
   'lib/services/log_writer_io.dart': 'log prefix const fork',
   'lib/data/database/daos/api_key_dao.dart': 'dead API-key prefix (no callers)',
 };
