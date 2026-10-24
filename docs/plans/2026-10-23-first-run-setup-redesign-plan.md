@@ -1,6 +1,46 @@
 # خطة: إعادة تصميم «إعداد بدء النظام» (First-Run Setup) وفق النموذج التفاعلي — 2026-10-23
 
 ## سجل التغييرات
+**2026-10-24 — دمج إجابات المالك وتدقيق المرآة والاعتماد.** المراجع في `docs/audits/2026-10-24-mirror-and-admin-login/`:
+- [SETUP-ADOPTION-AND-MODE.md](<../audits/2026-10-24-mirror-and-admin-login/SETUP-ADOPTION-AND-MODE.md>): ADP-001…013.
+- [MIRROR-AUDIT.md](<../audits/2026-10-24-mirror-and-admin-login/MIRROR-AUDIT.md>): MIR-001…025.
+- [ADMIN-IDENTITY-AND-DEVICE-ROLES.md](<../audits/2026-10-24-mirror-and-admin-login/ADMIN-IDENTITY-AND-DEVICE-ROLES.md>): ADM-001…012.
+- [REPRO-RESULTS.md](<../audits/2026-10-24-mirror-and-admin-login/REPRO-RESULTS.md>): جلسة أخرى. `CHAR-R4-a/b/c` PASS (الوضع يثبت إن نجحت المزامنة الأولى)، و`REPRO-R4-f/g` FAIL.
+
+**حالة التنفيذ:** commit `3361de8e` («complete new first-run setup (main-server, branch, mirror paths; offline-login grace policy partial)… remove old wizard») نفّذ P0–P3 وP5 وP6 وP8. وP7 جزئيًا. هذا **بحسب رسالة الـcommit ووجود الملفات** [استنتاج]، ولم يُراجَع كل ملف مقابل الخطة.
+
+**ما تغيّر:**
+- **قول المالك 4 (الاعتماد):**
+  - أُضيفت المرحلتان **A0** (إصلاحات فورية، الأولوية P0) و**A1** (عقد الاعتماد، الأولوية P1) في §D.
+  - أُضيف «عقد الاعتماد» في §C.7: مصدر حقيقة واحد `device_provisioning_v1`، تطبيق ذرّي، إعادة تطبيق idempotent عند كل إقلاع، فحص ذاتي بعد الإنهاء.
+  - السبب الجذري لعدم ثبات المرآة في `SETUP-ADOPTION-AND-MODE.md` §2.
+- **قول المالك 3 (هوية المسؤول):** بوابة الإعداد تنتقل **قبل** شاشة الدخول (ADM-001). أجهزة الفرع والمرآة تُوفَّر بلا دخول برمز إقران، ثم يُتحقَّق من أول مستخدم على السيرفر.
+- **قول المالك 1 (أدوار الأجهزة):** رمز الإقران يحمل **الفرع ونوع الجهاز** (`pos` | `generic` | `mirror`)، فيمتد B9 من الفرع إلى النوع.
+- **قول المالك 5 (التفعيل):** لا تغيير؛ التفعيل خارج الإعداد كما في قرار 2026-10-23 رقم 2.
+- **نص ملغى صراحةً (مُعلَّم [ملغى — 2026-10-24] في موضعه):**
+  - §C.1: «المرآة… خطوة `link` بوضع mirror فوق `client_link_service`»، لأن المرآة تُقرن الآن برمز (MIR-001).
+  - §C.2: مسار المرآة `mode ← link ← review`.
+  - §C.3 الخطوة 4: التحقق المحلي أولًا، والشرط المؤقت SEC-004 (أُغلق).
+  - §C.6: «البوابة لا تتغير».
+  - §P5: قبول «`legacyAllowed()` = false على الخادم الجديد» (SEC-006)، **مؤجَّل حتى M1** في خطة المستخدمين.
+  - §P6: بند المرآة.
+  - §P7 كاملة: مالكها الآن خطة المستخدمين P3.
+  - D.9: الحالتان 5 و12 (أُعيد تعريفهما).
+  - صفحة نجاح الفرع والمرآة بلا إعادة تشغيل.
+- **ملكية الخطتين:**
+  - **هذه الخطة تملك:**
+    - شاشات الإعداد.
+    - بوابة التوفير قبل الدخول.
+    - عقد الاعتماد (`ModeActivator`، `ProvisioningApplier`، الفحص الذاتي).
+    - «إعادة توفير الجهاز».
+    - مخارج شاشة Fatal.
+  - **خطة المستخدمين** (`docs/plans/2026-10-24-users-login-sync-logic-plan.md`) **تملك:**
+    - الاعتمادات والدخول والجلسات.
+    - سياسة الأوفلاين.
+    - وقت تشغيل المرآة (M1–M3).
+    - منطق التحقق عبر الرئيسي في `branch_account_verifier` (P4، ويُنفَّذ داخل A1 هنا).
+- **قرارات جديدة:** E14، E15. وعُدِّل E6 وE7.
+
 **2026-10-23 — مواءمة مع قرارات المالك (آخر الوثيقة) ومع المراجعة `docs/audits/2026-10-23-release-audit/`.** المعرّفات من `FINDINGS.md` هناك.
 
 - **التفعيل خارج الإعداد الأولي (قرار المالك 2):**
@@ -32,7 +72,8 @@
 - §A تحليل الفجوة خطوة بخطوة (النموذج ↔ الحالي)، و§A.0 التفعيل القائم في الإعدادات (لا يُكرَّر)
 - §B ميزات النموذج بلا backend اليوم — قرار لكل منها + ملاحظات أمنية
 - §C الحالة المستهدفة: آلة الحالات وقائمة الشاشات لكل مسار، الحفظ، الاستئناف، الإنهاء idempotent، التوافق الخلفي
-- §D خطة التنفيذ المرحلية P0–P8
+- §C.7 عقد الاعتماد **[جديد 2026-10-24]**
+- §D خطة التنفيذ المرحلية P0–P8 + **A0–A1 [جديد 2026-10-24]**
 - §E قرارات المالك (مع الافتراضي الموصى به)
 - §F ملاحظات UX من النموذج تستحق الإبقاء
 - §G ما لم يُتحقق منه
@@ -97,6 +138,7 @@
 ---
 
 ## A. تحليل الفجوة خطوة بخطوة
+> **[2026-10-24]** هذا القسم يصف **المعالج القديم** كما كان في 2026-10-23. المعالج حُذف في `3361de8e`، وملفاته تُقرأ من التاريخ (`git show 3361de8e^:<path>`). يبقى القسم مرجعًا لأسباب التصميم، لا وصفًا للكود الحالي.
 
 ### A.0 التفعيل القائم في النظام — مرجع فقط، لا يُكرَّر (قرار المالك 2) [مقروء]
 - **الموضع:** الإعدادات › حول، في بطاقة الترخيص (`lib/presentation/settings_picpos/screens/settings_picpos_about.dart:139-179`).
@@ -154,9 +196,9 @@
 | B6 | أقسام غير موجودة (العقارات، السيارات، الخدمات) + بلا flag (المشتريات، المندوبون، الأصول الثابتة) | مفقودة [مقروء: `feature_key.dart:29-59`] | **لا تُعرض** في `custom`؛ المحاسبة/المبيعات/المخزون core دائمة (`feature_key.dart:108`) تُعرض chips مقفلة «أساسي» | إظهار قسم لا يعمل = وعد كاذب |
 | B7 | ترخيص الفرع موروث من الرئيسي | كل جهاز يحتاج مفتاحه (`machineId`) [مقروء] | **[ملغى — قرار المالك 2]** لا خطوة `branchLicense`. كل جهاز يُفعَّل من إعداداته كما اليوم | — |
 | B8 | سجل فروع الرئيسي (إنشاء عدة فروع في الإعداد) | جدول `Branches` + `createBranch` [مقروء] | **تنفيذ فعلي** (P5) على قاعدة PG للخادم (ومحليًا للمستقل إن أراد) | idempotent بالرمز (`branches.code` ≤10)؛ لا إنشاء مخازن/صناديق لكل فرع (النموذج يؤجلها لما بعد الإعداد) |
-| B9 | رمز ربط محدد بالفرع يصدره الرئيسي | الرمز موجود (8 أحرف/10 دقائق/مرة واحدة)، و`branchId` يرسله **الجهاز** لا يُربط بالعرض [مقروء: `lan_pairing_service.dart:180-196`] | **تنفيذ فعلي** (P6): `issuePairingCode({int? branchId})` يربط الفرع بالعرض؛ الجهاز يرث الفرع ولا يختاره | الملف 25,892 بايت (غير ratcheted) — الإضافة صغيرة؛ إن اقتربت من 30KB تُنقل نماذج البيانات (:683-863) إلى `lan_pairing_models.dart` |
+| B9 | رمز ربط محدد بالفرع يصدره الرئيسي | الرمز موجود (8 أحرف/10 دقائق/مرة واحدة)، و`branchId` يرسله **الجهاز** لا يُربط بالعرض [مقروء: `lan_pairing_service.dart:180-196`] | **تنفيذ فعلي** (P6): `issuePairingCode({int? branchId})` يربط الفرع بالعرض؛ الجهاز يرث الفرع ولا يختاره. **[معدَّل 2026-10-24]** والرمز يحمل **نوع الجهاز** أيضًا (`pos` \| `generic` \| `mirror`؛ M1 في خطة المستخدمين) | الملف 25,892 بايت (غير ratcheted) — الإضافة صغيرة؛ إن اقتربت من 30KB تُنقل نماذج البيانات (:683-863) إلى `lan_pairing_models.dart` |
 | B10 | التحقق من حساب مركزي معتمد (فرع) | `authenticateUser` + `_verifyBranchAccess` + `_acquireServerSession` (`auth_repository_impl.dart:185-312`) [مقروء] | **تنفيذ فعلي** (P6) بعد المزامنة الأولى (انظر ترتيب §C.3) | كلمة المرور في الذاكرة فقط وتُمسح؛ على LAN الخادم HTTP 8080 افتراضيًا ⇒ **تحذير** إن لم يكن TLS مثبّتًا (`network_tls_enabled`) |
-| B11 | سياسة الدخول الأوفلاين (مدة سماح) | **لا حقل/إنفاذ** (لا last-verified في `Users`) [مقروء] | **تنفيذ فعلي** (P7): إعداد مُزامَن `offline_login_grace_days` + طابع تحقق per-device في secure storage + فحص في `authenticateUser` للعميل عند تعذّر الخادم | «بيانات التحقق المحلية الآمنة» = hashes Argon2id المزامنة أصلًا في `users`؛ حماية من إرجاع الساعة بحفظ أعلى وقت شوهد |
+| B11 | سياسة الدخول الأوفلاين (مدة سماح) | **لا حقل/إنفاذ** (لا last-verified في `Users`) [مقروء] | **تنفيذ فعلي** (P7): إعداد مُزامَن `offline_login_grace_days` + طابع تحقق per-device في secure storage + فحص في `authenticateUser` للعميل عند تعذّر الخادم. **[معدَّل 2026-10-24]** نُفِّذ جزئيًا. والتصميم النهائي (طوابع مربوطة بالبصمة، `notProvisioned`) في خطة المستخدمين P3 | «بيانات التحقق المحلية الآمنة» = hashes Argon2id المزامنة أصلًا في `users`؛ حماية من إرجاع الساعة بحفظ أعلى وقت شوهد |
 | B12 | المزامنة الأولى إلزامية قبل التشغيل | **موجودة** (`_firstSync` + reconcile) [مقروء] | **إعادة استعمال** + checklist مرئي | حالة القبول 4 مغطاة فعليًا؛ يضاف اختبار |
 | B13 | «جهاز إضافي يتصل بخادم الفرع» | الطوبولوجيا نجمية: كل عميل ↔ الخادم المركزي، ولكل عميل قاعدة محلية كاملة [مقروء: `client_first_sync_service.dart`، `offline_sync_worker_drain.dart`] | **تأجيل الخادم الطبقي للفرع**؛ «جهاز إضافي» = عميل آخر للرئيسي مربوط بنفس الفرع (قرار E5) | التكرار المخشي في النموذج غير قائم: الحركات تُرسل بـ`idempotencyKey` (UUIDv7) و`globalId` (`offline_sync_worker_replay.dart:14-28`) |
 | B14 | اختيار مجلد القاعدة | مسار ثابت، القاعدة مفتوحة قبل المعالج [مقروء] | **تأجيل**؛ الخطوة 4 تعرض المسار **للقراءة** + فحص المساحة الحرة وقابلية الكتابة + كشف بيانات سابقة | نقل قاعدة SQLCipher مفتوحة = خطر فقد بيانات |
@@ -180,7 +222,10 @@
   - النظام لـPicPos فقط، فلا يُحتفظ بالمعالج القديم لأي علامة. يبقى في الكود مؤقتًا فقط للمسارات التي لم تُنقل بعد أثناء P3–P6، ويُحذف في P8 مع اختباراته وعنوانه `مرحباً بك في URAL-ERP` (BRAND-009).
   - لا يوجد معالجان في الإصدار النهائي.
 - **الترتيب منفصل:** `setup_step_order_test` يفرض أن كل نمط يبدأ بـ`[10, 0, 11, 1]` (`test/unit/setup_step_order_test.dart:73`) ⇒ ترتيب جديد في ملف جديد `first_run_steps.dart`، ولا يُمسّ `setupStepOrderFor`.
-- **ربط المسار بالنمط:** standalone → `NetworkMode.standalone`؛ hq → `NetworkMode.server` (PostgreSQL + الخادم المضمَّن)؛ branch → `NetworkMode.client`؛ mirror → خيار «متقدم» في الخطوة 1 يفتح مسار مرآة **داخل v2** (خطوة `link` بوضع mirror فوق `client_link_service.dart` المستخرج في P0، ثم `review`). [ملغى — قرار المالك 1: «يفتح المسار القديم»] (قرار E6).
+- **ربط المسار بالنمط:** standalone → `NetworkMode.standalone`؛ hq → `NetworkMode.server` (PostgreSQL + الخادم المضمَّن)؛ branch → `NetworkMode.client`؛ mirror → خيار «متقدم» في الخطوة 1 يفتح مسار مرآة **داخل v2**.
+  - **[ملغى — 2026-10-24]** «خطوة `link` بوضع mirror فوق `client_link_service.dart` (`pairMirror` باسم المدير وكلمته)، ثم `review`». السبب: هذا الاقتران يعتمد على المفتاح المشترك القديم ذي الثلاثين يومًا (MIR-001)، ولا يملك تراجعًا عند الفشل (MIR-006).
+  - **المستهدف:** المرآة تُقرن **برمز إقران من نوع `mirror`** (M1 في خطة المستخدمين) عبر `ModeActivator` (§C.7)، ثم «حساب الجهاز» بمستخدم يملك `mirror_console`.
+  - [ملغى — قرار المالك 1: «يفتح المسار القديم»] (قرار E6).
 - **الإنهاء عبر الموجود:** `SetupFinishRunner` + `DeploymentModeCommitter` + `ClientFirstSyncService` + خدمة تهيئة PG المستخرجة. لا كتابة مباشرة لـ`standalone_setup_completed/server_setup_completed` (`test/static/no_direct_network_mode_writes_test.dart:23-27`).
 - **لا جداول جديدة ولا ترحيل:** كل الحالة الجديدة مفاتيح `settings` أو secure storage ⇒ `schemaVersion` يبقى 196.
 
@@ -197,7 +242,11 @@
 | 6 | `review` | `review` | `review` |
 | ✓ | `success` | `success` (+ «إعادة التشغيل الآن» لأن PG يحتاج إقلاعًا) | `success` (+ شريط اتصال وعدّادات) |
 
-المرآة (خيار متقدم): `mode` ← `link` (وضع mirror) ← `review` ← `success`.
+المرآة (خيار متقدم):
+- **[ملغى — 2026-10-24]** `mode` ← `link` (وضع mirror) ← `review` ← `success`.
+- **المستهدف:** `mode` ← `link` (رمز إقران `mirror`) ← `firstSync` ← `account` (مستخدم يملك `mirror_console`، يُتحقَّق منه على السيرفر) ← `review` ← `success` (إعادة تشغيل) ← فحص ذاتي.
+
+**الصف ✓ أعلاه للفرع [ملغى — 2026-10-24]:** صفحة نجاح الفرع والمرآة بلا إعادة تشغيل. **المستهدف:** كل الأوضاع الشبكية (hq، الفرع، المرآة) تنتهي بـ«إعادة التشغيل الآن»، ثم الفحص الذاتي قبل الدخول (§C.7، ADP-002).
 
 **تبديل 4↔5 في الفرع (انحراف مقصود عن النموذج):** التحقق الحقيقي من الحساب يحتاج الـhash المزامَن أو جلسة خادم، والمزامنة الأولى تُجري wipe للبيانات المزروعة. لذلك تبقى عناوين الـstepper ستًّا، ويأتي في الفرع «المزامنة الأولى» ثم «حساب الفرع». (بديل: تحقق خادمي قبل المزامنة عبر `_acquireServerSession` — قرار E7.)
 
@@ -216,8 +265,16 @@ app closed in committing ⇒ resume: review مع banner «إعداد غير مك
 1. `link`: `NetworkService.setServerAddress` → `pairLanClient(address, port, code, deviceName)` (أو `_probeHealth` القديم إن لم يدعم الخادم pairing) → يرجع `branchId, terminalCode` → `linked=true`، يُعرض «{الشركة} / {الفرع}» و chips من `FeaturePolicy` الخاص بالخادم بعد المزامنة [استنتاج: يحتاج GET بسيط لـ`company_name`/الفرع قبل المزامنة؛ إن لم يتوفر يُعرض الفرع فقط].
 2. `storage`: «أول جهاز» = الوضع الوحيد المدعوم؛ «إضافي» = نفس السلوك مع شرح (B13). فحوص: مساحة حرة ≥ 500MB [استنتاج للعتبة]، كتابة في مجلد القاعدة، وكشف بيانات سابقة (عدد فواتير > 0 ⇒ حجب ومسار صيانة).
 3. `firstSync`: `DeploymentModeCommitter.commit(client)` يتولى الربط + `_firstSync`؛ عند انعدام الاتصال: «لا يمكن إجراء المزامنة الأولى دون اتصال بالرئيسي…» و**لا تقدّم** (حالة القبول 4).
-4. `account`: `authenticateUser(u, p)` محليًا على البيانات المزامنة + `_verifyBranchAccess` + جلسة خادم ⇒ «{الدور} / {الفرع}» + ملخص الصلاحيات (عدد/أبرز 3) — لا إنشاء مستخدم محلي (قرار E8).
-   - **شرط أمني (SEC-004):** صف `users` الذي وصل بلا بيانات اعتماد (سحب ما قبل الدخول) يحمل اليوم كلمة مؤقتة متوقَّعة `<username>123`. لذلك لا يُقبل التحقق إلا بعد نجاح **جلسة الخادم** للمستخدم نفسه (`_acquireServerSession`)، لا بالتحقق المحلي وحده، إلى أن يُغلق SEC-004.
+4. `account`:
+   - **[ملغى — 2026-10-24]** «`authenticateUser(u, p)` محليًا على البيانات المزامنة + `_verifyBranchAccess` + جلسة خادم». السبب: التحقق المحلي يفشل حين لم تصل البصمات (SETUP-001).
+   - **المستهدف** (خطة المستخدمين B.7.3 / P4):
+     1. تحقق **على السيرفر أولًا** (`mintDirect`).
+     2. كلمة مؤقتة ⇒ تغييرها في الخطوة نفسها (`POST /api/auth/change-password`).
+     3. بالرمز الناتج يُسحب `users` + `user_branch_access` + `user_warehouse_access`، فتُسلَّم بصمات مستخدمي الفرع + `admin` وتُختم.
+     4. ثم التحقق المحلي + `_verifyBranchAccess`.
+     5. العرض: «{الدور} / {الفرع}» + ملخص الصلاحيات + **قائمة المستخدمين المصرَّح لهم على الجهاز**.
+   - لا إنشاء مستخدم محلي (قرار E8). الافتراضي أن يكون أول مستخدم `admin` (Q-A1 في خطة المستخدمين).
+   - **[ملغى — 2026-10-24]** شرط SEC-004 المؤقت (`<username>123`): SEC-004 مُغلق (`unusable_credential.dart:12-18`، `user_sync_strategy.dart:128-137`).
 5. `review` → `finish`: لا كتابة شركة/فروع/صناديق؛ فقط `client_branch_id` + بادئات الفواتير (`_clientBranch`, `setup_finish_runner.dart:552-589`) + touch/لغة + `setup_completed`.
 
 ### C.4 البيانات المحفوظة في كل خطوة
@@ -230,7 +287,7 @@ app closed in committing ⇒ resume: review مع banner «إعداد غير مك
 - **رئيسي:** (1) اختبار PG، (2) `provisionPostgres` (منقول من `_runProvisioning`) + `seedInitialDataPostgresAtomic`، (3) `pgDb.transaction`: المنشأة، الفروع (upsert بالرمز)، كلمة مرور المدير (`updateUserPassword` على PG — يُغلق ثغرة admin/admin)، المستخدمون + `UserBranchAccess`، `offline_login_grace_days`، `company_global_id`، `setup_completed`/`network_mode` على PG، (4) `cfg.save()` + `PostgresConfig.saveMode(postgres)` + committer(server) محليًا، (5) `setup_completed` محليًا، (6) صفحة نجاح بزر «إعادة التشغيل الآن» بدل `exit(0)` الفوري.
   - **شروط أمنية من المراجعة لمسار الرئيسي:**
     - **SEC-002.** مستخدمو الفروع يُنشؤون بكلمة أولية مع `forcePasswordChange:true`، و`/api/auth/session` اليوم يصدر لهم جلسة 30 يومًا دون فرض التغيير. لذلك **لا يُصدَر مسار hq قبل إغلاق SEC-002**: رفض الجلسة أو جلسة «تغيير كلمة المرور فقط».
-    - **SEC-006.** الخادم الجديد يجب ألا يفتح نافذة الـbearer القديم المشترك (30 يومًا) حين لا توجد أجهزة قديمة مقرونة.
+    - **SEC-006 [معدَّل 2026-10-24: مؤجَّل]** «الخادم الجديد يجب ألا يفتح نافذة الـbearer القديم المشترك (30 يومًا) حين لا توجد أجهزة قديمة مقرونة». **لا يُنفَّذ قبل M1** (المرآة اليوم لا تعمل إلا بهذا المفتاح، MIR-001). موضعه P7 في خطة المستخدمين.
     - **SEC-011.** مسارات «الإصلاح الذاتي» لا تعيد `admin/admin` دون `force_password_change`.
     - هذه كلها في SPEC-02 وSPEC-10 بخارطة المعالجة، وهي شرط مسبق لا جزء من هذه الخطة.
 - **فرع:** الربط والمزامنة سبق تنفيذهما بالـcommitter؛ الإنهاء كتابات محلية قليلة (C.3/5).
@@ -238,10 +295,29 @@ app closed in committing ⇒ resume: review مع banner «إعداد غير مك
 - **`setup_completed` يبقى آخر كتابة** (عقد `setup_finish_runner_parity_test.dart:247,307`).
 
 ### C.6 التثبيتات القائمة والتوافق الخلفي
-- البوابة لا تتغير: `setup_completed=='true'` ⇒ `MainScreen` (`main.dart:1623-1628`). أي تثبيت مكتمل لا يرى المعالج الجديد إطلاقًا.
+- **[ملغى — 2026-10-24]** «البوابة لا تتغير: `setup_completed=='true'` ⇒ `MainScreen`». **المستهدف** (§C.7): بوابة التوفير `ProvisioningGate` **قبل** شاشة الدخول، تقرأ `device_provisioning_v1`. الشرط المكافئ للتثبيتات القائمة: سجل غائب + `setup_completed=='true'` ⇒ يُبنى السجل من المفاتيح الحالية مرة واحدة (`ADOPT-BACKFILL`) ⇒ شاشة الدخول. أي تثبيت مكتمل لا يرى الإعداد الأول.
 - تثبيت توقف في منتصف المعالج القديم (`setup_in_progress='true'`، بلا `setup_completed`): يفتح v2 بلا مسودة؛ الإنهاء idempotent يعيد استعمال الفرع المزروع و`admin`. لا ترحيل مطلوب.
 - إعادة تعيين المعالج: `resetWizard` (`business_profile_provider.dart:377-386`، غير ratcheted) يمسح أيضًا `setup_draft_v2` و`setup_progress_v2`؛ مسار CLI `--reset-setup-wizard` (`main.dart:817-833`, ratcheted) **لا يُعدَّل** (المسودة تُستخدم تعبئة مسبقة فقط وأعلام التحقق مشتقة من الحقائق) — يُوثَّق.
 - أعلام `*_setup_completed` تُكتب عبر committer كما اليوم، والـbackfill في `_checkConsistency` (`network_service.dart:478-518`) يبقى.
+
+### C.7 عقد الاعتماد (Adoption Contract) — قول المالك 4 [جديد 2026-10-24]
+> «كل ما يُضبط في الإعداد الأول يجب أن يعتمده النظام كله.» التصميم الكامل والأدلة في `SETUP-ADOPTION-AND-MODE.md` §4. هنا الملخص الملزم:
+
+1. **مصدر حقيقة واحد لحالة الجهاز:** إعداد `device_provisioning_v1` (JSON، محلي للجهاز، يُضاف إلى `kDeviceLocalSettingKeys`)، وفيه `{version, mode, deviceKind, serverHost, serverPort, deviceId, branchId?, pairedAt, firstSyncAt, setupCompletedAt, appVersion}`.
+   - `network_mode` و`deployment_mode` و`setup_completed` و`*_first_sync_completed` و`client_branch_id` و`mirror_*` تُشتق منه.
+   - prefs ذاكرة مؤقتة فقط.
+2. **حالة المؤسسة:**
+   - على العميل والمرآة: **لا تُكتب** في الإنهاء (لا company، ولا currency، ولا `feature.*`، ولا سنة مالية). `runExtras` لهما = `touchMode` فقط (ADP-006).
+   - على المستقل والمقر: كاتب واحد لكل مفتاح.
+3. **تطبيق ذرّي:** `ModeActivator.commit(plan)` (ملف جديد `lib/services/deployment/mode_activator.dart`، يلفّ `DeploymentModeCommitter`). يملك الاقتران + المزامنة الأولى (سحب ثم استبدال المزروع) + التحقق من أول مستخدم + معاملة واحدة تكتب السجل وكل المفاتيح المشتقة. الفشل ⇒ تراجع كامل.
+4. **إعادة تطبيق idempotent عند كل إقلاع:** `ProvisioningApplier.ensure(db)` قبل `reconcileWithDb`. السجل يفوز، والإصلاح يُسجَّل `ADOPT-REPAIR`.
+5. **إعادة تشغيل إلزامية للأوضاع الشبكية**، ثم **فحص ذاتي** قبل الدخول، وبنوده في `SETUP-ADOPTION-AND-MODE.md` §4.1-5. FAIL ⇒ لا دخول + «إعادة المحاولة» / «إعادة توفير الجهاز».
+6. **مدخل واحد لتغيير الوضع:** «الإعدادات › الجهاز › إعادة توفير هذا الجهاز». يتطلب مستخدمًا بـ`system_settings`، ويكون أونلاين للعميل والمرآة.
+   - رقائق إعدادات الشبكة للعرض فقط.
+   - «تغيير الوضع» في أدوات المطوّر يستدعي هذا المدخل.
+   - شاشة Fatal تستدعيه.
+   - حارس static: `NetworkService.setMode` لا يُستدعى إلا من `ModeActivator`. يُحدَّث `test/static/no_direct_network_mode_writes_test.dart` الذي يعدّ `setMode` اليوم «canonical» (`:37`).
+7. **بوابة التوفير قبل الدخول:** `ProvisioningGate` تحيط بـ`MaterialApp.home`. السجل غير مكتمل ⇒ الإعداد الأول **بلا دخول**، وإلا `LoginScreen`. إعادة التوفير لاحقًا لا تتم إلا من داخل جلسة أو من Fatal بتأكيد.
 
 ---
 
@@ -252,9 +328,10 @@ app closed in committing ⇒ resume: review مع banner «إعداد غير مك
 **الشروط المسبقة من خارطة المعالجة (خارج هذه الخطة، 2026-10-23):**
 - SPEC-05 / G0.6: `CurrencyInfo.fromCode` يرمي على رمز غير معروف، وإزالة رموز العملة الثابتة (UX-001، UX-002).
 - SPEC-02 / G0.9: SEC-001 وSEC-002، قبل مسار hq وقبل أي تعديل لاسم المسؤول.
-- SEC-004 قبل الاعتماد على التحقق المحلي في مسار الفرع.
+- SEC-004 قبل الاعتماد على التحقق المحلي في مسار الفرع. **[2026-10-24: مُغلق]**
+- **[جديد 2026-10-24]** شرطا A1: M1 (إقران المرآة برمز) وP0/P1 في خطة المستخدمين. ترتيب الإصدارات الموحَّد للخطتين في خطة المستخدمين §C «ترتيب الدمج والإصدار المعدَّل»، ولا يُكرَّر هنا.
 
-**التوازي:** P0 ∥ P1. بعد P2 تأتي P3 ثم P5. P6 بعد P3 لأنها تمس `lan_pairing_service.dart`، وهي منفصلة عن P5. P7 ∥ P6 (ملفات auth منفصلة). P8 أخيرًا. **[ملغى — قرار المالك 2]** P4 ونطاقها `step_activation*` و`license_file_import.dart`.
+**التوازي:** P0 ∥ P1. بعد P2 تأتي P3 ثم P5. P6 بعد P3 لأنها تمس `lan_pairing_service.dart`، وهي منفصلة عن P5. P7 ∥ P6 (ملفات auth منفصلة) **[2026-10-24: P7 انتقلت إلى خطة المستخدمين P3]**. P8 أخيرًا. **[جديد 2026-10-24]** A0 ∥ (P0 وM1 في خطة المستخدمين)، ثم A1 بعدها. **[ملغى — قرار المالك 2]** P4 ونطاقها `step_activation*` و`license_file_import.dart`.
 
 **نطاقات الملفات:** P1 `lib/domain/models/first_run/**`؛ P5 `first_run/steps/step_company_hq*`, `step_users_hq*`, `lib/services/setup/server_setup_writer.dart`؛ P6 `first_run/steps/step_link*`, `step_first_sync*`, `step_account*`, `lan_pairing_service.dart`؛ P7 `lib/services/auth/offline_login_policy.dart`, `auth_repository_impl.dart`.
 
@@ -302,17 +379,18 @@ app closed in committing ⇒ resume: review مع banner «إعداد غير مك
   - مدير الخادم لم يعد `admin/admin`.
   - المراجعة غير قابلة للتجاوز، ولا `exit(0)` قبل صفحة النجاح.
   - **(شرط مسبق SEC-002):** `POST /api/auth/session` لمستخدم فرع منشأ بكلمة أولية يرجع 403 أو جلسة «تغيير كلمة المرور فقط».
-  - **(SEC-006):** `legacyAllowed()` = false على الخادم الجديد.
+  - **(SEC-006) [ملغى — 2026-10-24، مؤجَّل]:** «`legacyAllowed()` = false على الخادم الجديد». إن نُفِّذ قبل M1 (إقران المرآة برمز، خطة المستخدمين) فلن تقترن أي مرآة من اليوم الأول (MIR-001). ينتقل إلى P7 في خطة المستخدمين بشرطه المسبق.
 - **مخاطر:** PG غير متاح في CI (الاختبار تحت `pg`). الحجم ~45KB.
 
 ### P6 — مسار الفرع + المرآة (4.5–5 أيام؛ +0.5–1 يوم لنقل المرآة إلى v2 — قرار المالك 1)
-- **المرآة (2026-10-23):** خيار متقدم في `step_mode`. يُعاد استعمال `step_link.dart` بوضع mirror فوق `_pairMirror` المستخرج في P0 داخل `client_link_service.dart`، ثم `review` و`success`. اختبار: `first_run_mirror_flow_test.dart` (fake link ⇒ `NetworkMode.mirror` عبر committer). بذلك لا يبقى سبب للمعالج القديم.
+- **المرآة (2026-10-23) [ملغى — 2026-10-24، منفَّذ ثم مُستبدَل]:** «خيار متقدم في `step_mode`… `step_link.dart` بوضع mirror فوق `_pairMirror`… ثم `review` و`success`». اختبار fake link فقط. نُفِّذ في `3361de8e`، ثم استُبدل بـA1 (رمز `mirror` + `firstSync` + `account` + فحص ذاتي)، واختبار تفعيل حقيقي (ADP-012).
 - **ملفات جديدة:** `first_run/steps/step_link.dart` (عنوان، منفذ، رمز ربط 8 أحرف بحروف كبيرة، اسم الجهاز؛ زر «اتصال واعتماد الربط» → `client_link_service.dart`؛ بطاقة الشركة/الفرع؛ تحذير إن لم يكن TLS مثبّتًا)؛ `steps/step_storage_branch.dart`؛ `steps/step_first_sync.dart` (checklist بأربعة عناصر يربطها تقدّم `performFirstSync`، شارة اتصال حقيقية من حالة `NetworkService`، تنبيه amber حول الإلغاء والأوفلاين)؛ `steps/step_account.dart` (تحقق حقيقي B10)؛ `lib/services/setup/branch_account_verifier.dart` (يلف `authenticateUser` + التحقق من الفرع، ويُرجع الدور وأبرز الصلاحيات، ولا يحتفظ بالجلسة إن طُلب).
 - **تعديل:** `lan_pairing_service.dart` — `issuePairingCode({int? branchId})` يخزّن الفرع في العرض، و`claim` يفرضه إن وُجد (يتجاهل `branchId` المرسل من الجهاز)؛ حوار إصدار الرمز في الإعدادات (`widgets/settings/lan_pairing_dialog.dart`) يضيف منتقي فرع. `test/golden/api_routes.txt` لا يتغير (لا مسار جديد) [استنتاج].
 - **اختبارات:** `test/unit/lan_pairing_branch_bound_code_test.dart` (رمز مرتبط بفرع ⇒ الجهاز يُسجَّل عليه مهما أرسل)؛ `test/unit/setup/branch_account_verifier_test.dart` (مستخدم بلا وصول للفرع ⇒ «ليس لديك صلاحية الدخول لهذا الفرع»)؛ **حالة القبول 3:** `first_run_acceptance_branch_online_test.dart` (fake link + first sync ⇒ إنهاء)؛ **حالة القبول 4:** `first_run_acceptance_branch_offline_blocked_test.dart` (المزامنة تفشل ⇒ زر التالي معطّل + رسالة السبب، ولا `setup_completed`)؛ **حالة القبول 6:** `first_run_acceptance_branch_additional_device_test.dart` (جهاز ثانٍ بنفس الفرع ⇒ `terminalCode` مختلف، لا إنشاء مستخدمين محليين، لا مدير محلي).
 - **قبول:** لا خطوة إنشاء مدير في الفرع (حسب E8)؛ الفرع يحدده الرمز. **الحجم:** ~50KB.
 
-### P7 — سياسة الدخول الأوفلاين (2 يوم، يوازي P6)
+### P7 — سياسة الدخول الأوفلاين (2 يوم، يوازي P6) [ملغى — 2026-10-24: نُفِّذ جزئيًا في `3361de8e`، والتصميم والتنفيذ المتبقّيان مِلكُ خطة المستخدمين P3]
+> النص أدناه تاريخي. **حكم «مستخدم لم يُتحقق منه قط ⇒ رفض»** يبقى صحيحًا وتُنفّذه خطة المستخدمين P3 (`notProvisioned`). والتنفيذ الحالي يسمح بـ`neverVerified` (POLICY-001 هناك).
 - **ملفات جديدة:** `lib/services/auth/offline_login_policy.dart` (`OfflineLoginPolicy.check(userId, now)`: يقرأ `offline_login_grace_days` (مزامَن، افتراضي 7)، وطابع آخر تحقق خادمي لكل مستخدم من secure storage `offline_auth_verified_v1` (JSON {userId: iso}) + `max_seen_clock`؛ رفض إن `now - last > grace` أو `now < max_seen - 10min`)؛ `offline_login_policy_store.dart`.
 - **تعديل:** `auth_repository_impl.dart` (21.5KB): في `authenticateUser` لعميل/مرآة: عند نجاح جلسة الخادم ⇒ تسجيل الطابع؛ عند تعذّر الخادم (شبكة) ⇒ `policy.check` ورسالة «انتهت مدة الدخول دون اتصال ({n} يومًا). اتصل بالرئيسي لتجديد التحقق.».
 - **اختبارات:** `test/unit/auth/offline_login_policy_test.dart` (داخل المدة/خارجها/إرجاع الساعة/مستخدم لم يُتحقق منه قط ⇒ رفض)؛ **حالة القبول 5:** `test/unit/auth/branch_offline_login_acceptance_test.dart`.
@@ -330,6 +408,61 @@ app closed in committing ⇒ resume: review مع banner «إعداد غير مك
 - توثيق في `docs/ARCHITECTURE-MAP.md` §3 (وصفة «خطوة إعداد جديدة»).
 - **الأمر النهائي:** `flutter analyze lib test` (0 مشاكل حسب `scripts/gate.sh:468-477`) ثم `flutter test test/structural test/unit/first_run test/widget/first_run test/unit/setup test/unit/auth`.
 
+### A0 — إصلاحات اعتماد فورية (1.5–2 يوم؛ **الأولوية P0**؛ يوازي P0 وM1 في خطة المستخدمين) [جديد 2026-10-24]
+- **الهدف:** إيقاف «الاختيار لا يثبت» و«اضطررت لخيارات المطوّر» دون إعادة تصميم.
+- **ملفات:**
+  - `network_service.dart` (ratcheted): `setMode` يرمي عند فشل كتابة `network_mode` في الـDB بدل `debugPrint` (`:716-720`، `:742-748`). صافي الحجم ≤ 0 بحذف تعليقات مكافئة (ADP-003).
+  - `main.dart` (ratcheted):
+    - `:448` المفتاح `'client_first_sync_completed'` يصير `'mirror_first_sync_completed'` (الطول نفسه، 6 أحرف مقابل 6) (MIR-007).
+    - `onEnterDevTools`/`onResetWizard` (`:345-373`) يستدعيان دالة جديدة `resetProvisioning(db)` في ملف جديد `lib/services/deployment/provisioning_reset.dart`. تمسح `network_mode` و`deployment_mode` و`setup_completed` و`*_first_sync_completed` وprefs `mirror_*`/العنوان/المفتاح، ثم رسالة «أعد تشغيل البرنامج لإعادة الإعداد».
+  - `network_service.dart:567-569`: نص `mirrorPairingMissing` بلا «خيارات المطور»، بل «أعد توفير الجهاز».
+  - `first_run_success_page.dart`: زر «إعادة التشغيل الآن» لكل الأوضاع الشبكية (ADP-002).
+  - `deployment_mode_committer.dart`: `_rollbackPairing()` عند أي فشل لمرآة **دائمًا** (لا شرط `pairingDone`) (ADP-001 جزئيًا).
+- **اختبار التفعيل الحقيقي (ADP-012):** جديد `test/integration/first_run_mirror_real_activation_test.dart`:
+  - committer حقيقي + `SyncService` مزيّف.
+  - «إعادة إقلاع» (خدمات جديدة على القاعدة نفسها) ⇒ `reconcileWithDb` OK، و`NetworkService.mode==mirror`، و`MirrorState.isConfigured`، و`mirror_first_sync_completed=='true'`.
+  - والحالة نفسها للعميل.
+- **قبول:**
+  - Fatal للمرآة له مخرج يعمل.
+  - فشل كتابة `network_mode` يظهر خطأً في المراجعة.
+  - بعد إنهاء مرآة أو عميل ثم إعادة التشغيل: المزامنة تعمل.
+- **حراس:** `file_size_ratchet_test` (main, network_service)، `setup_finish_runner_parity_test`، `no_direct_network_mode_writes_test`.
+
+### A1 — عقد الاعتماد + بوابة التوفير قبل الدخول (5–7 أيام؛ **الأولوية P1**؛ بعد A0 وM1 وP0 وP1 في خطة المستخدمين، ومع P2/P3 هناك) [جديد 2026-10-24]
+- **الهدف:** §C.7 كاملًا + P4 من خطة المستخدمين (التحقق عبر الرئيسي، `credentialsDelivered`) + ADM-001/002 + MIR-005/006/014/015/022.
+- **ملفات جديدة:**
+  - `lib/services/deployment/mode_activator.dart`.
+  - `lib/services/deployment/provisioning_record.dart` (نموذج + قراءة/كتابة السجل).
+  - `lib/services/deployment/provisioning_applier.dart`.
+  - `lib/services/setup/seeded_admin_retire.dart`.
+  - `lib/presentation/screens/first_run/provisioning_gate.dart`.
+  - `lib/presentation/screens/first_run/first_run_self_check_screen.dart`.
+  - `lib/presentation/settings_picpos/screens/device_reprovision_tile.dart`.
+- **تعديل:**
+  - `main.dart` (ratcheted): `home:` ⇒ `ProvisioningGate(child: isAuthenticated ? MainScreen… : LoginScreen)`، بحجم صفري تقريبًا ونقل المنطق إلى الملف الجديد. `_startSyncIfReady` يقرأ السجل.
+  - `first_run_finish_server.dart`: العميل والمرآة يمرّان بـ`ModeActivator`، و`runExtras` لهما = `touchMode` فقط.
+  - `step_link.dart`: رمز إقران للمرآة ومنتقي نوع الجهاز معروض من الرمز.
+  - `first_run_steps.dart`: مسار المرآة `mode, link, firstSync, account, review` (لا يزال ستًّا أو أقل).
+  - `network_mode_settings_picpos.dart` و`network_mode_settings.dart`: الرقائق للعرض.
+  - `developer_tools_screen.dart` (`_ChangeModeSection`): يستدعي «إعادة توفير الجهاز».
+  - `setting_sync_strategy.dart`: `device_provisioning_v1`، `mirror_current_branch_id`.
+  - `mirror_state.dart`: يقرأ ويكتب عبر السجل (prefs ذاكرة).
+  - `setup_persistence_riverpod.dart:150-153`: `saveClientBranchId` يكتب السجل (ADP-011).
+- **اختبارات:**
+  - `test/unit/deployment/mode_activator_test.dart`: فشل في كل خطوة ⇒ لا أثر.
+  - `test/unit/deployment/provisioning_applier_test.dart`: prefs ممسوحة أو متضاربة ⇒ إصلاح من السجل، و`ADOPT-BACKFILL` لتركيب قديم.
+  - `test/widget/first_run/provisioning_gate_before_login_test.dart`: تركيب جديد ⇒ الإعداد قبل الدخول، ومكتمل ⇒ شاشة الدخول.
+  - `test/widget/first_run/self_check_screen_test.dart`.
+  - `test/unit/setup/seeded_admin_retire_test.dart`: `admin/admin` بعد الإقران ⇒ null.
+  - اختبارات P4 في خطة المستخدمين.
+- **قبول:**
+  - سيناريو الأجهزة الأربعة في خطة المستخدمين §E، الخطوات 1–5.
+  - كل قيمة في `SETUP-ADOPTION-AND-MODE.md` §3 تظهر في الفحص الذاتي PASS.
+  - لا مستدعٍ لـ`setMode` خارج `ModeActivator`.
+- **مخاطر:**
+  - تغيير ترتيب البوابة/الدخول يمسّ كل إقلاع ⇒ `ADOPT-BACKFILL` يُختبر على نسخة قاعدة حقيقية من تركيب قائم (مستقل، عميل، مرآة) قبل الدمج.
+  - التراجع: revert للـcommit، والسجل يُهمل (المفاتيح القديمة باقية).
+
 ### D.9 مصفوفة حالات القبول (من دليل النموذج §7)
 | الحالة | المرحلة | الاختبار |
 |---|---|---|
@@ -337,14 +470,17 @@ app closed in committing ⇒ resume: review مع banner «إعداد غير مك
 | 2 رئيسي + كامل | P5 | `first_run_acceptance_hq_full_test.dart` |
 | 3 فرع + اتصال ناجح | P6 | `first_run_acceptance_branch_online_test.dart` (لا خطوة ترخيص — [ملغى — قرار المالك 2]؛ نجاح التحقق يتطلب جلسة خادم — SEC-004) |
 | 4 فرع غير متصل قبل المزامنة | P6 | `first_run_acceptance_branch_offline_blocked_test.dart` |
-| 5 فرع مهيأ عند الانقطاع | P7 | `branch_offline_login_acceptance_test.dart` + الموجود: outbox idempotency |
+| 5 فرع مهيأ عند الانقطاع | ~~P7~~ **[معدَّل 2026-10-24]** P3 في خطة المستخدمين | `branch_offline_login_acceptance_test.dart` + الموجود: outbox idempotency |
 | 6 جهاز إضافي | P6 | `first_run_acceptance_branch_additional_device_test.dart` (عميل آخر للرئيسي — B13) |
 | 7 العملة (UX-001/UX-004) | P3 | `first_run_currency_test.dart`: JOD/EGP فقط، بلا اختيار مسبق، `system_currency` ∈ {JOD, EGP} |
 | 8 اسم الشركة العربي (UX-005) | P3 | `first_run_company_name_roundtrip_test.dart` |
 | 9 بيانات المسؤول (SEC-001/SEC-002/E11/E12) | P3, P5 | اسم `admin` غير قابل للتعديل في المعالج؛ كلمة < 8 مرفوضة؛ مسار hq: لا `admin/admin` بعد الإنهاء، وجلسة API لمستخدم بكلمة أولية مرفوضة (يعتمد على إغلاق SEC-002) |
 | 10 تخطيط وإتاحة | P3 | 1366×768 و125%/150% DPI بلا overflow (goldens)؛ إكمال المسار المستقل بلوحة المفاتيح فقط (Enter=التالي) |
 | 11 الاستئناف بعد انهيار أثناء `committing` | P3 | `first_run_resume_after_commit_crash_test.dart`: banner «إعداد غير مكتمل» ثم إنهاء idempotent بلا تكرار |
-| 12 المرآة داخل v2 | P6 | `first_run_mirror_flow_test.dart` |
+| 12 المرآة داخل v2 | ~~P6~~ **[معدَّل 2026-10-24]** A0 + A1 | ~~`first_run_mirror_flow_test.dart` (fake link)~~. يُستبدل بـ`first_run_mirror_real_activation_test.dart` (A0): `NetworkMode.mirror` + `MirrorState.isConfigured` + العلم بعد «إعادة إقلاع»، ثم رمز `mirror` + `account` بـ`mirror_console` (A1) |
+| 13 الاعتماد الكامل [جديد] | A1 | الفحص الذاتي PASS لكل قيمة في `SETUP-ADOPTION-AND-MODE.md` §3، لكل مسار |
+| 14 التوفير قبل الدخول [جديد] | A1 | `provisioning_gate_before_login_test.dart`؛ `admin/admin` مرفوضة على العميل والمرآة بعد الإقران |
+| 15 لا خيارات مطوّر للأوضاع العادية [جديد] | A0 + A1 | من كل Fatal مرآة أو عميل يُصل إلى إعداد صالح. و`setMode` عبر `ModeActivator` فقط |
 
 **المدة الإجمالية التقريبية:** 17–20 يوم عمل (كانت 18–21: حُذفت P4 بمقدار −1.5 يوم، وأُضيف نقل المرآة وحذف القديم بمقدار +0.5–1 يوم). ~255KB كود جديد في ~32 ملفًا، وصفر ترحيل.
 - **لا تشمل المدة الشروط المسبقة** من خارطة المعالجة: SPEC-05 (العملة، ≈ 1–2 يوم) وSPEC-02 (SEC-001/002، ≈ 1–1.5 يوم).
@@ -360,6 +496,7 @@ app closed in committing ⇒ resume: review مع banner «إعداد غير مك
 4. **E4 — ترخيص أجهزة الفروع: [ملغى — قرار المالك 2]** كل جهاز يُفعَّل من إعداداته كما اليوم (§A.0).
 5. **E5 — الجهاز الإضافي في الفرع:** عميل آخر للرئيسي بنفس الفرع **(موصى به)** / خادم فرع طبقي (مشروع كبير مؤجل).
 6. **E6 — المرآة و«تخطي الإعداد»:** تحت «خيارات متقدمة» في الخطوة 1، والمرآة **داخل v2** (P6) **(موصى به)** / حذفهما من الإعداد الأول.
+   - **[معدَّل 2026-10-24]** المرآة داخل v2 **برمز إقران `mirror`** (A1 + M1). و«تخطي الإعداد» **غير موجود** في v2 (`first_run/` بلا `skip`، تحقق grep) ويبقى كذلك. كان القديم يعيد الجهاز إلى standalone (`setup_wizard_screen.dart:1357-1381` @`3361de8e^`)، وهو أحد طرق «الاختيار لم يثبت».
 7. **E7 — ترتيب الفرع:** المزامنة ثم التحقق من الحساب **(موصى به)** / تحقق خادمي قبل المزامنة (مطابق للنموذج، يحتاج نداء جلسة قبل وجود المستخدمين محليًا).
 8. **E8 — مستخدم محلي في الفرع:** لا إنشاء مستخدمين محليين (حسب النموذج، يعكس قرار 2026-08-28) **(موصى به)** / إبقاء إنشاء كاشير محلي اختياريًا.
 9. **E9 — الأدوار في جدول مستخدمي الرئيسي:** الأدوار المزروعة فقط (كاشير، مدير فرع، محاسب، مخزني، مدير مالي) **(موصى به)** / إضافة دور «مدير مبيعات» (يحتاج بذرة + مصفوفة منح + `picpos_permission_parity_test`).
@@ -367,6 +504,9 @@ app closed in committing ⇒ resume: review مع banner «إعداد غير مك
 11. **E11 — كلمة مرور المسؤول:** حد أدنى 8 أحرف (النموذج) بدل 6 الحالية (`_kAdminPasswordMin = 6`، `setup_wizard_flow.dart:33`) **(موصى به)**. الحد نفسه يسري على كلمات مستخدمي الفروع الأولية في مسار hq، ولا تساوي `admin` ولا اسم الدخول. كلمة مرور المطوّر تبقى إلزامية لكن في قسم قابل للطي.
 12. **E12 — اسم دخول المسؤول (جديد 2026-10-23، SEC-001):** يبقى `admin` للقراءة فقط في المعالج **(موصى به)** إلى أن يُغلق SEC-001 بهوية ثابتة للمسؤول. البديل: السماح بتعديله بعد إغلاق SEC-001 فقط. يرتبط بسؤال المالك Q8 في المراجعة.
 13. **E13 — العملات (جديد 2026-10-23، UX-001/UX-004):** JOD وEGP فقط، بلا اختيار مسبق **(موصى به)** / إضافة عملات أخرى بعد اكتمال `CurrencyInfo` لكل منها (الرمز، الخانات، ربط الفوترة الإلكترونية).
+14. **E14 — إعادة التشغيل بعد إعداد شبكي (جديد 2026-10-24، ADP-002):** إلزامية بزر «إعادة التشغيل الآن»، ثم فحص ذاتي قبل الدخول **(موصى به)**. البديل: تفعيل المزامنة داخل الجلسة بلا إعادة تشغيل (مسار ثانٍ يحتاج اختبارًا مستقلًا).
+15. **E15 — تغيير الوضع بعد الإعداد (جديد 2026-10-24، MIR-014):** مدخل واحد «إعادة توفير هذا الجهاز» لمستخدم بـ`system_settings` + أونلاين، ويُزال تبديل الوضع من أدوات المطوّر والرقائق **(موصى به)**. البديل: إبقاء أدوات المطوّر مدخلًا ثانيًا يستدعي المسار نفسه (أكثر سطحًا للخطأ).
+- **قرارات الأجهزة والمرآة والمسؤول** (Q-M1…Q-M4، Q-A1…Q-A4) في خطة المستخدمين §D، ولا تُكرَّر هنا.
 
 ---
 
@@ -387,6 +527,7 @@ app closed in committing ⇒ resume: review مع banner «إعداد غير مك
 - لم أتحقق من: قبول `AppDatabase.withExecutor` لـNativeDatabase في الاختبارات؛ وجود GET يعرض بيانات الشركة/الفرع قبل المزامنة؛ سلوك Drift transaction مع `SettingsRepositoryCached`؛ قواعد `feature_dependency_graph.dart` لباقة `custom`. (بند «حقن مفتاح عام في `LicenseVerifier`» سقط بإلغاء P4.)
 - **مواءمة 2026-10-23:** تحقّق المنسّق بالقراءة من: شرائح العملة في `step_company_info.dart:51-58`؛ `_kAdminPasswordMin = 6` في `setup_wizard_flow.dart:33`؛ بطاقة الترخيص `settings_picpos_about.dart:139-179` وحارسها `settings_permission_tiles.dart:220-239`؛ `getMachineId` في `license_service.dart:102-129`. لم يُشغَّل أي اختبار. ملاحظة: جلسة أخرى عدّلت `setup_wizard_screen.dart` و`main.dart` في شجرة العمل بعد HEAD `d69be1ea` (04:35 يوم 2026-10-23)، فأحجام الملفات وأرقام الأسطر قد تتغير، ويعيد المنفّذ قياسها.
 - أحجام الملفات بالبايت من `Get-ChildItem` (تشمل CR)؛ الـratchet يقيس بعد حذف CR، فالأرقام الفعلية أصغر قليلًا.
+- **2026-10-24:** بنود A0/A1 و§C.7 مبنية على قراءة الكود عند `add15ede`. الأسطر الموسومة [مقروء*] في وثائق التدقيق قرأها قارئ مساعد، ويُعاد فحصها قبل التنفيذ. لم يُشغَّل أي اختبار (NOT_RUN)، ولم يُتح سجل جهاز المالك لتأكيد أي سبب جذري بعينه وقع عنده (BLOCKED، انظر `SETUP-ADOPTION-AND-MODE.md` §2).
 
 
 ---
