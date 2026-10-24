@@ -13,7 +13,7 @@ import '../activity_logger.dart';
 import '../permission_enforcer.dart';
 
 /// Device kinds a pairing code may be issued for.
-const Set<String> kPairableDeviceKinds = {'admin', 'pos', 'warehouse'};
+const Set<String> kPairableDeviceKinds = {'client', 'mirror', 'warehouse', 'admin', 'pos'};
 
 class PairingAuthz {
   const PairingAuthz({required this.hasPermission, this.db});

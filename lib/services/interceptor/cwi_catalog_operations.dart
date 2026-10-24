@@ -438,6 +438,20 @@ class _CwiCatalogOperations {
     );
   }
 
+  /// RESET-001: admin password reset from a client/mirror device. Online-only
+  /// (no outbox → no plaintext password parked on disk) and never applied
+  /// locally; the host's hash arrives with the follow-up pull. Returns false
+  /// when this device is not intercepted (standalone/server).
+  static Future<bool> resetUserPasswordOnline(int userId, String password) async {
+    if (!SyncInterceptor.isClientMode) return false;
+    await resetPasswordOnMain(
+      userId: userId,
+      password: password,
+      send: (id, pw) => ClientWriteInterceptor._proxy.updateUserPassword(id, pw),
+    );
+    _CwiCoreSupport._refreshAfterWrite();
+    return true;
+  }
   static Future<bool> updateUserPin(int userId, String? pin) async {
     if (!SyncInterceptor.isClientMode) return false;
     debugPrint('[ClientInterceptor] Routing user PIN update to server');

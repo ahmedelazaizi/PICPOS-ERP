@@ -62,11 +62,13 @@ import 'data/database/extensions/fiscal_year_dedup_extension.dart';
 import 'data/database/extensions/sales_cogs_backfill_extension.dart';
 import 'data/database/extensions/negative_sales_default_backfill_extension.dart';
 import 'services/network_service.dart';
+import 'services/deployment/provisioning_reset.dart';
 import 'services/deployment/reconcile_result.dart';
 import 'services/sync/client_first_sync_service.dart';
 import 'services/sync/mirror_divergence_handler.dart';
 import 'services/sync_service.dart';
 import 'presentation/screens/fatal_setup_error_screen.dart';
+import 'presentation/screens/provisioning_reset_done_app.dart';
 import 'core/widgets/app_error_boundary.dart'
     show installGlobalErrorWidgetBuilder;
 import 'app_main_screen.dart';
@@ -344,32 +346,12 @@ void main() async {
         // The user must repair via Dev Tools or reset the wizard.
         runApp(FatalSetupErrorApp(
           result: reconcileResult,
-          onEnterDevTools: () {
-            // T041: detailed Dev Tools entry from Fatal screen requires
-            // the full app + auth provider stack to be alive. Logging
-            // here is sufficient for support diagnostics; the user can
-            // close + reopen, then navigate to Dev Tools through the
-            // normal app entry that follows a "reset wizard" tap.
-            debugPrint('[FATAL-SCREEN] user chose: enter developer tools');
-          },
-          onResetWizard: () {
-            // T042: reset = clear setup_completed + setup_in_progress so
-            // the wizard runs from scratch on next launch. We don't wipe
-            // the DB here (preserves any salvageable data); the wizard's
-            // own client/mirror branches will wipe seeded master data
-            // via ClientFirstSyncService if/when the user picks those.
-            debugPrint('[FATAL-SCREEN] user chose: reset wizard');
-            unawaited(() async {
-              try {
-                await dbForReconcile.setSetting('setup_completed', '');
-                await dbForReconcile.setSetting('setup_in_progress', '');
-                debugPrint('[FATAL-SCREEN] setup flags cleared — '
-                    'restart app to re-run wizard');
-              } catch (e) {
-                debugPrint('[FATAL-SCREEN] reset failed: $e');
-              }
-            }());
-          },
+          // A0 (ADP-009): both exits clear the provisioning state and ask for
+          // a restart — the Fatal screen must always lead to a valid setup.
+          onEnterDevTools: () => unawaited(runProvisioningResetFlow(
+              () => resetProvisioning(dbForReconcile))),
+          onResetWizard: () => unawaited(runProvisioningResetFlow(
+              () => resetProvisioning(dbForReconcile))),
         ));
         return; // Stop main() — Fatal app owns the UI now.
       }
@@ -416,15 +398,12 @@ void main() async {
               reasonCode: ReconcileReasonCode.mirrorFirstSyncIncomplete,
               dbMode: NetworkMode.mirror,
             ),
-            onEnterDevTools: () {},
-            onResetWizard: () {
-              unawaited(() async {
-                try {
-                  await dbForReconcile.setSetting('setup_completed', '');
-                  await dbForReconcile.setSetting('setup_in_progress', '');
-                } catch (_) {}
-              }());
-            },
+            // A0 (ADP-009): both exits clear the provisioning state and ask for
+            // a restart — the Fatal screen must always lead to a valid setup.
+            onEnterDevTools: () => unawaited(runProvisioningResetFlow(
+                () => resetProvisioning(dbForReconcile))),
+            onResetWizard: () => unawaited(runProvisioningResetFlow(
+                () => resetProvisioning(dbForReconcile))),
           ));
           return;
         }
@@ -445,7 +424,7 @@ void main() async {
             debugPrint('[FATAL-SCREEN] user chose: re-pair mirror');
             try {
               await dbForReconcile
-                  .setSetting('client_first_sync_completed', 'false');
+                  .setSetting('mirror_first_sync_completed', 'false');
               // Best-effort POS cart invalidation. The exact provider name
               // is identified in T030; for now, clearing client_first_sync_completed
               // forces a fresh first-sync on the next boot which produces
@@ -468,15 +447,12 @@ void main() async {
               debugPrint('[FATAL-SCREEN] re-pair failed: $err');
             }
           },
-          onEnterDevTools: () {},
-          onResetWizard: () {
-            unawaited(() async {
-              try {
-                await dbForReconcile.setSetting('setup_completed', '');
-                await dbForReconcile.setSetting('setup_in_progress', '');
-              } catch (_) {}
-            }());
-          },
+          // A0 (ADP-009): both exits clear the provisioning state and ask for
+          // a restart — the Fatal screen must always lead to a valid setup.
+          onEnterDevTools: () => unawaited(runProvisioningResetFlow(
+              () => resetProvisioning(dbForReconcile))),
+          onResetWizard: () => unawaited(runProvisioningResetFlow(
+              () => resetProvisioning(dbForReconcile))),
         ));
       });
     } on PgSchemaParityException catch (e) {
@@ -855,7 +831,7 @@ void main() async {
     //   5. Log every step. Never throw — swallow all errors so the app
     //      still comes up.
     //
-    // Client mode: SKIP boot heal entirely. The admin credentials on a
+    // Client/mirror mode: SKIP boot heal entirely. The admin credentials on a
     // client are SYNCED from the server (UserSyncStrategy / DeltaPullService),
     // and the server admin's password is almost always customised away from
     // 'admin'. With heal enabled, every boot would:
@@ -865,7 +841,7 @@ void main() async {
     //   4. The next boot sees admin/admin fails again → reset → loop
     // The user observed this loop in ${Brand.dbPrefix}_startup_log.txt
     // (defaultVerifies(admin/admin)=false → reset → next session same).
-    if (!NetworkService.instance.isClient) {
+    if (!NetworkService.instance.isClient && !NetworkService.instance.isMirror) {
       await _bootTimeAdminHeal(sharedDb);
     } else {
       debugPrint('[BootHeal] Skipped — client mode (admin credentials are '

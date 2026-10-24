@@ -89,7 +89,20 @@ abstract interface class ClientLinkPort {
   });
 }
 
-class ClientLinkService implements ClientLinkPort {
+/// M1 (plan 2026-10-24): mirror pairing by the one-time CODE the administrator
+/// issued for kind mirror (per-device token; no shared key, no admin login).
+/// A separate interface so existing ClientLinkPort implementations (the
+/// wizard's fakes) keep compiling; the first-run UI adopts it with A1.
+abstract interface class ClientLinkMirrorCodePort {
+  Future<ClientLinkResult> pairMirrorWithCode({
+    required String host,
+    required int port,
+    required String code,
+    String? deviceName,
+  });
+}
+
+class ClientLinkService implements ClientLinkPort, ClientLinkMirrorCodePort {
   ClientLinkService({
     required this.db,
     required this.loadBranches,
@@ -225,6 +238,42 @@ class ClientLinkService implements ClientLinkPort {
           'p0': firstSyncResult.tablesSynced,
           'warningSuffix': warningSuffix,
         }),
+      );
+    } catch (e) {
+      return ClientLinkResult(
+        ClientLinkOutcome.error,
+        message: tr('❌ خطأ: {e}', {'e': e}),
+      );
+    }
+  }
+
+  @override
+  Future<ClientLinkResult> pairMirrorWithCode({
+    required String host,
+    required int port,
+    required String code,
+    String? deviceName,
+  }) async {
+    try {
+      final result = await MirrorPairingService.instance.pairWithCode(
+        host: host,
+        port: port,
+        code: code,
+        deviceName: deviceName,
+      );
+      if (!result.isSuccess) {
+        final icon = result.outcome == MirrorPairingOutcome.missingFields
+            ? '⚠️'
+            : '❌';
+        return ClientLinkResult(
+          ClientLinkOutcome.pairFailed,
+          message: '$icon ${result.message}',
+        );
+      }
+      return ClientLinkResult(
+        ClientLinkOutcome.paired,
+        message: tr(
+            '✅ تم إقران الجهاز بالسيرفر الرئيسي كمرآة — سيتم تفعيل وضع المرآة عند إنهاء المعالج'),
       );
     } catch (e) {
       return ClientLinkResult(

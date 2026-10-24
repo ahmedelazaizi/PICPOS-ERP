@@ -581,6 +581,42 @@
 - **حراس:** `api_routes_golden_test`, `api_handler_perm_gate_grep_test`, `file_size_ratchet_test`, `web_entry_scope_test`.
 - **الأمر:** `flutter test test/unit/api/auth_change_password_handler_test.dart test/unit/api/issue_session_branch_scope_test.dart test/unit/api_routes_golden_test.dart test/unit/api_handler_perm_gate_grep_test.dart` ثم `dart run scripts/run_pg_tests.dart`.
 
+#### P1 — العقد المنفَّذ (implemented contract) [2026-10-24]
+> نُفِّذ في الفرع `feat/tables-reservations-permissions`. كل ما يلي **additive**: عميل قديم لا يرى فرقًا إلا في (أ) رفض `403 branch_access_denied` من جهاز مربوط بفرع لمستخدم من فرع آخر (يطابق ما يرفضه العميل محليًا أصلًا)، و(ب) حقول إضافية في ردود JSON. لا تغيير مخطط ولا `schemaVersion`.
+
+**ترويسات كل نداء** (ما عدا `/api/pair`): `Authorization: Bearer <deviceToken>` و`X-Device-Id: <deviceId>`؛ وهوية المستخدم `X-Session-Token: <token>` حيث يلزم. أجسام الأخطاء: `{"error": "<نص إنجليزي>", "code": "<رمز آلي>"}` (الحقل `code` جديد ولا يغيّر نص `error` الموجود).
+
+**1) `POST /api/auth/session`** (موجود، يُمدَّد). الجسم: `{username,password}` أو `{cardCode}`.
+- ترتيب الفحص: 503 (المفتاح غير جاهز) ← 400 ← 429 ← اعتماد ← **فحص الجهاز** ← `force_password_change` ← إصدار.
+- `200 {token, userId, expiresInMs}` (بلا تغيير) + سطر تدقيق `session_issued` في `activity_logs` (`device=<id> kind=<kind>`، بلا أسرار؛ مرة كل 10 دقائق لكل مستخدم+جهاز).
+- `401 {code:"invalid_credentials"}` · `429 {code:"locked_out"}` (العدّاد نفسه لـ`change-password`) · `403 {code:"password_change_required"}`.
+- **جديد** `403 {code:"branch_access_denied"}`: الجهاز مربوط بفرع (`lanDeviceBranchId` من رمز الإقران) والمستخدم لا يملك ذلك الفرع في `user_branch_access` (+مناطق). المعفى: `admin` (id=1 أو الاسم `admin`)، والأجهزة بلا فرع (`admin`، `mirror`، المقترنة قديمًا بلا فرع، والمفتاح القديم).
+- **جديد** `403 {code:"mirror_console_denied"}`: جهاز `mirror` والمستخدم بلا الصلاحية `mirror_console` (مدير النظام يملكها تلقائيًا).
+
+**2) `POST /api/auth/change-password`** (جديد، `api_password_change_handler.dart`). **بلا جلسة مستخدم**: يُثبت الهوية بالكلمة الحالية، ويقع خلف bearer الجهاز. يُصنَّف حدّ المعدّل `read` كـ`/api/auth/session`.
+- الجسم: `{username, currentPassword, newPassword}` أو `{cardCode, newPassword}` (البطاقة **فقط** لحساب ما زال ملزمًا بالتغيير، وإلا `403 card_change_not_allowed`).
+- `200 {token, userId, expiresInMs, passwordHash, serverTime, alreadyApplied}`: جلسة جديدة للمستخدم، و`passwordHash` بصمة Argon2id الجديدة (يكتبها الجهاز محليًا)، و`serverTime` بالمللي ثانية (UTC)، و`alreadyApplied=true` عند الإعادة.
+- أخطاء: `400 invalid_request | password_too_short (<8) | password_same_as_current | password_same_as_username` · `401 invalid_credentials` · `403 branch_access_denied | mirror_console_denied | card_change_not_allowed` · `409 password_rejected` (الكلمة مستعملة؛ **لا يُذكر اسم صاحبها**) · `429 locked_out` · `503 not_ready`.
+- **idempotent**: إن فشلت الكلمة الحالية ونجحت `newPassword` كاعتماد والعلم `forcePasswordChange=false` ⇒ تُعدّ مطبَّقة سلفًا (200 + `alreadyApplied:true`) دون عدّ إخفاق؛ وإلا إخفاق عادي.
+- الأثر: `updateUserPassword` (Argon2id، يمسح `forcePasswordChange`) ← إبطال كل جلسات المستخدم القديمة ← بثّ `users` ← تدقيق `password_changed_self` (أو `password_change_replayed`) ← الرمز الجديد يُصدر بعد قطع الإبطال.
+- **لا يمر عبر outbox أبدًا** (كلمة نصية). `lib/core/auth/password_policy.dart`: `kMinPasswordLength = 8`، `validateNewPassword(username, current, next)`.
+
+**3) `GET /api/users`** (موجود، يُمدَّد)
+- كل مستخدم: `+ forcePasswordChange: bool` (ليس سرًّا). الاستجابة: `+ serverTime` (epoch **milliseconds** UTC). `pin` لا يخرج أبدًا. الاعتمادات (`passwordHash/passwordSalt/cardCode`) بقاعدتها السابقة: جلسة موقَّعة أو نافذة الإقران اليدوية — **ولا حاجة للنافذة**: أول مستخدم يُتحقَّق منه على الرئيسي (`POST /api/auth/session`) فجلسته تسلّم اعتمادات فرع الجهاز.
+- **النطاق** (MIR-010): كامل نطاق المستخدم (كل فروعه، لا أول فرع فقط)؛ و**جهاز مربوط بفرع يتلقى مستخدمي ذلك الفرع فقط** مهما كان `?branch_id=` أو اتساع صلاحية المستخدم (يبقى حاملو الأدوار النظامية و`admin` ضمن كل فرع كما كان). جهاز `mirror` غير مقيَّد بفرع. السنتينل المغلق (بلا هوية) لا يُوسَّع.
+
+**4) إعادة تعيين كلمة المرور (RESET-001، النصف الخادمي)**
+- `PUT /api/users/<id>`: الجسم الذي يحمل `password` **يُطبَّق فعلًا** تحت `users_manage` (كان يُتجاهل ويُجاب بنجاح). يقبل `forcePasswordChange` (يُضبط **بعد** الكلمة لأن كتابتها تمسحه). `400 invalid_request` لكلمة فارغة/غير نصية، `409 password_rejected` للكلمة المستعملة؛ لا يتغير أي شيء عند الرفض. تغيير الكلمة يُبطل جلسات المستخدم. حراس المسؤول الأساسي كما كانت.
+- `POST /api/users/<id>/password`: نفس الأخطاء + يقبل `forcePasswordChange` اختياريًا.
+- نشر العلم: `forcePasswordChange` في `/api/users` وفي `/api/sync/pull?table=users` (موجود)، **ونسخه على الجهاز من عمل `UserSyncStrategy`** (خارج هذه الدفعة: تملكه جلسة العميل).
+
+**5) قياس المفتاح القديم المشترك (SEC-006)** — على الرئيسي، داخل العملية وفي جدول الأجهزة:
+- `LanPairingService.legacyUsage({window=30d}) → LegacyUsage{devices, deviceCount, inUse, requestsSinceStart}`؛ `LegacyTokenTelemetry.instance` (عدّاد طلبات لكل جهاز منذ الإقلاع) يُغذّى من `recordLegacyDevice`.
+- `endLegacyTransitionIfUnused({window}) → bool`: **لا يُغلق إلا عند صفر أجهزة**. زر «إنهاء فترة المفتاح القديم» في `LanPairingDialog` يرفض بالرسالة نفسها عندما `inUse`، ويعرض «أجهزة تعمل بالمفتاح القديم: N». **لا شيء في هذه الدفعة يُغلقه تلقائيًا ولا يغيّر توليد المفتاح على السيرفرات الجديدة.**
+- حدّ معروف: قناة `/ws` تتحقق من المفتاح القديم دون تسجيل جهاز (`verifyCredential`) فلا تُحتسب.
+
+**انحرافات عن نص الخطة:** (أ) `serverTime` بالمللي ثانية لا الثواني (يختلف عن `/api/sync/time`). (ب) `PUT /api/users` **يطبّق** الكلمة بدل رفضها بـ400 (خيار المالك: «يطبّق تحت الصلاحية أو يرفض بصدق»؛ اخترنا التطبيق لأن العملاء القدامى يرسلونها فعلًا من الطابور). (ج) فحص الفرع في `issueSession` يستثني `admin` بالاسم أيضًا (`isBootstrapAdmin`). (د) لم يُضف اختبار PostgreSQL: لا SQL خام جديد (كله Drift؛ `updateUserPassword` يعمل على PG أصلًا) — يبقى التحقق على PG من `run_pg_tests` (مشغّلات `last_modified_at` لجدول `users` على PG ما زالت استنتاجًا غير مُتحقَّق منه).
+
 ### P2 — العميل: رفض حيّ + تحقق عبر الرئيسي + تغيير الكلمة المتصل (3 أيام؛ بعد P0، ويستفيد من P1)
 - **الهدف:** B.6.1–B.6.3 وB.7.2.
 - **ملفات:**
@@ -760,6 +796,26 @@
   - تحديث `api_routes_golden_test` إن تغيّرت المسارات (لا مسار جديد متوقَّع).
 - **قبول:** مرآة جديدة تُقرن وتعمل على سيرفر انتهت نافذته القديمة. ومرآة قائمة تُعاد إقرانها من «إعادة توفير الجهاز» (A1) دون فقد بيانات السيرفر.
 - **توافق:** المرآة القائمة بالمفتاح القديم تعمل حتى نهاية النافذة. شريط على المرآة: «أعد إقران هذا الجهاز برمز قبل {p0}».
+
+#### M1 — العقد المنفَّذ (implemented contract) [2026-10-24]
+**رمز الإقران يحمل نوع الجهاز والفرع.** `LanPairingService.issuePairingCode(serverHost, port, serverFingerprint, actorUserId, deviceKind, branchId)` — الصلاحية الوحيدة `devices_pair_manage` لكل الأنواع.
+
+| `deviceKind` في الرمز | الفرع في الرمز | جهاز الصف | ملاحظات |
+|---|---|---|---|
+| `client` | **مطلوب** (`ArgumentError` بدونه) | `client` + `branch_id` | جهاز فرع (محاسب/مخزني/إداري). بلا `terminal_code` |
+| `pos` | اختياري | `pos` + فرع + `terminal_code` | بفرع في الرمز: مربوط به؛ بلا فرع: السلوك القديم (الجهاز يسمّي فرعه) |
+| `mirror` | **ممنوع** (`ArgumentError` معه) | `mirror`، `branch_id = null` | كونسول مدير الفروع |
+| `warehouse` | مطلوب + بصمة TLS | `warehouse` (كما كان) | |
+| `admin` | اختياري | `admin` | |
+| بلا نوع (قديم) | اختياري | يقبل طلب `admin`/`pos`/بلا نوع **فقط** | لا يصنع `client`/`mirror`/`warehouse` |
+
+- **عند الاستلام (`POST /api/pair`)**: النوع والفرع من **الرمز** لا من الجهاز؛ طلب بنوع مخالف ⇒ `401` «رمز الإقران لا يخصّ هذا النوع من الأجهزة» **دون حرق الرمز**؛ فرع يطلبه الجهاز يُتجاهل إن كان للرمز فرع (وللمرآة دائمًا). الرمز لمرة واحدة 10 دقائق، 5 محاولات/IP/10 دقائق (كما كان). جسم الطلب: `{pairingCode|code, deviceId, deviceName, deviceKind?, branchId?}`.
+- **الرد `200`**: `{token, deviceId}` + `{branchId, branchCode, terminalCode}` للأنواع ذات الفرع/المحطة (كما كان) + **جديد** `deviceKind` لـ`client` و`mirror` فقط (شكل رد الأنواع القديمة لم يتغير). `token` = HMAC لكل جهاز ← **إلغاؤه فرديًا** (`revoke` ⇒ `401 device_revoked` في الطلب التالي، ولا يتأثر غيره) ويعمل على سيرفر **انتهت** نافذة مفتاحه القديم.
+- **نطاق مسارات المرآة** (`LanDeviceRoutePolicy`، قائمة منع): `403 device_scope` على `/api/pos`، `/api/pos-terminals`، `/api/sales/held`، `/api/sales/held-items`، `/api/table-requests`، `/api/m1/wh`. كل ما عداها (قراءات المزامنة، المستخدمون، الإدارة بهوية المستخدم) مسموح. الأنواع الأخرى بلا تغيير. قناة `/ws` تقبل المرآة (لا الـwarehouse).
+- **`mirror_console`**: ملف جديد `lib/core/permissions/mirror_permission_codes.dart` (`MirrorPermissionCodes.mirrorConsole`) مسجَّل بسطر واحد في `PermissionCodes.masterList`، فئة `warehouse_mobile`، ويُمنح افتراضيًا لـ«مدير النظام» و«مدير مالي» (مصفوفة المنح). الفرض على الخادم: `POST /api/auth/session` و`/api/auth/change-password` من جهاز `mirror` ⇒ `403 mirror_console_denied`. **الفرض على الجهاز نفسه (`authenticate*` على `isMirror`) ليس منفَّذًا** — يأتي مع M2.
+- **الجهاز**: `MirrorPairingService.pairWithCode({host, port, code, deviceName})` يستعمل `LanPairingClient.pair(deviceKind:'mirror')` (فيُرفض رمز غير المرآة) ثم فحص `/api/health` ثم `MirrorState.setPaired(adminUserId: null)`؛ ولا `verify-admin`. `ClientLinkService.pairMirrorWithCode(...)` (واجهة منفصلة `ClientLinkMirrorCodePort` كي لا ينكسر `FakeLink`) يعيد `ClientLinkOutcome.paired | pairFailed | error`. **شاشة الإعداد الأول لم تُوصَّل بها بعد** (ملكية A1).
+- **الخادم (واجهة)**: `LanPairingDialog.showServer` يسأل أولًا عن النوع (عميل/نقطة بيع/مرآة/إدارة) والفرع ثم يصدر الرمز؛ ويعرض عدد أجهزة المفتاح القديم ويمنع إنهاءه ما دام مستعملًا. المسارات القديمة `verify-admin` + `/api/health` للمرآة القائمة **تعمل كما كانت** (لم تُحذف).
+- **غير منفَّذ في M1**: تحذير «أعد إقران هذا الجهاز برمز قبل {p0}» على المرآة القديمة، وتحذير الأجهزة بالمفتاح القديم في `linked_devices_section.dart` (ملف في الـratchet بلا هامش؛ التحذير موجود في `LanPairingDialog`).
 
 ### M2 — كونسول مدير الفروع: البوابة والهوية والفرع الحالي والحارس (3–4 أيام؛ **P1**؛ بعد P2 وM1) [جديد 2026-10-24]
 - **الهدف:** B.12 القواعد 2–8 (MIR-003، 004، 008، 010، 011، 012، 013).

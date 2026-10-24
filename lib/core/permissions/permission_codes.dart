@@ -1,4 +1,5 @@
 import 'package:picpos_erp/core/i18n/tr.dart';
+import 'mirror_permission_codes.dart';
 import 'warehouse_permission_codes.dart';
 // Permission Codes Registry
 //
@@ -1767,6 +1768,7 @@ class PermissionCodes {
     {'code': bookingsReports, 'name': tr('تقارير الحجوزات'), 'category': 'bookings'},
     {'code': bookingsSettings, 'name': tr('إعدادات الحجوزات'), 'category': 'bookings'},
     ...warehouseMobilePermissionEntries,
+    ...mirrorConsolePermissionEntries,
   ];
 
   /// All category names in Arabic

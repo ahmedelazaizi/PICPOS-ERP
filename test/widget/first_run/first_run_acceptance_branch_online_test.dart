@@ -58,11 +58,14 @@ void main() {
     expect(h.provisioning.armed, 0);
 
     expect(find.byKey(const Key('first_run_success_title')), findsOneWidget);
-    expect(find.byKey(const Key('first_run_start')), findsOneWidget);
+    // A0 (ADP-002): network modes must restart (sync starts at boot).
+    expect(find.byKey(const Key('first_run_start')), findsNothing);
+    expect(find.byKey(const Key('first_run_restart')), findsOneWidget);
     expect(find.byKey(const Key('first_run_success_connection')), findsOneWidget);
     expect(find.textContaining('192.168.1.10'), findsWidgets);
-    await tapKey(tester, 'first_run_start');
-    expect(h.started, isTrue);
+    await tapKey(tester, 'first_run_restart');
+    expect(h.restarted, isTrue);
+    expect(h.started, isFalse);
     await h.teardown(tester);
   });
 

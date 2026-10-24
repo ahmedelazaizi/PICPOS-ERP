@@ -127,19 +127,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       user = await tryAuth();
 
-      // ── Client mode: if local auth fails, pull users from server then retry ──
-      // This handles the "server-created user can't login on client" case:
-      // the user exists on the server but hasn't been synced locally yet.
-      //
-      // We prefer a focused users-only sync over performFullSync — the latter
-      // takes 10+ seconds on a real DB and the user is already waiting on the
-      // login button. A targeted users sync via SyncService.syncTable('users')
-      // uses the same _fetchJson helper that powers the post-login refresh
-      // (15-second connection timeout, dart:io HttpClient with badCertificate
-      // tolerance, ngrok-skip-browser-warning header) — i.e. the path that
-      // we know works on this client even when the lighter ServerProxy
-      // fetchUsers() fails ("token missing or server down").
-      if (user == null && NetworkService.instance.isClient) {
+      // Client/mirror: a user created on the host may not exist locally yet —
+      // pull users (SyncService.syncTable, the path known to work here) and retry.
+      // The merge never replaces a valid local credential (user_credential_merge).
+      if (user == null && (NetworkService.instance.isClient || NetworkService.instance.isMirror)) {
         try {
           final serverUrl = NetworkService.instance.buildServerUrl();
           if (serverUrl.isNotEmpty) {
@@ -157,8 +148,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             } catch (e) {
               debugPrint('[Login] users-only sync failed: $e');
             }
-            // Full sync as a last-resort if targeted sync didn't help.
-            if (user == null) {
+            // Full sync as a last resort (client only; a mirror never full-syncs here).
+            if (user == null && !NetworkService.instance.isMirror) {
               await syncRepo.performFullSync(serverUrl).timeout(
                 const Duration(seconds: 10),
                 onTimeout: () => throw 'sync timeout',
@@ -181,7 +172,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       // with stale local data, they'll land on the wrong screen or lack
       // permissions. A quick sync + re-fetch guarantees the freshest state.
       // Kept short (3 sec max) to avoid noticeable login delay if server is slow.
-      if (user != null && NetworkService.instance.isClient) {
+      if (user != null && (NetworkService.instance.isClient || NetworkService.instance.isMirror)) {
         await DiagnosticLogger.startSession(
             'CLIENT LOGIN user=${user.user.username} id=${user.user.id}');
         await DiagnosticLogger.log('LOGIN',

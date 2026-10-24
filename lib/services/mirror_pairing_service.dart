@@ -28,6 +28,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import '../data/database/sync_interceptor.dart';
+import 'api/lan_pairing_client.dart';
 import 'mirror_state.dart';
 import 'network_service.dart';
 import 'server_proxy.dart';
@@ -35,6 +36,60 @@ import 'server_proxy.dart';
 class MirrorPairingService {
   MirrorPairingService._();
   static final MirrorPairingService instance = MirrorPairingService._();
+
+  /// M1 (plan 2026-10-24): pair this device as a mirror with the one-time code
+  /// the administrator issued on the main server for kind mirror. The device
+  /// receives its OWN revocable device token (no shared key, no admin login
+  /// here: the user signs in afterwards and needs `mirror_console`).
+  /// Like [pair], it does not switch the network mode.
+  Future<MirrorPairingResult> pairWithCode({
+    required String host,
+    required int port,
+    required String code,
+    String? deviceName,
+  }) async {
+    if (host.trim().isEmpty || code.trim().isEmpty) {
+      return MirrorPairingResult.failed(
+        outcome: MirrorPairingOutcome.missingFields,
+        message: 'أدخل عنوان السيرفر ورمز الإقران',
+      );
+    }
+    final ns = NetworkService.instance;
+    ns.setServerAddress(host, port: port);
+    await ns.saveSettings();
+    Map<String, dynamic> paired;
+    try {
+      // Straight to the client handshake (NetworkService.pairLanClient has no
+      // kind): a mirror states its kind so a client / legacy code is refused.
+      paired = await LanPairingClient.pair(
+        address: host,
+        port: port,
+        code: code,
+        deviceName: deviceName,
+        deviceKind: 'mirror',
+      );
+    } catch (e) {
+      paired = {'success': false, 'error': '$e'};
+    }
+    if (paired['success'] != true) {
+      return MirrorPairingResult.failed(
+        outcome: MirrorPairingOutcome.pairingFailed,
+        message: 'تعذّر إقران الجهاز: ${paired['error']}',
+      );
+    }
+    final probe = await ns.testServerConnection(host, port);
+    if (probe['success'] != true) {
+      return MirrorPairingResult.failed(
+        outcome: MirrorPairingOutcome.connectionFailed,
+        message: 'فشل الاتصال بـ HQ-Server: ${probe['error']}',
+      );
+    }
+    await MirrorState.instance.setPaired(
+      serverDisplayName: '$host:$port',
+      adminUserId: null,
+    );
+    return MirrorPairingResult.paired();
+  }
 
   /// Pair this device as a mirror against the HQ server at [host]:[port],
   /// authenticating with the given admin credentials. On success, server
@@ -157,6 +212,9 @@ enum MirrorPairingOutcome {
   invalidCredentials,
   notAdmin,
   verificationError,
+
+  /// Code pairing: the server refused the code / the device could not pair.
+  pairingFailed,
 }
 
 class MirrorPairingResult {
@@ -176,6 +234,10 @@ class MirrorPairingResult {
         adminUserId: adminUserId,
         adminDisplayName: adminDisplayName,
       );
+
+  /// Paired by code: no admin identity is involved.
+  factory MirrorPairingResult.paired() =>
+      const MirrorPairingResult._(outcome: MirrorPairingOutcome.ok);
 
   factory MirrorPairingResult.failed({
     required MirrorPairingOutcome outcome,

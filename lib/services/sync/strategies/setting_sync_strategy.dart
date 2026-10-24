@@ -149,4 +149,14 @@ const kDeviceLocalSettingKeys = <String>[
       // (FR-019). Server never overrides what the operator picked at
       // each terminal.
       'touchMode',
+      // ── Credentials / adoption state: strictly per device ───────────
+      // P0: the lockout counters of THIS terminal must never be pushed to,
+      // or overwritten from, other devices.
+      'login_lockouts_v1',
+      // A0 (ADP-013): the DeploymentModeCommitter's own keys. A client that
+      // received the host's server_setup_completed / last_committed_mode
+      // would believe it was provisioned as a server.
+      'last_committed_mode',
+      'server_setup_completed',
+      'standalone_setup_completed',
 ];

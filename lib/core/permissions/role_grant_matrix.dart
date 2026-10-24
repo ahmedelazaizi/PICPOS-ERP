@@ -61,6 +61,8 @@ class RoleGrantMatrix {
       // Plan 2026-10-23 §B.4 — pairing/revoking devices is a permission now,
       // not a role-name check. Only this role by default.
       'devices_pair_manage',
+      // Plan 2026-10-24 Q-M3: the branch-manager console (mirror) sign-in.
+      'mirror_console',
       'branches_manage',
       'pos_shift_open',
       'pos_shift_close',
@@ -292,6 +294,8 @@ class RoleGrantMatrix {
       // لاخر». وتُمنَح للأدوار التي تُطالِب وتُراسل فعلاً — والكاشيرُ
       // خارجها عن قصدٍ حتى يمنحها مديرُ النظام لمن يشاء.
       'customer_message_send',
+      // Plan 2026-10-24 Q-M3: the branch-manager console (mirror) sign-in.
+      'mirror_console',
       // Inherits the full accountant set
       'reports_view',
       'reports_export',

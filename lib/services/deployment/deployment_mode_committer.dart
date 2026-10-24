@@ -167,7 +167,7 @@ class DeploymentModeCommitter {
           );
           final syncFailure = await _firstSync(contract, force: forceResync);
           if (syncFailure != null) {
-            if (pairingDone) await _rollbackPairing();
+            if (pairingDone || isMirror) await _rollbackPairing();
             return syncFailure;
           }
           firstSyncDone = true;
@@ -183,7 +183,7 @@ class DeploymentModeCommitter {
           if (isMirror) {
             final emptyServerFailure = await _checkMirrorMasterDataNonEmpty();
             if (emptyServerFailure != null) {
-              if (pairingDone) await _rollbackPairing();
+              if (pairingDone || isMirror) await _rollbackPairing();
               return emptyServerFailure;
             }
           }
@@ -212,13 +212,13 @@ class DeploymentModeCommitter {
               ));
               final resyncFailure = await _firstSync(contract, force: true);
               if (resyncFailure != null) {
-                if (pairingDone) await _rollbackPairing();
+                if (pairingDone || isMirror) await _rollbackPairing();
                 return resyncFailure;
               }
               firstSyncDone = true;
               final stillEmpty = await _checkMirrorMasterDataNonEmpty();
               if (stillEmpty != null) {
-                if (pairingDone) await _rollbackPairing();
+                if (pairingDone || isMirror) await _rollbackPairing();
                 return stillEmpty;
               }
               unawaited(DiagnosticLogger.log(
@@ -230,6 +230,7 @@ class DeploymentModeCommitter {
         }
       }
 
+      final previousMode = NetworkService.instance.mode;
       // ── Step 4: setMode (delegates to NetworkService) ──────────────────
       // NetworkService.setMode writes network_mode to DB + manages HTTP
       // server/SyncService lifecycle. We delegate rather than duplicate.
@@ -254,7 +255,7 @@ class DeploymentModeCommitter {
           'COMMIT-FAIL',
           'setMode threw at step=setMode mode=${target.name}: $e\n$st',
         ));
-        if (firstSyncDone || pairingDone) {
+        if (firstSyncDone || pairingDone || isMirror) {
           await _rollbackPairing();
         }
         return CommitFailed(
@@ -292,7 +293,28 @@ class DeploymentModeCommitter {
         CommitStep.finalDbCommit,
         'جارٍ حفظ الإعدادات النهائية...',
       );
-      await _writeOwnedSettings(target);
+      try {
+        await _writeOwnedSettings(target);
+      } catch (e, st) {
+        // A0 (ADP-001): the mode is already set in memory/DB here. Undo it,
+        // stop the heartbeat and (mirror) drop the pairing so the device is not
+        // left half-activated.
+        unawaited(DiagnosticLogger.log(
+          'COMMIT-FAIL',
+          'final settings write threw mode=${target.name}: $e\n$st',
+        ));
+        if (isMirror) MirrorHeartbeatService.stop();
+        try {
+          await NetworkService.instance.setMode(previousMode, db: db);
+        } catch (_) {}
+        if (isMirror || firstSyncDone || pairingDone) await _rollbackPairing();
+        return CommitFailed(
+          failedAtStep: CommitStep.finalDbCommit,
+          reasonAr: 'تعذّر حفظ إعدادات النظام النهائية.',
+          reasonCode: 'FINAL_COMMIT_FAILED',
+          underlying: e,
+        );
+      }
 
       // Spec 136 ISS-22 — re-apply the client id-namespace floor (>=1B) AFTER
       // committing client OR mirror mode. The boot-time floor (main.dart) is

@@ -13,7 +13,8 @@ import 'package:picpos_erp/core/design_system/typography.dart';
 //
 // Design rules:
 //   - Full-screen blocker (no AppBar, no escape).
-//   - Two clear actions only: "ادخل خيارات المطور" + "إعادة اعداد البدء".
+//   - Two clear actions only: "إعادة توفير الجهاز" + "إعادة اعداد البدء"
+//     (A0: both clear the provisioning state; no developer options needed).
 //   - Dynamic reason in Arabic (from `ReconcileInconsistent.reasonAr`).
 //   - Footer shows build + device hint for support call-in.
 //   - No DB writes — purely display + delegate to action handlers.
@@ -290,7 +291,7 @@ class FatalSetupErrorScreen extends StatelessWidget {
                       label:  Padding(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         child: Text(
-                          tr('ادخل خيارات المطور للإصلاح\n(يتطلب كلمة سر المطور)'),
+                          tr('إعادة توفير الجهاز\n(تحتفظ بالبيانات وتبدأ الإعداد من جديد)'),
                           textAlign: TextAlign.center,
                         ),
                       ),

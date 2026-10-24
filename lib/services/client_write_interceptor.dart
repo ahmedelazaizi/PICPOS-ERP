@@ -8,6 +8,7 @@ import 'server_proxy.dart';
 import 'delta_pull_service.dart';
 import 'offline_sync_worker.dart';
 import 'write_router.dart';
+import 'auth/remote_password_reset.dart';
 import '../core/logging/diagnostic_logger.dart';
 import '../data/database/database.dart';
 import '../data/database/sync_interceptor.dart';

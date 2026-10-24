@@ -10,7 +10,7 @@ import 'delta_pull_column_filter.dart';
 import 'id_namespace_service.dart';
 import 'api/client_schema_gate.dart';
 import 'delta_pull_failure_tracker.dart';
-import 'unusable_credential.dart';
+import 'sync/user_credential_merge.dart';
 import 'server_proxy.dart';
 import 'sync_event_bus.dart';
 
@@ -1010,6 +1010,9 @@ class DeltaPullService {
             ).getSingleOrNull();
             naturalLocalId = hit?.read<int?>('id');
           }
+        } else if (table == 'users') {
+          // The bootstrap admin maps onto the local admin row (one identity).
+          naturalLocalId = await localAdminIdByUsername(_db!, row);
         }
         if (naturalLocalId != null) {
           // Adopt the server's globalId onto this local row, then treat
@@ -1182,140 +1185,12 @@ class DeltaPullService {
       }
     }
 
-    // ── Users table: preserve local password credentials and roleId ──────────
-    // The server's users delta may carry password_hash with an empty
-    // password_salt (e.g. when the server stores bcrypt with an embedded salt
-    // rather than PBKDF2 with a separate salt column). A bare INSERT OR REPLACE
-    // would overwrite the client's good salt with "", breaking every subsequent
-    // login until the boot-heal runs.
-    //
-    // Additionally, if the server's user id=N belongs to a *different* person
-    // than the client's local user id=N (created offline before sync assigned
-    // server IDs), the raw upsert would silently change the local user's roleId,
-    // causing mid-session permission escalation (nav expansion bug).
-    //
-    // Fix: for the users table, detect an absent/empty server salt and fall
-    // back to the existing local credentials so the row is otherwise updated
-    // (display name, isActive, defaultScreen, …) without clobbering passwords.
+    // Users: re-attach the device-local secrets the server withheld (INSERT OR
+    // REPLACE would wipe them) and never replace a complete local credential
+    // with an unusable one — CRED-WIPE, see user_credential_merge.dart.
     if (table == 'users') {
-      // ── حفظُ الأسرار المحلّيّة حين لا يرسلها الخادم ─────────────────────
-      //
-      // 🔴 `_upsertRow` يكتب بـ**INSERT OR REPLACE**، فالعمودُ الغائبُ عن
-      // الحمولة **يُمحى** لا يُترَك. ولهذا الكتلةُ أدناه ترقّع
-      // `password_hash`/`password_salt` من الصفّ المحلّيّ.
-      //
-      // وصار الخادمُ يحجب أعمدةَ الاعتماد عن مستدعٍ بلا هويّةٍ متحقَّقةٍ
-      // ولا نافذةِ اقتران (`_getSyncPull` — قائمةُ منعِ الأعمدة)، ويحجب
-      // `pin` **دائماً**. فبلا هذا الترقيع كانت أوّلُ مزامنةٍ تمحو الـPIN
-      // ورمزَ البطاقة من كلِّ جهاز — أي أنّ سدَّ ثقبِ تسريبٍ كان سيُنتج
-      // إتلافَ بيانات.
-      //
-      // الترقيعُ **غيرُ مشروطٍ** بحالة الهاش عمداً: الـPIN قد يغيب بينما
-      // الهاشُ سليم، فوضعُه داخل فرع «الاعتمادُ ناقص» يتركه مكشوفاً للمحو.
-      if (row['pin'] == null || row['card_code'] == null) {
-        try {
-          final secretRow = await _db!.customSelect(
-            'SELECT pin, card_code FROM users WHERE id = ? LIMIT 1',
-            variables: [
-              Variable.withInt(localId ?? (row['id'] as int? ?? 0)),
-            ],
-          ).getSingleOrNull();
-          if (secretRow != null) {
-            row = Map.of(row);
-            if (row['pin'] == null) {
-              row['pin'] = secretRow.read<String?>('pin');
-            }
-            if (row['card_code'] == null) {
-              row['card_code'] = secretRow.read<String?>('card_code');
-            }
-          }
-        } catch (e) {
-          debugPrint('[DeltaPull] users: preserve pin/card_code failed: $e');
-        }
-      }
-
-      final serveSalt = row['password_salt'];
-      final serveHash = row['password_hash'];
-      final hashStr = serveHash is String ? serveHash : '';
-      final saltStr = serveSalt is String ? serveSalt : '';
-      final hashOk = hashStr.isNotEmpty;
-      // Argon2id PHC hashes embed their salt in the hash string (format:
-      // $argon2id$v=19$m=...,t=...,p=...$saltB64$hashB64). When the server's
-      // user has been rehashed to Argon2 (Week-8 upgrade in user_dao.dart),
-      // password_salt becomes "" by design. Treat that as a VALID credential
-      // form — otherwise the previous "preserve local credentials" branch
-      // would silently overwrite the server's authoritative Argon2 hash with
-      // a stale local PBKDF2 'admin' hash, blocking the user from logging in
-      // with their real password (and triggering the boot-heal loop the
-      // operator observed in ${Brand.dbPrefix}_startup_log.txt).
-      final isArgon2 = hashStr.startsWith(r'$argon2');
-      final saltOk = saltStr.isNotEmpty || isArgon2;
-
-      if (!saltOk || !hashOk) {
-        // Server sent incomplete credentials — three cases to handle:
-        //   1. Local row exists with valid credentials → preserve them
-        //      (existing user; admin's PBKDF2 hash mustn't be overwritten by
-        //      the server's bcrypt-style "99-char hash, empty salt" form).
-        //   2. Local row exists but is also broken (salt="") → mint a fresh
-        //      temp password locally so the user can log in via reset flow.
-        //   3. NEW user row from server with no local match → mint a temp
-        //      password keyed off the username and force a password change.
-        //      Without this, the row lands with salt="" and every login
-        //      attempt fails (PBKDF2 verifyPassword bails on empty salt) —
-        //      the symptom the user reported as "الكاشير القديم مش راضى يدخل
-        //      على النظام من جهاز مرتبط".
-        final username = row['username'] as String?;
-        try {
-          final localRow = await _db!.customSelect(
-            'SELECT password_hash, password_salt, role_id '
-            'FROM users WHERE id = ? LIMIT 1',
-            variables: [Variable.withInt(localId ?? (row['id'] as int? ?? 0))],
-          ).getSingleOrNull();
-
-          String? hashToUse;
-          String? saltToUse;
-
-          if (localRow != null) {
-            final localHash = localRow.read<String?>('password_hash') ?? '';
-            final localSalt = localRow.read<String?>('password_salt') ?? '';
-            if (localHash.isNotEmpty && localSalt.isNotEmpty) {
-              hashToUse = localHash;
-              saltToUse = localSalt;
-              debugPrint('[DeltaPull] users id=${row['id']}: '
-                  'server sent empty salt — preserved local credentials');
-            }
-          }
-
-          // SEC-004: no usable local credentials — store an UNUSABLE random
-          // credential (same as UserSyncStrategy), never `<username>123`.
-          if (hashToUse == null &&
-              username != null &&
-              username.isNotEmpty &&
-              !username.startsWith('__dup_')) {
-            final unusable = await UnusableCredential.mint();
-            saltToUse = unusable.salt;
-            hashToUse = unusable.hash;
-            debugPrint('[DeltaPull] users id=${row['id']} '
-                'username="$username": no usable credentials — stored an '
-                'unusable credential + forcePasswordChange=true');
-          }
-
-          if (hashToUse != null && saltToUse != null) {
-            row = Map.of(row); // make mutable copy before patching
-            row['password_hash'] = hashToUse;
-            row['password_salt'] = saltToUse;
-            // Force the user to change the temp password on first login when
-            // we minted credentials. Preserved local credentials don't need
-            // this flag — only newly-minted ones do.
-            if (localRow == null ||
-                (localRow.read<String?>('password_salt') ?? '').isEmpty) {
-              row['force_password_change'] = 1;
-            }
-          }
-        } catch (e) {
-          debugPrint('[DeltaPull] users credential handling failed: $e');
-        }
-      }
+      row = await preserveUserSecrets(
+          _db!, row, localId ?? (row['id'] as int? ?? 0));
     }
 
     // Normal path: server row wins — INSERT OR REPLACE by id.

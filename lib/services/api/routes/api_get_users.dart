@@ -31,13 +31,15 @@ extension ApiHandlerUserGets on ApiHandler {
         hasIdentity: hasIdentity,
       );
 
-      final branchId = await _extractBranchId(
+      // P1/M1: the FULL scope (a multi-branch manager gets every branch he is
+      // granted, not only the first) narrowed to the device's own branch.
+      final scope = await _usersFeedScope(
         request,
         failClosedOnNoIdentity: !pairingOpen,
       );
       final query = _db.select(_db.users);
 
-      if (branchId != null) {
+      if (scope != null) {
         // Spec 029 / US3 Bug A — materialize the union of allowed user
         // IDs as a Dart Set<int> instead of relying on SQL OR-of-isIn
         // semantics. Two production hypotheses motivated this rewrite:
@@ -54,7 +56,7 @@ extension ApiHandlerUserGets on ApiHandler {
         // contains 1 (admin), so even an otherwise empty union still
         // returns at least the admin row.
         final accessibleUserIds = await (_db.select(_db.userBranchAccess)
-              ..where((a) => a.branchId.equals(branchId)))
+              ..where((a) => a.branchId.isIn(scope)))
             .get();
 
         final systemRoles = await (_db.select(_db.roles)
@@ -107,6 +109,8 @@ extension ApiHandlerUserGets on ApiHandler {
               'defaultScreen': u.defaultScreen,
               'isLocked': u.isLocked,
               'isActive': u.isActive,
+              // P1: not a secret - lets a device mirror the forced-change state.
+              'forcePasswordChange': u.forcePasswordChange,
               'maxDiscountPercent': u.maxDiscountPercent,
               'discountLimitIsPercent': u.discountLimitIsPercent,
               // cardCode = اعتمادُ دخولٍ كاملٌ (POST /api/auth/session يقبله وحده)
@@ -137,7 +141,13 @@ extension ApiHandlerUserGets on ApiHandler {
             },
           )
           .toList();
-      return _json({'users': jsonList, 'count': jsonList.length});
+      return _json({
+        'users': jsonList,
+        'count': jsonList.length,
+        // Server clock, epoch MILLISECONDS (UTC): the device stamps what it
+        // received with it instead of its own (possibly wrong) clock.
+        'serverTime': DateTime.now().millisecondsSinceEpoch,
+      });
     } catch (e) {
       return ApiErrors.fail(e, 'Failed to fetch users');
     }

@@ -39,6 +39,7 @@ const handlerFiles = <String>[
 const exemptHostFiles = <String>[
   'lib/services/api/api_handler.dart',
   'lib/services/api/api_auth_handler.dart',
+  'lib/services/api/api_password_change_handler.dart',
   'lib/services/api/api_terminals_handler.dart',
 ];
 

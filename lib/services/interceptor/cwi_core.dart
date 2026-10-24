@@ -90,6 +90,7 @@ class ClientWriteInterceptor implements SyncInterceptor {
       _CwiCatalogOperations.deleteCategory(id, moveToCategoryId: moveToCategoryId);
   static Future<bool> updateUser(int userId, Map<String, dynamic> fields) => _CwiCatalogOperations.updateUser(userId, fields);
   static Future<bool> updateUserPassword(int userId, String password) => _CwiCatalogOperations.updateUserPassword(userId, password);
+  static Future<bool> resetUserPasswordOnline(int userId, String password) => _CwiCatalogOperations.resetUserPasswordOnline(userId, password);
   static Future<bool> updateUserPin(int userId, String? pin) => _CwiCatalogOperations.updateUserPin(userId, pin);
   static Future<int?> createWarehouse({required String name, int? branchId, String? globalId}) => _CwiCatalogOperations.createWarehouse(name: name, branchId: branchId, globalId: globalId);
   static Future<bool> updateWarehouse(int id, Map<String, dynamic> fields) => _CwiCatalogOperations.updateWarehouse(id, fields);

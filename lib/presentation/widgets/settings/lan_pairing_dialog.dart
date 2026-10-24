@@ -1,13 +1,16 @@
 import 'package:picpos_erp/core/i18n/tr.dart';
+import 'package:drift/drift.dart' show BooleanExpressionOperators;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/auth_providers.dart';
+import '../../../data/providers/providers.dart' show databaseProvider, Branche;
 import '../../../services/permission_enforcer.dart';
 import '../../../services/api/lan_pairing_service.dart';
 import '../../../services/network_service.dart';
+import 'lan_pairing_kind_dialog.dart';
 import 'lan_transport_section.dart';
 
 /// Server-side pairing code dialog. QR rendering is intentionally omitted:
@@ -23,10 +26,23 @@ class LanPairingDialog extends StatelessWidget {
   final int? actorUserId;
 
   static Future<void> showServer(BuildContext context) async {
-    final actor = ProviderScope.containerOf(context).read(authProvider).user?.id;
+    final container = ProviderScope.containerOf(context);
+    final actor = container.read(authProvider).user?.id;
+    // The code carries the device kind and (for branch devices) the branch.
+    final db = container.read(databaseProvider);
+    final branches = await (db.select(db.branches)
+          ..where((b) => b.isActive.equals(true) & b.deletedAt.isNull()))
+        .get();
+    if (!context.mounted) return;
+    final choice = await showLanPairingKindDialog(context, branches);
+    if (choice == null || !context.mounted) return;
     PairingOffer? issued;
     try {
-      issued = await NetworkService.instance.issueLanPairingCode(actorUserId: actor);
+      issued = await NetworkService.instance.issueLanPairingCode(
+        actorUserId: actor,
+        deviceKind: choice.kind,
+        branchId: choice.branchId,
+      );
     } on PermissionDeniedException catch (e) {
       if (context.mounted) AppToast.show(context, e.message, type: ToastType.error);
       return;
@@ -103,8 +119,28 @@ class LanPairingDialog extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 8),
+              // SEC-006: the shared key may only be closed once NO device uses it.
+              FutureBuilder<LegacyUsage>(
+                future: service!.legacyUsage(),
+                builder: (context, snapshot) => Text(
+                  tr('أجهزة تعمل بالمفتاح القديم: {p0}',
+                      {'p0': snapshot.data?.deviceCount ?? 0}),
+                ),
+              ),
               OutlinedButton(
                 onPressed: () async {
+                  final usage = await service!.legacyUsage();
+                  if (usage.inUse) {
+                    if (context.mounted) {
+                      AppToast.show(
+                        context,
+                        tr('لا يمكن إيقاف المفتاح القديم: {p0} جهاز ما زال يستعمله',
+                            {'p0': usage.deviceCount}),
+                        type: ToastType.error,
+                      );
+                    }
+                    return;
+                  }
                   await service!.endLegacyTransition();
                   if (context.mounted) {
                     AppToast.show(context, tr('تم إيقاف المفتاح القديم'));

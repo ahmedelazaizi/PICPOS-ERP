@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/auth/bootstrap_admin.dart';
 import '../../core/i18n/tr.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../services/auth/offline_login_policy.dart';
@@ -134,25 +135,61 @@ class AuthRepositoryImpl implements IAuthRepository {
     username: username,
   );
 
+  // MIR-023 / RESET-001: on a client/mirror device the HOST owns user
+  // administration. A local-only write is silently reverted by the next pull
+  // (and on a mirror it is a write HQ never heard of), so these four go through
+  // the interceptor like [setUserBranchAccess]. The mirror has no outbox: the
+  // interceptor throws MirrorOfflineException when HQ is unreachable.
   @override
   Future<void> updateUserPassword({
     required int userId,
     required String newPassword,
-  }) => db.updateUserPassword(userId: userId, newPassword: newPassword);
+  }) async {
+    // A user changing their OWN password is not an admin reset (the host route
+    // needs users_manage): that flow stays local until the dedicated
+    // change-password endpoint (plan P2).
+    if (SyncInterceptor.isClientMode && SyncInterceptor.currentUserId != userId) {
+      await ClientWriteInterceptor.updateUserPassword(userId, newPassword);
+      if (SyncInterceptor.isMirrorMode) return;
+    }
+    await db.updateUserPassword(userId: userId, newPassword: newPassword);
+  }
 
   @override
   Future<void> toggleUserActive({
     required int userId,
     required bool isActive,
-  }) => db.toggleUserActive(userId: userId, isActive: isActive);
+  }) async {
+    if (SyncInterceptor.isClientMode) {
+      if (isBootstrapAdmin(userId) && !isActive) {
+        throw StateError(bootstrapAdminGuardMessage);
+      }
+      await ClientWriteInterceptor.updateUser(userId, {'isActive': isActive});
+      return;
+    }
+    await db.toggleUserActive(userId: userId, isActive: isActive);
+  }
 
   @override
-  Future<void> assignRoleToUser(int userId, int? roleId) =>
-      db.assignRoleToUser(userId, roleId);
+  Future<void> assignRoleToUser(int userId, int? roleId) async {
+    if (SyncInterceptor.isClientMode) {
+      await ClientWriteInterceptor.updateUser(userId, {'roleId': roleId});
+      return;
+    }
+    await db.assignRoleToUser(userId, roleId);
+  }
 
   @override
-  Future<bool> setUserLocked(int userId, bool isLocked) =>
-      db.setUserLocked(userId, isLocked);
+  Future<bool> setUserLocked(int userId, bool isLocked) async {
+    if (SyncInterceptor.isClientMode) {
+      if (isBootstrapAdmin(userId) && isLocked) {
+        throw StateError(bootstrapAdminGuardMessage);
+      }
+      await ClientWriteInterceptor.updateUser(userId, {'isLocked': isLocked});
+      return true;
+    }
+    return db.setUserLocked(userId, isLocked);
+  }
 
   @override
   Future<List<int>> getUserAccessibleBranchIds(int userId) =>

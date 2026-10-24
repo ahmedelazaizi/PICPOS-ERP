@@ -43,7 +43,7 @@ void main() {
           ),
         ),
       );
-      expect(find.textContaining('ادخل خيارات المطور'), findsOneWidget);
+      expect(find.textContaining('إعادة توفير الجهاز'), findsOneWidget);
       expect(find.textContaining('إعادة اعداد البدء'), findsOneWidget);
     });
 
@@ -87,7 +87,7 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.textContaining('ادخل خيارات المطور'));
+      await tester.tap(find.textContaining('إعادة توفير الجهاز'));
       await tester.pumpAndSettle();
       expect(devTools, 1);
       expect(reset, 0);
@@ -185,7 +185,7 @@ void main() {
       // Verify all 3 buttons present.
       expect(find.textContaining('إعادة محاولة الإصلاح الذاتى'),
           findsOneWidget);
-      expect(find.textContaining('ادخل خيارات المطور'), findsOneWidget);
+      expect(find.textContaining('إعادة توفير الجهاز'), findsOneWidget);
       expect(find.textContaining('إعادة اعداد البدء'), findsOneWidget);
 
       // Tap retry → only retry callback fires.
@@ -222,7 +222,7 @@ void main() {
       );
 
       expect(find.textContaining('إعادة محاولة الإصلاح الذاتى'), findsNothing);
-      expect(find.textContaining('ادخل خيارات المطور'), findsOneWidget);
+      expect(find.textContaining('إعادة توفير الجهاز'), findsOneWidget);
       expect(find.textContaining('إعادة اعداد البدء'), findsOneWidget);
       // And the title stays Spec 125's wording.
       expect(find.text('النظام يحتاج لإعادة الإعداد'), findsOneWidget);
@@ -307,7 +307,7 @@ void main() {
       );
       expect(find.textContaining('إعادة المزامنة مع السيرفر'), findsOneWidget);
       // The other two default buttons stay visible.
-      expect(find.textContaining('ادخل خيارات المطور'), findsOneWidget);
+      expect(find.textContaining('إعادة توفير الجهاز'), findsOneWidget);
       expect(find.textContaining('إعادة اعداد البدء'), findsOneWidget);
       // The PG-parity retry button stays HIDDEN — strict separation between
       // kinds (regression guard).

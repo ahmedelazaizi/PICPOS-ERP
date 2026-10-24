@@ -161,6 +161,7 @@ DELETE /api/printers/<id>
 POST /api/activity-logs/push
 POST /api/auth/verify-admin
 POST /api/auth/session
+POST /api/auth/change-password
 POST /api/web/session
 POST /api/web/ws-ticket
 POST /api/web/logout

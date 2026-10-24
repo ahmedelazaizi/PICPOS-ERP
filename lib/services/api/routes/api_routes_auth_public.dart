@@ -13,6 +13,8 @@ extension ApiHandlerAuthPublicRoutes on ApiHandler {
     // Spec 151 (P1-8): issue a signed per-user session token after a credential
     // check — replaces the forgeable X-User-Id header as the identity source.
     router.post('/api/auth/session', _auth.issueSession);
+    // P1 (plan 2026-10-24): a user sets his OWN password (proves the current one).
+    router.post('/api/auth/change-password', _passwordChange.changePassword);
     // الويب (م3-4/م3-5): دخول بالاعتماد → رمز جلسة 12 ساعة؛ تذكرة لمرة واحدة؛
     // ثم قناة drift للقراءة. ⚠️ /webdb لا يبدأ بـ/ws (انظر الإعفاءات).
     router.post('/api/web/session', _webSession.login);

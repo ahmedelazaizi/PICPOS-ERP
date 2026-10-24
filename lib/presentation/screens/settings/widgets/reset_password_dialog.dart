@@ -208,12 +208,18 @@ class _ResetPasswordDialogState extends AppFormDialogState<bool, ResetPasswordDi
 
     final authRepo = ref.read(authRepositoryProvider);
     
-    // Route through interceptor in client mode
-    final intercepted = await ClientWriteInterceptor.updateUser(widget.user.id, {
-      'password': password,
-    });
-    
-    if (!intercepted) {
+    // RESET-001: on a client/mirror device the host owns users — the reset
+    // goes to POST /api/users/<id>/password, online only (never queued: the
+    // outbox would keep the plaintext password; never applied locally).
+    // PUT /api/users/<id> {password} is ignored by the host, so it is not used.
+    final onHost = await ClientWriteInterceptor.resetUserPasswordOnline(
+        widget.user.id, password);
+    if (onHost) {
+      if (forcePasswordChange) {
+        await ClientWriteInterceptor.updateUser(
+            widget.user.id, {'forcePasswordChange': true});
+      }
+    } else {
       await authRepo.updateUserPassword(
         userId: widget.user.id,
         newPassword: password,

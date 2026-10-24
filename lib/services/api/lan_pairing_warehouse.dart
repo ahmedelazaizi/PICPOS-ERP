@@ -3,11 +3,6 @@ part of 'lan_pairing_service.dart';
 /// Warehouse-device pairing (plan 2026-10-23): kind binding, branch from the
 /// offer, device lookup for the route policy, permission-checked listing.
 extension LanPairingWarehouse on LanPairingService {
-  /// A code issued for warehouse pairs only a warehouse device, and a
-  /// warehouse device can only use such a code.
-  bool _kindAllowed(_PairingOffer offer, LanPairingRequest request) =>
-      (offer.deviceKind == 'warehouse') == (request.deviceKind == 'warehouse');
-
   /// The branch comes from the issued offer, never from the device.
   Future<LanPairingResult> _pairWarehouseDevice(LanPairingRequest request) async {
     final branchId = _pendingOffer?.branchId;

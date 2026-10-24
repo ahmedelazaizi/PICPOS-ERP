@@ -11499,5 +11499,22 @@
   "تعذّر التحقق من وقت الجهاز. اتصل بالرئيسي لتجديد التحقق.": "The device time could not be verified. Connect to the main server to renew verification.",
   "يُلزم بتغيير كلمة المرور عند أول دخول": "Must change the password at first sign-in",
   "الخادم لا يمنح جلسة لحساب ملزم بالتغيير؛ عند تعطيله يعتمد جهاز الفرع الحساب مباشرة في الإعداد.": "The server does not grant a session to an account that must change its password; when turned off, a branch device can approve the account directly during setup.",
-  "هذا الحساب ملزم بتغيير كلمة المرور الأولية قبل أول اتصال. غيّرها من الجهاز الرئيسي أو اطلب من المسؤول تعطيل الإلزام ثم أعد التحقق.": "This account must change its initial password before the first connection. Change it on the main device or ask the administrator to turn off the requirement, then verify again."
+  "هذا الحساب ملزم بتغيير كلمة المرور الأولية قبل أول اتصال. غيّرها من الجهاز الرئيسي أو اطلب من المسؤول تعطيل الإلزام ثم أعد التحقق.": "This account must change its initial password before the first connection. Change it on the main device or ask the administrator to turn off the requirement, then verify again.",
+  "تغيير كلمة المرور يتطلب اتصالًا بالنظام الرئيسي": "Changing the password requires a connection to the main system.",
+  "تمت إعادة توفير الجهاز": "Device provisioning was reset",
+  "تعذّرت إعادة توفير الجهاز": "Device provisioning reset failed",
+  "تعذّرت إعادة الضبط: {p0}": "The reset failed: {p0}",
+  "أغلق البرنامج ثم افتحه من جديد لبدء الإعداد الأول.": "Close the program and open it again to start the first-run setup.",
+  "إعادة توفير الجهاز\n(تحتفظ بالبيانات وتبدأ الإعداد من جديد)": "Re-provision this device\n(keeps your data and restarts the setup)",
+  "الدخول على كونسول مدير الفروع (المرآة)": "Sign in to the branch-manager console (mirror)",
+  "✅ تم إقران الجهاز بالسيرفر الرئيسي كمرآة — سيتم تفعيل وضع المرآة عند إنهاء المعالج": "✅ Device paired with the main server as a mirror — mirror mode will be activated when the wizard finishes",
+  "نوع الجهاز المراد إقرانه": "Type of device to pair",
+  "جهاز فرع (محاسب / مخزني / إداري)": "Branch device (accountant / storekeeper / administrator)",
+  "نقطة بيع (كاشير / مندوب)": "Point of sale (cashier / sales rep)",
+  "كونسول مدير الفروع (المرآة)": "Branch-manager console (mirror)",
+  "تطبيق الإدارة على الهاتف": "Management app on the phone",
+  "لا توجد فروع نشطة": "There are no active branches",
+  "اختر الفرع": "Choose the branch",
+  "أجهزة تعمل بالمفتاح القديم: {p0}": "Devices still using the legacy key: {p0}",
+  "لا يمكن إيقاف المفتاح القديم: {p0} جهاز ما زال يستعمله": "The legacy key cannot be turned off: {p0} device(s) still use it"
 }

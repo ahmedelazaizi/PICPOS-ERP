@@ -44,7 +44,7 @@ lib/data/repositories/sales_transaction_orchestrator.dart 75619
 lib/data/repositories/treasury_repository_impl.dart 38575
 lib/data/services/excel_service.dart 83563
 lib/domain/models/quick_sale_policy.dart 54563
-lib/main.dart 75335
+lib/main.dart 74674
 lib/presentation/accounting_picpos/bank_reconciliation_picpos_screen.dart 61099
 lib/presentation/accounting_picpos/chart_of_accounts_picpos_screen.dart 38751
 lib/presentation/accounting_picpos/financial_statements_picpos_screen.dart 85200
@@ -100,7 +100,7 @@ lib/presentation/screens/fixed_assets_dialogs.dart 70219
 lib/presentation/screens/invoice_designer/invoice_designer_properties.dart 47246
 lib/presentation/screens/invoice_designer/invoice_section_editor.dart 80458
 lib/presentation/screens/journal_entries_screen.dart 46153
-lib/presentation/screens/login_screen.dart 41046
+lib/presentation/screens/login_screen.dart 40567
 lib/presentation/screens/offers/offer_dialogs.dart 51760
 lib/presentation/screens/parties/party_dialogs.dart 46032
 lib/presentation/screens/parties/party_groups_tab.dart 35586
@@ -157,10 +157,10 @@ lib/services/aclas_sdk_ffi.dart 36109
 lib/services/api/api_product_handler.dart 40404
 lib/services/api/api_purchase_handler.dart 72909
 lib/services/api/api_sales_handler.dart 77276
-lib/services/delta_pull_service.dart 83163
+lib/services/delta_pull_service.dart 76374
 lib/services/journal_entry_factory.dart 40633
 lib/services/label_scale_service.dart 55333
-lib/services/network_service.dart 55349
+lib/services/network_service.dart 55286
 lib/services/printing/report_pdf_generator.dart 87280
 lib/services/printing/template_pdf_renderer.dart 35188
 lib/services/printing/thermal_receipt_generator.dart 50669

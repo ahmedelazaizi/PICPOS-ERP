@@ -2,7 +2,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart';
 import 'package:picpos_erp/data/database/database.dart';
-import 'package:picpos_erp/services/unusable_credential.dart';
+import 'package:picpos_erp/services/sync/user_credential_merge.dart';
 import 'package:picpos_erp/services/sync/sync_strategy.dart';
 import 'package:picpos_erp/services/sync_event_bus.dart';
 
@@ -23,126 +23,78 @@ class UserSyncStrategy extends SyncStrategy {
       final username = u['username'] as String;
 
       // Read existing user by server ID to preserve local passwords
-      final existingUser = await (db.select(db.users)..where((t) => t.id.equals(id))).getSingleOrNull();
+      var rowId = id;
+      var existingUser = await (db.select(db.users)..where((t) => t.id.equals(id))).getSingleOrNull();
 
-      // Clean up stale duplicate: if a local user has the same username but a
-      // different ID (created offline before server assigned its ID), deactivate
-      // it so authentication doesn't get confused by duplicate usernames.
-      // IMPORTANT: Preserve the duplicate's password hash so it can be used
-      // for the new server-ID row (the offline user had the real password).
+      // Clean up stale duplicate: a local user with the same username but a
+      // different ID (created offline before the server assigned its ID) is
+      // deactivated so authentication is not confused by duplicate usernames,
+      // and its password hash is carried over to the server-ID row.
       User? deactivatedDuplicate;
       if (existingUser == null) {
-        // This is a new server ID not yet local — check for username duplicate
         final duplicate = await (db.select(db.users)
               ..where((t) => t.username.equals(username) & t.id.equals(id).not()))
             .getSingleOrNull();
         if (duplicate != null) {
-          // Feature 011 / Issue 9 — defense-in-depth: NEVER rename the
-          // bootstrap admin (id=1). It is the system's emergency-access
-          // identity; renaming it to `__dup_1_admin` and deactivating it
-          // (as the legacy code did) leaves a client unable to log in as
-          // admin even after the server-side _getUsers fix at
-          // api_handler.dart:1458 lands. If a server response carries a
-          // DIFFERENT user with username='admin', skip this server row
-          // entirely rather than overwriting the local bootstrap.
           if (duplicate.id == 1) {
-            debugPrint('[UserSync] Refusing to rename bootstrap admin '
-                '(local id=1, username="$username"): server response carries '
-                'a different user with the same username (server id=$id). '
-                'Skipping this row to preserve admin login. See '
-                'specs/011/PROMPT.md §Issue 9.');
-            continue;
+            // The bootstrap admin (local id=1) is the system's emergency-access
+            // identity and is NEVER renamed/deactivated. A server user with the
+            // same name but another id (e.g. a PostgreSQL sequence that moved
+            // admin off id 1) maps ONTO the local row — one admin identity —
+            // instead of being skipped (which left the host admin unreachable).
+            existingUser = duplicate;
+            rowId = duplicate.id;
+            debugPrint('[UserSync] Mapping server "$username" (id=$id) onto '
+                'the local bootstrap row id=1');
+            try {
+              await db.storeFkMapping(
+                  tableName: 'users', localId: rowId, remoteId: id);
+            } catch (_) {}
+          } else {
+            deactivatedDuplicate = duplicate;
+            debugPrint('[UserSync] Deduplicating user "$username": '
+                'renaming old local id=${duplicate.id} to prevent auth conflict');
+            await (db.update(db.users)..where((t) => t.id.equals(duplicate.id))).write(
+              UsersCompanion(
+                username: Value('__dup_${duplicate.id}_$username'),
+                isActive: const Value(false),
+              ),
+            );
           }
-          deactivatedDuplicate = duplicate;
-          debugPrint('[UserSync] Deduplicating user "$username": '
-              'renaming old local id=${duplicate.id} to prevent auth conflict');
-          await (db.update(db.users)..where((t) => t.id.equals(duplicate.id))).write(
-            UsersCompanion(
-              username: Value('__dup_${duplicate.id}_$username'),
-              isActive: const Value(false),
-            ),
-          );
         }
       }
 
-      // Resolve password hash/salt — priority order:
-      // 1. Server-provided hash (authoritative if present)
-      // 2. Existing local user's hash (same ID — e.g. password changed on server)
-      // 3. Deactivated duplicate's hash (offline-created user's real password)
-      // 4. Generate temporary password as last resort
+      // Credential priority (user_credential_merge.dart): complete server
+      // credential → complete local row (Argon2id rows legitimately have
+      // salt='') → the offline duplicate's real password → unusable (SEC-004).
       final serveHash = u['passwordHash'] as String?;
       final serveSalt = u['passwordSalt'] as String?;
       final servePin = u['pin'] as String?;
-
-      var hashToSave = '';
-      var saltToSave = '';
-      String? pinToSave;
-
-      // P5 (Issue #4): Require BOTH hash AND salt before adopting server
-      // credentials. Previously the check was hash-only, so a server row
-      // with `passwordHash="<valid>"` but `passwordSalt=""` overwrote the
-      // local salt with empty — the next boot's "Admin Password Integrity
-      // Check" then fired heal because `salt.length=0`.
-      //
-      // EXCEPTION: Argon2id PHC hashes ($argon2id$...) embed their salt in
-      // the hash string itself, so password_salt is legitimately "" for
-      // those — that's not corruption, that's the Week-8 hash format. Treat
-      // an Argon2 hash as a complete authoritative credential even with an
-      // empty salt column. Without this, the post-Argon2-rehash server admin
-      // could never propagate to clients (the local PBKDF2 'admin' would
-      // win every sync, blocking the operator's real password).
-      final isArgon2 =
-          serveHash != null && serveHash.startsWith(r'$argon2');
-      final serveCredsValid = serveHash != null &&
-          serveHash.isNotEmpty &&
-          (isArgon2 ||
-              (serveSalt != null && serveSalt.isNotEmpty));
-      if (serveCredsValid) {
-        // Server sent authoritative credentials. For Argon2 the salt column
-        // is intentionally empty (salt embedded in PHC string) — store ''
-        // rather than the nullable serveSalt to keep the column non-null.
-        hashToSave = serveHash;
-        saltToSave = serveSalt ?? '';
-        // الخادم مابقاش بيبعت `pin` (تسريب B11 — شوف api_handler `_getUsers`).
-        // كان `= servePin` مباشرةً، فغياب الحقل كان هيمسح الـPIN المحلي على
-        // كل مزامنة. الـPIN بقى سرّاً محلياً: بيتظبط عبر نقطة النهاية
-        // المخصّصة وبيتحقق محلياً، والمزامنة ما بتلمسهوش.
-        pinToSave = servePin ?? existingUser?.pin;
-      } else if (existingUser != null &&
-          existingUser.passwordHash.isNotEmpty &&
-          existingUser.passwordSalt.isNotEmpty) {
-        // Existing local user (same ID) — preserve their password.
-        // Require BOTH hash AND salt to be non-empty so that a previously
-        // delta-pull-corrupted row (hash=OK, salt="") is not perpetuated here.
-        hashToSave = existingUser.passwordHash;
-        saltToSave = existingUser.passwordSalt;
-        pinToSave = servePin ?? existingUser.pin;
-      } else if (deactivatedDuplicate != null &&
-          deactivatedDuplicate.passwordHash.isNotEmpty &&
-          deactivatedDuplicate.passwordSalt.isNotEmpty) {
-        // Offline-created duplicate — carry over their real password
-        hashToSave = deactivatedDuplicate.passwordHash;
-        saltToSave = deactivatedDuplicate.passwordSalt;
-        pinToSave = servePin ?? deactivatedDuplicate.pin;
-        debugPrint('[UserSync] Preserved password from offline duplicate for "$username"');
-      } else {
-        // SEC-004: no password anywhere — store an UNUSABLE random credential
-        // (never the guessable `<username>123`); a real one arrives later.
-        final unusable = await UnusableCredential.mint();
-        saltToSave = unusable.salt;
-        hashToSave = unusable.hash;
-        pinToSave = servePin;
+      final cred = await resolveCredential(
+        serverHash: serveHash,
+        serverSalt: serveSalt,
+        localHash: existingUser?.passwordHash,
+        localSalt: existingUser?.passwordSalt,
+        dupHash: deactivatedDuplicate?.passwordHash,
+        dupSalt: deactivatedDuplicate?.passwordSalt,
+      );
+      final hashToSave = cred.hash;
+      final saltToSave = cred.salt;
+      // The server never sends `pin` (B11 leak): it is device-local, so an
+      // absent field must not wipe the local PIN.
+      final pinToSave = servePin ?? existingUser?.pin ?? deactivatedDuplicate?.pin;
+      if (cred.source == CredentialSource.unusable) {
         debugPrint('[UserSync] New user "$username" synced without password — '
             'unusable credential stored, forcePasswordChange enabled');
       }
 
-      final forceChange = !serveCredsValid &&
+      final forceChange = cred.source == CredentialSource.unusable &&
           existingUser == null &&
           deactivatedDuplicate == null;
 
       await db.into(db.users).insertOnConflictUpdate(
         UsersCompanion(
-          id: Value(id),
+          id: Value(rowId),
           username: Value(u['username'] as String),
           passwordHash: Value(hashToSave),
           passwordSalt: Value(saltToSave),

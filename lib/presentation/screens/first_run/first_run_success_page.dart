@@ -20,7 +20,8 @@ class FirstRunSuccessPage extends ConsumerWidget {
 
   final VoidCallback onStart;
 
-  /// المقرّ: PostgreSQL يحتاج إقلاعاً جديداً — «إعادة التشغيل الآن» بدل البدء.
+  /// كلُّ الأوضاع الشبكية (مقرّ/فرع/مرآة): حلقةُ المزامنة والـheartbeat والـWS لا تبدأ إلا
+  /// عند الإقلاع، فـ«إعادة التشغيل الآن» بدل «ابدأ» (A0 / ADP-002).
   final VoidCallback? onRestart;
 
   @override
@@ -114,7 +115,7 @@ class FirstRunSuccessPage extends ConsumerWidget {
                 ),
               ],
               const SizedBox(height: 24),
-              if (path == FirstRunPath.hq)
+              if (path != FirstRunPath.standalone)
                 FilledButton.icon(
                   key: const Key('first_run_restart'),
                   onPressed: onRestart,

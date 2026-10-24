@@ -28,6 +28,7 @@ import 'api_errors.dart';
 import '../../data/database/database.dart';
 import '../security_service.dart';
 import 'api_handler_base.dart';
+import 'api_auth_support.dart';
 import 'api_session_token.dart';
 import 'server_login_throttle.dart';
 
@@ -40,13 +41,13 @@ class ApiAuthHandler extends ApiHandlerBase {
   static const String _lockoutMessage = 'Too many attempts, try again later';
 
   /// Per-username throttle key (lower-cased so `Admin`/`admin` share a bucket).
-  static String _userThrottleKey(String username) =>
+  static String userThrottleKey(String username) =>
       'u:${username.toLowerCase()}';
 
   /// Per-card-code throttle key. The raw card code is NEVER used as the key
   /// (and never logged) — it is one-way hashed and truncated so the in-memory
   /// map cannot leak card codes.
-  static String _cardThrottleKey(String cardCode) =>
+  static String cardThrottleKey(String cardCode) =>
       'c:${SecurityService.hashApiKey(cardCode).substring(0, 16)}';
 
   /// Same admin-classification predicate as `AuthState.isAdmin` in the UI
@@ -98,7 +99,7 @@ class ApiAuthHandler extends ApiHandlerBase {
       }
 
       // Spec 151 P1-8b — server-side per-username brute-force lockout.
-      final throttleKey = _userThrottleKey(username);
+      final throttleKey = userThrottleKey(username);
       if (ServerLoginThrottle.isLockedOut(throttleKey)) {
         return errorResponse(_lockoutMessage, statusCode: 429);
       }
@@ -189,9 +190,9 @@ class ApiAuthHandler extends ApiHandlerBase {
           password != null &&
           password.isNotEmpty;
       if (useCard) {
-        throttleKey = _cardThrottleKey(cardCode);
+        throttleKey = cardThrottleKey(cardCode);
       } else if (useUserPass) {
-        throttleKey = _userThrottleKey(username);
+        throttleKey = userThrottleKey(username);
       } else {
         return errorResponse(
           'username+password or cardCode required',
@@ -200,7 +201,8 @@ class ApiAuthHandler extends ApiHandlerBase {
       }
 
       if (ServerLoginThrottle.isLockedOut(throttleKey)) {
-        return errorResponse(_lockoutMessage, statusCode: 429);
+        return jsonResponse({'error': _lockoutMessage, 'code': 'locked_out'},
+            statusCode: 429);
       }
 
       final UserWithRole? result = useCard
@@ -209,15 +211,28 @@ class ApiAuthHandler extends ApiHandlerBase {
 
       if (result == null) {
         ServerLoginThrottle.recordFailure(throttleKey);
-        return errorResponse('Invalid credentials', statusCode: 401);
+        return jsonResponse(
+            {'error': 'Invalid credentials', 'code': 'invalid_credentials'},
+            statusCode: 401);
       }
       ServerLoginThrottle.recordSuccess(throttleKey);
+
+      // P1: the PAIRED DEVICE decides who may sign in on it (device branch,
+      // mirror_console on a mirror). Checked before the forced-change 403.
+      final denial = await deviceSessionDenial(db, request, result.user);
+      if (denial != null) {
+        return jsonResponse({'error': denial, 'code': denial}, statusCode: 403);
+      }
 
       // SEC-002: no session for accounts still on default/temporary
       // credentials. The change must happen on the host first.
       if (result.user.forcePasswordChange) return _passwordChangeRequired();
 
       final token = ApiSessionToken.mint(result.user.id);
+      final deviceId = request.context['lanDeviceId'] as String?;
+      if (AuthAudit.shouldLogSession(result.user.id, deviceId)) {
+        await AuthAudit.log(db, request, action: 'session_issued', user: result.user);
+      }
       return jsonResponse({
         'token': token,
         'userId': result.user.id,

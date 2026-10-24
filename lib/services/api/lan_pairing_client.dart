@@ -47,6 +47,7 @@ class LanPairingClient {
     required int port,
     required String code,
     String? deviceName,
+    String? deviceKind,
   }) async {
     final input = LanPairingInput.parse(code);
     final id = await _deviceId();
@@ -78,7 +79,8 @@ class LanPairingClient {
         onFirstUse: (_, _, fp) => firstUseFingerprint = fp,
       );
       try {
-        final result = await _post(client, uri, input.code, id, name);
+        final result =
+            await _post(client, uri, input.code, id, name, deviceKind);
         final observed = firstUseFingerprint;
         if (result['success'] == true && observed != null) {
           await TlsTrust.pin(uri.host, uri.port, observed);
@@ -114,6 +116,7 @@ class LanPairingClient {
     String code,
     String id,
     String name,
+    String? deviceKind,
   ) async {
     final request = await client.postUrl(uri);
     request.headers.contentType = ContentType.json;
@@ -124,6 +127,7 @@ class LanPairingClient {
       'pairingCode': code.trim().toUpperCase(),
       'deviceId': id,
       'deviceName': name,
+      'deviceKind': ?deviceKind,
     }));
     final response = await request.close();
     final body = await response.transform(utf8.decoder).join();
@@ -142,7 +146,14 @@ class LanPairingClient {
     }
     DeviceIdentityService.instance.adoptForPairing(id);
     ServerProxy.instance.setApiToken(token);
-    return {'success': true, 'deviceId': id, 'secure': uri.scheme == 'https'};
+    return {
+      'success': true,
+      'deviceId': id,
+      'secure': uri.scheme == 'https',
+      // M1: what the server bound this device to (from the code).
+      'deviceKind': data['deviceKind'],
+      'branchId': data['branchId'],
+    };
   }
 
   static Future<String> _deviceId() async {

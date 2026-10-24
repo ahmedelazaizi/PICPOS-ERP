@@ -37,6 +37,7 @@ import 'api_party_handler.dart';
 import 'api_product_handler.dart';
 import 'api_purchase_handler.dart';
 import 'api_auth_handler.dart';
+import 'api_password_change_handler.dart';
 import 'api_web_session_handler.dart';
 import 'm1_wh/wh_read_handlers.dart';
 import 'web_static_handler.dart';
@@ -66,6 +67,7 @@ part 'routes/api_get_treasury.dart';
 part 'routes/api_get_documents.dart';
 part 'routes/api_get_directory.dart';
 part 'routes/api_get_users.dart';
+part 'routes/api_users_feed_scope.dart';
 part 'routes/api_table_guest_routes.dart';
 part 'routes/api_branch_scope.dart';
 part 'routes/api_sync_pull_tables.dart';
@@ -90,6 +92,7 @@ class ApiHandler {
   late final ApiProductHandler _products;
   late final ApiPurchaseHandler _purchases;
   late final ApiAuthHandler _auth;
+  late final ApiPasswordChangeHandler _passwordChange;
   // الويب: لا يرث ApiHandlerBase (كي لا يُسجَّل _registeredInstance).
   late final ApiWebSessionHandler _webSession;
   late final WebReadChannelHost _webRead;
@@ -107,6 +110,7 @@ class ApiHandler {
     _products = ApiProductHandler(_db, _wsClients);
     _purchases = ApiPurchaseHandler(_db, _wsClients);
     _auth = ApiAuthHandler(_db, _wsClients);
+    _passwordChange = ApiPasswordChangeHandler(_db, _wsClients);
     _webSession = ApiWebSessionHandler(_db);
     WebSessionGuard.configure(_db);
     _webRead = WebReadChannelHost(_db);

@@ -566,7 +566,7 @@ class NetworkService {
           return ReconcileInconsistent(
             reasonAr: 'النظام مسجّل كمرآة لكن ارتباط السيرفر مفقود '
                 '(لم يتم التحقق من السيرفر بنجاح). '
-                'ادخل خيارات المطور لإعادة الربط أو أعد اعداد البدء.',
+                'أعد توفير الجهاز لإعادة الربط.',
             reasonCode: ReconcileReasonCode.mirrorPairingMissing,
             dbMode: dbMode,
           );
@@ -711,14 +711,10 @@ class NetworkService {
   /// Legacy callers without a DB handle still update prefs only; the
   /// next boot's `reconcileWithDb()` will mirror the value into the DB.
   Future<void> setMode(NetworkMode newMode, {AppDatabase? db}) async {
+    // ADP-003: a failed DB write THROWS (the committer maps it to CommitFailed)
+    // instead of leaving prefs ahead of the DB.
     if (_mode == newMode) {
-      if (db != null) {
-        try {
-          await db.setSetting('network_mode', newMode.name);
-        } catch (e) {
-          debugPrint('[NetworkService] setMode: DB write failed: $e');
-        }
-      }
+      if (db != null) await db.setSetting('network_mode', newMode.name);
       await saveSettings();
       return;
     }
@@ -734,16 +730,18 @@ class NetworkService {
       SyncService.clearInstance();
     }
 
+    final previous = _mode;
     _mode = newMode;
     DiagnosticLogger.setModeLabel(_mode.name); // Spec 136 ISS-5
 
-    // Persist to DB first (canonical) so a crash mid-call doesn't strand
-    // prefs ahead of the DB.
+    // DB first (canonical): on failure restore the mode and rethrow.
     if (db != null) {
       try {
         await db.setSetting('network_mode', newMode.name);
       } catch (e) {
-        debugPrint('[NetworkService] setMode: DB write failed: $e');
+        _mode = previous;
+        DiagnosticLogger.setModeLabel(previous.name);
+        rethrow;
       }
     }
 

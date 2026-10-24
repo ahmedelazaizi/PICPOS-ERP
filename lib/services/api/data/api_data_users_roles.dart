@@ -104,6 +104,14 @@ extension ApiDataUsersRolesRoutes on ApiDataHandler {
         }
       }
 
+      // RESET-001: a password in the body used to be IGNORED while the call
+      // answered success. It is applied here, under the same users_manage gate
+      // as POST /api/users/<id>/password; a refusal answers honestly and leaves
+      // the row untouched. forcePasswordChange (set AFTER the password, since
+      // a password write clears it) propagates the forced-change flag.
+      final reset = await _applyPasswordReset(userId, data);
+      if (reset != null) return reset;
+
       final companion = UsersCompanion(
         roleId: data.containsKey('roleId')
             ? Value(parseIntNullable(data['roleId']))
@@ -122,6 +130,9 @@ extension ApiDataUsersRolesRoutes on ApiDataHandler {
             : const Value.absent(),
         displayName: data.containsKey('displayName')
             ? Value(data['displayName'] as String)
+            : const Value.absent(),
+        forcePasswordChange: data.containsKey('forcePasswordChange')
+            ? Value(parseBool(data['forcePasswordChange']))
             : const Value.absent(),
         // Issue 7 (Feature 018): admins can rename a user (display_name +
         // username) and reassign their MSR card from the edit dialog.
@@ -226,17 +237,43 @@ extension ApiDataUsersRolesRoutes on ApiDataHandler {
       if (perm != null) return perm;
       final data =
           json.decode(await request.readAsString()) as Map<String, dynamic>;
-      await db.updateUserPassword(
-        userId: int.parse(id),
-        newPassword: data['password'] as String,
-      );
-      WebSessionGuard.userChanged(int.parse(id), revokeSessions: true);
+      if (data['password'] is! String || (data['password'] as String).isEmpty) {
+        return _passwordFail(400, 'password required', 'invalid_request');
+      }
+      final reset = await _applyPasswordReset(int.parse(id), data);
+      if (reset != null) return reset;
       broadcast('users');
       return jsonResponse({'success': true});
     } catch (e) {
       debugPrint('[API] postUserPassword error: $e');
       return ApiErrors.fail(e, 'Failed to update password');
     }
+  }
+
+  Response _passwordFail(int status, String error, String code) =>
+      jsonResponse({'error': error, 'code': code}, statusCode: status);
+
+  /// Applies `password` (and then `forcePasswordChange`) from an ADMIN request
+  /// body to user [userId]; `null` = nothing to refuse (also when the body has
+  /// no `password`). Revokes the user's sessions after a real password change.
+  Future<Response?> _applyPasswordReset(
+      int userId, Map<String, dynamic> data) async {
+    if (!data.containsKey('password')) return null;
+    final password = data['password'];
+    if (password is! String || password.isEmpty) {
+      return _passwordFail(400, 'password must be a non-empty string', 'invalid_request');
+    }
+    try {
+      await db.updateUserPassword(userId: userId, newPassword: password);
+    } on DuplicatePasswordException {
+      return _passwordFail(409, 'password rejected', 'password_rejected');
+    }
+    if (data.containsKey('forcePasswordChange') && parseBool(data['forcePasswordChange'])) {
+      await (db.update(db.users)..where((u) => u.id.equals(userId))).write(
+          const UsersCompanion(forcePasswordChange: Value(true)));
+    }
+    WebSessionGuard.userChanged(userId, revokeSessions: true);
+    return null;
   }
 
   Future<Response> postUserPin(Request request, String id) async {

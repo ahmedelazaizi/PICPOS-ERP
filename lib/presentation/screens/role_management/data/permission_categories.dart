@@ -296,6 +296,7 @@ Map<String, PermissionCategory> get permissionCategories => {
     permissions: {
       'devices_pair_manage': tr('ربط وإقران الأجهزة وإلغاء ربطها'),
       'warehouse_mobile_access': tr('استعمال تطبيق المخازن على الهاتف'),
+      'mirror_console': tr('الدخول على كونسول مدير الفروع (المرآة)'),
     },
   ),
 };

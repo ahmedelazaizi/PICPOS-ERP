@@ -86,6 +86,11 @@ class LanPairingApiHandler {
       'token': result.token,
       'deviceId': result.deviceId,
     };
+    // The kinds introduced with M1 echo themselves; the older kinds' response
+    // shape is unchanged.
+    if (result.deviceKind == 'client' || result.deviceKind == 'mirror') {
+      body['deviceKind'] = result.deviceKind;
+    }
     if (result.branchId != null) {
       body.addAll({
         'branchId': result.branchId,
