@@ -1,0 +1,93 @@
+(* ============================================================
+  Mandatory pre-upgrade database backup (audit REL-003).
+
+  Included from the [Code] section of setup_picpos.iss and setup.iss:
+    (ISPP include directive for this file)
+
+  There is no in-app updater: an upgrade is "run the next installer over the
+  old one". The app's own pre-migration backup is non-blocking and rotates, so
+  the installer takes its OWN copy first and ABORTS the upgrade when the copy
+  cannot be made or verified. Nothing has been changed on disk at that point
+  (PrepareToInstall runs before any file is installed).
+
+  Copies go to  {userdocs}\backups\pre-upgrade\  - a sub-folder the app's
+  backup rotation does not touch - and are never deleted by the installer.
+  Databases: {userdocs}\picpos_*.db and {userdocs}\uralcash_*.db (+ -wal files).
+  No database found (fresh install) = nothing to do.
+  ============================================================ *)
+
+function PreUpgradeCopyOne(const Src, DestDir, Stamp: String): String;
+var
+  Dst: String;
+  SrcSize, DstSize: Int64;
+begin
+  Result := '';
+  if not ForceDirectories(DestDir) then
+  begin
+    Result := ExtractFileName(Src);
+    Exit;
+  end;
+  Dst := DestDir + '\' + ChangeFileExt(ExtractFileName(Src), '') +
+    '_preupgrade_' + Stamp + ExtractFileExt(Src);
+  if not FileCopy(Src, Dst, False) then
+  begin
+    Result := ExtractFileName(Src);
+    Exit;
+  end;
+  if not (FileSize64(Src, SrcSize) and FileSize64(Dst, DstSize) and
+          (SrcSize = DstSize)) then
+  begin
+    DeleteFile(Dst);
+    Result := ExtractFileName(Src);
+  end;
+end;
+
+{ Copies every database matching Pattern. Returns '' on success or the name of
+  the first file that could not be copied and verified. }
+function PreUpgradeBackupPattern(const Pattern, DestDir, Stamp: String): String;
+var
+  FindRec: TFindRec;
+  Dir, Src: String;
+begin
+  Result := '';
+  Dir := ExpandConstant('{userdocs}');
+  if not FindFirst(Dir + '\' + Pattern, FindRec) then
+    Exit;
+  try
+    repeat
+      if (FindRec.Attributes and FILE_ATTRIBUTE_DIRECTORY) = 0 then
+      begin
+        Src := Dir + '\' + FindRec.Name;
+        Result := PreUpgradeCopyOne(Src, DestDir, Stamp);
+        if Result <> '' then
+          Exit;
+        { SQLite write-ahead log, when present, belongs to the same snapshot. }
+        if FileExists(Src + '-wal') then
+        begin
+          Result := PreUpgradeCopyOne(Src + '-wal', DestDir, Stamp);
+          if Result <> '' then
+            Exit;
+        end;
+      end;
+    until not FindNext(FindRec);
+  finally
+    FindClose(FindRec);
+  end;
+end;
+
+{ Returns '' to continue, or a message that aborts the installation. }
+function PreUpgradeBackup(): String;
+var
+  DestDir, Stamp, Failed: String;
+begin
+  Result := '';
+  DestDir := ExpandConstant('{userdocs}') + '\backups\pre-upgrade';
+  Stamp := GetDateTimeString('yyyymmdd_hhnnss', #0, #0);
+  Failed := PreUpgradeBackupPattern('picpos_*.db', DestDir, Stamp);
+  if Failed = '' then
+    Failed := PreUpgradeBackupPattern('uralcash_*.db', DestDir, Stamp);
+  if Failed <> '' then
+    Result := 'Could not back up the database "' + Failed + '" before upgrading.' + #13#10 +
+      'Close PicPos completely (including the system-tray icon), make sure the disk has free space, then run the installer again.' + #13#10 +
+      'The upgrade was stopped and nothing was changed.';
+end;
