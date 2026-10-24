@@ -514,3 +514,27 @@
 3. **تطبيق المخازن:** تطبيق موبايل لمسؤول المخزن والمشرف والمدير والموظف، يُثبَّت على هاتفه ويُقرَن بالنظام بصلاحية المدير المسؤول عن ربط وإقران الأجهزة.
 4. **قسم العقارات:** غير موجود حاليًا، وهو خطة إضافية لاحقة بعد مراجعة النظام وتطبيقاته.
 5. **الترتيب:** تُنفَّذ مراجعة شاملة أولًا (طلب المراجعة) ثم يُصاغ الترتيب.
+
+---
+
+## حالة التنفيذ (W0 + W1) — 2026-10-23
+
+**منجز:**
+- `mobile_warehouse/` (`com.picpos.warehouse`، «PicPos مخازن»): توقيع يفشل مغلقًا، مفتاح اختبار عبر `tool/gen_android_keystore.ps1`، عملية CI (مصفوفة `packages_and_mobile` + `android-release`) وسطر `tool/run_e2e.ps1`، وAPK موقَّع.
+- `picpos_api_client`: `PairingPayload` (v1/v2)، `WarehouseLanClient`، `wh_contracts` (مع تثبيت البصمة عبر `lan_pinning.dart` الموجود). `picpos_device`: `ScanEvent`/`ScanDeduper`.
+- سطح المكتب: الصلاحية `devices_pair_manage` تُفرض في `LanPairingService` (إصدار/إلغاء/عرض) مع تدقيق في `ActivityLogs`؛ نوع الجهاز `warehouse` مقيَّد بالفرع من الرمز لا من الجهاز؛ `LanDeviceRoutePolicy` (ADR-W3)؛ `401 device_revoked` للجهاز الملغى؛ المسارات `GET /api/m1/info` و`/api/m1/wh/session` و`/api/m1/wh/items` (قراءة فقط، نطاق الفرع ∩ مخازن المستخدم).
+- G-1، G-2 (بلا فحص علامة على الـAPK)، G-6 منجزة. G-4 كان قائمًا (`isUserLive`)، وG-7 كان قائمًا (`forcePasswordChange` في `issueSession`).
+
+**مصفوفة الصلاحيات المنفَّذة** (`role_grant_matrix.dart`؛ الدوران الجديدان يُنشآن بـ`ensureWarehouseRoles` داخل `grantMissingDefaults`):
+
+| الدور | الأكواد |
+|---|---|
+| موظف مخزن (جديد) | `warehouse_mobile_access`, `inventory_view` |
+| مخزني | الموجود + `warehouse_mobile_access`, `inventory_transfer` |
+| مشرف مخزن (جديد) | `warehouse_mobile_access`, `inventory_view`, `inventory_edit`, `inventory_transfer` |
+| مدير مخزون | الموجود + `warehouse_mobile_access` |
+| مدير النظام | + `devices_pair_manage` (ولا دور آخر) |
+
+الأكواد `goods_receipt_mobile` و`stock_count_submit` و`stock_adjust_approve` **لم تُضف بعد**: تُضاف مع المرحلة التي تفرضها (W2–W4) كي لا يظهر كود بلا إنفاذ.
+
+**فجوات معروفة:** حجب الأرصدة أثناء جرد نشط (W4)؛ بقية G-3 (نافذة bearer القديمة SEC-006)، وG-5 لغير أجهزة المخازن (`/api/parties` بلا جلسة)؛ فحص العلامة على الـAPK في CI؛ لا إبطال لرمز الجلسة عند الخروج (رمز موقَّع بلا حالة)؛ لم تُجرَّب أي أجهزة فعلية.

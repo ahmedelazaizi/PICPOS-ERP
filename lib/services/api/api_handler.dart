@@ -38,6 +38,7 @@ import 'api_product_handler.dart';
 import 'api_purchase_handler.dart';
 import 'api_auth_handler.dart';
 import 'api_web_session_handler.dart';
+import 'm1_wh/wh_read_handlers.dart';
 import 'web_static_handler.dart';
 import 'web_session_guard.dart';
 import '../web_read/web_read_channel_host.dart';
@@ -58,6 +59,7 @@ import '../manufacturing_sync_tables.dart';
 part 'routes/api_routes_read.dart';
 part 'routes/api_routes_write.dart';
 part 'routes/api_routes_auth_public.dart';
+part 'routes/api_routes_m1_wh.dart';
 part 'routes/api_get_catalog.dart';
 part 'routes/api_get_system.dart';
 part 'routes/api_get_treasury.dart';
@@ -153,6 +155,7 @@ class ApiHandler {
     _registerWriteRoutes(router);
     _registerAdminWriteRoutes(router);
     _registerAuthSyncRoutes(router);
+    _registerWarehouseRoutes(router);
     _registerPublicRoutes(router);
 
     return router;

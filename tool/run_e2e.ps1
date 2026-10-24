@@ -3,13 +3,13 @@
   يشغّل كل مجموعات اختبارات E2E بالترتيب ويطبع جدولًا نهائيًا.
 
 .DESCRIPTION
-  الترتيب: Postgres ← server ← packages ← mobile ← mobile_admin ← mobile_pos ← root ← web.
+  الترتيب: Postgres ← server ← packages ← mobile ← mobile_admin ← mobile_pos ← mobile_warehouse ← root ← web.
   أوامر flutter تُشغَّل تتابعيًا دائمًا (لا تتوازى أبدًا) وتُعاد تلقائيًا إن ظهر قفل
   الإقلاع أو انهيار نسخ native_assets الناتج عن تشغيل flutter آخر بالتوازي.
   رمز الخروج غير صفري عند فشل أي مجموعة. التفاصيل: docs/testing/E2E.md.
 
 .PARAMETER Only
-  تشغيل مجموعات محددة فقط: server, packages, mobile, mobile_admin, mobile_pos, root, web.
+  تشغيل مجموعات محددة فقط: server, packages, mobile, mobile_admin, mobile_pos, mobile_warehouse, root, web.
 
 .PARAMETER Skip
   استبعاد مجموعات.
@@ -129,6 +129,7 @@ $suites = @(
   @{ Name = 'mobile';       Dir = 'mobile';                    Exe = 'flutter'; Args = @('test', 'test/e2e');                  Flutter = $true;  NeedsPg = $true },
   @{ Name = 'mobile_admin'; Dir = 'mobile_admin';              Exe = 'flutter'; Args = @('test', 'test/e2e');                  Flutter = $true;  NeedsPg = $true },
   @{ Name = 'mobile_pos';   Dir = 'mobile_pos';                Exe = 'flutter'; Args = @('test', 'test/e2e');                  Flutter = $true;  NeedsPg = $false },
+  @{ Name = 'mobile_warehouse'; Dir = 'mobile_warehouse';      Exe = 'flutter'; Args = @('test', 'test/e2e');                  Flutter = $true;  NeedsPg = $false },
   @{ Name = 'root';         Dir = '.';                         Exe = 'flutter'; Args = @('test', 'test/e2e');                  Flutter = $true;  NeedsPg = $true },
   @{ Name = 'web';          Dir = '.';                         Exe = 'flutter'; Args = @('test', 'test/integration/web_client_e2e_test.dart'); Flutter = $true; NeedsPg = $false }
 )

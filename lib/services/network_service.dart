@@ -867,13 +867,14 @@ class NetworkService {
         '[NetworkService] Device pairing window opened for ${ttl.inMinutes} min');
   }
 
-  PairingOffer? issueLanPairingCode() {
+  Future<PairingOffer?> issueLanPairingCode({int? actorUserId, String? deviceKind, int? branchId}) async {
     final pairing = _lanPairing;
     if (pairing == null || !pairing.isInitialized) return null;
     return pairing.issuePairingCode(
       serverHost: _serverAddress ?? 'localhost',
       port: _serverPort,
       serverFingerprint: _serverCertFingerprint,
+      actorUserId: actorUserId, deviceKind: deviceKind, branchId: branchId,
     );
   }
 
@@ -882,8 +883,8 @@ class NetworkService {
     return pairing == null ? const [] : pairing.listUnpairedDevices();
   }
 
-  Future<void> revokeLanDevice(String deviceId) async {
-    await _lanPairing?.revoke(deviceId);
+  Future<void> revokeLanDevice(String deviceId, {int? actorUserId}) async {
+    await _lanPairing?.revoke(deviceId, actorUserId: actorUserId);
   }
 
   Future<void> endLegacyLanTransition() async {

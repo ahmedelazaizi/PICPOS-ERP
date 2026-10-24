@@ -1,6 +1,6 @@
 # Android release signing (PicPos Van / Cashier / Admin)
 
-Audit finding **REL-004**. All three apps (`mobile`, `mobile_pos`, `mobile_admin`) now use the
+Audit finding **REL-004**. All four apps (`mobile`, `mobile_pos`, `mobile_admin`, `mobile_warehouse`) now use the
 same fail-closed rule: **a release build never falls back to the debug key.** Without a valid
 `android/key.properties` the release tasks (`assembleRelease`, `bundleRelease`, `package*Release`,
 `sign*Release`) stop with an actionable message. Debug builds are unaffected.
@@ -55,7 +55,7 @@ Job `android-release` in `.github/workflows/ci.yml` runs on version tags (and ma
    (manual dispatch input `allow_unsigned`, or repository variable `ALLOW_UNSIGNED`). Even then no
    unsigned release APK is produced: the signed build is skipped.
 
-All three apps share the secrets above; to use a distinct keystore per app, add per-app secrets and
+All four apps share the secrets above; to use a distinct keystore per app, add per-app secrets and
 select them with the matrix `dir`.
 
 ## Migrating already-installed debug-signed builds

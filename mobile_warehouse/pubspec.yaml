@@ -1,0 +1,47 @@
+name: picpos_warehouse
+description: >-
+  PicPos Warehouse («PicPos مخازن») - Android app for the warehouse clerk,
+  keeper, supervisor and manager. LAN client of the main desktop, paired under
+  the `devices_pair_manage` permission (docs/plans/2026-10-23-warehouse-app-plan.md,
+  phases W0-W1: shell, pairing, sign-in, scope, read-only item lookup).
+publish_to: 'none'
+
+# versionName = x.y.z, versionCode = N (strictly increasing, per app).
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  mobile_scanner: ^7.4.2
+  picpos_api_client:
+    path: ../packages/picpos_api_client
+  picpos_device:
+    path: ../packages/picpos_device
+  picpos_rules:
+    path: ../packages/picpos_rules
+  picpos_ui:
+    path: ../packages/picpos_ui
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+
+# Launcher icons: same PicPos sources as the sibling apps
+# (tool/mobile_icons/make_icons.py); outputs are committed under
+# android/app/src/main/res.
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: assets/icon/legacy.png
+  min_sdk_android: 24
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: assets/icon/foreground.png
+  adaptive_icon_monochrome: assets/icon/monochrome.png

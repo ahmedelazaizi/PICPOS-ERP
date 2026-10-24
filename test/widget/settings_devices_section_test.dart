@@ -37,7 +37,7 @@ class _FakeLan implements LanPairingService {
   Future<List<LanPairingDevice>> listDevices() async => devices;
 
   @override
-  Future<void> revoke(String deviceId) async => revoked.add(deviceId);
+  Future<void> revoke(String deviceId, {int? actorUserId}) async => revoked.add(deviceId);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -406,11 +406,12 @@ void main() {
     expect(find.byKey(const Key('ld_rep_issue')), findsNothing);
   });
 
-  testWidgets('cashier and warehouse apps show coming-soon status', (tester) async {
+  testWidgets('cashier is coming-soon; warehouse app has its pairing entry', (tester) async {
     await pumpSection(tester);
     expect(find.text('PicPos كاشير'), findsOneWidget);
     expect(find.text('PicPos مخازن'), findsOneWidget);
-    expect(find.text('قريباً'), findsNWidgets(2));
+    expect(find.text('قريباً'), findsOneWidget);
+    expect(find.byKey(const Key('wd_pair')), findsOneWidget);
   });
 
   for (final locale in const [Locale('ar'), Locale('en')]) {

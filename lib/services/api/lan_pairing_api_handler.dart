@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:shelf/shelf.dart';
 
+import 'lan_pairing_authz.dart' show kPairableDeviceKinds;
 import 'lan_pairing_service.dart';
 
 /// Small route handler kept outside the API god-file.
@@ -48,7 +49,7 @@ class LanPairingApiHandler {
     Map body,
   ) {
     final kind = body['deviceKind'];
-    if (kind != null && kind != 'admin' && kind != 'pos') {
+    if (kind != null && !kPairableDeviceKinds.contains(kind)) {
       return (
         kind: null,
         branchId: null,
@@ -121,6 +122,10 @@ class LanPairingApiHandler {
     LanPairingStatus.branchCodeUnavailable => (
       status: 409,
       message: 'لا يمكن إقران جهاز POS بفرع دون رمز',
+    ),
+    LanPairingStatus.kindMismatch => (
+      status: 401,
+      message: 'رمز الإقران لا يخصّ هذا النوع من الأجهزة',
     ),
     LanPairingStatus.success => throw StateError(
       'Success has no pairing error',

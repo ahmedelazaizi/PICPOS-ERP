@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launcher label. Arabic is the default (Arabic-first product); values-en holds English. -->
+<resources>
+    <string name="app_name">PicPos مخازن</string>
+</resources>

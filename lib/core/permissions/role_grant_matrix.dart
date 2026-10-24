@@ -37,6 +37,12 @@
 // matrix-based self-heal (`grantMissingDefaults`) treat admin like
 // any other role for THESE specific codes — defense in depth.
 
+/// «موظف مخزن» — counts and receives; no transfers, vouchers or approval.
+const String kWarehouseClerkRole = 'موظف مخزن';
+
+/// «مشرف مخزن» — the clerk plus transfers / vouchers (approval code joins in W3-W4).
+const String kWarehouseSupervisorRole = 'مشرف مخزن';
+
 class RoleGrantMatrix {
   RoleGrantMatrix._();
 
@@ -52,6 +58,9 @@ class RoleGrantMatrix {
     // field smoke (2026-05-19, mirror V148) caught silently missing
     // and that block core POS / branch flows when absent.
     'مدير النظام': {
+      // Plan 2026-10-23 §B.4 — pairing/revoking devices is a permission now,
+      // not a role-name check. Only this role by default.
+      'devices_pair_manage',
       'branches_manage',
       'pos_shift_open',
       'pos_shift_close',
@@ -203,6 +212,9 @@ class RoleGrantMatrix {
     'مخزني': {
       'inventory_view',
       'inventory_edit',
+      // Warehouse app (plan §B.4): the app user = «مسؤول المخزن».
+      'warehouse_mobile_access',
+      'inventory_transfer',
       'products_view',
       'products_add',
       'products_edit',
@@ -225,6 +237,17 @@ class RoleGrantMatrix {
       // دفعة ٩ — الدور ده معاه `purchases_create` بس (مالوش `sales_view`).
       'purchases_print',
       'purchases_return_print',
+    },
+    // Warehouse app roles (plan §B.4). Created idempotently by
+    // ensureWarehouseRoles (grantMissingDefaults only grants, never creates).
+    // goods_receipt_mobile / stock_count_submit / stock_adjust_approve join
+    // these rows in the phases (W2-W4) that enforce them.
+    kWarehouseClerkRole: {'warehouse_mobile_access', 'inventory_view'},
+    kWarehouseSupervisorRole: {
+      'warehouse_mobile_access',
+      'inventory_view',
+      'inventory_edit',
+      'inventory_transfer',
     },
     'محاسب': {
       // ── إرسالُ مستندات العميل على واتساب (2026-09-12) ─────────────────
@@ -426,6 +449,7 @@ class RoleGrantMatrix {
     'مدير مخزون': {
       'inventory_view',
       'inventory_transfer',
+      'warehouse_mobile_access',
       'products_add',
       'purchases_create',
       'reports_view',

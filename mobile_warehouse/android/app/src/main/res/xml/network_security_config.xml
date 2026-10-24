@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Release/profile: HTTPS only, system CAs only. The cloud uses public TLS;
+     the desktop LAN server uses a self-signed certificate whose fingerprint is
+     pinned in Dart from the pairing QR (ARCHITECTURE-M §2.4), not here.
+     Note: Dart's HttpClient does not consult this file; picpos_api_client
+     UrlPolicy.release enforces https-only for Dart code. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

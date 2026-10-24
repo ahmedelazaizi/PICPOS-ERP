@@ -6,6 +6,7 @@ export 'src/printing/print_service.dart';
 export 'src/printing/printer_transport.dart';
 export 'src/printing/receipt.dart';
 export 'src/printing/receipt_renderer.dart';
+export 'src/scan/scan_event.dart';
 export 'src/scan/scanner_input.dart';
 export 'src/store/db_key.dart';
 export 'src/store/local_store.dart';

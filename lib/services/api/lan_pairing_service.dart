@@ -11,7 +11,11 @@ import '../legacy_identifiers.dart';
 import '../secret_store.dart';
 import '../secure_storage_service.dart';
 import '../security_service.dart';
+import '../permission_enforcer.dart';
 import '../storage_key_migration.dart';
+import 'lan_pairing_authz.dart';
+
+part 'lan_pairing_warehouse.dart';
 
 /// Server-side LAN pairing state. The install secret never leaves this process.
 class LanPairingService {
@@ -28,6 +32,7 @@ class LanPairingService {
   final SecureStorageService _storage;
   final DateTime Function() _now;
   final String Function() _makeCode;
+  final PairingAuthz _authz;
   final Map<String, _PairingDevice> _memoryDevices = {};
   final Map<String, List<DateTime>> _attempts = {};
   final Map<int, Future<void>> _branchAllocationQueues = {};
@@ -41,21 +46,31 @@ class LanPairingService {
     SecureStorageService? storage,
     DateTime Function()? now,
     String Function()? makeCode,
+    HasPermissionFn? hasPermission,
   }) : _storage = storage ?? SecureStorageService(),
        _now = now ?? DateTime.now,
-       _makeCode = makeCode ?? _randomCode;
+       _makeCode = makeCode ?? _randomCode,
+       _authz = PairingAuthz(hasPermission: hasPermission ?? _dbCheck(_db), db: _db);
 
   LanPairingService.forTesting({
     required String installSecret,
     AppDatabase? db,
     DateTime Function()? now,
     String Function()? makeCode,
+    HasPermissionFn? hasPermission,
   }) : _db = db,
        _storage = SecureStorageService(),
        _now = now ?? DateTime.now,
        _makeCode = makeCode ?? _randomCode,
+       _authz = PairingAuthz(hasPermission: hasPermission ?? _allowAll, db: db),
        _installSecret = installSecret,
        _initialized = true;
+
+  /// Production check: the database permission lookup; no database = deny.
+  static HasPermissionFn _dbCheck(AppDatabase? db) =>
+      db == null ? (_, _) async => false : db.userHasPermission;
+
+  static Future<bool> _allowAll(int _, String _) async => true;
 
   static String _randomCode() {
     const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -104,15 +119,44 @@ class LanPairingService {
 
   bool get isInitialized => _initialized && _installSecret != null;
 
-  PairingOffer issuePairingCode({
+  /// Issues a one-time pairing code. Requires devices_pair_manage for every
+  /// device kind (G-6). A warehouse code is bound to [deviceKind] and
+  /// [branchId] (the device cannot pick its own branch) and refuses to be
+  /// issued without a TLS fingerprint. The payload carries no secret: the
+  /// one-time code is the only credential, valid [pairingTtl] (QR v2).
+  Future<PairingOffer> issuePairingCode({
     required String serverHost,
     required int port,
     String? serverFingerprint,
-  }) {
+    required int? actorUserId,
+    String? deviceKind,
+    int? branchId,
+  }) async {
     _requireInitialized();
+    if (deviceKind != null && !kPairableDeviceKinds.contains(deviceKind)) {
+      throw ArgumentError.value(deviceKind, 'deviceKind', 'unsupported');
+    }
+    if (deviceKind == 'warehouse') {
+      if (branchId == null || branchId <= 0) {
+        throw ArgumentError.value(branchId, 'branchId', 'required for warehouse');
+      }
+      if ((serverFingerprint ?? '').isEmpty) {
+        throw StateError('tls_required_for_warehouse');
+      }
+    }
+    await _authz.require(actorUserId, action: 'issue', deviceKind: deviceKind, branchId: branchId);
     final code = _makeCode().toUpperCase();
     final expiresAt = _now().add(pairingTtl);
+    final hasTls = (serverFingerprint ?? '').isNotEmpty;
     final payload = jsonEncode({
+      'v': 2,
+      'kind': deviceKind ?? 'lan',
+      'url': '${hasTls ? 'https' : 'http'}://$serverHost:$port',
+      'code': code,
+      'exp': expiresAt.millisecondsSinceEpoch,
+      'fp': serverFingerprint,
+      'branchId': ?branchId,
+      // v1 keys, kept for clients that predate QR v2.
       'serverHost': serverHost,
       'port': port,
       'pairingCode': code,
@@ -122,6 +166,8 @@ class LanPairingService {
       code: code,
       expiresAt: expiresAt,
       payload: payload,
+      deviceKind: deviceKind,
+      branchId: branchId,
     );
     _pendingOffer = offer;
     return PairingOffer(code: code, expiresAt: expiresAt, qrPayload: payload);
@@ -136,6 +182,10 @@ class LanPairingService {
     }
     if (!_claimedOffers.add(offer)) {
       return const LanPairingResult.invalidCode();
+    }
+    if (!_kindAllowed(offer, request)) {
+      _claimedOffers.remove(offer);
+      return const LanPairingResult.kindMismatch();
     }
     try {
       final result = await _completePairing(request);
@@ -158,6 +208,7 @@ class LanPairingService {
   }
 
   Future<LanPairingResult> _completePairing(LanPairingRequest request) async {
+    if (request.deviceKind == 'warehouse') return _pairWarehouseDevice(request);
     final work = _PairingWork(
       request: request,
       deviceId: request.deviceId.trim(),
@@ -514,7 +565,12 @@ class LanPairingService {
     return devices.where((device) => device.pairedAt == null).toList();
   }
 
-  Future<void> revoke(String deviceId) async {
+  /// Revokes [deviceId]; requires devices_pair_manage (G-6). The token stops
+  /// working on the next request (verifyDeviceToken checks revoked) and the
+  /// phone wipes itself on the resulting device_revoked answer.
+  Future<void> revoke(String deviceId, {required int? actorUserId}) async {
+    final target = await _findDevice(deviceId);
+    await _authz.require(actorUserId, action: 'revoke', deviceKind: target?.deviceKind, branchId: target?.branchId, deviceId: deviceId);
     if (_db == null) {
       final existing = _memoryDevices[deviceId];
       if (existing != null) existing.revoked = true;
@@ -769,6 +825,18 @@ class LanPairingResult {
          branchCode: branchCode,
          terminalCode: terminalCode,
        );
+  const LanPairingResult.warehouseSuccess({
+    required String token,
+    required String deviceId,
+    required int branchId,
+  }) : this._(
+         status: LanPairingStatus.success,
+         token: token,
+         deviceId: deviceId,
+         branchId: branchId,
+       );
+  const LanPairingResult.kindMismatch()
+    : this._(status: LanPairingStatus.kindMismatch);
   const LanPairingResult.invalidCode()
     : this._(status: LanPairingStatus.invalidCode);
   const LanPairingResult.rateLimited()
@@ -798,6 +866,7 @@ enum LanPairingStatus {
   branchRequired,
   branchUnavailable,
   branchCodeUnavailable,
+  kindMismatch,
 }
 
 class LanPairingDevice {
@@ -833,7 +902,11 @@ class _PairingOffer {
     required this.code,
     required this.expiresAt,
     required this.payload,
+    this.deviceKind,
+    this.branchId,
   });
+  final String? deviceKind;
+  final int? branchId;
   final String code;
   final DateTime expiresAt;
   final String payload;

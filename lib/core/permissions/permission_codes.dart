@@ -1,4 +1,5 @@
 import 'package:picpos_erp/core/i18n/tr.dart';
+import 'warehouse_permission_codes.dart';
 // Permission Codes Registry
 //
 // Contains all permission codes used throughout the application.
@@ -1096,10 +1097,6 @@ class PermissionCodes {
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // PERMISSION CATEGORIES (فئات الصلاحيات)
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  // ═══════════════════════════════════════════════════════════════════════════
   // MASTER PERMISSION LIST (Single Source of Truth for Runtime Sync)
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -1769,6 +1766,7 @@ class PermissionCodes {
     {'code': bookingsResourcesManage, 'name': tr('إدارة الموظفين / الموارد'), 'category': 'bookings'},
     {'code': bookingsReports, 'name': tr('تقارير الحجوزات'), 'category': 'bookings'},
     {'code': bookingsSettings, 'name': tr('إعدادات الحجوزات'), 'category': 'bookings'},
+    ...warehouseMobilePermissionEntries,
   ];
 
   /// All category names in Arabic
@@ -1803,5 +1801,6 @@ class PermissionCodes {
     'branches': tr('الفروع'),
     'critical_financial': tr('عمليات مالية حرجة'),
     'bookings': tr('الحجوزات'),
+    'warehouse_mobile': tr('تطبيق المخازن والأجهزة'),
   };
 }

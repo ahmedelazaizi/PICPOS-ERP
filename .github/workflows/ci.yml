@@ -392,6 +392,8 @@ jobs:
             tool: flutter
           - dir: mobile_pos
             tool: flutter
+          - dir: mobile_warehouse
+            tool: flutter
 
     defaults:
       run:
@@ -569,6 +571,7 @@ jobs:
           run_suite mobile       mobile                      flutter test test/e2e
           run_suite mobile_admin mobile_admin                flutter test test/e2e
           run_suite mobile_pos   mobile_pos                  flutter test test/e2e
+          run_suite mobile_warehouse mobile_warehouse        flutter test test/e2e
           run_suite root         .                           flutter test test/e2e
 
           echo; echo "══════ E2E summary ══════"
@@ -778,8 +781,8 @@ jobs:
           if (Test-Path $pfx) { Remove-Item $pfx -Force }
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# (ح) Android release APKs - PicPos Van / Cashier / Admin (REL-004)
-# All three apps fail their release build without android/key.properties
+# (ح) Android release APKs - PicPos Van / Cashier / Admin / Warehouse (REL-004)
+# All four apps fail their release build without android/key.properties
 # (validateReleaseSigning in each android/app/build.gradle.kts). This job:
 #   1. proves the fail-closed behaviour (a release build WITHOUT key.properties must fail);
 #   2. builds the signed APK from the ANDROID_* secrets and rejects a debug-signed result;
@@ -797,7 +800,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        dir: [mobile, mobile_pos, mobile_admin]
+        dir: [mobile, mobile_pos, mobile_admin, mobile_warehouse]
     defaults:
       run:
         shell: bash

@@ -12,7 +12,10 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/app_error_handler.dart';
 import '../../../core/widgets/app_toast.dart';
+import '../../../core/permissions/warehouse_permission_codes.dart';
 import '../../../data/providers/auth_providers.dart';
+import '../../widgets/permission_guard.dart' show hasPermissionWithAdminBypass;
+import '../widgets/warehouse_devices_body.dart';
 import '../../../domain/models/hr_employee_file.dart';
 import '../../../services/api/lan_paired_devices_provider.dart';
 import '../../../services/api/lan_pairing_service.dart';
@@ -51,12 +54,10 @@ List<CloudRepDeviceView> _sortedRepDevices(List<CloudRepDeviceView> devices) =>
           .compareTo(a.lastSeenAt ?? a.pairedAt ?? DateTime(0));
     });
 
-bool _isAdmin(WidgetRef ref) => ref
-    .watch(currentUserPermissionsProvider)
-    .maybeWhen(
-      data: (codes) => codes.contains('system_admin') || codes.contains('*'),
-      orElse: () => false,
-    );
+bool _isAdmin(WidgetRef ref) => ref.watch(currentUserPermissionsProvider).maybeWhen(
+  data: (c) => hasPermissionWithAdminBypass(c, WarehousePermissionCodes.devicesPairManage),
+  orElse: () => false,
+);
 
 /// محتوى القسم كلُّه. [onOpenNetworkMode] يفتح حوارَ وضع الشبكة القائم.
 class LinkedDevicesSection extends ConsumerWidget {
@@ -74,7 +75,7 @@ class LinkedDevicesSection extends ConsumerWidget {
             child: SettingsBlock(
               key: const Key('ld_read_only'),
               title: linkedDevicesSectionTitle(),
-              subtitle: tr('للعرض فقط — ربط الأجهزة وإلغاؤه لمدير النظام وحده'),
+              subtitle: tr('للعرض فقط — ربط الأجهزة وإلغاؤه لمن يملك صلاحية ربط وإقران الأجهزة'),
               tint: AppColors.info,
               child: const SizedBox.shrink(),
             ),
@@ -153,7 +154,7 @@ class _ConnectionsOverviewState extends ConsumerState<_ConnectionsOverview> {
             _appCard(tr('PicPos كاشير'), tr('يتطلب الشبكة المحلية'),
                 null, lanReady ? null : _warning(_lanKey)),
             _appCard(tr('PicPos مخازن'), tr('يتطلب الشبكة المحلية'),
-                null, lanReady ? null : _warning(_lanKey)),
+                const WarehouseDevicesBody(), lanReady ? null : _warning(_lanKey)),
           ]),
         )),
         const SettingsBlockSpan(span: 12, child: ServerSecurityBlock()),
@@ -189,10 +190,6 @@ class _ConnectionsOverviewState extends ConsumerState<_ConnectionsOverview> {
     ),
   );
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// 1. الشبكة المحلية
-// ═══════════════════════════════════════════════════════════════════════════
 
 class _LanDevicesBody extends ConsumerStatefulWidget {
   const _LanDevicesBody({required this.onOpenNetworkMode});
@@ -231,7 +228,7 @@ class _LanDevicesBodyState extends ConsumerState<_LanDevicesBody> {
     );
     if (!ok || !mounted) return;
     try {
-      await ref.read(lanPairedDevicesServiceProvider).revoke(device.deviceId);
+      await ref.read(lanPairedDevicesServiceProvider).revoke(device.deviceId, actorUserId: ref.read(authProvider).user?.id);
       if (!mounted) return;
       AppToast.show(context, tr('تم إلغاء ربط الجهاز'));
       _reload();

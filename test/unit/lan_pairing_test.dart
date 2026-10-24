@@ -37,7 +37,7 @@ void main() {
   });
 
   test('pairing code is one-time and expires after ten minutes', () async {
-    final offer = pairing.issuePairingCode(
+    final offer = await pairing.issuePairingCode(actorUserId: 1, 
       serverHost: '192.168.1.2',
       port: 8080,
       serverFingerprint: 'fp',
@@ -62,7 +62,7 @@ void main() {
     );
     expect(second.status, LanPairingStatus.invalidCode);
 
-    final expired = pairing.issuePairingCode(serverHost: 'host', port: 8080);
+    final expired = await pairing.issuePairingCode(actorUserId: 1, serverHost: 'host', port: 8080);
     now = now.add(const Duration(minutes: 11));
     final expiredResult = await pairing.pair(
       LanPairingRequest(
@@ -112,7 +112,7 @@ void main() {
 
   test('pairing attempts are limited to five per IP per ten minutes', () async {
     for (var i = 0; i < 5; i++) {
-      pairing.issuePairingCode(serverHost: 'host', port: 8080);
+      await pairing.issuePairingCode(actorUserId: 1, serverHost: 'host', port: 8080);
       final result = await pairing.pair(
         LanPairingRequest(
           code: 'WRONG$i',
@@ -123,7 +123,7 @@ void main() {
       );
       expect(result.status, LanPairingStatus.invalidCode);
     }
-    pairing.issuePairingCode(serverHost: 'host', port: 8080);
+    await pairing.issuePairingCode(actorUserId: 1, serverHost: 'host', port: 8080);
     final limited = await pairing.pair(
       const LanPairingRequest(
         code: 'WRONG',
@@ -136,7 +136,7 @@ void main() {
   });
 
   test('derived token verifies and a revoked token is rejected', () async {
-    final offer = pairing.issuePairingCode(serverHost: 'host', port: 8080);
+    final offer = await pairing.issuePairingCode(actorUserId: 1, serverHost: 'host', port: 8080);
     final result = await pairing.pair(
       LanPairingRequest(
         code: offer.code,
@@ -152,7 +152,7 @@ void main() {
       ),
       isTrue,
     );
-    await pairing.revoke('device-a');
+    await pairing.revoke('device-a', actorUserId: 1);
     expect(
       await pairing.verifyDeviceToken(
         token: result.token!,
@@ -237,7 +237,7 @@ void main() {
         final pairOnBranch = <String, dynamic>{};
 
         Future<Map<String, dynamic>> pairPos(String id, int branchId) async {
-          final offer = dbPairing.issuePairingCode(
+          final offer = await dbPairing.issuePairingCode(actorUserId: 1, 
             serverHost: 'host',
             port: 8080,
           );
@@ -270,7 +270,7 @@ void main() {
           ),
           isTrue,
         );
-        await dbPairing.revoke('pos-a1');
+        await dbPairing.revoke('pos-a1', actorUserId: 1);
 
         final secondA = await pairPos('pos-a2', branchA);
         final firstB = await pairPos('pos-b1', branchB);
@@ -297,7 +297,7 @@ void main() {
 
     test('concurrent POS attempts consume one offer exactly once', () async {
       final branchId = await addBranch('Concurrent branch', code: 'CAI');
-      final offer = dbPairing.issuePairingCode(serverHost: 'host', port: 8080);
+      final offer = await dbPairing.issuePairingCode(actorUserId: 1, serverHost: 'host', port: 8080);
       final outcomes = await Future.wait([
         dbPairing.pair(
           LanPairingRequest(
@@ -349,7 +349,7 @@ void main() {
       'distinct in-flight offers allocate unique branch terminal codes',
       () async {
         final branchId = await addBranch('Overlapping branch', code: 'CAI');
-        final firstOffer = dbPairing.issuePairingCode(
+        final firstOffer = await dbPairing.issuePairingCode(actorUserId: 1, 
           serverHost: 'host',
           port: 8080,
         );
@@ -363,7 +363,7 @@ void main() {
             branchId: branchId,
           ),
         );
-        final secondOffer = dbPairing.issuePairingCode(
+        final secondOffer = await dbPairing.issuePairingCode(actorUserId: 1, 
           serverHost: 'host',
           port: 8080,
         );
@@ -400,7 +400,7 @@ void main() {
 
     test('successful pairing does not clear a newer pending offer', () async {
       final branchId = await addBranch('Replacement branch', code: 'CAI');
-      final firstOffer = dbPairing.issuePairingCode(
+      final firstOffer = await dbPairing.issuePairingCode(actorUserId: 1, 
         serverHost: 'host',
         port: 8080,
       );
@@ -414,7 +414,7 @@ void main() {
           branchId: branchId,
         ),
       );
-      final replacement = dbPairing.issuePairingCode(
+      final replacement = await dbPairing.issuePairingCode(actorUserId: 1, 
         serverHost: 'host',
         port: 8080,
       );
@@ -460,7 +460,7 @@ void main() {
       ];
 
       for (final failure in failures) {
-        final offer = dbPairing.issuePairingCode(
+        final offer = await dbPairing.issuePairingCode(actorUserId: 1, 
           serverHost: 'host',
           port: 8080,
         );
@@ -526,7 +526,7 @@ void main() {
     test(
       'API handler pipeline accepts paired and rejects unpaired token',
       () async {
-        final offer = dbPairing.issuePairingCode(
+        final offer = await dbPairing.issuePairingCode(actorUserId: 1, 
           serverHost: 'host',
           port: 8080,
         );

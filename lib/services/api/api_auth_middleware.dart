@@ -7,6 +7,7 @@ import '../legacy_identifiers.dart';
 import 'api_session_token.dart';
 import 'api_user_context.dart';
 import 'api_web_session_handler.dart';
+import 'lan_device_route_policy.dart';
 import 'lan_pairing_api_handler.dart';
 import 'lan_pairing_service.dart';
 import 'client_address.dart';
@@ -49,6 +50,7 @@ class ApiAuthMiddleware {
   /// **ليست** معفاةً من محدّد المعدّل — بخلاف `/menu` و`/cfd`.
   static const _exemptPrefixes = [
     '/api/health',
+    '/api/m1/info',
     '/api/pair',
     '/cfd',
     '/menu',
@@ -160,7 +162,8 @@ class ApiAuthMiddleware {
     final pairing = _pairingService;
     if (pairing != null &&
         await pairing.verifyDeviceToken(token: token, deviceId: deviceId)) {
-      return true;
+      // A warehouse phone has no business on the realtime /ws broadcast.
+      return (await pairing.deviceById(deviceId))?.deviceKind != LanDeviceRoutePolicy.warehouseKind;
     }
     if (_tokenMatches(token)) {
       return pairing == null || await pairing.legacyAllowed();
@@ -290,9 +293,14 @@ class ApiAuthMiddleware {
         // عنوان الاتصال الفعلي (XFF/X-Real-IP/Host لا تُصدَّق من العميل).
         final ip = ClientAddress.of(request);
 
+        LanPairingDevice? paired;
         if (pairing != null &&
             await pairing.verifyDeviceToken(token: token, deviceId: deviceId)) {
           await pairing.recordSeen(deviceId: deviceId, name: deviceName, ip: ip);
+          paired = await pairing.deviceById(deviceId);
+          if (!LanDeviceRoutePolicy.allows(paired?.deviceKind, path)) {
+            return _json(403, 'device_scope');
+          }
         } else if (_tokenMatches(token)) {
           if (pairing != null) {
             if (!await pairing.legacyAllowed()) {
@@ -305,6 +313,10 @@ class ApiAuthMiddleware {
             );
           }
         } else {
+          if (pairing != null &&
+              await pairing.isRevokedDeviceToken(token: token, deviceId: deviceId)) {
+            return _json(401, 'device_revoked');
+          }
           return _json(403, 'Invalid API token');
         }
 
@@ -315,6 +327,8 @@ class ApiAuthMiddleware {
         Request enriched = request.change(context: {
           if (deviceId.isNotEmpty) 'lanDeviceId': deviceId,
           if (deviceName.isNotEmpty) 'lanDeviceName': deviceName,
+          if (paired?.deviceKind != null) 'lanDeviceKind': paired!.deviceKind,
+          if (paired?.branchId != null) 'lanDeviceBranchId': paired!.branchId,
         });
         if (uid != null) {
           enriched = enriched.change(context: {ApiUserCtx.userIdKey: uid});

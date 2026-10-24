@@ -12,7 +12,7 @@
   - Passwords are read from -StorePassword / -KeyPassword (SecureString) or prompted.
     They are never echoed and never written anywhere except the git-ignored key.properties.
 
-  Release builds of mobile, mobile_pos and mobile_admin FAIL CLOSED when key.properties
+  Release builds of mobile, mobile_pos, mobile_admin and mobile_warehouse FAIL CLOSED when key.properties
   or the keystore is missing (see android/app/build.gradle.kts).
 
 .EXAMPLE
@@ -26,7 +26,7 @@
 [CmdletBinding()]
 param(
   [string]$OutDir = 'D:\keys',
-  [string[]]$Apps = @('mobile', 'mobile_pos', 'mobile_admin'),
+  [string[]]$Apps = @('mobile', 'mobile_pos', 'mobile_admin', 'mobile_warehouse'),
   [int]$ValidityDays = 10000,
   [string]$DistinguishedName = 'CN=PicPos, OU=Mobile, O=PicPos, C=EG',
   [securestring]$StorePassword,

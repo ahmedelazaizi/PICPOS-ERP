@@ -168,6 +168,9 @@ GET /webdb
 POST /api/sync/heartbeat
 GET /api/sync/pull
 GET /api/sync/time
+GET /api/m1/info
+GET /api/m1/wh/session
+GET /api/m1/wh/items
 GET /cfd
 GET /api/cfd/stream
 GET /menu

@@ -67,7 +67,7 @@ void main() {
     ]) {
       expect(find.text(title), findsOneWidget);
     }
-    expect(find.text('قريباً'), findsNWidgets(2));
+    expect(find.text('قريباً'), findsOneWidget); // cashier only; warehouse has its pairing card
     expect(find.text('هواتف المناديب المقترنة (2)'), findsOneWidget);
     expect(find.text('نشط: 1 · ملغى: 1'), findsOneWidget);
     expect(find.text('هواتف الإدارة المقترنة (1)'), findsOneWidget);

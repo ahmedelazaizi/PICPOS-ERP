@@ -34,7 +34,7 @@ void main() {
       );
       LanPairingApiHandler.setService(pairing);
       addTearDown(LanPairingApiHandler.clearService);
-      pairing.issuePairingCode(serverHost: 'server', port: 8080);
+      await pairing.issuePairingCode(actorUserId: 1, serverHost: 'server', port: 8080);
 
       Future<int> attempt(String remoteIp, String forgedIp) async {
         final response = await LanPairingApiHandler.pair(
@@ -75,7 +75,7 @@ void main() {
       installSecret: secret,
       makeCode: () => 'ABCD2345',
     );
-    final offer = pairing.issuePairingCode(serverHost: 'server', port: 8080);
+    final offer = await pairing.issuePairingCode(actorUserId: 1, serverHost: 'server', port: 8080);
     expect(
       (await pairing.pair(
         const LanPairingRequest(
@@ -99,7 +99,7 @@ void main() {
       )).status,
       LanPairingStatus.success,
     );
-    final safeOffer = pairing.issuePairingCode(
+    final safeOffer = await pairing.issuePairingCode(actorUserId: 1, 
       serverHost: 'server',
       port: 8080,
     );
@@ -139,12 +139,12 @@ void main() {
       isNull,
     );
 
-    await pairing.revoke(injection);
+    await pairing.revoke(injection, actorUserId: 1);
     expect(
       (await pairing.listDevices()).every((device) => !device.revoked),
       isTrue,
     );
-    await pairing.revoke('device-$injection');
+    await pairing.revoke('device-$injection', actorUserId: 1);
     final afterRevoke = await pairing.listDevices();
     expect(
       afterRevoke

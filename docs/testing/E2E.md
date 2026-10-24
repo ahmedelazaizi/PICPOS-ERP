@@ -21,14 +21,14 @@
 ```powershell
 # الكل بالترتيب مع جدول نهائي (رمز الخروج ≠ 0 عند أي فشل)
 powershell -NoProfile -ExecutionPolicy Bypass -File tool/run_e2e.ps1      # أو: pwsh tool/run_e2e.ps1
-# مجموعات محددة: server, packages, mobile, mobile_admin, mobile_pos, root, web
+# مجموعات محددة: server, packages, mobile, mobile_admin, mobile_pos, mobile_warehouse, root, web
 powershell -File tool/run_e2e.ps1 -Only server,mobile
 powershell -File tool/run_e2e.ps1 -Skip root,web
 # مزامنة نسخ المساعد المشترك بعد تعديل الأصل
 powershell -File tool/run_e2e.ps1 -SyncHelpers
 ```
 
-الترتيب: Postgres ← `server` ← `packages` ← `mobile` ← `mobile_admin` ← `mobile_pos` ← `root` ← `web`. سجلات كل مجموعة في `build/e2e_logs/<suite>.log`.
+الترتيب: Postgres ← `server` ← `packages` ← `mobile` ← `mobile_admin` ← `mobile_pos` ← `mobile_warehouse` ← `root` ← `web`. سجلات كل مجموعة في `build/e2e_logs/<suite>.log`.
 
 يدويًا (كل أمر من مجلده): `dart test -j 1 test/e2e` (server) · `dart test test/e2e` (packages/picpos_api_client) ·
 `flutter test test/e2e` (mobile، mobile_admin، mobile_pos، والجذر) · `flutter test test/integration/web_client_e2e_test.dart` (الجذر، الويب).
