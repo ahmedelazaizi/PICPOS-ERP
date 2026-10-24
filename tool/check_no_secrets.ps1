@@ -8,7 +8,7 @@ $root = (& git rev-parse --show-toplevel).Trim()
 if ($LASTEXITCODE -ne 0) { Write-Error 'not a git repository'; exit 2 }
 
 $tracked = & git -C $root ls-files
-$pattern = '(^|/)(key\.properties|google-services\.json|[^/]*firebase-adminsdk[^/]*\.json)$|\.(jks|keystore)$'
+$pattern = '(^|/)(key\.properties|google-services\.json|[^/]*firebase-adminsdk[^/]*\.json)$|\.(jks|keystore|pfx|p12)$'
 $hits = @($tracked | Where-Object { $_ -match $pattern })
 
 if ($hits.Count -gt 0) {
@@ -18,7 +18,8 @@ if ($hits.Count -gt 0) {
 }
 
 # The ignore rules must also cover the mobile apps' signing files.
-$probe = @('mobile_admin/android/key.properties', 'mobile_pos/android/key.properties',
+$probe = @('mobile_admin/android/key.properties', 'mobile_pos/android/key.properties', 'mobile/android/key.properties',
+           'tool/codesign.pfx',
            'mobile_admin/android/app/upload.jks', 'mobile_pos/android/app/google-services.json')
 $notIgnored = @()
 foreach ($p in $probe) {

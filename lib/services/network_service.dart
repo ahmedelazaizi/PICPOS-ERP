@@ -25,6 +25,8 @@ import 'api/api_errors.dart';
 import 'deployment/reconcile_result.dart';
 import 'deployment/settings_keys.dart';
 import 'mirror_state.dart';
+import 'lan_tls/lan_tls_manager.dart';
+import 'lan_tls/lan_transport_controller.dart';
 import 'tls_trust.dart';
 import 'server_proxy.dart';
 import 'sync/mirror_settings_keys.dart';
@@ -63,6 +65,7 @@ class NetworkService {
   String? _tlsKeyPath;
   String? _tlsKeyPassword;
   bool _activeServerIsTls = false;
+  final LanTransportController lanTransport = LanTransportController();
 
   /// بصمةُ شهادةِ **هذا الخادم** — تُحسَب عند الإقلاع وتُنشَر في
   /// `/api/health` داخلَ نافذة الاقتران وحدَها.
@@ -259,6 +262,7 @@ class NetworkService {
     _tlsCertPath = prefs.getString(_prefTlsCertPath);
     _tlsKeyPath = prefs.getString(_prefTlsKeyPath);
     _tlsKeyPassword = prefs.getString(_prefTlsKeyPassword);
+    lanTransport.load(prefs, customTlsEnabled: _tlsEnabled, certPath: _tlsCertPath, keyPath: _tlsKeyPath);
     _remoteServerIsTls = prefs.getBool(_prefRemoteTls) ?? false;
     _webAccessEnabled = prefs.getBool(_prefWebEnabled) ?? false;
     _webAllowedOrigins = prefs.getStringList(_prefWebOrigins) ?? const [];
@@ -580,6 +584,7 @@ class NetworkService {
     }
     await prefs.setInt(_prefServerPort, _serverPort);
     await prefs.setBool(_prefTlsEnabled, _tlsEnabled);
+    await lanTransport.save(prefs);
     await prefs.setBool(_prefRemoteTls, _remoteServerIsTls);
     if (_tlsCertPath != null) {
       await prefs.setString(_prefTlsCertPath, _tlsCertPath!);
@@ -608,6 +613,7 @@ class NetworkService {
     // بائتٌ لا يُقرأ. أي أنّ مفتاحاً مشفَّراً كان **غيرَ قابلٍ للاستعمال**
     // من الواجهة إطلاقاً. الآن: لا يُمسّ إلّا حين يُمرَّر صراحةً.
     if (keyPassword != null) _tlsKeyPassword = keyPassword;
+    lanTransport.onCustomTlsConfigured(enabled: enabled, certPath: certPath, keyPath: keyPath);
     await saveSettings();
   }
 
@@ -796,22 +802,25 @@ class NetworkService {
           .addMiddleware(ApiErrors.middleware()) // 8.1: generic 500 + request id
           .addHandler(router.call);
 
-      SecurityContext? securityContext;
-      if (_tlsEnabled) {
+      // SEC-007: TLS by default (managed self-signed cert, secure storage).
+      if (_tlsEnabled && lanTransport.mode == LanTransportMode.customCertificate) {
         final validationError = validateTlsConfig();
         if (validationError != null) {
           debugPrint('[NetworkService] ❌ TLS misconfigured: $validationError');
           return false;
         }
-        try {
-          securityContext = SecurityContext()
-            ..useCertificateChain(_tlsCertPath!)
-            ..usePrivateKey(_tlsKeyPath!, password: _tlsKeyPassword);
-        } catch (e) {
-          debugPrint('[NetworkService] ❌ Failed to load TLS cert/key: $e');
-          return false;
-        }
       }
+      final tls = await lanTransport.prepare(
+        certPath: _tlsCertPath,
+        keyPath: _tlsKeyPath,
+        keyPassword: _tlsKeyPassword,
+        ipAddresses: [await getLocalIpAddress()],
+      );
+      if (tls.error != null) {
+        debugPrint('[NetworkService] ❌ ${tls.error}');
+        return false;
+      }
+      final securityContext = tls.context;
 
       _httpServer = await shelf_io.serve(
         handler,
@@ -823,20 +832,12 @@ class NetworkService {
       _serverPort = serverPort;
       _serverStartTime = DateTime.now();
       _activeServerIsTls = securityContext != null;
-      // بصمةُ الشهادةِ تُحسَب مرّةً هنا لا عند كلِّ نداءِ `/api/health`:
-      // قراءةُ ملفٍّ وتجزئتُه في مسارِ طلبٍ معفًى من حدِّ المعدّل تفتح
-      // بابَ إرهاقٍ رخيصاً.
-      _serverCertFingerprint = securityContext != null && _tlsCertPath != null
-          ? TlsTrust.fingerprintOfPemFile(_tlsCertPath!)
-          : null;
+      // Computed once at start, not per /api/health call.
+      _serverCertFingerprint = tls.fingerprint;
 
-      // 5.1/5.2 decision: the listener stays on anyIPv4 even without TLS —
-      // LAN clients/mirrors need it and plain HTTP is the supported default,
-      // so binding loopback-only would break server mode. Warn loudly instead.
       if (securityContext == null) {
-        final warn = 'Server listening on 0.0.0.0:$serverPort WITHOUT TLS — '
-            'API token / credentials cross the LAN in clear text. '
-            'Enable TLS in network settings or restrict to a trusted LAN.';
+        final warn = 'Server listening on 0.0.0.0:$serverPort WITHOUT TLS (legacy '
+            'HTTP option) - API token / credentials cross the LAN in clear text.';
         debugPrint('[NetworkService] ⚠️ SECURITY: $warn');
         unawaited(DiagnosticLogger.log('SEC-WARN', warn));
       }
@@ -1064,8 +1065,10 @@ class NetworkService {
       final uri = Uri.parse(healthUrl);
       // البصمةُ المثبَّتةُ لهذا المضيف — إن وُجدت رُفضت أيُّ شهادةٍ سواها.
       await TlsTrust.loadPin(uri.host, uri.port);
-      final client = TlsTrust.ioClient(
+      String? firstUseFp; // SEC-007: cert actually presented (TOFU)
+      final client = TlsTrust.ioClientTofu(
         connectionTimeout: const Duration(seconds: 15),
+        onFirstUse: (_, _, fp) => firstUseFp = fp,
       );
 
       final request = await client.getUrl(uri);
@@ -1085,12 +1088,9 @@ class NetworkService {
         _sessionKeyWatch.observe(data['sessionKeyId'],
             ServerProxy.instance.invalidateAllSessionTokens);
 
-        // ── تثبيتُ بصمةِ الشهادة ────────────────────────────────────────
-        //
-        // تُسلَّم في نافذة الاقتران وحدَها، تماماً كالتوكن. وبعدها يرفض
-        // هذا الجهازُ أيَّ شهادةٍ أخرى لهذا المضيف — وهذا ما يمنع الرجلَ
-        // في المنتصف على الشبكة المحلّيّة.
-        final fingerprint = data['certFingerprint'] as String?;
+        // Pin the certificate we actually saw (TOFU); afterwards any other
+        // certificate for this host is rejected (blocks LAN MITM).
+        final fingerprint = firstUseFp ?? data['certFingerprint'] as String?;
         if (fingerprint != null && fingerprint.isNotEmpty) {
           await TlsTrust.pin(uri.host, uri.port, fingerprint);
         }

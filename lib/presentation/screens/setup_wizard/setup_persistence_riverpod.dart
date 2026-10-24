@@ -23,7 +23,7 @@ final setupPersistenceProvider = Provider<SetupPersistence>(
   RiverpodSetupPersistence.new,
 );
 
-class RiverpodSetupPersistence implements SetupPersistence {
+class RiverpodSetupPersistence implements SetupPersistence, SetupTablesPort {
   RiverpodSetupPersistence(this._ref);
 
   final Ref _ref;
@@ -176,4 +176,29 @@ class RiverpodSetupPersistence implements SetupPersistence {
   Future<bool> rehydrateRuntimeConfigCache() => _ref
       .read(configServiceProvider)
       .rehydrateRuntimeConfigCache(exitPath: 'finish');
+
+  // المعالج v2: قسمٌ + طاولات، idempotent بالاسم.
+  @override
+  Future<int> ensureTables({
+    required String sectionName,
+    required int count,
+    required String Function(int n) tableName,
+  }) async {
+    final repo = _ref.read(restaurantRepositoryProvider);
+    final sections = await repo.getAllSections();
+    final section = sections.where((s) => s.name.trim() == sectionName).firstOrNull;
+    final sectionId = section?.id ?? await repo.createSection(sectionName);
+    final existing = (await repo.getAllTables())
+        .where((t) => t.sectionId == sectionId)
+        .map((t) => t.name.trim())
+        .toSet();
+    var created = 0;
+    for (var n = 1; n <= count; n++) {
+      final name = tableName(n);
+      if (existing.contains(name)) continue;
+      await repo.createTable(name: name, capacity: 4, sectionId: sectionId);
+      created++;
+    }
+    return created;
+  }
 }

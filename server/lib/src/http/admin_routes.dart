@@ -30,6 +30,14 @@ void mountAdminRoutes(
     await admin.setSigningKey(d, await _body(req));
     return Response(204);
   });
+  r.post('/desktop/link/rotate-signing-key', (Request req) async {
+    final d = await desktop(req);
+    return _json(200, {'revokedDevices': await admin.rotateSigningKey(d, await _body(req))});
+  });
+  r.post('/desktop/admin-devices/revoke-all', (Request req) async {
+    final d = await desktop(req);
+    return _json(200, {'revokedDevices': await admin.revokeAllDevices(d)});
+  });
   r.post('/desktop/users', (Request req) async {
     final d = await desktop(req);
     return _json(200, await admin.upsertUsers(d, (await _body(req))['users']));

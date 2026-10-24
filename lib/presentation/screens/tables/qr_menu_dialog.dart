@@ -19,7 +19,7 @@ class QrMenuDialog extends StatelessWidget {
     final ns = NetworkService.instance;
     final serverIp = ns.serverAddress ?? 'localhost';
     final port = ns.serverPort;
-    final menuUrl = 'http://$serverIp:$port/menu';
+    final menuUrl = '${ns.httpScheme}://$serverIp:$port/menu';
 
     return Directionality(
       textDirection: TextDirection.rtl,

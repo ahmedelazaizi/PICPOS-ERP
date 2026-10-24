@@ -136,7 +136,7 @@ void main() {
       {
         'tables_discount',
         'bookings_edit',
-        'bookings_assign',
+        // ⚠️ `bookings_assign` خرج (AUTHZ-008): تنفّذه `BookingActionsService`.
         // ⚠️ `bookings_deposit` **ليست هنا** منذ v167 (‏المرحلة ٣،
         //    2026-08-27): نقطةُ `/api/bookings/apply-deposit` تحرسها بـ
         //    `ApiUserCtx.requirePermission`، فهي أوّلُ أكواد الحجوزات تنال
@@ -148,8 +148,8 @@ void main() {
         //    الاثنين معاً أو يبقى أحدُهما أحمرَ.
       },
       reason:
-          'السجل المتوقَّع يقتصر على كودِ خصم الطاولة و`bookings_edit` و'
-          '`bookings_assign` (بلا سطحٍ في الواجهة بعد). لو ظهر كودٌ تانٍ أو '
+          'السجل المتوقَّع يقتصر على كودِ خصم الطاولة و`bookings_edit` '
+          '(بلا سطحٍ في الواجهة بعد). لو ظهر كودٌ تانٍ أو '
           'اختفى واحدٌ من هذول بلا سببٍ موثَّق، يبقى فيه تغيير غير متوقَّع '
           'محتاج مراجعة.',
     );

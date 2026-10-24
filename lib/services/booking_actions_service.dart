@@ -7,7 +7,9 @@
 // وأخواتِهما إلى مجالٍ يستورد حزمةَ القاعدة أصلاً، فتتصادم الأسماء.
 import 'package:drift/drift.dart' show Value;
 
+import '../core/permissions/permission_codes.dart';
 import '../data/database/database.dart';
+import 'permission_enforcer.dart';
 
 /// أفعالُ الحجز التي تُكتب في سجلّ النشاط — إنشاءٌ ونقلٌ وتأجيل.
 ///
@@ -26,6 +28,18 @@ class BookingActionsService {
 
   BookingActionsService({required AppDatabase db}) : _db = db;
 
+  /// AUTHZ-008: service-layer enforcement, so a future entry point (API route,
+  /// import, another screen) cannot skip the UI gate. An actor-attributed call
+  /// (`userId` non-null) must hold [code]; `null`/0 is the system / sync-replay
+  /// path (same convention as [PermissionEnforcer]). A conditional grant counts
+  /// as held: its manager approval happens in the UI before the call.
+  Future<void> _require(int? userId, String code) async {
+    if (userId == null || userId == 0) return;
+    if (!await _db.userHasPermission(userId, code)) {
+      throw PermissionDeniedException(code, 'ليست لديك صلاحية تنفيذ هذا الإجراء على الحجوزات ($code).');
+    }
+  }
+
   Future<int> create({
     required String customerName,
     String? customerPhone,
@@ -39,6 +53,8 @@ class BookingActionsService {
     required int? userId,
     required String userName,
   }) async {
+    await _require(userId, PermissionCodes.bookingsAdd);
+    if (depositAmount > 0) await _require(userId, PermissionCodes.bookingsDeposit);
     final id = await _db.createBooking(
       customerName: customerName,
       customerPhone: customerPhone,
@@ -82,7 +98,8 @@ class BookingActionsService {
     DateTime? startsAt,
     required int? userId,
     required String userName,
-  }) {
+  }) async {
+    await _require(userId, PermissionCodes.bookingsAssign);
     return _db.transaction(() async {
       final before = await (_db.select(_db.bookings)
             ..where((b) => b.id.equals(bookingId)))
@@ -146,7 +163,8 @@ class BookingActionsService {
     String status, {
     required int? userId,
     required String userName,
-  }) {
+  }) async {
+    await _require(userId, status == 'cancelled' ? PermissionCodes.bookingsCancel : PermissionCodes.bookingsStatus);
     return _db.transaction(() async {
       final before = await (_db.select(_db.bookings)
             ..where((b) => b.id.equals(bookingId)))
@@ -187,7 +205,8 @@ class BookingActionsService {
     String? reason,
     required int? userId,
     required String userName,
-  }) {
+  }) async {
+    await _require(userId, PermissionCodes.bookingsCancel);
     return _db.transaction(() async {
       final before = await (_db.select(_db.bookings)
             ..where((b) => b.id.equals(bookingId)))

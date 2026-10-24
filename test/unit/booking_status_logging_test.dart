@@ -26,11 +26,20 @@ void main() {
     // لا وجودَ له يُسقط الكتابةَ بـ`FOREIGN KEY constraint failed` — وهو ما
     // وقع أوّلَ تشغيل. والبديلُ (‏`userId: null` كما في الاختبار المجاور)
     // كان يُخفي أنّ الفاعلَ يُسجَّل أصلاً.
+    // AUTHZ-008: the service now enforces the booking permissions itself, so
+    // the actor holds the codes these logging tests exercise.
+    final roleId = await db.insertRole(name: 'booking-log-role');
+    final perms = await db.getAllPermissions();
+    await db.setRolePermissions(roleId, [
+      for (final c in const ['bookings_status', 'bookings_cancel', 'bookings_add', 'bookings_assign'])
+        perms.firstWhere((p) => p.code == c).id,
+    ]);
     actorId = await db.into(db.users).insert(
           UsersCompanion.insert(
             username: 'booking_log_test_user',
             passwordHash: 'x',
             displayName: 'ريم أحمد',
+            roleId: Value(roleId),
           ),
         );
   });

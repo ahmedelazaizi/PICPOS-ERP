@@ -6,7 +6,7 @@ Owner / finance-manager Android app (`com.picpos.admin`). Architecture:
 
 ```
 flutter analyze && flutter test            # shell matrix AR/EN × light/dark × phone/tablet, goldens, guards
-flutter build apk --release                # signed with android/key.properties (git-ignored), else debug key
+flutter build apk --release                # needs android/key.properties (git-ignored); FAILS without it - see docs/ops/ANDROID-SIGNING.md
 flutter test --update-goldens test/golden_test.dart   # only on a deliberate UI change
 ```
 

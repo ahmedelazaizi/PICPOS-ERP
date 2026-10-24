@@ -166,28 +166,15 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
       _pgTestMessage = null;
       _pgConnectionOk = false;
     });
-    try {
-      final cfg = _currentPgConfig();
-      final err = await testPostgresConnection(cfg);
-      if (!mounted) return;
-      setState(() {
-        _pgTestInProgress = false;
-        if (err == null) {
-          _pgConnectionOk = true;
-          _pgTestMessage = tr('✅ تم الاتصال بنجاح');
-        } else {
-          _pgConnectionOk = false;
-          _pgTestMessage = tr('❌ فشل الاتصال: {err}', {'err': err});
-        }
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _pgTestInProgress = false;
-        _pgConnectionOk = false;
-        _pgTestMessage = tr('❌ خطأ: {e}', {'e': e});
-      });
-    }
+    final err = await ServerProvisioningService().testConnection(_currentPgConfig());
+    if (!mounted) return;
+    setState(() {
+      _pgTestInProgress = false;
+      _pgConnectionOk = err == null;
+      _pgTestMessage = err == null
+          ? tr('✅ تم الاتصال بنجاح')
+          : tr('❌ فشل الاتصال: {err}', {'err': err});
+    });
   }
 
   PostgresConfig _currentPgConfig() => PostgresConfig(
@@ -369,109 +356,26 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
       }
     });
 
-    AppDatabase? db;
-    try {
-      // Step 1: test connection
-      await _runProvisionStep(0, () async {
-        final err = await testPostgresConnection(_currentPgConfig());
-        if (err != null) {
-          throw Exception('فشل الاتصال: $err');
-        }
-      });
-
-      // Open the actual Drift-wrapped PG connection for steps 2–5.
-      final cfg = _currentPgConfig();
-      final executor = openPostgresConnection(cfg);
-      db = AppDatabase.withExecutor(executor, isPostgres: true);
-
-      // Step 2: create all tables (m.createAll via beforeOpen flow)
-      await _runProvisionStep(1, () async {
-        // Touch the database to trigger onCreate / beforeOpen.
-        await db!.customSelect('SELECT 1').get();
-      });
-
-      // Step 3: roles + branch + warehouse + units + safes + settings + delivery parties
-      // Steps 4, 5 are part of the same atomic seeder call, but we drive the
-      // UI by calling sub-helpers directly. For simplicity we run the full
-      // atomic seeder once (beforeOpen may have already run it — that's fine,
-      // it's idempotent) and then verify.
-      SeedResult? result;
-      await _runProvisionStep(2, () async {
-        result = await db!.seedInitialDataPostgresAtomic();
-      });
-
-      // Step 4: accounts — already inserted in the atomic seed, just report.
-      await _runProvisionStep(3, () async {
-        if (result == null) throw Exception('الخطوة السابقة لم تُنفذ');
-        _provisionSteps[3].detail = tr('{p0} حساب جديد', {'p0': result!.accounts});
-      });
-
-      // Step 5: fiscal year
-      await _runProvisionStep(4, () async {
-        if (result == null) throw Exception('الخطوة السابقة لم تُنفذ');
-        _provisionSteps[4].detail = result!.fiscalYear > 0
-            ? tr('تم إنشاء السنة المالية')
-            : tr('موجودة مسبقاً');
-      });
-
-      // Step 6: verify baseline
-      await _runProvisionStep(5, () async {
-        final check = await db!.verifyPostgresBaseline();
-        _provisionSteps[5].detail =
-            tr('{p0} حساب، {p1} أدوار', {'p0': check.counts['accounts'] ?? 0, 'p1': check.counts['roles'] ?? 0});
-        if (!check.ok) {
-          throw Exception('باقية جداول ناقصة: ${check.missing.join(', ')}');
-        }
-      });
-
-      if (!mounted) return;
-      setState(() {
-        _provisioningInProgress = false;
-        _provisioningDone = true;
-      });
-    } catch (e, st) {
-      debugPrint('[Provisioning] FAILED: $e\n$st');
-      if (!mounted) return;
-      // Mark first non-ok step as failed if we didn't reach the catch inside
-      // _runProvisionStep.
-      for (final s in _provisionSteps) {
-        if (s.state == _ProvisionState.running) {
-          s.state = _ProvisionState.failed;
-          break;
-        }
-      }
-      setState(() {
-        _provisioningInProgress = false;
-        _provisioningError = e.toString();
-      });
-    } finally {
-      try {
-        await db?.close();
-      } catch (_) {}
-    }
-  }
-
-  /// Runs a single provisioning step, marking it running → ok/failed and
-  /// updating the UI between states.
-  Future<void> _runProvisionStep(int index, Future<void> Function() body) async {
-    setState(() {
-      _provisionSteps[index].state = _ProvisionState.running;
-    });
-    try {
-      await body();
-      if (!mounted) return;
-      setState(() {
-        _provisionSteps[index].state = _ProvisionState.ok;
-      });
-    } catch (e) {
-      if (mounted) {
+    // المنطقُ كلُّه في الخدمة (‏P0) — هنا الرسمُ فقط.
+    final outcome = await ServerProvisioningService().provision(
+      _currentPgConfig(),
+      onStep: (i, status, detail) {
+        if (!mounted) return;
         setState(() {
-          _provisionSteps[index].state = _ProvisionState.failed;
-          _provisionSteps[index].detail = e.toString();
+          _provisionSteps[i].state = _ProvisionState.values[status.index];
+          if (detail != null) _provisionSteps[i].detail = detail;
         });
+      },
+    );
+    if (!mounted) return;
+    setState(() {
+      _provisioningInProgress = false;
+      if (outcome.ok) {
+        _provisioningDone = true;
+      } else {
+        _provisioningError = outcome.error;
       }
-      rethrow;
-    }
+    });
   }
 
   /// Invoked when the user clicks "إكمال وإعادة تشغيل التطبيق" on the
@@ -481,18 +385,10 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
   Future<void> _finishServerSetup() async {
     try {
       final cfg = _currentPgConfig();
-      await cfg.save();
-      await PostgresConfig.saveMode(DatabaseMode.postgres);
-      // Arm the boot-gate: main.dart's startup flow requires this flag to
-      // be true before it attempts a PG connection. Without it, a saved
-      // `deployment_mode=postgres` alone won't trigger PG — the app
-      // defaults to SQLite. We set the flag here, at the end of the
-      // provisioning step, because at this point the server has been
-      // tested + schema created + baseline verified successfully.
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('pg_provisioned_ok', true);
-      } catch (_) {}
+      final provisioning = ServerProvisioningService();
+      // يحفظ الإعدادَ ويُسلّح بوّابة الإقلاع (‏pg_provisioned_ok) — بعد نجاح
+      // الاختبار والمخطّط والتحقّق فقط.
+      await provisioning.armPostgresMode(cfg);
 
       // Company info + network mode still need persisting.
       final settingsRepo = ref.read(settingsRepositoryProvider);
@@ -535,45 +431,7 @@ extension _SetupWizardProvisioningExt on _SetupWizardScreenState {
 
       // Also persist company_name into the freshly provisioned PG DB so the
       // user sees their entered value after restart.
-      try {
-        final executor = openPostgresConnection(cfg);
-        final pgDb = AppDatabase.withExecutor(executor, isPostgres: true);
-        if (companyName.isNotEmpty) {
-          await pgDb.customStatement(
-            "UPDATE settings SET value = ? WHERE key = 'company_name'",
-            [companyName],
-          );
-        }
-        // UPDATE-then-INSERT-if-zero: avoids `ON CONFLICT (key)` which would
-        // raise 42P10 on a PG install whose `settings` table was created by
-        // an older migration without the PK constraint emitted correctly.
-        // This pattern is target-free and works on any dialect.
-        await pgDb.customStatement(
-          "UPDATE settings SET value = 'true' WHERE key = 'setup_completed'",
-        );
-        final existing = await pgDb.customSelect(
-          "SELECT 1 AS x FROM settings WHERE key = 'setup_completed'",
-        ).get();
-        if (existing.isEmpty) {
-          await pgDb.customStatement(
-            "INSERT INTO settings (key, value) VALUES ('setup_completed', 'true')",
-          );
-        }
-        await pgDb.customStatement(
-          "UPDATE settings SET value = 'server' WHERE key = 'network_mode'",
-        );
-        final existingNetworkMode = await pgDb.customSelect(
-          "SELECT 1 AS x FROM settings WHERE key = 'network_mode'",
-        ).get();
-        if (existingNetworkMode.isEmpty) {
-          await pgDb.customStatement(
-            "INSERT INTO settings (key, value) VALUES ('network_mode', 'server')",
-          );
-        }
-        await pgDb.close();
-      } catch (e) {
-        debugPrint('[SetupWizard] persist company_name to PG: $e');
-      }
+      await provisioning.persistServerSettings(cfg, companyName: companyName);
 
       if (!mounted) return;
       await showDialog<void>(

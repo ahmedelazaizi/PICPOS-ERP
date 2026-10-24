@@ -214,6 +214,9 @@ tools/postgresql-*-windows-x64.exe
 *.jks
 *.keystore
 key.properties
+# Windows code-signing material (REL-002) - never in the repo; templates are *.example
+*.pfx
+*.p12
 google-services.json
 
 # Audit SEC-012: operational logs / scratch output must never be committed

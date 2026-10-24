@@ -69,6 +69,45 @@ class CloudConfig {
   }
 
   bool get seedDemo => env['SEED_DEMO'] == 'true';
+
+  // ── Transport security (SEC-014) ──────────────────────────────────────────
+  // Production: terminate TLS at a reverse proxy (see docs/ops/CLOUD-SERVER-DEPLOY.md)
+  // and bind loopback (BIND_ADDRESS=127.0.0.1), or let the server terminate TLS
+  // itself with TLS_CERT_FILE + TLS_KEY_FILE (PEM, optional TLS_KEY_PASSWORD).
+
+  String? get tlsCertFile => _nonEmpty(env['TLS_CERT_FILE']);
+  String? get tlsKeyFile => _nonEmpty(env['TLS_KEY_FILE']);
+  String? get tlsKeyPassword => _nonEmpty(env['TLS_KEY_PASSWORD']);
+  bool get tlsEnabled => tlsCertFile != null && tlsKeyFile != null;
+
+  /// Address to bind (default: all IPv4 interfaces, as the docker stack needs).
+  InternetAddress get bindAddress =>
+      InternetAddress.tryParse(env['BIND_ADDRESS'] ?? '') ?? InternetAddress.anyIPv4;
+
+  /// True when the server speaks plain HTTP on an externally reachable address.
+  bool get plainHttpExposed => !tlsEnabled && !bindAddress.isLoopback;
+
+  /// Startup error for an inconsistent transport configuration, or null.
+  String? get tlsProblem {
+    if ((tlsCertFile == null) != (tlsKeyFile == null)) {
+      return tlsCertFile == null
+          ? 'TLS_KEY_FILE is set but TLS_CERT_FILE is missing'
+          : 'TLS_CERT_FILE is set but TLS_KEY_FILE is missing';
+    }
+    final raw = env['BIND_ADDRESS'];
+    if (raw != null && raw.isNotEmpty && InternetAddress.tryParse(raw) == null) {
+      return 'BIND_ADDRESS "$raw" is not an IP address';
+    }
+    return null;
+  }
+
+  /// Loads the PEM certificate chain + key. Throws when a file is unreadable
+  /// (the server must not fall back to HTTP silently).
+  SecurityContext buildSecurityContext() => SecurityContext()
+    ..useCertificateChain(tlsCertFile!)
+    ..usePrivateKey(tlsKeyFile!, password: tlsKeyPassword);
+
+  static String? _nonEmpty(String? v) => (v == null || v.trim().isEmpty) ? null : v.trim();
 }
 
 class CloudServices {

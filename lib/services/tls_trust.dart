@@ -185,6 +185,28 @@ class TlsTrust {
     return client;
   }
 
+  /// عميلٌ لأوّلِ اقتران (TOFU): مضيفٌ مثبَّتٌ ⇒ مطابقةٌ حرفيّة؛ غيرُ مثبَّتٍ ⇒
+  /// يُقبَل **ويُسجَّل** ما قدّمه عبر [onFirstUse] ليثبّته المنادي بعد نجاح
+  /// الاقتران. يختلف عن [ioClient] بأنّ البصمة المرصودة هي التي صافحنا بها
+  /// فعلاً لا ادّعاءٌ في متن الاستجابة.
+  static HttpClient ioClientTofu({
+    required void Function(String host, int port, String fingerprint) onFirstUse,
+    Duration? connectionTimeout,
+  }) {
+    final client = HttpClient();
+    if (connectionTimeout != null) client.connectionTimeout = connectionTimeout;
+    client.badCertificateCallback = (cert, host, port) {
+      final fp = fingerprintOfDer(cert.der);
+      final pinned = _pins[_mapKey(host, port)];
+      if (pinned == null) {
+        onFirstUse(host, port, fp);
+        return true;
+      }
+      return acceptFingerprint(fp, host, port);
+    };
+    return client;
+  }
+
   static http.Client? _shared;
 
   /// عميلُ `package:http` مضبوطاً على التثبيت — **مشترَكٌ ومُعادُ استعماله**.

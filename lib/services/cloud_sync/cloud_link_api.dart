@@ -116,6 +116,14 @@ class CloudLinkApi {
         body: {'publicKey': publicKey, 'decimals': AppConstants.decimalPlaces});
   }
 
+  /// SEC-017: registers a NEW signing key and revokes every paired admin phone
+  /// of the company in one call. Returns the number of devices revoked.
+  Future<int> rotateAdminSigningKey(String publicKey) async {
+    final b = await _send('POST', '/desktop/link/rotate-signing-key',
+        body: {'publicKey': publicKey});
+    return (b['revokedDevices'] as num?)?.toInt() ?? 0;
+  }
+
   /// Mirrors every desktop user, including disabled users for revocation.
   Future<Map<String, dynamic>> pushAdminUsers(
           List<Map<String, Object?>> users) =>

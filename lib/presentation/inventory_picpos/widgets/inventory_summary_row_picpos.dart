@@ -12,7 +12,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/navigation/screen_id.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../../../data/providers/inventory_providers.dart';
 import '../../../data/providers/financial_figures_providers.dart';
@@ -32,10 +31,8 @@ class InventorySummaryRowPicpos extends ConsumerWidget {
         final totalActive = s.activeCount;
         final lowStock = s.lowStockCount;
         final totalValue = s.totalValue;
-        final canSeeFigures = ref
-                .watch(screenFiguresVisibilityProvider(ScreenId.inventory))
-                .value ??
-            false;
+        // AUTHZ-009: valuation is cost-derived.
+        final canSeeFigures = ref.watch(inventoryCostVisibilityProvider).value ?? false;
 
         return Row(
           children: [

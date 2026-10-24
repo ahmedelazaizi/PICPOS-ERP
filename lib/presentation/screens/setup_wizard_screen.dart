@@ -8,7 +8,6 @@ import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:picpos_erp/core/widgets/app_toast.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 // `app_config.dart` يعيد تصدير `business_profile.dart` — فمفيش استيراد
 // مباشر ليه هنا (الـ analyzer بيعتبره زيادة).
 import '../../core/config/app_config.dart';
@@ -16,17 +15,12 @@ import '../../core/config/business_profile_meta.dart';
 import '../../domain/models/setup_step_order.dart';
 import '../../core/config/business_profile_provider.dart';
 import '../../core/theme/app_colors.dart';
-import '../../data/database/connection.dart'
-    show openPostgresConnection, testPostgresConnection;
 import '../../data/database/pg_config.dart';
 import '../../data/providers/providers.dart';
 import '../../services/network_service.dart';
-import '../../services/mirror_pairing_service.dart';
 import '../../services/mirror_state.dart';
-import '../../services/delta_pull_service.dart';
-import '../../services/server_proxy.dart';
-import '../../services/sync_service.dart';
-import '../../services/sync/client_first_sync_service.dart';
+import '../../services/setup/client_link_service.dart';
+import '../../services/setup/server_provisioning_service.dart';
 import '../../services/deployment/deployment_mode_committer.dart';
 import '../../services/deployment/commit_result.dart';
 import '../../app_main_screen.dart';
@@ -115,8 +109,8 @@ Widget _inlineNote(
 class SetupWizardScreen extends ConsumerStatefulWidget {
   const SetupWizardScreen({
     super.key,
-    @visibleForTesting this.initialStep,
-    @visibleForTesting this.initialMode,
+    this.initialStep,
+    this.initialMode,
   });
 
   /// للاختبار: يبدأ المعالجُ على خطوةٍ بعينها (‏`SetupStepIds`) لتُقاس وحدَها.
@@ -1194,190 +1188,50 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       _isConnecting = true;
       _connectionResult = null;
     });
-
-    try {
-      final port = int.tryParse(_serverPortController.text) ?? 8080;
-      final ns = NetworkService.instance;
-
-      // CRITICAL: Set server address BEFORE switching mode
-      // so that saveSettings() inside setMode persists the correct URL
-      ns.setServerAddress(addr, port: port);
-      final db = ref.read(databaseProvider);
-
-      // Save as client mode (this calls saveSettings internally)
-      await ns.setMode(NetworkMode.client, db: db);
-      // Persist again to ensure address is saved
-      await ns.saveSettings();
-
-      // Test connection first (extracts API token from health endpoint)
-      final testResult = await ns.testServerConnection(addr, port);
-      if (!testResult['success']) {
-        if (mounted) {
-          setState(() {
-            _isConnecting = false;
-            _connectionResult = tr('❌ فشل الاتصال بالسيرفر: {p0}', {'p0': testResult['error']});
-          });
-        }
-        return;
+    final result = await ClientLinkService(
+      db: ref.read(databaseProvider),
+      loadBranches: () => ref.read(branchRepositoryProvider).getAllBranches(),
+    ).connectAndSync(
+      address: addr,
+      port: int.tryParse(_serverPortController.text) ?? 8080,
+      confirmRePair: _confirmRePair,
+      onProgress: (msg) {
+        if (mounted) setState(() => _connectionResult = msg);
+      },
+    );
+    if (!mounted) return;
+    setState(() {
+      _isConnecting = false;
+      _connectionResult = result.message;
+      if (result.outcome == ClientLinkOutcome.connected) {
+        _syncedBranches = result.branches;
       }
-
-      // Build server URL
-      final serverUrl = ns.buildServerUrl(address: addr, port: port);
-      final syncService = SyncService(serverUrl: serverUrl, localDb: db);
-
-      // Spec 001: client-first-sync invariant — the local seeder ran with
-      // isClientMode=false at first DB open (mode unknown then). Wipe its
-      // master rows before pulling so the server's data lands in clean
-      // tables. If the device was already paired, this is a re-pair; ask
-      // for explicit confirmation per Spec Risk Register.
-      final firstSyncService = ClientFirstSyncService(db: db);
-      final pending = await firstSyncService.isFirstSyncPending();
-      if (!pending) {
-        final confirmed = await _confirmRePair();
-        if (!confirmed) {
-          if (mounted) {
-            setState(() {
-              _isConnecting = false;
-              _connectionResult = null;
-            });
-          }
-          return;
-        }
-        await firstSyncService.reset();
-      }
-
-      late final FirstSyncResult firstSyncResult;
-      try {
-        firstSyncResult = await firstSyncService.performFirstSync(
-          syncService: syncService,
-          onProgress: (stage) {
-            if (!mounted) return;
-            setState(() => _connectionResult = '⏳ ${_progressLabel(stage)}…');
-          },
-        );
-      } on FirstSyncException catch (e) {
-        if (mounted) {
-          setState(() {
-            _isConnecting = false;
-            _connectionResult = tr('⚠️ فشلت المزامنة: {p0}', {'p0': e.message});
-          });
-        }
-        return;
-      }
-
-      // Seed watermarks so the first periodic delta pull is incremental
-      // rather than redundantly re-pulling what the strategies just loaded.
-      // Prefer the authoritative server clock over a client clock that may
-      // run ahead of the server and cause rows modified in the skew window
-      // to be skipped.
-      final serverSec = await ServerProxy.instance.fetchServerTime();
-      final seedSec = serverSec ??
-          (DateTime.now().millisecondsSinceEpoch ~/ 1000) - 60;
-      await DeltaPullService.instance.seedWatermarks(seedSec);
-
-      // Load synced branches
-      final branchRepo = ref.read(branchRepositoryProvider);
-      final branches = await branchRepo.getAllBranches();
-
-      if (mounted) {
-        final warningSuffix = firstSyncResult.warningCount > 0
-            ? tr(' ({p0} تحذير)', {'p0': firstSyncResult.warningCount})
-            : '';
-        setState(() {
-          _isConnecting = false;
-          _syncedBranches = branches;
-          _connectionResult =
-              tr('✅ تم الاتصال والمزامنة — {p0} جدول{warningSuffix}', {'p0': firstSyncResult.tablesSynced, 'warningSuffix': warningSuffix});
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isConnecting = false;
-          _connectionResult = tr('❌ خطأ: {e}', {'e': e});
-        });
-      }
-    }
+    });
   }
 
-  /// Mirror-mode handshake. Validates reachability to the HQ server,
-  /// captures + persists the API token (via testServerConnection), and
-  /// records the server identity in [MirrorState]. The actual
-  /// `NetworkService.setMode(NetworkMode.mirror)` call is deferred to
-  /// `_finishSetup` so the wizard can fall back cleanly if the user
-  /// changes their mind on a later step.
-  ///
-  /// Spec 097: pairing logic lives in [MirrorPairingService] so the
-  /// Developer Tools "مرآة" toggle (`MirrorPairingDialog`) can reuse it.
+  /// Mirror-mode handshake — المنطقُ في [ClientLinkService.pairMirror]
+  /// (‏Spec 097: يشاركه حوارُ أدوات المطوّر `MirrorPairingDialog`).
   Future<void> _pairMirror() async {
-    final addr = _serverAddressController.text.trim();
-    final adminUsername = _mirrorAdminUsernameController.text.trim();
-    final adminPassword = _mirrorAdminPasswordController.text;
-    final port = int.tryParse(_serverPortController.text) ?? 8080;
-
     setState(() {
       _isConnecting = true;
       _connectionResult = null;
     });
-
-    try {
-      final result = await MirrorPairingService.instance.pair(
-        host: addr,
-        port: port,
-        adminUsername: adminUsername,
-        adminPassword: adminPassword,
-        // Spec 151 P1-8b — mint an admin session token now so the mirror's
-        // first-sync (run by the committer in _finishSetup) pulls ALL
-        // branches' transactions instead of fail-closing to zero rows.
-        acquireAdminSession: true,
-      );
-
-      if (!result.isSuccess) {
-        if (mounted) {
-          final icon = result.outcome == MirrorPairingOutcome.missingFields
-              ? '⚠️'
-              : '❌';
-          setState(() {
-            _isConnecting = false;
-            _connectionResult = '$icon ${result.message}';
-          });
-        }
-        return;
-      }
-
-      // Wipe the password from memory immediately after pairing — the
-      // controller only existed to drive verify-admin and is no longer
-      // needed for the rest of the wizard / runtime.
-      _mirrorAdminPasswordController.clear();
-
-      if (mounted) {
-        setState(() {
-          _isConnecting = false;
-          _connectionResult =
-              tr('✅ تم التحقق من المدير "{p0}" — سيتم تفعيل وضع المرآة عند إنهاء المعالج', {'p0': result.adminDisplayName});
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isConnecting = false;
-          _connectionResult = tr('❌ خطأ: {e}', {'e': e});
-        });
-      }
-    }
-  }
-
-  String _progressLabel(String stage) {
-    switch (stage) {
-      case 'wipe':
-        return tr('تجهيز قاعدة البيانات');
-      case 'sync':
-        return tr('مزامنة الجداول');
-      case 'finalize':
-        return tr('الانتهاء');
-      default:
-        return stage;
-    }
+    final result = await ClientLinkService(
+      db: ref.read(databaseProvider),
+      loadBranches: () => ref.read(branchRepositoryProvider).getAllBranches(),
+    ).pairMirror(
+      host: _serverAddressController.text.trim(),
+      port: int.tryParse(_serverPortController.text) ?? 8080,
+      adminUsername: _mirrorAdminUsernameController.text.trim(),
+      adminPassword: _mirrorAdminPasswordController.text,
+    );
+    // كلمةُ المرور تُمسح من الذاكرة فور المصافحة الناجحة.
+    if (result.ok) _mirrorAdminPasswordController.clear();
+    if (!mounted) return;
+    setState(() {
+      _isConnecting = false;
+      _connectionResult = result.message;
+    });
   }
 
   /// Re-pair confirmation dialog — shown when the device was already paired

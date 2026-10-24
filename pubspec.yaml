@@ -44,6 +44,7 @@ dependencies:
   intl: ^0.20.2
   crypto: ^3.0.7
   cryptography: ^2.7.0          # Argon2id for password hashing (Week 8)
+  pointycastle: ^4.0.0          # SEC-007: self-signed LAN TLS certificate (ECDSA P-256) generation
   picpos_api_client:
     path: packages/picpos_api_client
   qr_flutter: ^4.1.0

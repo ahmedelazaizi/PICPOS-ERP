@@ -31,7 +31,7 @@ import 'core/config/supabase_config.dart';
 import 'data/providers/providers.dart';
 import 'data/repositories/settings_repository_cached.dart';
 import 'presentation/screens/login_screen.dart';
-import 'presentation/screens/setup_wizard_screen.dart';
+import 'presentation/screens/first_run/first_run_entry.dart';
 import 'presentation/touch_keyboard/providers/touch_mode_provider.dart';
 import 'presentation/widgets/admin_elevation_banner.dart';
 import 'presentation/widgets/connection_health_wrapper.dart';
@@ -1618,12 +1618,10 @@ class _SetupGate extends ConsumerWidget {
             ),
           );
         }
-        // If setup_completed is 'true', go to main screen
-        if (snapshot.data == 'true') {
-          return const MainScreen();
-        }
-        // Otherwise, show the setup wizard
-        return const SetupWizardScreen();
+        return resolveSetupGateChild(
+          setupCompleted: snapshot.data,
+          completed: () => const MainScreen(),
+        );
       },
     );
   }

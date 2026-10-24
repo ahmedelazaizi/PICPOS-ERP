@@ -73,6 +73,8 @@ class SetupDraft {
     this.bankAccountNumber,
     this.cliqSafeName,
     this.adminPassword,
+    this.fiscalYear,
+    this.extraStage,
   });
 
   // ── حقولُ المعالج القديم ──
@@ -111,6 +113,15 @@ class SetupDraft {
 
   /// `null` ⇒ لا تُلمَس كلمةُ مرور المدير (‏العميلُ والخادمُ والمرآة).
   final String? adminPassword;
+
+  // ── المعالج v2 (‏P3) — اختياريّتان: `null` ⇒ سلوكٌ مطابقٌ للقديم ──
+
+  /// سنةٌ ماليّةٌ محدَّدة؛ `null` ⇒ سنةُ الساعة الجارية.
+  final int? fiscalYear;
+
+  /// كتاباتٌ إضافيّةٌ (‏طاولات · overrides · تفضيلات) تجري **قبل** `finalize`
+  /// فتبقى `setup_completed` آخرَ ما يُكتَب.
+  final Future<void> Function(SetupPersistence p)? extraStage;
 }
 
 /// منفذُ الكتابة — كلُّ نداءٍ كان `_finishSetup` يجريه، بلا زيادة.
@@ -157,6 +168,18 @@ abstract class SetupPersistence {
   Future<void> generatePeriodsForYear(int yearId, DateTime start, DateTime end);
   Future<void> recordAudit(String event, Map<String, dynamic> payload);
   Future<bool> rehydrateRuntimeConfigCache();
+
+}
+
+/// منفذٌ إضافيٌّ للمعالج v2 (‏P3): قسمٌ للطاولات و[count] طاولةً **بلا تكرار**
+/// (‏بالاسم داخل القسم) — تشغيلتان ⇒ العددُ نفسُه. منفصلٌ عن [SetupPersistence]
+/// كي لا تنكسر مسجّلاتُ الاختبار القديمة التي implements الأصل.
+abstract interface class SetupTablesPort {
+  Future<int> ensureTables({
+    required String sectionName,
+    required int count,
+    required String Function(int n) tableName,
+  });
 }
 
 /// مراحلُ التشغيل كما تعرضها المراجعة.
@@ -168,6 +191,7 @@ enum SetupRunStage {
   tax,
   mode,
   fiscalYear,
+  extras,
   finalize,
 }
 
@@ -180,6 +204,7 @@ extension SetupRunStageLabel on SetupRunStage {
         SetupRunStage.tax => tr('الضريبة والفوترة الإلكترونية'),
         SetupRunStage.mode => tr('اعتماد وضع التشغيل'),
         SetupRunStage.fiscalYear => tr('السنة المالية الحالية'),
+        SetupRunStage.extras => tr('الطاولات وإعدادات الأقسام وتفضيلات الجهاز'),
         SetupRunStage.finalize => tr('إنهاء الإعداد'),
       };
 }
@@ -399,13 +424,19 @@ class SetupFinishRunner {
       if (d.networkMode != NetworkMode.client) {
         try {
           final now = _clock();
-          final fyStart = DateTime(now.year, 1, 1);
-          final fyEnd = DateTime(now.year, 12, 31);
-          final fyId = await p.createFiscalYear('${now.year}', fyStart, fyEnd);
+          final year = d.fiscalYear ?? now.year;
+          final fyStart = DateTime(year, 1, 1);
+          final fyEnd = DateTime(year, 12, 31);
+          final fyId = await p.createFiscalYear('$year', fyStart, fyEnd);
           await p.generatePeriodsForYear(fyId, fyStart, fyEnd);
         } catch (_) {
           // Fiscal year may already exist — silently continue
         }
+      }
+
+      if (d.extraStage != null) {
+        enter(SetupRunStage.extras);
+        await d.extraStage!(p);
       }
 
       enter(SetupRunStage.finalize);

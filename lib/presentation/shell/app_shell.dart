@@ -44,6 +44,7 @@ import '../widgets/sync_management_dialog.dart';
 import '../widgets/sync_status_badge.dart';
 import '../widgets/mirror_badge.dart';
 import '../widgets/mirror_offline_banner.dart';
+import '../widgets/legacy_db_key_banner.dart';
 import '../../services/mirror_state.dart';
 
 part 'nav_widgets.dart';
@@ -920,11 +921,9 @@ class _AppShellState extends ConsumerState<AppShell> {
             : null,
          floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
         body: Column(children: [
-          // Feature 006 / MM.D — banner that surfaces when the most
-          // recent HQ handshake is older than 5 minutes. Self-collapses
-          // to zero height in all other modes, so non-mirror layouts
-          // are unaffected.
+          // MM.D mirror-offline banner (self-collapses outside mirror mode).
           const MirrorOfflineBanner(),
+          const LegacyDbKeyBanner(), // SEC-005 (admin-only, self-collapsing)
           Expanded(child: Row(
           children: [
             // Sidebar - fully hidden when _isHidden is true

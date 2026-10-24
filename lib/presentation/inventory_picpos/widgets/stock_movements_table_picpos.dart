@@ -13,7 +13,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/navigation/screen_id.dart';
 import '../../../data/providers/financial_figures_providers.dart';
 import '../../../domain/repositories/inventory_repository.dart';
 import '../../../core/widgets/shimmer_loading.dart';
@@ -85,10 +84,8 @@ class _StockMovementsTableState
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(inventoryNotifierProvider);
-    final canSeeFigures = ref
-            .watch(screenFiguresVisibilityProvider(ScreenId.inventory))
-            .value ??
-        false;
+    // AUTHZ-009: the only figure in this table is unit cost.
+    final canSeeFigures = ref.watch(inventoryCostVisibilityProvider).value ?? false;
 
     return widget.movementsAsync.when(
       data: (mvmts) {

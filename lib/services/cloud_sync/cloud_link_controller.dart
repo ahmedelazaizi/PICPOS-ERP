@@ -224,6 +224,26 @@ class CloudLinkController {
     }
   }
 
+  /// SEC-017: rotates the desktop's Ed25519 signing key and revokes every paired
+  /// admin phone (they must re-pair and pin the new key). Returns how many
+  /// phones were revoked.
+  Future<int> rotateAdminSigningKey() async {
+    final config = await store.load();
+    if (!config.enabled || !config.credentials.isComplete) {
+      throw CloudLinkException(0, 'link_not_configured');
+    }
+    final api = CloudLinkApi(config.credentials);
+    try {
+      var revoked = 0;
+      await AdminSigningKey(store).rotate(
+        publish: (key) async => revoked = await api.rotateAdminSigningKey(key),
+      );
+      return revoked;
+    } finally {
+      api.close();
+    }
+  }
+
   Future<void> revokeAdminDevice(String deviceId) async {
     final config = await store.load();
     if (!config.enabled || !config.credentials.isComplete) {

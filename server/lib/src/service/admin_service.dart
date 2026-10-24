@@ -331,6 +331,29 @@ class AdminService {
     await _audit(d.companyId, 'admin_device_revoked', d.ip, 'desktop:${d.linkId}:$deviceId');
   }
 
+  /// SEC-017: revokes EVERY admin device of the caller's company (idempotent).
+  /// Returns how many devices were newly revoked.
+  Future<int> revokeAllDevices(DesktopContext d, {String action = 'admin_devices_revoked_all'}) async {
+    final r = await db.query('''
+      UPDATE admin_devices SET revoked_at=@n, previous_token_hash=NULL
+      WHERE company_id=@c AND revoked_at IS NULL RETURNING id''', {'n': _now, 'c': d.companyId});
+    await _audit(d.companyId, action, d.ip, 'desktop:${d.linkId}:${r.length}');
+    return r.length;
+  }
+
+  /// SEC-017: replaces the desktop's Ed25519 public signing key (after the seed
+  /// was regenerated on the desktop) and revokes every paired admin device in
+  /// the same request, so no phone keeps trusting - or being fed snapshots
+  /// signed by - the old key. Phones must re-pair and pin the new key. The new
+  /// key is validated BEFORE anything is revoked.
+  Future<int> rotateSigningKey(DesktopContext d, Map<String, Object?> body) async {
+    final key = body['publicKey'];
+    if (key is! String || !_isEd25519Key(key)) throw ApiError(400, 'invalid_public_key');
+    await db.query('UPDATE desktop_links SET signing_public_key=@k, signing_key_set_at=@n WHERE id=@id',
+        {'k': key, 'n': _now, 'id': d.linkPk});
+    return revokeAllDevices(d, action: 'admin_signing_key_rotated');
+  }
+
   // ───────────────────────────── phone side ─────────────────────────────
 
   Future<Map<String, Object?>> pair({

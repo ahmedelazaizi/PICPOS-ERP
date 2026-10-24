@@ -60,5 +60,11 @@ bool canExportProductFigures(Iterable<String> permissions,
     (permissions.contains('products_price_view') &&
         permissions.contains('products_cost_view'));
 
+/// AUTHZ-009: unit cost and inventory valuation need the dedicated cost code;
+/// `inventory_view` (which only opens the screen and shows quantities) is not
+/// enough. System administrators bypass.
+bool canSeeInventoryCost(Iterable<String> permissions, {bool bypass = false}) =>
+    bypass || permissions.contains('products_cost_view');
+
 /// A stable placeholder used by non-widget figure formatters and exports.
 const maskedFinancialFigure = '—';

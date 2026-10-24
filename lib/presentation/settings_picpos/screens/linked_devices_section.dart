@@ -2,8 +2,7 @@ import 'dart:convert';
 
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:picpos_erp/core/i18n/tr.dart';
-// إعدادات ربط PicPos تجمع السحابة والشبكة والتطبيقات دون نسخ تدفّقات الإقران.
-// الإجراء للمدير (`system_admin` أو `*`)؛ غيره يرى إشعاراً للعرض فقط.
+// ربط PicPos: السحابة والشبكة والتطبيقات. الإجراء للمدير فقط.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,6 +24,7 @@ import '../../hr_picpos/widgets/rep_pairing_flow.dart';
 import '../../picpos_shell/picpos_dialog.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../../widgets/settings/lan_pairing_dialog.dart';
+import '../widgets/admin_key_rotation_button.dart';
 import '../widgets/cloud_link_settings_block.dart';
 import '../widgets/database_encryption_block.dart';
 import '../widgets/server_security_block.dart';
@@ -905,6 +905,7 @@ class _AdminDevicesBodyState extends ConsumerState<_AdminDevicesBody> {
             onPressed: _selected == null ? null : _disable,
             child: Text(tr('إلغاء التفعيل')),
           ),
+          AdminKeyRotationButton(controller: _api, onDone: _reload),
         ],
       ),
       FutureBuilder<List<Map<String, dynamic>>>(

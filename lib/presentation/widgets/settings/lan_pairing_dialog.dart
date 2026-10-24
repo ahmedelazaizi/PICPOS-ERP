@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../services/api/lan_pairing_service.dart';
 import '../../../services/network_service.dart';
+import 'lan_transport_section.dart';
 
 /// Server-side pairing code dialog. QR rendering is intentionally omitted:
 /// the dependency tree has no QR widget package, while the payload remains
@@ -66,6 +67,7 @@ class LanPairingDialog extends StatelessWidget {
               icon: const Icon(Icons.copy),
               label:  Text(tr('نسخ بيانات QR')),
             ),
+            const LanTransportSection(),
             if (service != null) ...[
               const SizedBox(height: 12),
               TextField(

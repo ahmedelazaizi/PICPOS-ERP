@@ -20,4 +20,18 @@ class AdminSigningKey {
     await store.writeSecret(storageKey, base64.encode(seed));
     return PayloadSigner.fromSeed(seed);
   }
+
+  /// SEC-017: replaces the seed. [publish] receives the NEW public key and must
+  /// register it with the cloud (which also revokes every paired admin phone);
+  /// the new seed is stored only after that call succeeded, so a failed
+  /// network call leaves the old (still registered) key in place.
+  Future<PayloadSigner> rotate({
+    required Future<void> Function(String newPublicKey) publish,
+  }) async {
+    final seed = PayloadSigner.newSeed();
+    final signer = await PayloadSigner.fromSeed(seed);
+    await publish(await signer.publicKeyBase64());
+    await store.writeSecret(storageKey, base64.encode(seed));
+    return signer;
+  }
 }

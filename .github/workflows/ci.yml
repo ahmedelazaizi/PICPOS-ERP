@@ -8,6 +8,12 @@ on:
     branches: ['**']
     tags: ['v*.*.*']
   pull_request:
+  workflow_dispatch:
+    inputs:
+      allow_unsigned:
+        description: 'Allow an UNSIGNED release (Windows + Android). Internal testing only. Default false = fail closed.'
+        type: boolean
+        default: false
 
 # One run per ref; a newer push cancels the older run (never cancel a tag run —
 # a half-finished release is worse than a slow one).
@@ -22,6 +28,10 @@ permissions:
 # ── Shared env ───────────────────────────────────────────────────────────────
 env:
   FLUTTER_VERSION: '3.41.x'   # Pin to the version used in development (3.41.2 stable, Dart 3.11)
+  # REL-002 / REL-004: release jobs FAIL when no signing identity is configured, unless this
+  # is explicitly 'true' (workflow_dispatch input allow_unsigned, or repository variable
+  # ALLOW_UNSIGNED). Tag pushes have no inputs, so they are signed-or-fail by default.
+  ALLOW_UNSIGNED: ${{ inputs.allow_unsigned && 'true' || vars.ALLOW_UNSIGNED || 'false' }}
 
 # Jobs (all independent => run in parallel, except where `needs` is stated):
 #   secrets | gitleaks | root_static | root_tests (12 file-shards) | packages_and_mobile | server | web
@@ -50,14 +60,16 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -ExecutionPolicy Bypass -File tool/check_no_secrets.ps1
 
-  # Optional content scan. gitleaks-action@v2 needs GITLEAKS_LICENSE only for
-  # organisation-owned repos; for a personal repo it is free. It is advisory
-  # (never blocks the pipeline) so a missing license cannot turn CI red.
+  # Content scan (SEC-013). BLOCKING on pull requests and release tags; advisory
+  # only for plain branch pushes. gitleaks-action@v2 needs GITLEAKS_LICENSE for
+  # organisation-owned repos (free for personal repos) - without it a blocking
+  # run fails, which is the intended fail-closed behaviour for release refs.
+  # Allowlist for test fixtures: .gitleaks.toml.
   gitleaks:
-    name: 🔎 Gitleaks (advisory)
+    name: 🔎 Gitleaks
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    continue-on-error: true
+    continue-on-error: ${{ github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/') }}
     permissions:
       contents: read
       pull-requests: read
@@ -111,6 +123,12 @@ jobs:
 
       - name: PicPos brand artifact guard (assets + visible strings)
         run: flutter test test/structural/brand_artifact_guard_test.dart
+
+      # Structural + static guards (file-size ratchet, API golden, i18n coverage,
+      # permission parity, installer/signing/CI contracts) run first so a violation
+      # fails fast, before the 12 test shards.
+      - name: Structural + static guards
+        run: flutter test test/structural test/static
 
       # ── God-File size gates ────────────────────────────────────────────────
       # Each threshold is the MAXIMUM allowed byte size.
@@ -654,6 +672,45 @@ jobs:
           echo "artifact-name=PicPos-ERP-${FULL}-windows" >> "$GITHUB_OUTPUT"
           echo "Building: PicPos-ERP ${FULL}"
 
+      # ── Windows code-signing identity (REL-002) ────────────────────────────
+      # Release tags FAIL when no signing identity is configured, unless
+      # ALLOW_UNSIGNED is explicitly 'true' (workflow_dispatch input
+      # allow_unsigned or repository variable ALLOW_UNSIGNED). The PFX comes from
+      # an encrypted secret, is decoded to the runner temp dir and removed in the
+      # `if: always()` cleanup step. build_picpos.bat / build_installer_picpos.bat
+      # sign through tool\sign_file.cmd when PICPOS_SIGN_PFX / _THUMBPRINT is set.
+      # See docs/ops/WINDOWS-SIGNING.md.
+      - name: Windows signing identity (fail closed on release tags)
+        shell: pwsh
+        env:
+          SIGN_PFX_B64: ${{ secrets.PICPOS_SIGN_PFX_BASE64 }}
+          SIGN_PFX_PASSWORD: ${{ secrets.PICPOS_SIGN_PFX_PASSWORD }}
+          SIGN_THUMBPRINT: ${{ secrets.PICPOS_SIGN_THUMBPRINT }}
+          IS_TAG: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        run: |
+          $hasPfx = -not [string]::IsNullOrWhiteSpace($env:SIGN_PFX_B64)
+          $hasThumb = -not [string]::IsNullOrWhiteSpace($env:SIGN_THUMBPRINT)
+          $allow = ($env:ALLOW_UNSIGNED -eq 'true')
+          if ($hasPfx) {
+            $pfx = Join-Path $env:RUNNER_TEMP 'picpos-codesign.pfx'
+            [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:SIGN_PFX_B64))
+            "PICPOS_SIGN_PFX=$pfx" >> $env:GITHUB_ENV
+            if ($env:SIGN_PFX_PASSWORD) { "PICPOS_SIGN_PFX_PASSWORD=$($env:SIGN_PFX_PASSWORD)" >> $env:GITHUB_ENV }
+            "PICPOS_SIGN_EXPECTED=1" >> $env:GITHUB_ENV
+            Write-Host 'Signing identity: PFX secret.'
+          } elseif ($hasThumb) {
+            "PICPOS_SIGN_THUMBPRINT=$($env:SIGN_THUMBPRINT)" >> $env:GITHUB_ENV
+            "PICPOS_SIGN_EXPECTED=1" >> $env:GITHUB_ENV
+            Write-Host 'Signing identity: certificate thumbprint (runner cert store).'
+          } elseif ($allow) {
+            Write-Host '::warning::UNSIGNED build allowed by ALLOW_UNSIGNED=true (internal testing only).'
+          } elseif ($env:IS_TAG -eq 'true') {
+            Write-Host '::error::Release tag without a code-signing identity. Set the PICPOS_SIGN_PFX_BASE64 (+ PICPOS_SIGN_PFX_PASSWORD) or PICPOS_SIGN_THUMBPRINT secret, or run workflow_dispatch with allow_unsigned=true for an internal test build. See docs/ops/WINDOWS-SIGNING.md.'
+            exit 1
+          } else {
+            Write-Host '::warning::No code-signing identity configured: this non-tag build is UNSIGNED.'
+          }
+
       # ── Build PicPos (same entry point as a local release) ─────────────────
       # build_picpos.bat sets the BRAND_* CMake env vars, passes
       # --dart-define=APP_BRAND=picpos, applies the PicPos icon, forces the
@@ -687,6 +744,14 @@ jobs:
           $text = [Text.Encoding]::GetEncoding(28591).GetString($bytes)
           if (-not $text.Contains("sqlcipher")) { throw "sqlite3.dll is not SQLCipher" }
           Write-Host "OK: PicPos.exe $($vi.FileVersion), SQLCipher dll present"
+          # REL-002: when an identity was configured, every shipped binary must carry a signature.
+          if ($env:PICPOS_SIGN_EXPECTED -eq '1') {
+            foreach ($f in @($exe, $dll)) {
+              $sig = Get-AuthenticodeSignature $f
+              if ($null -eq $sig.SignerCertificate) { throw "signing was configured but $f is NOT signed ($($sig.Status))" }
+              Write-Host "signed: $(Split-Path $f -Leaf) -> $($sig.SignerCertificate.Subject)"
+            }
+          }
 
       # ── Package as zip ─────────────────────────────────────────────────────
       - name: Package artifact
@@ -705,6 +770,114 @@ jobs:
           path: dist/*.zip
           retention-days: 30
 
+      - name: Remove decoded signing certificate
+        if: always()
+        shell: pwsh
+        run: |
+          $pfx = Join-Path $env:RUNNER_TEMP 'picpos-codesign.pfx'
+          if (Test-Path $pfx) { Remove-Item $pfx -Force }
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# (ح) Android release APKs - PicPos Van / Cashier / Admin (REL-004)
+# All three apps fail their release build without android/key.properties
+# (validateReleaseSigning in each android/app/build.gradle.kts). This job:
+#   1. proves the fail-closed behaviour (a release build WITHOUT key.properties must fail);
+#   2. builds the signed APK from the ANDROID_* secrets and rejects a debug-signed result;
+#   3. fails the tag when the secrets are absent, unless ALLOW_UNSIGNED is 'true'
+#      (then the APK build is skipped - there is no "unsigned release APK").
+# ═══════════════════════════════════════════════════════════════════════════════
+  android-release:
+    name: 📱 Android release (${{ matrix.dir }})
+    needs: [secrets, packages_and_mobile]
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    if: |
+      startsWith(github.ref, 'refs/tags/v') ||
+      github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        dir: [mobile, mobile_pos, mobile_admin]
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ matrix.dir }}
+    env:
+      ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Fail-closed proof (release build without key.properties must fail)
+        run: |
+          rm -f android/key.properties
+          if flutter build apk --release; then
+            echo "::error::${{ matrix.dir }}: release build SUCCEEDED without key.properties - signing is not fail-closed (REL-004)"
+            exit 1
+          fi
+          echo "OK: release build refused without key.properties"
+
+      - name: Signing secrets present?
+        id: sign
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_B64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] && [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
+            echo "have=true" >> "$GITHUB_OUTPUT"
+          elif [ "$ALLOW_UNSIGNED" = "true" ]; then
+            echo "::warning::No Android upload keystore secrets; ALLOW_UNSIGNED=true so the signed APK build is skipped."
+            echo "have=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Android release without signing secrets (ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD). See docs/ops/ANDROID-SIGNING.md."
+            exit 1
+          fi
+
+      - name: Build signed release APK
+        if: steps.sign.outputs.have == 'true'
+        run: |
+          ks="$RUNNER_TEMP/upload.jks"
+          echo "$ANDROID_KEYSTORE_B64" | base64 -d > "$ks"
+          {
+            echo "storeFile=$ks"
+            echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
+            echo "keyAlias=$ANDROID_KEY_ALIAS"
+            echo "keyPassword=$ANDROID_KEY_PASSWORD"
+          } > android/key.properties
+          flutter build apk --release
+
+      - name: Verify the APK is not debug-signed
+        if: steps.sign.outputs.have == 'true'
+        run: |
+          apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          apk=build/app/outputs/flutter-apk/app-release.apk
+          "$apksigner" verify --print-certs "$apk" | tee certs.txt
+          if grep -qi "Android Debug" certs.txt; then
+            echo "::error::APK is signed with the Android debug certificate"
+            exit 1
+          fi
+
+      - name: Upload APK
+        if: steps.sign.outputs.have == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ matrix.dir }}-release-apk
+          path: ${{ matrix.dir }}/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+
+      - name: Remove signing material
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks" android/key.properties
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # GitHub Release (version tags only: v*.*.*)
 # Creates a GitHub Release and attaches the Windows zip.
@@ -716,7 +889,7 @@ jobs:
 # ═══════════════════════════════════════════════════════════════════════════════
   release:
     name: 🚀 Create Release
-    needs: [build-windows]
+    needs: [build-windows, android-release]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:

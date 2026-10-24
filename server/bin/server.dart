@@ -11,6 +11,11 @@ Future<void> main() async {
     stderr.writeln('[config] FATAL: $adminKeyProblem');
     exit(78);
   }
+  final tlsProblem = cfg.tlsProblem;
+  if (tlsProblem != null) {
+    stderr.writeln('[config] FATAL: $tlsProblem');
+    exit(78);
+  }
   if (cfg.allowWeakAdminKey) {
     stderr.writeln('[config] WARNING: ALLOW_WEAK_ADMIN_KEY=1 — weak admin keys accepted (TEST ONLY)');
   }
@@ -60,7 +65,17 @@ Future<void> main() async {
     }
   });
 
-  final server = await io.serve(services.app.handler, InternetAddress.anyIPv4, cfg.port);
-  stdout.writeln('[startup] picpos_cloud listening on :${server.port} '
-      '(whatsapp=${services.outbox.provider.name})');
+  final server = await io.serve(
+    services.app.handler,
+    cfg.bindAddress,
+    cfg.port,
+    securityContext: cfg.tlsEnabled ? cfg.buildSecurityContext() : null,
+  );
+  if (cfg.plainHttpExposed) {
+    stderr.writeln('[security] WARNING: plain HTTP on ${cfg.bindAddress.address}:${server.port}. '
+        'Tokens and business data are NOT encrypted in transit. For production set TLS_CERT_FILE/TLS_KEY_FILE '
+        'or bind BIND_ADDRESS=127.0.0.1 behind a TLS reverse proxy (docs/ops/CLOUD-SERVER-DEPLOY.md).');
+  }
+  stdout.writeln('[startup] picpos_cloud listening on ${cfg.tlsEnabled ? 'https' : 'http'}://'
+      '${cfg.bindAddress.address}:${server.port} (whatsapp=${services.outbox.provider.name})');
 }

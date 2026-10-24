@@ -442,3 +442,11 @@ begin
     end;
   end;
 end;
+
+#include "preupgrade_backup.isi"
+
+{ REL-003: take a verified copy of the database before anything is installed; abort the upgrade if it fails. }
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  Result := PreUpgradeBackup();
+end;

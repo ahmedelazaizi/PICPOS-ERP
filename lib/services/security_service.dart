@@ -125,32 +125,64 @@ class SecurityService {
   // desktop). Pure-Dart is significantly slower than native, so we use
   // parameters that provide a good security-vs-speed trade-off:
   //
-  //   memory    = 4 MB (4 096 KB)  — enough to defeat GPU parallelism
-  //   iterations = 3               — adds time cost on top of memory cost
+  //   memory    = 19 MiB (19 456 KiB) — OWASP minimum tier (SEC-010)
+  //   iterations = 2
   //   parallelism = 1              — pure-Dart is single-threaded anyway
   //   hashLength  = 32 bytes
   //
-  // This is already massively better than our previous PBKDF2-SHA256 with
-  // 10 000 iterations (which has zero memory-hardness).  If a native backend
-  // is added later (via cryptography_flutter or dart_argon2_ffi), the
-  // parameters can be raised to the OWASP "high" tier (m=65536,t=3,p=4)
-  // without changing the stored hash format.
+  // Measured (pure Dart, JIT, dev PC): m=4096,t=3 ~120 ms; m=19456,t=2 ~190 ms.
+  // Verification reads m/t/p from the STORED hash (bounded, see
+  // [parseArgon2Params]), so older hashes keep verifying and are re-hashed at
+  // the next successful login (needsRehash) with the current parameters.
   //
   // Hash storage format (PHC string):
-  //   $argon2id$v=19$m=4096,t=3,p=1$<base64salt>$<base64hash>
+  //   $argon2id$v=19$m=19456,t=2,p=1$<base64salt>$<base64hash>
 
   static const String _argon2Prefix = '\$argon2id\$';
-  static const int    _argon2Memory      = 4096;  // KB = 4 MB (pure-Dart safe)
-  static const int    _argon2Iterations  = 3;
+  static const int    _argon2Memory      = 19456; // KiB = 19 MiB (OWASP minimum)
+  static const int    _argon2Iterations  = 2;
   static const int    _argon2Parallelism = 1;
   static const int    _argon2HashLength  = 32;    // bytes
 
-  static argon_lib.Argon2id get _argon2 => argon_lib.Argon2id(
-    parallelism: _argon2Parallelism,
-    memory:      _argon2Memory,
-    iterations:  _argon2Iterations,
-    hashLength:  _argon2HashLength,
-  );
+  static argon_lib.Argon2id get _argon2 =>
+      _argon2For(_argon2Memory, _argon2Iterations, _argon2Parallelism);
+
+  static argon_lib.Argon2id _argon2For(int m, int t, int p) =>
+      argon_lib.Argon2id(
+        parallelism: p,
+        memory: m,
+        iterations: t,
+        hashLength: _argon2HashLength,
+      );
+
+  /// Parses `m=..,t=..,p=..` from a PHC string. Returns null when absent or
+  /// outside sane bounds (a stored/synced hash must not be able to demand
+  /// gigabytes of memory): m 1 024..131 072 KiB, t 1..10, p 1..4.
+  static ({int m, int t, int p})? parseArgon2Params(String phcHash) {
+    final parts = phcHash.split('\$');
+    if (parts.length < 6) return null;
+    final kv = <String, int>{};
+    for (final item in parts[3].split(',')) {
+      final eq = item.indexOf('=');
+      final v = eq < 0 ? null : int.tryParse(item.substring(eq + 1));
+      if (v != null) kv[item.substring(0, eq)] = v;
+    }
+    final m = kv['m'], t = kv['t'], p = kv['p'];
+    if (m == null || t == null || p == null) return null;
+    if (m < 1024 || m > 131072 || t < 1 || t > 10 || p < 1 || p > 4) {
+      return null;
+    }
+    return (m: m, t: t, p: p);
+  }
+
+  /// True when the hash was made with weaker parameters than the current ones.
+  static bool argon2NeedsRehash(String phcHash) {
+    final x = parseArgon2Params(phcHash);
+    if (x == null) return true;
+    return x.m < _argon2Memory ||
+        (x.m == _argon2Memory && x.t < _argon2Iterations) ||
+        x.p != _argon2Parallelism;
+  }
 
   /// True when [hash] was produced by Argon2id (new format).
   static bool isArgon2Hash(String hash) => hash.startsWith(_argon2Prefix);
@@ -163,7 +195,7 @@ class SecurityService {
 
   /// Hash [password] with Argon2id.
   /// Returns a self-describing PHC string:
-  ///   `$argon2id$v=19$m=65536,t=3,p=4$<base64salt>$<base64hash>`
+  ///   `$argon2id$v=19$m=19456,t=2,p=1$<base64salt>$<base64hash>`
   static Future<String> hashPasswordArgon2(String password) async {
     final saltBytes = generateArgon2Salt();
     final secretKey = await _argon2.deriveKey(
@@ -181,15 +213,18 @@ class SecurityService {
   /// Verify [password] against an Argon2id PHC string.
   static Future<bool> verifyArgon2(String password, String phcHash) async {
     try {
-      // Parse: $argon2id$v=19$m=65536,t=3,p=4$<saltB64>$<hashB64>
+      // Parse: $argon2id$v=19$m=19456,t=2,p=1$<saltB64>$<hashB64>
       final parts = phcHash.split('\$');
       // parts[0]="" parts[1]="argon2id" parts[2]="v=19"
-      // parts[3]="m=65536,t=3,p=4" parts[4]=saltB64 parts[5]=hashB64
+      // parts[3]="m=..,t=..,p=.." parts[4]=saltB64 parts[5]=hashB64
       if (parts.length < 6) return false;
       final saltBytes = base64.decode(parts[4]);
       final storedHash = base64.decode(parts[5]);
+      // SEC-010: derive with the parameters the hash was CREATED with (every
+      // pre-SEC-010 hash is m=4096,t=3,p=1, which is also the fallback).
+      final prm = parseArgon2Params(phcHash) ?? (m: 4096, t: 3, p: 1);
 
-      final secretKey = await _argon2.deriveKey(
+      final secretKey = await _argon2For(prm.m, prm.t, prm.p).deriveKey(
         secretKey: argon_lib.SecretKey(utf8.encode(password)),
         nonce: saltBytes,
       );
@@ -214,7 +249,8 @@ class SecurityService {
   ) async {
     if (isArgon2Hash(storedHash)) {
       final ok = await verifyArgon2(password, storedHash);
-      return (verified: ok, needsRehash: false);
+      // SEC-010: a hash made with weaker parameters is upgraded transparently.
+      return (verified: ok, needsRehash: ok && argon2NeedsRehash(storedHash));
     }
     // Legacy PBKDF2-SHA256
     final ok = verifyPassword(password, salt, storedHash);

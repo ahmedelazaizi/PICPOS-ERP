@@ -113,6 +113,9 @@ const kDeviceLocalSettingKeys = <String>[
       // with the server's value skips the wizard on a fresh client
       // install or incorrectly marks first-sync as done.
       'setup_completed',
+      // First-run wizard v2 draft/progress: per-device, never synced.
+      'setup_draft_v2',
+      'setup_progress_v2',
       'client_first_sync_completed',
       // Mirror (Spec 131) uses the same first-sync contract. These flags are
       // per-device too — if the server payload ever carries them they must NOT

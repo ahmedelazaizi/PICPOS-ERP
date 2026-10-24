@@ -378,6 +378,9 @@ class ConfigService {
     _assertUnlocked();
     await _settings.save('setup_completed', '');
     await _settings.save('setup_in_progress', 'true');
+    // مسودّةُ المعالج v2 وسجلُّ مراحله تُمسحان مع إعادة التعيين.
+    await _settings.save('setup_draft_v2', '');
+    await _settings.save('setup_progress_v2', '');
     await AuditLog.record(
       'wizard_reset',
       level: AuditLevel.critical,

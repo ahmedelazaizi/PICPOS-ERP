@@ -27,6 +27,11 @@ part 'offline_sync_worker/offline_sync_worker_replay.dart';
 /// conflict by contract, not by guessing at Arabic error prose.
 const kDuplicateSupplierInvoiceNoCode = 'DUPLICATE_SUPPLIER_INVOICE_NO';
 
+/// SYNC-005: structured code of a uniqueness conflict with a DIFFERENT record
+/// (e.g. product code/barcode owned by another product). Never folded into
+/// success: the operator's change would be dropped silently.
+const kUniqueConflictCode = 'UNIQUE_CONFLICT';
+
 /// True when a server error is a BUSINESS conflict the operator must resolve —
 /// as opposed to the benign "this exact row already exists" 409 that the worker
 /// folds into success.
@@ -42,6 +47,12 @@ const kDuplicateSupplierInvoiceNoCode = 'DUPLICATE_SUPPLIER_INVOICE_NO';
 /// `DELETE /api/sales/<id>`) قرارٌ دائم — إعادة الإرسال تُرفض بالمثل، وبلا هذا
 /// السطر كان نص «409» يُطوى إلى «نجاح» فيضيع الرفض بصمت.
 bool isTerminalBusinessConflict(String error) =>
+    // SYNC-005: a uniqueness 409 that names ANOTHER record (the host only sends
+    // conflictWithGlobalId when a different logical row owns the key; a retry of
+    // the same row is answered with success) is a different-data conflict, not
+    // an already-applied duplicate.
+    error.contains(kUniqueConflictCode) ||
+    error.contains('conflictWithGlobalId') ||
     error.contains(kDuplicateSupplierInvoiceNoCode) ||
     error.contains(kSalesVoidHasReturnMessage) ||
     error.contains(kSalesVoidReturnDocMessage);

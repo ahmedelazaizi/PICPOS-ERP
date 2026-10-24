@@ -7,6 +7,7 @@ import '../secure_storage_service.dart';
 import '../tls_trust.dart';
 import '../../core/config/brand.dart';
 import '../../core/utils/uuid_v7.dart';
+import 'lan_pairing_input.dart';
 
 /// Client-side pairing handshake and device-header source of truth.
 class LanPairingClient {
@@ -31,53 +32,117 @@ class LanPairingClient {
     }
   }
 
+  /// Pairs this device with a LAN host (SEC-007).
+  ///
+  /// [code] is either the 8-character one-time code or the full pairing
+  /// payload (JSON) copied from the host. A payload carries the host
+  /// certificate fingerprint: it is pinned BEFORE the first byte is sent and
+  /// the connection is HTTPS-only (no downgrade). A bare code has no
+  /// out-of-band fingerprint, so HTTPS is tried first with trust-on-first-use
+  /// (the certificate actually presented is pinned after a successful pairing);
+  /// plain HTTP is only used when the host does not speak TLS at all (the
+  /// explicit legacy transport option on the host).
   static Future<Map<String, dynamic>> pair({
     required String address,
     required int port,
     required String code,
     String? deviceName,
   }) async {
+    final input = LanPairingInput.parse(code);
     final id = await _deviceId();
     final name = deviceName?.trim().isNotEmpty == true
         ? deviceName!.trim()
         : _deviceName();
-    final base = _baseUrl(address, port);
-    final uri = Uri.parse('$base/api/pair');
-    final client = TlsTrust.ioClient(connectionTimeout: const Duration(seconds: 15));
-    try {
-      final request = await client.postUrl(uri);
-      request.headers.contentType = ContentType.json;
-      request.headers.set('User-Agent', '${Brand.name}-Client');
-      request.headers.set('X-Device-Id', id);
-      request.headers.set('X-Device-Name', name);
-      request.write(jsonEncode({
-        'pairingCode': code.trim().toUpperCase(),
-        'deviceId': id,
-        'deviceName': name,
-      }));
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
-      final data = body.isEmpty
-          ? <String, dynamic>{}
-          : jsonDecode(body) as Map<String, dynamic>;
-      if (response.statusCode < 200 || response.statusCode >= 300) {
+    final typed = address.trim();
+    final explicit = typed.startsWith('http://') || typed.startsWith('https://');
+    final host = typed.isEmpty && input.host != null ? input.host! : typed;
+    final effectivePort = (typed.isEmpty ? input.port : null) ?? port;
+    final List<String> bases;
+    if (explicit) {
+      bases = [_trimSlash(typed)];
+    } else if (input.hasFingerprint) {
+      bases = ['https://$host:$effectivePort'];
+    } else {
+      bases = ['https://$host:$effectivePort', 'http://$host:$effectivePort'];
+    }
+
+    Object? lastError;
+    for (final base in bases) {
+      final uri = Uri.parse('$base/api/pair');
+      if (input.hasFingerprint && uri.scheme == 'https') {
+        await TlsTrust.pin(uri.host, uri.port, input.fingerprint!);
+      }
+      String? firstUseFingerprint;
+      final client = TlsTrust.ioClientTofu(
+        connectionTimeout: const Duration(seconds: 15),
+        onFirstUse: (_, _, fp) => firstUseFingerprint = fp,
+      );
+      try {
+        final result = await _post(client, uri, input.code, id, name);
+        final observed = firstUseFingerprint;
+        if (result['success'] == true && observed != null) {
+          await TlsTrust.pin(uri.host, uri.port, observed);
+        }
+        return result;
+      } on HandshakeException catch (error) {
+        // A certificate decision (pin mismatch) is final: never fall back to
+        // HTTP after it. Any other handshake failure means the host is not
+        // speaking TLS (legacy transport) and falls through to the next base.
+        final text = error.toString();
+        final certRejected = text.contains('CERTIFICATE_VERIFY_FAILED') ||
+            text.contains('BAD_CERTIFICATE');
+        if (!certRejected && bases.length > 1) {
+          lastError = error;
+          continue;
+        }
         return {
           'success': false,
-          'error': data['error'] ?? 'فشل إقران الجهاز (${response.statusCode})',
+          'error': 'تعذّر تأمين الاتصال بالخادم (TLS): $error',
         };
+      } catch (error) {
+        lastError = error;
+      } finally {
+        client.close(force: true);
       }
-      final token = data['token'] as String?;
-      if (token == null || token.isEmpty) {
-        return {'success': false, 'error': 'لم يُرجع الخادم توكن الجهاز'};
-      }
-      DeviceIdentityService.instance.adoptForPairing(id);
-      ServerProxy.instance.setApiToken(token);
-      return {'success': true, 'deviceId': id};
-    } catch (error) {
-      return {'success': false, 'error': 'تعذّر الاتصال بالخادم: $error'};
-    } finally {
-      client.close(force: true);
     }
+    return {'success': false, 'error': 'تعذّر الاتصال بالخادم: $lastError'};
+  }
+
+  static Future<Map<String, dynamic>> _post(
+    HttpClient client,
+    Uri uri,
+    String code,
+    String id,
+    String name,
+  ) async {
+    final request = await client.postUrl(uri);
+    request.headers.contentType = ContentType.json;
+    request.headers.set('User-Agent', '${Brand.name}-Client');
+    request.headers.set('X-Device-Id', id);
+    request.headers.set('X-Device-Name', name);
+    request.write(jsonEncode({
+      'pairingCode': code.trim().toUpperCase(),
+      'deviceId': id,
+      'deviceName': name,
+    }));
+    final response = await request.close();
+    final body = await response.transform(utf8.decoder).join();
+    final data = body.isEmpty
+        ? <String, dynamic>{}
+        : jsonDecode(body) as Map<String, dynamic>;
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      return {
+        'success': false,
+        'error': data['error'] ?? 'فشل إقران الجهاز (${response.statusCode})',
+      };
+    }
+    final token = data['token'] as String?;
+    if (token == null || token.isEmpty) {
+      return {'success': false, 'error': 'لم يُرجع الخادم توكن الجهاز'};
+    }
+    DeviceIdentityService.instance.adoptForPairing(id);
+    ServerProxy.instance.setApiToken(token);
+    return {'success': true, 'deviceId': id, 'secure': uri.scheme == 'https'};
   }
 
   static Future<String> _deviceId() async {
@@ -94,13 +159,10 @@ class LanPairingClient {
     return generated;
   }
 
-  static String _baseUrl(String address, int port) {
-    final trimmed = address.trim();
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-      return trimmed.endsWith('/')
-          ? trimmed.substring(0, trimmed.length - 1)
-          : trimmed;
-    }
-    return 'http://$trimmed:$port';
+  static String _trimSlash(String s) {
+    final trimmed = s.trim();
+    return trimmed.endsWith('/')
+        ? trimmed.substring(0, trimmed.length - 1)
+        : trimmed;
   }
 }

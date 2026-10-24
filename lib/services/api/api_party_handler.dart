@@ -13,6 +13,7 @@ import '../../core/permissions/permission_codes.dart';
 import '../../data/database/database.dart';
 import 'api_user_context.dart';
 import 'api_handler_base.dart';
+import 'party_phone_dedupe.dart';
 
 /// Handles party (customer / supplier) CRUD API endpoints.
 class ApiPartyHandler extends ApiHandlerBase {
@@ -108,6 +109,17 @@ class ApiPartyHandler extends ApiHandlerBase {
               .getSingleOrNull();
         }
       }
+      // SYNC-004: formatting-insensitive phone + name match (`+20 101...` vs
+      // `0101...`), and a suspects list for same-phone/different-name rows.
+      final phoneMatch = existingByNaturalKey != null
+          ? const PartyPhoneMatch()
+          : await findPartyByNormalizedPhone(
+              db,
+              name: data['name'] as String?,
+              phone: data['phone'] as String?,
+              isSupplier: parseBool(data['isSupplier'], false),
+            );
+      existingByNaturalKey ??= phoneMatch.same;
       if (existingByNaturalKey != null) {
         if ((existingByNaturalKey.globalId == null || existingByNaturalKey.globalId!.isEmpty) &&
             incomingGlobalId != null && incomingGlobalId.isNotEmpty) {
@@ -148,6 +160,15 @@ class ApiPartyHandler extends ApiHandlerBase {
            currencyId: Value(parseIntNullable(data['currencyId'] ?? data['currency_id'])),
         ),
       );
+      if (phoneMatch.suspects.isNotEmpty) {
+        await recordPhoneDuplicateSuspects(
+          db,
+          newPartyId: id,
+          newName: data['name'] as String,
+          newPhone: data['phone'] as String?,
+          existing: phoneMatch.suspects,
+        );
+      }
       broadcast('parties');
       return jsonResponse({'success': true, 'serverId': id});
     } catch (e) {

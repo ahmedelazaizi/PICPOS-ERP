@@ -79,6 +79,12 @@ set SIGN_ARGS=
 if defined PICPOS_SIGN_PFX set SIGN_ARGS=/DSignInstaller=1 "/Spicpossign=$q%~dp0tool\sign_file.cmd$q $f"
 if defined PICPOS_SIGN_THUMBPRINT set SIGN_ARGS=/DSignInstaller=1 "/Spicpossign=$q%~dp0tool\sign_file.cmd$q $f"
 if not defined SIGN_ARGS echo unsigned build - PICPOS_SIGN_PFX / PICPOS_SIGN_THUMBPRINT not set.
+REM REL-002: a RELEASE build (set RELEASE=1) without a signing identity FAILS,
+REM unless ALLOW_UNSIGNED=1 is set explicitly (internal testing only).
+if not defined SIGN_ARGS if "%RELEASE%"=="1" if not "%ALLOW_UNSIGNED%"=="1" (
+    echo FAILED: RELEASE=1 requires PICPOS_SIGN_PFX or PICPOS_SIGN_THUMBPRINT. Set ALLOW_UNSIGNED=1 only for internal test builds.
+    exit /b 1
+)
 %ISCC% %SIGN_ARGS% %ISS_FILE%
 if %ERRORLEVEL% NEQ 0 (
     echo.

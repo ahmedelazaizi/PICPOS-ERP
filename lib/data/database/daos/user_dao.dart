@@ -48,11 +48,10 @@ class DuplicatePasswordException implements Exception {
 /// usernames. Running one dummy verify on the no-user path evens the two paths
 /// out. This is NOT a real credential — its salt/hash are deterministic
 /// non-secret throwaway bytes and the verify result is always discarded.
-/// (The `cryptography` Argon2id backend derives work from SecurityService's
-/// static m/t/p params, not from the m/t/p embedded here, so the cost matches
-/// the real path regardless of the descriptor segment below.)
+/// (SEC-010: verification derives with the m/t/p embedded below, so keep
+/// them equal to SecurityService's CURRENT parameters.)
 const String _dummyArgon2idPhcForTimingDefense =
-    r'$argon2id$v=19$m=4096,t=3,p=1$Wd/BX+ZdcKR0osjKbW4xrQ==$yucY7iYoN/U8em4xt5hX/9+Gt0L0jYNC6T+6G84pmVc=';
+    r'$argon2id$v=19$m=19456,t=2,p=1$Wd/BX+ZdcKR0osjKbW4xrQ==$yucY7iYoN/U8em4xt5hX/9+Gt0L0jYNC6T+6G84pmVc=';
 
 /// Extension for User-related database operations
 extension UserDao on AppDatabase {

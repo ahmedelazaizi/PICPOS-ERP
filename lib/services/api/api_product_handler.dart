@@ -119,8 +119,7 @@ class ApiProductHandler extends ApiHandlerBase {
         // — the previous behaviour returned the existing serverId, so
         // the operator's "new" product invisibly became an alias of an
         // unrelated row, then later edits cross-contaminated stock and
-        // pricing. This is the bug the user reported as "الكود/الباركود
-        // لازم لا يتكرر مع صنف تانى".
+        // pricing (user report: code/barcode must be unique per product).
         if (hasExistingGid && hasIncomingGid && existingGid != incomingGlobalId) {
           final field = (incomingCode != null &&
                   incomingCode.isNotEmpty &&
@@ -135,6 +134,7 @@ class ApiProductHandler extends ApiHandlerBase {
             body: json.encode({
               'error':
                   'هذا $field مستخدم بالفعل لصنف آخر "${existingByNaturalKey.name}"',
+              'code': 'UNIQUE_CONFLICT', // SYNC-005 structured code
               'conflictWithProductId': existingByNaturalKey.id,
               'conflictWithGlobalId': existingGid,
             }),

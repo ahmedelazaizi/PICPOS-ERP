@@ -274,7 +274,8 @@ extension _SetupWizardReviewExt on _SetupWizardScreenState {
             ),
           ),
           const SizedBox(height: 8),
-          for (final s in SetupRunStage.values)
+          // `extras` مرحلةٌ للمعالج الجديد فقط (‏P3) — لا تُعرض هنا.
+          for (final s in SetupRunStage.values.where((s) => s != SetupRunStage.extras))
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 2),
               child: Row(

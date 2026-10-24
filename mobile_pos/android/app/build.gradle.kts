@@ -7,17 +7,41 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// Release signing (ARCHITECTURE-M §4.3): android/key.properties is git-ignored
-// and points at the upload keystore kept OUTSIDE the repo
-// (storeFile, storePassword, keyAlias, keyPassword). Without it the release
-// build falls back to the debug key so `flutter run --release` still works.
+// Release signing (ARCHITECTURE-M section 4.3): key.properties points at an upload
+// keystore kept outside the repository. Release tasks fail closed when the
+// file, required properties, or referenced keystore is missing. Debug tasks do
+// not require release credentials.
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
-val hasUploadKey = keystorePropertiesFile.exists()
-if (hasUploadKey) {
-    keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
+val requiredSigningProperties = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+val hasUploadKey = if (keystorePropertiesFile.isFile) {
+    try {
+        keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
+        requiredSigningProperties.all { !keystoreProperties.getProperty(it).isNullOrBlank() } &&
+            rootProject.file(keystoreProperties.getProperty("storeFile")).isFile
+    } catch (_: Exception) {
+        false
+    }
 } else {
-    logger.warn("key.properties not found: release build is signed with the DEBUG key (not for distribution).")
+    false
+}
+
+val validateReleaseSigning = tasks.register("validateReleaseSigning") {
+    doLast {
+        check(hasUploadKey) {
+            "Release signing is required. Provide a valid android/key.properties " +
+                "with storeFile, storePassword, keyAlias, and keyPassword pointing " +
+                "to an existing upload keystore. Debug builds remain unaffected."
+        }
+    }
+}
+
+tasks.configureEach {
+    if (name.contains("Release", ignoreCase = true) &&
+        (name.startsWith("assemble") || name.startsWith("bundle") ||
+            name.startsWith("package") || name.startsWith("sign"))) {
+        dependsOn(validateReleaseSigning)
+    }
 }
 
 android {
@@ -57,7 +81,11 @@ android {
 
     buildTypes {
         release {
-            signingConfig = if (hasUploadKey) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
+            // Never fall back to the debug key. The release validation task
+            // provides the actionable failure when this config is incomplete.
+            if (hasUploadKey) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 }
