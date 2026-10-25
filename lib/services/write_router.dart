@@ -1,4 +1,6 @@
+import '../core/i18n/tr.dart';
 import '../web/web_session.dart';
+import 'mirror_branch_context.dart';
 import 'mirror_state.dart';
 import 'network_service.dart';
 
@@ -17,16 +19,34 @@ import 'network_service.dart';
 /// reporting "connection lost" while the device was clearly online and only
 /// the write itself was failing for a different reason.
 class MirrorOfflineException implements Exception {
-  MirrorOfflineException(this.detail, {this.isNetworkIssue = true});
+  MirrorOfflineException(this.detail, {this.isNetworkIssue = true})
+      : isRefusal = false;
 
   /// Convenience constructor for the unambiguous "we couldn't reach HQ"
   /// case (SocketException, TimeoutException, ClientException).
-  MirrorOfflineException.network(this.detail) : isNetworkIssue = true;
+  MirrorOfflineException.network(this.detail)
+      : isNetworkIssue = true,
+        isRefusal = false;
 
   /// Convenience constructor for "HQ answered, but rejected the write"
   /// (HTTP 4xx/5xx). The user needs to see the actual server message,
   /// not a generic "connection lost".
-  MirrorOfflineException.serverError(this.detail) : isNetworkIssue = false;
+  MirrorOfflineException.serverError(this.detail)
+      : isNetworkIssue = false,
+        isRefusal = false;
+
+  /// The console REFUSES this operation outright (M3 / MIR-009): it would write
+  /// locally before the main hears of it and the console has no outbox. [detail]
+  /// is a user-facing sentence, shown as is.
+  MirrorOfflineException.refused(this.detail)
+      : isNetworkIssue = false,
+        isRefusal = true;
+
+  /// Local-first sales-invoice creation is not offered on the console.
+  MirrorOfflineException.invoiceRefused()
+      : detail = tr('إنشاء فاتورة بيع غير متاح على كونسول المدير — أنشئها من جهاز الفرع'),
+        isNetworkIssue = false,
+        isRefusal = true;
 
   /// Underlying error string. Surfaced as-is in debug builds and
   /// summarised in user-facing snackbars.
@@ -36,8 +56,13 @@ class MirrorOfflineException implements Exception {
   /// false when the server responded with a non-2xx status.
   final bool isNetworkIssue;
 
+  /// True for [MirrorOfflineException.refused].
+  final bool isRefusal;
+
   @override
-  String toString() => isNetworkIssue
+  String toString() => isRefusal
+      ? detail
+      : isNetworkIssue
       ? 'فقد الاتصال بـ HQ-Server — تأكد من الاتصال ثم أعد المحاولة ($detail)'
       : 'تعذّر التعديل — رد السيرفر: $detail';
 }
@@ -52,7 +77,7 @@ class MirrorOfflineException implements Exception {
 /// 2. **client mode** — preserve the legacy behaviour: try the server
 ///    once, fall back to the local outbox on failure (offline-first).
 /// 3. **mirror mode** (Feature 006 / MM.C) — no outbox. Inject
-///    `adminUserId` so HQ attributes the write to the remote admin, then
+///    the current branch (HQ takes the actor from the session), then
 ///    throw [MirrorOfflineException] if the call fails. The UI layer
 ///    surfaces the error, the operator sees that nothing was saved, and
 ///    the next attempt happens after they reconnect.
@@ -78,25 +103,17 @@ class WriteRouter {
   /// هل هذا متصفّح ويب بجلسة نشطة؟ (لا كاش محلي: يُتخطّى سحب الدلتا والصندوق.)
   static bool get isWebClient => WebSession.activeWebClient != null;
 
-  /// Stamps the mirror admin's HQ-side userId into [payload] so the
-  /// server's `_resolveUserId` resolves writes to that user instead of
-  /// the local cashier. Adds:
+  /// M2 (MIR-012): the console works in ONE branch at a time. A write that
+  /// carries no branch key at all gets `branchId` = the branch the manager is
+  /// working in; the main checks it against his scope (`branch_access_denied`).
+  /// A payload that already has the key (even null) is never touched - master
+  /// data such as a warehouse owns its own branch.
   ///
-  ///   • `userId` — only when the caller didn't already provide one.
-  ///     This avoids overriding a deliberate userId on writes that need
-  ///     to retain a different actor (e.g. shift-reconstruct flows).
-  ///   • `actorUserId` — always set, regardless of the legacy `userId`
-  ///     field, so a future server-side audit handler can prefer this
-  ///     dedicated channel and ignore `userId` (which is also used for
-  ///     domain semantics like "who opened the shift").
-  ///
-  /// No-op when the mirror admin id has not yet been verified — the
-  /// server's existing admin fallback in `_resolveUserId` will still
-  /// preserve the record.
-  static void stampAdminAttribution(Map<String, dynamic> payload) {
-    final adminId = MirrorState.instance.adminUserId;
-    if (adminId == null) return;
-    payload['actorUserId'] = adminId;
-    payload['userId'] ??= adminId;
+  /// The acting user is NOT stamped here any more (MIR-004): the main takes it
+  /// from the signed session alone and refuses a body naming somebody else.
+  static void stampBranchContext(Map<String, dynamic> payload) {
+    final branch = MirrorBranchContext.instance.currentBranchId;
+    if (branch == null || payload.containsKey('branchId')) return;
+    payload['branchId'] = branch;
   }
 }

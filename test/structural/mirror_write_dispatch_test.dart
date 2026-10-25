@@ -41,20 +41,15 @@ import 'package:flutter_test/flutter_test.dart';
 /// startup, so there is no local row for a failure to falsify.
 const Map<String, int> _exempt = {'lib/main.dart': 1};
 
-/// Remaining raw `unawaited(ClientWriteInterceptor.…)` submit sites, per file.
+/// Remaining raw `unawaited(ClientWriteInterceptor.` submit sites, per file.
 /// A file absent from this map (and from [_exempt]) must contain zero.
-const Map<String, int> _baseline = {
-  // Local write happens inside `_db.transaction` before the submit.
-  'lib/data/repositories/sales_transaction_orchestrator.dart': 1,
-  // UI-layer paths; each writes locally first.
-  'lib/presentation/widgets/dialogs/add_product_dialog.dart': 1,
-  'lib/presentation/screens/shift_close_screen.dart': 1,
-  'lib/presentation/shift_close_picpos/screens/shift_close_picpos_screen.dart':
-      1,
-  'lib/app_main_screen.dart': 0,
-  'lib/app_main_screen_shift.dart': 1,
-};
-
+///
+/// M3 (plan 2026-10-24, MIR-009): the baseline is EMPTY. Each former loss path
+/// was converted: the three shift-open flows go through `openShiftAndSync`
+/// (HQ-first on the console), `add_product_dialog` skips the local movement on a
+/// console and uses `dispatchWrite`, and `createSalesInvoice` (local-first, no
+/// outbox on a console) is refused there with `MirrorOfflineException.refused`.
+const Map<String, int> _baseline = {};
 void main() {
   test('no new raw fire-and-forget ClientWriteInterceptor submits', () {
     // `unawaited(` followed by a ClientWriteInterceptor call on the same line —

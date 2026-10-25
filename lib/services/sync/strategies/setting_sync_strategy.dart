@@ -153,6 +153,9 @@ const kDeviceLocalSettingKeys = <String>[
       // P0: the lockout counters of THIS terminal must never be pushed to,
       // or overwritten from, other devices.
       'login_lockouts_v1',
+      // FLEET-6: the MAIN's own failed-login counters (ServerLoginThrottle) —
+      // host-local, must never travel to a client nor be overwritten by one.
+      'server_login_throttle_v1',
       // A0 (ADP-013): the DeploymentModeCommitter's own keys. A client that
       // received the host's server_setup_completed / last_committed_mode
       // would believe it was provisioned as a server.
@@ -169,4 +172,6 @@ const kDeviceLocalSettingKeys = <String>[
       'offline_login_max_seen_v1',
       'offline_login_mode', // shadow | enforce
       'device_revoked_v1',
+      // M2: the branch a travelling manager is working in on THIS console.
+      'mirror_current_branch_id',
 ];

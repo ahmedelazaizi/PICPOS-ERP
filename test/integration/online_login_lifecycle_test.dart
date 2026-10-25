@@ -31,6 +31,14 @@ class _ClientInterceptor extends SyncInterceptor {
   dynamic noSuchMethod(Invocation i) => super.noSuchMethod(i);
 }
 
+/// Adds permission [code] to [roleId] on the DEVICE database only.
+Future<void> _grantOnDevice(AppDatabase db, int? roleId, String code) async {
+  final all = await db.getAllPermissions();
+  final held = (await db.getPermissionsForRole(roleId!)).map((p) => p.id).toSet()
+    ..add(all.firstWhere((p) => p.code == code).id);
+  await db.setRolePermissions(roleId, held.toList());
+}
+
 void main() {
   // No TestWidgetsFlutterBinding: it turns every real dart:io request into a 400.
   late LanHost host;
@@ -60,6 +68,19 @@ void main() {
       await d.db.into(d.db.roles).insert(
           RolesCompanion(id: Value(r.id), name: Value(r.name)),
           mode: InsertMode.insertOrIgnore);
+    }
+    // ...and so does the role -> permission sync: a console device decides
+    // `mirror_console` (AuthRepositoryImpl._requireConsole) from ITS copy of the
+    // role's permissions, exactly as the fleet harness delivers them.
+    final devPermByCode = {
+      for (final p in await d.db.getAllPermissions()) p.code: p.id,
+    };
+    for (final r in await host.db.getAllRoles()) {
+      final codes = (await host.db.getPermissionsForRole(r.id)).map((p) => p.code);
+      await d.db.setRolePermissions(r.id, [
+        for (final c in codes)
+          if (devPermByCode[c] != null) devPermByCode[c]!,
+      ]);
     }
     DeviceIdentityService.instance.adoptForPairing(id);
     ServerProxy.instance.setApiToken(d.deviceToken);
@@ -425,6 +446,14 @@ void main() {
           reason: 'branch 3 is outside his scope');
       ServerProxy.instance.clearSessions();
 
+      // A STALE role copy on the device: it still believes the accountant's
+      // role holds `mirror_console` (the host revoked/never granted it). The
+      // device-side guard (M2 `_requireConsole`) therefore lets him through and
+      // it is the HOST that must refuse - the authority this test pins. (With a
+      // truthful copy the device refuses first: see the next test.)
+      await _grantOnDevice(dv.db, (await host.db.getUserByUsername('acct1'))!.user.roleId,
+          'mirror_console');
+
       final repo = repoFor(dv.db);
       final mgr = await repo.authenticateUser('mgr1', HostFixture.mgrPw);
       expect(mgr, isNotNull);
@@ -435,6 +464,21 @@ void main() {
       await expectRejected(repo.authenticateUser('acct1', HostFixture.acctPw),
           'كونسول مدير الفروع');
       expect((await stamps(dv.db).read(fx.acctId))!.src, StampSource.rejected);
+    });
+
+    test('with a truthful role copy the console refuses a user without '
+        '`mirror_console` on the device itself (M2), before asking the host',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final dv = await pairDevice('mirror-1', mirror: true);
+      expect((await dv.dev.login('mgr1', HostFixture.mgrPw)).status, 200);
+      expect((await dv.dev.syncUsers()).status, 200);
+      ServerProxy.instance.clearSessions();
+      await expectRejected(
+          repoFor(dv.db).authenticateUser('acct1', HostFixture.acctPw),
+          'كونسول مدير الفروع');
+      expect((await stamps(dv.db).read(fx.acctId))!.src, isNot(StampSource.rejected),
+          reason: 'the host was never asked');
     });
 
     test('the mirror follows the same grace when the host is away', () async {

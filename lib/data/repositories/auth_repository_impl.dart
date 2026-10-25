@@ -1,8 +1,10 @@
+import '../../core/i18n/tr.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/auth/bootstrap_admin.dart';
+import '../../core/permissions/mirror_permission_codes.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../services/auth/credential_stamp_store.dart';
 import '../../services/auth/offline_login_policy.dart';
@@ -235,6 +237,19 @@ class AuthRepositoryImpl implements IAuthRepository {
     await db.setUserBranchAccess(userId, branchIds);
   }
 
+  /// M2 / MIR-003: the branch-manager console admits only users holding
+  /// `mirror_console` (the main enforces the same at session issue). A device
+  /// that has not yet received the permission catalogue leaves the decision to
+  /// the main instead of locking every manager out.
+  Future<void> _requireConsole(UserWithRole result) async {
+    if (!NetworkService.instance.isMirror) return;
+    const code = MirrorPermissionCodes.mirrorConsole;
+    if (!(await db.getAllPermissions()).any((p) => p.code == code)) return;
+    if (await db.userHasPermission(result.user.id, code)) return;
+    throw AuthRejectedException(
+        tr('هذا الجهاز كونسول مدير الفروع؛ حسابك غير مخوَّل له.'));
+  }
+
   /// Phase 6 (T4) — fail-closed branch gate.
   ///
   /// On a paired client device, only let the user in if either:
@@ -258,6 +273,7 @@ class AuthRepositoryImpl implements IAuthRepository {
   /// view-time scope helpers continue to use [getUserAccessibleBranchIds]
   /// because there the "admin sees everything" semantic is still correct.
   Future<void> _verifyBranchAccess(UserWithRole result) async {
+    await _requireConsole(result);
     if (!SyncInterceptor.isClientMode) return;
     final prefs = await SharedPreferences.getInstance();
     final localBranchId = prefs.getInt('client_branch_id');

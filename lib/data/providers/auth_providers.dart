@@ -17,6 +17,7 @@ import '../../services/server_proxy.dart';
 import '../../services/websocket_sync_client.dart';
 import '../database/sync_interceptor.dart';
 import 'providers.dart';
+import 'mirror_branch_context_provider.dart';
 import 'e_invoicing_providers.dart';
 import 'screen_access_selectors.dart';
 import '../../services/shift_dialog_session_guard.dart';
@@ -37,13 +38,8 @@ final allBranchesProvider = StreamProvider.autoDispose<List<Branche>>((ref) {
   return db.watchBranches();
 });
 
-/// All cost centers provider for filtering and display in invoice screens.
-///
-/// Spec 111 — deduplicates by case-folded name on the way out so multi-row
-/// duplicates (sync artifacts, manual misentry) do not bloat dropdowns. The
-/// oldest id within a name group wins so foreign keys keep pointing at the
-/// canonical row; siblings are surfaced via DiagnosticLogger so the operator
-/// can clean them up via the maintenance tools.
+/// Cost centers for invoice screens (Spec 111): de-duplicated by case-folded
+/// name, the oldest id wins; dropped siblings are logged for clean-up.
 final allCostCentersProvider = StreamProvider.autoDispose<List<CostCenter>>((ref) {
   final db = ref.watch(databaseProvider);
   return db.watchCostCenters().map(_dedupCostCentersByName);
@@ -539,6 +535,10 @@ final activeBranchIdProvider = FutureProvider<int?>((ref) async {
   final userId = authState.user?.id;
   if (userId == null) return null;
 
+  if (NetworkService.instance.isMirror) {
+    final b = ref.watch(mirrorCurrentBranchProvider);
+    if (b != null) return b;
+  }
   if (NetworkService.instance.isClient) {
     final prefs = await SharedPreferences.getInstance();
     final clientBranchId = prefs.getInt('client_branch_id');

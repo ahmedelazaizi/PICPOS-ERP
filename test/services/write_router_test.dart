@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:picpos_erp/services/mirror_branch_context.dart';
 import 'package:picpos_erp/services/mirror_state.dart';
 import 'package:picpos_erp/services/network_service.dart';
 import 'package:picpos_erp/services/server_proxy.dart';
@@ -53,49 +54,44 @@ void main() {
     });
   });
 
-  group('WriteRouter.stampAdminAttribution', () {
-    test('no-op when adminUserId has not been verified yet', () {
+  group('WriteRouter.stampBranchContext (M2)', () {
+    setUp(() => MirrorBranchContext.instance.reset());
+    tearDown(() => MirrorBranchContext.instance.reset());
+
+    test('no-op until a current branch is known', () {
+      final payload = <String, dynamic>{'name': 'X'};
+      WriteRouter.stampBranchContext(payload);
+      expect(payload, {'name': 'X'});
+    });
+
+    test('never stamps the acting user (the main takes it from the session)',
+        () {
       MirrorState.instance.debugSetForTests(
         serverDisplayName: 'hq.local:8080',
         lastHandshakeAt: DateTime.now().toUtc(),
-        // adminUserId omitted → null.
+        adminUserId: 42, // the legacy pairing admin must NOT leak into writes
       );
+      MirrorBranchContext.instance.debugSet(
+          branches: const [MirrorBranch(id: 2, name: 'B2')], current: 2);
       final payload = <String, dynamic>{'name': 'X'};
-      WriteRouter.stampAdminAttribution(payload);
+      WriteRouter.stampBranchContext(payload);
       expect(payload.containsKey('actorUserId'), isFalse);
-      expect(payload.containsKey('userId'), isFalse,
-          reason: 'must not invent a userId when MirrorState lacks one');
+      expect(payload.containsKey('userId'), isFalse);
+      expect(payload['branchId'], 2);
     });
 
-    test('always sets actorUserId, plus userId when payload had none', () {
-      MirrorState.instance.debugSetForTests(
-        serverDisplayName: 'hq.local:8080',
-        lastHandshakeAt: DateTime.now().toUtc(),
-        adminUserId: 42,
-      );
-      final payload = <String, dynamic>{'name': 'X'};
-      WriteRouter.stampAdminAttribution(payload);
-      expect(payload['actorUserId'], 42);
-      expect(payload['userId'], 42,
-          reason: 'fills in userId when caller did not provide one');
-    });
-
-    test('preserves caller-supplied userId, only injects actorUserId', () {
-      MirrorState.instance.debugSetForTests(
-        serverDisplayName: 'hq.local:8080',
-        lastHandshakeAt: DateTime.now().toUtc(),
-        adminUserId: 42,
-      );
-      final payload = <String, dynamic>{'userId': 99, 'name': 'X'};
-      WriteRouter.stampAdminAttribution(payload);
-      expect(payload['userId'], 99,
-          reason: 'shift-reconstruct flows pass a deliberate userId — '
-              'mirror admin must not steal attribution from them');
-      expect(payload['actorUserId'], 42,
-          reason: 'actorUserId is the dedicated audit channel');
+    test('a payload that already has a branch key is left alone (even null)',
+        () {
+      MirrorBranchContext.instance.debugSet(
+          branches: const [MirrorBranch(id: 2, name: 'B2')], current: 2);
+      final own = <String, dynamic>{'branchId': 7};
+      final none = <String, dynamic>{'branchId': null, 'name': 'warehouse'};
+      WriteRouter.stampBranchContext(own);
+      WriteRouter.stampBranchContext(none);
+      expect(own['branchId'], 7);
+      expect(none['branchId'], isNull);
     });
   });
-
   group('MirrorOfflineException', () {
     test('preserves the underlying network error in toString', () {
       final ex = MirrorOfflineException('SocketException: refused');

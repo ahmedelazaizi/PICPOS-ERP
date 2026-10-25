@@ -20,6 +20,7 @@ import '../../domain/models/exchange_sync_payload.dart';
 import '../../domain/models/return_original_link.dart' show SalesVoidBlockedException;
 import '../../domain/models/distribution_model.dart';
 import 'api_user_context.dart';
+import 'api_auth_middleware.dart';
 import '../stock_shortage_policy_service.dart';
 import 'api_handler_base.dart';
 
@@ -427,14 +428,14 @@ class ApiSalesHandler extends ApiHandlerBase {
     // 5.3: Origin + optional-token + connection caps (see WsConnectionGuard).
     final denied = await WsConnectionGuard.check(request);
     if (denied != null) return denied;
-    // Spec 129 F1 — accept mode='mirror' + device_id query params alongside
-    // the existing branch_id. Pre-129 clients send only branch_id and get
-    // mode='client' by default (backward-compat: identical routing behaviour).
-    final branchId = int.tryParse(
-      request.requestedUri.queryParameters['branch_id'] ?? '',
-    );
-    final mode = request.requestedUri.queryParameters['mode'] ?? 'client';
-    final deviceId = request.requestedUri.queryParameters['device_id'];
+    // Spec 129 F1 / MIR-011: a PAIRED device's mode and branch come from its
+    // pairing row; the query string is believed only for legacy-token callers.
+    final q = request.requestedUri.queryParameters;
+    final deviceId = q['device_id'];
+    final (mode, branchId) = await ApiAuthMiddleware.wsSubscriber(
+        request.headers['x-device-id'] ?? deviceId ?? '',
+        q['mode'] ?? 'client',
+        int.tryParse(q['branch_id'] ?? ''));
     final info = WsSubscriberInfo(mode: mode, branchId: branchId, deviceId: deviceId);
 
     final handler = webSocketHandler((WebSocketChannel ws, String? protocol) {

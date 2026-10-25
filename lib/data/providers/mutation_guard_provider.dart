@@ -15,53 +15,45 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/mutation_guard.dart';
+import '../../services/mirror_connectivity.dart';
 import '../../services/mirror_state.dart';
 import '../../services/network_service.dart';
 import 'auth_providers.dart';
 
 export '../../core/mutation_guard.dart';
 
-/// True when the device is in mirror mode AND the most recent handshake
-/// is older than 5 minutes (or never recorded). Mirrors the
-/// `MirrorBadge.classify` "offline" tier so the badge color and the
-/// guard agree on what "offline" means.
-///
-/// Using a 5-minute threshold (not the badge's 30s "online" tier)
-/// avoids flapping read-only state every time a heartbeat is briefly
-/// late — the operator only loses write access when HQ has clearly
-/// gone away, not on a transient hiccup.
-bool _isMirrorOffline() {
-  if (!NetworkService.instance.isMirror) return false;
-  final stamp = MirrorState.instance.lastHandshakeAt;
-  if (stamp == null) return true;
-  return DateTime.now().toUtc().difference(stamp.toUtc()) >
-      const Duration(minutes: 5);
-}
-
-/// Provider that combines [authProvider.isCrossBranchElevated] with
-/// [serverConnectionLiveProvider] (Feature 004) and the mirror-mode
-/// offline detector (Feature 006 / MM.D) to decide whether mutating
-/// writes are allowed in the current session. Mirrors the result into
+/// Combines [authProvider.isCrossBranchElevated] with
+/// [serverConnectionLiveProvider] (Feature 004) and the console's link state
+/// ([MirrorConnectivity], plan 2026-10-24 M2 / MIR-008) to decide whether
+/// mutating writes are allowed. The result is mirrored into
 /// [MutationGuard.current] so DAO write paths can short-circuit cheaply.
 ///
-/// Order of precedence — mirror-offline wins because it has no outbox:
-/// even a non-elevated user on a mirror device must be blocked the
-/// instant HQ goes away, otherwise their writes vanish into
-/// MirrorOfflineException at the bottom of the stack with no UI hook
-/// to undo the optimistic state.
+/// Order of precedence — console read-only wins because the console has no
+/// outbox: a user must be blocked the instant the main goes away, otherwise the
+/// write would vanish into a MirrorOfflineException at the bottom of the stack.
+///
+/// The provider is re-evaluated (1) by a TIMER set for the exact moment the link
+/// crosses the read-only threshold, so a console left alone on a list view turns
+/// read-only without any interaction, and (2) on every [MirrorState] change — a
+/// successful heartbeat, or a failed one ([MirrorState.markHandshakeFailed]).
+/// The write path itself (`ClientWriteInterceptor`) consults the same
+/// [MirrorConnectivity], so the UI state and the refusal can never disagree.
 final mutationGuardProvider = Provider<MutationGuard>((ref) {
   final auth = ref.watch(authProvider);
   final live = ref.watch(serverConnectionLiveProvider);
-  // Re-evaluate on every MirrorState change so a heartbeat tick that
-  // crosses the 5-minute threshold flips the guard immediately. The
-  // counter value is irrelevant — only the change event matters.
   ref.watch(mirrorRevisionProvider);
 
+  final left = MirrorConnectivity.untilReadOnly;
+  if (NetworkService.instance.isMirror && left != null && left > Duration.zero) {
+    final timer = Timer(left + const Duration(seconds: 1), ref.invalidateSelf);
+    ref.onDispose(timer.cancel);
+  }
+
   final MutationGuard guard;
-  if (_isMirrorOffline()) {
+  if (MirrorConnectivity.isReadOnly) {
     guard = MutationGuard.readOnly(
       reason:
-          'فقد الاتصال بـ HQ-Server — وضع المرآة معطّل للكتابة حتى يُستعاد الاتصال',
+          'فقد الاتصال بالسيرفر الرئيسي — المرآة للقراءة فقط حتى يعود الاتصال.',
     );
   } else if (auth.isCrossBranchElevated && !live) {
     guard = MutationGuard.readOnly(

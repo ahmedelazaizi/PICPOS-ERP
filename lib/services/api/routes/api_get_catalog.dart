@@ -188,7 +188,12 @@ extension ApiHandlerCatalogGets on ApiHandler {
 
   Future<Response> _getUserBranchAccess(Request request) async {
     try {
-      final accessData = await _db.select(_db.userBranchAccess).get();
+      // MIR-010: assignments are limited to the caller's branch scope - the same
+      // one `/api/users` serves (identity-less reference callers: unchanged).
+      final scope = await _usersFeedScope(request, failClosedOnNoIdentity: false);
+      final accessData = (await _db.select(_db.userBranchAccess).get())
+          .where((a) => scope == null || scope.contains(a.branchId))
+          .toList();
       // Spec 136 ISS-10 — also send the branch's globalId so the client can
       // remap the server branchId to its OWN local branch id. Without this the
       // client stored the raw server id, and when local↔server branch ids

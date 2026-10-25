@@ -15,6 +15,7 @@ import '../../core/utils/financial_utils.dart';
 import '../../services/accounting_service.dart';
 import '../../services/network_service.dart';
 import '../../services/client_write_interceptor.dart';
+import '../../services/write_router.dart';
 import '../../services/pos_terminal_registration_service.dart';
 import '../../services/stock_shortage_policy_service.dart';
 import '../../services/sync/mirror_cache_divergence_exception.dart';
@@ -150,6 +151,10 @@ class SalesTransactionOrchestrator {
     // post-commit fire-and-forget push share the same identity. Without
     // this, non-POS invoices created on a cashier-mode client never reach
     // the server until an admin manually triggers pushLocalSalesToServer.
+    // M3 / MIR-009: local-first write; no console outbox => phantom invoice.
+    if (WriteRouter.isMirrorActive) {
+      throw MirrorOfflineException.invoiceRefused();
+    }
     final saleGlobalId = globalId ?? UuidV7.generate();
     // Spec 007 / FR-005: gate the server push on the broadened
     // `SyncInterceptor.isClientMode` (true for client OR mirror) so mirror
@@ -473,11 +478,8 @@ class SalesTransactionOrchestrator {
       return invoiceId;
     });
 
-    // Spec 002 (B1): fire-and-forget push to server in client mode so a
-    // non-POS sales invoice (e.g. a credit sale created from the regular
-    // sales screen) reaches the server immediately, without waiting for
-    // an admin to open the invoices screen and trigger pushLocalSalesToServer.
-    // Mirrors the POS path's submit (see completeSalesTransaction).
+    // Spec 002 (B1): push a non-POS invoice to the server at once (client mode;
+    // the console is refused above - it has no outbox).
     if (isClientMode) {
       try {
         final invoice = await (_db.select(_db.salesInvoices)
@@ -587,19 +589,23 @@ class SalesTransactionOrchestrator {
           unawaited(DiagnosticLogger.log('SALE-SYNC',
               'submit non-POS invoice=${invoice.invoiceNumber} userId=$userId '
               'total=$total globalId=$saleGlobalId'));
-          unawaited(ClientWriteInterceptor.submitSale(syncRequest).then((serverId) {
-            debugPrint('[SALE-SYNC] Server response: serverId=$serverId');
-            unawaited(DiagnosticLogger.log('SALE-SYNC',
-                serverId != null
-                    ? '✓ accepted non-POS invoice=${invoice.invoiceNumber} → '
-                        'serverId=$serverId'
-                    : '⏳ queued offline non-POS invoice=${invoice.invoiceNumber} '
-                        '(server unreachable, will retry from sync_outbox)'));
-          }).catchError((e) {
-            debugPrint('[SALE-SYNC] Server sync failed (queued in outbox): $e');
-            unawaited(DiagnosticLogger.log('SALE-SYNC',
-                '❌ sync error non-POS invoice=${invoice.invoiceNumber}: $e'));
-          }));
+          await ClientWriteInterceptor.dispatchWrite(
+            () => ClientWriteInterceptor.submitSale(syncRequest).then((serverId) {
+              debugPrint('[SALE-SYNC] Server response: serverId=$serverId');
+              unawaited(DiagnosticLogger.log('SALE-SYNC',
+                  serverId != null
+                      ? '✓ accepted non-POS invoice=${invoice.invoiceNumber} → '
+                          'serverId=$serverId'
+                      : '⏳ queued offline non-POS invoice=${invoice.invoiceNumber} '
+                          '(server unreachable, will retry from sync_outbox)'));
+              return serverId;
+            }, onError: (Object e) {
+              unawaited(DiagnosticLogger.log('SALE-SYNC',
+                  '❌ sync error non-POS invoice=${invoice.invoiceNumber}: $e'));
+              throw e;
+            }),
+            tag: 'SALE-SYNC',
+          );
         }
       } catch (e) {
         debugPrint('[SALE-SYNC] Non-POS sync setup failed: $e');
@@ -1008,11 +1014,8 @@ class SalesTransactionOrchestrator {
         'routeId': ?repStamp.routeId,
       };
 
-      // IMPORTANT: Do NOT await — local save must never block on network latency.
-      // But DO log the outcome to DiagnosticLogger so the operator can confirm
-      // whether each invoice actually reached the server. The user reported
-      // invoices saving locally but never appearing on the server, and the
-      // previous debugPrint-only logging was invisible in release builds.
+      // Client: never block the local save on the network, but log each
+      // outcome to DiagnosticLogger (release builds hide debugPrint).
       debugPrint('[SALE-SYNC] Submitting sale to server...');
       unawaited(DiagnosticLogger.log('SALE-SYNC',
           'submit invoice=$localInvoiceNumber userId=${request.userId} '

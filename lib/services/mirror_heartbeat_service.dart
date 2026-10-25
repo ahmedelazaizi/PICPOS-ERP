@@ -65,6 +65,9 @@ class MirrorHeartbeatService {
     }
   }
 
+  /// Ping right now (the status strip's refresh button, M2).
+  static Future<void> checkNow() => _tick();
+
   /// Cancel the timer. Safe to call when not running.
   static void stop() {
     if (_timer == null) return;
@@ -84,9 +87,11 @@ class MirrorHeartbeatService {
       final t = await ServerProxy.instance.fetchServerTime();
       if (t != null) {
         await MirrorState.instance.markHandshake();
+      } else {
+        MirrorState.instance.markHandshakeFailed();
       }
     } catch (_) {
-      // Silent — staleness is observable via lastHandshakeAt.
+      MirrorState.instance.markHandshakeFailed(); // staleness stays observable
     }
   }
 }

@@ -176,6 +176,9 @@ class ApiRateLimiter {
     const MapEntry('/api/auth/session', RateLimitClass.read),
     // P1: self-service password change is a credential endpoint too.
     const MapEntry('/api/auth/change-password', RateLimitClass.read),
+    // M2/P5: four-eyes approval grant (credential check) + console context.
+    const MapEntry('/api/approvals', RateLimitClass.read),
+    const MapEntry('/api/mirror', RateLimitClass.read),
     // الويب (م3-4/م3-5): دخولٌ بالاعتماد + تذكرة + قناة قراءة. ⚠️ /webdb
     // **لا** يبدأ بـ/ws فلا يشمله إعفاءُ _exemptPrefixes — يُصنَّف صراحةً
     // (طلبُ ترقيةٍ واحدٌ لكلّ اتصال؛ الاتصالُ نفسه لا يُحتسب بعد ذلك).

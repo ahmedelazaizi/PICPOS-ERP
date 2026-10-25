@@ -91,6 +91,23 @@ class ApiSessionToken {
     return base64Url.encode(mac.bytes);
   }
 
+  /// Domain-separated detached signature for OTHER server-signed artefacts
+  /// (approval proofs, plan P5). A signature made for one [domain] can never
+  /// verify as a session token or under another domain. Null when the key is
+  /// not ready (callers fail closed).
+  static String? signDomain(String domain, String payloadB64) {
+    final key = _signingKey;
+    if (key == null) return null;
+    final mac = Hmac(sha256, key).convert(utf8.encode('$domain:$payloadB64'));
+    return base64Url.encode(mac.bytes);
+  }
+
+  /// Constant-time check of a [signDomain] signature.
+  static bool verifyDomain(String domain, String payloadB64, String sig) {
+    final expected = signDomain(domain, payloadB64);
+    return expected != null && _constantTimeEquals(sig, expected);
+  }
+
   /// Mint a signed token for [userId], valid for [_ttl]. [nowMs] is injectable
   /// for tests. Throws [StateError] if the key isn't derived yet — callers
   /// (the issue endpoint) must guard on [isReady] first.

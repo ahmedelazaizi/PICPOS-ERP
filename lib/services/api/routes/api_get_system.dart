@@ -56,6 +56,9 @@ extension ApiHandlerSystemGets on ApiHandler {
         // يكسرها دون اتّصال — والهاشُ سلسلةُ SHA‑256 مكرَّرةٌ لا KDF حقيقيّ
         // (‏الملحُ يدخل في الدورة الأولى وحدَها)، فالكسرُ رخيص.
         if (isServerSecretSettingKey(s.key)) continue;
+        // FLEET-6: the main's failed-login counters name the accounts under
+        // attack — host-local, never served.
+        if (s.key == ServerLoginThrottle.settingKey) continue;
         settingsMap[s.key] = s.value!;
       }
 

@@ -20,6 +20,7 @@ import 'package:shelf/shelf.dart';
 
 import '../../core/logging/diagnostic_logger.dart';
 import '../../data/database/database.dart';
+import 'approval_proof.dart';
 
 /// Shelf request-context keys.
 class ApiUserCtx {
@@ -85,6 +86,10 @@ class ApiUserCtx {
     // critical financial codes remain explicit for segregation of duties.
     final ok = await db.userHasPermission(userId, code);
     if (!ok) {
+      // P5: a signed four-eyes proof (X-Approval-Proof) stands in for a missing
+      // grant, for exactly this code, this user and this device.
+      final proof = await ApprovalGate.authorise(request, db, userId, code);
+      if (proof != null) return proof.isGranted ? null : proof.toResponse();
       return Response(
         403,
         body: '{"error":"User #$userId lacks permission: $code"}',

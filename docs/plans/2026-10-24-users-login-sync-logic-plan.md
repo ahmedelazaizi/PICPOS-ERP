@@ -777,6 +777,28 @@
 - **قبول:** موافقة مدير بلا اتصال تعمل ضمن مدته وتُسجَّل `offline: true`. كلمة مرور المدير لا تبقى في الذاكرة بعد الموافقة. `app_main_screen_dialogs` يمرّ بالقفل والسياسة.
 - **الأمر:** `flutter test test/unit/auth/approver_verification_test.dart test/structural` + اختبارات الموافقة الموجودة.
 
+#### P5 — العقد المنفَّذ (implemented contract) [2026-10-25]
+**القرار يُتخذ على الرئيسي؛ المسار المحلي `verifyApprover` لم يُنفَّذ** (استُبدل بـ`ManagerApprovalFlow` في `lib/services/approval/` الذي يحمل الأربع عيون `ManagerApprovalRules.canApprove` كما هي). كل مواقع `requestManagerApproval` تمرّ بـ`ManagerApprovalDialog` (PicPosDialog).
+
+**`POST /api/approvals/grant`** (bearer الجهاز + `X-Session-Token` **للطالب**؛ تصنيف rate-limit: `read`):
+- الطلب: `{permission, scope?, (username?+password) | cardCode | password}` — اعتماد **الموافِق**.
+- `200`: `{proof, approvalId(nonce), approverId, approverName, requesterId, permission, scope, critical, expiresAt(ms), serverTime}`.
+- أخطاء: `400 invalid_request|unknown_permission`، `401 session_required|invalid_credentials`، `403 self_approval|approver_not_authorised|password_change_required|branch_access_denied` (الفرع من `X-Branch-Id` ثم فرع الجهاز)، `429 locked_out` (مفاتيح `ServerLoginThrottle` لكل طالب ولكل اسم/بطاقة)، `503 not_ready`.
+- التدقيق في `activity_logs`: `manager_approval` / `manager_approval_denied` بـ`approverId, requesterId, permission, offline=false, device`.
+
+**الإثبات** `base64url(json{v,op,req,apr,iat,exp,nid,dev?,sc?}) '.' HMAC(domain 'picpos.approval.v1')` بمفتاح الجلسة (نطاق توقيع مستقل: لا يصلح رمز جلسة إثباتًا ولا العكس). صلاحية الاستعمال الأول **5 دقائق**.
+
+**الحمل:** الجهاز يمسك الإثبات في الذاكرة 90ث (`ApprovalProofCarrier`) ويرسله ترويسة `X-Approval-Proof`، ويُختم في حمولة الكتابة `approvalProof` فيبقى في الـoutbox وتحوّله `ServerProxy` ترويسةً عند الإعادة ولا يُرسل كبيانات.
+
+**التحقق** في `ApiUserCtx.requirePermission` (`ApprovalGate.authorise`): عند فقد الصلاحية وحضور إثبات صالح لنفس الكود والطالب والجهاز (ولا قيمة `dev` مخالفة) يُسمح بالطلب. الرفض `403 {code}`: `approval_invalid` (توقيع/شكل) | `approval_mismatch` (طالب/صلاحية/جهاز) | `approval_expired` | `approval_already_used` | `approval_approver_invalid` (الموافِق عُطِّل/قُفل/فقد الصلاحية وقت الاستعمال).
+
+**الإعادة (replay):** بصمة العملية = `sha256(METHOD path # X-Idempotency-Key)`؛ أول استعمال يسجّل `nid→fp` (ذاكرة + `activity_logs` بالحدث `manager_approval_used` فتنجو من إعادة تشغيل الرئيسي). إعادة **نفس** العملية (نفس المفتاح) مقبولة حتى بعد انتهاء الإثبات (idempotent، المعالج يزيل التكرار)، وعملية أخرى ⇒ `approval_already_used`. طلب **بلا** `X-Idempotency-Key` يستهلك الإثبات نهائيًا (لا يمكنه إثبات أنه إعادة).
+
+**بلا اتصال بالرئيسي** (`ManagerApprovalFlow`): المرآة ⇒ `offlineRefusedMirror`؛ عملية في `criticalFinancialOps` ⇒ `offlineRefusedCritical` (مرفوضة)؛ غيرها على جهاز فرع ⇒ تحقق محلي مع سجل `manager_approval` بـ`offline: true` يصل الرئيسي بمزامنة سجل النشاط. على الرئيسي/المستقل: تحقق محلي.
+
+**الاختبارات:** `test/integration/four_eyes_approval_host_test.dart` و`mirror_console_fleet_test.dart` (P5.1–P5.3) و`test/unit/approval/*` و`test/widget/manager_approval_dialog_test.dart`.
+**غير منفَّذ/مؤجَّل:** مواقع التحقق المباشر الأخرى بـ`authenticateByPasswordOrCard` (فك إخفاء الشاشة `app_shell`، `app_main_screen_dialogs:96`، إغلاق الوردية في `pos_closing_controller`، فواتير البيع/الشراء) لم تنتقل إلى الرئيسي بعد — ليست موافقة أربع عيون عبر `requestManagerApproval`.
+
 ### P6 — رموز الطوارئ (3 أيام؛ بعد P3، يوازي P4/P5؛ مشروط بقرار D.5)
 - **ملفات:**
   - جديد `lib/services/auth/break_glass_service.dart`.
@@ -871,6 +893,26 @@
   - `test/widget/mirror_mutation_guard_timer_test.dart` (ساعة مزيّفة: 5 دقائق ⇒ read-only بلا تفاعل).
   - `test/unit/api/users_feed_full_scope_test.dart`.
 - **قبول:** §E سيناريو تعدد الفروع.
+
+#### M2 — العقد المنفَّذ (implemented contract) [2026-10-25]
+**الكونسول يُفوَّض لكل طلب من جهاز `lanDeviceKind=='mirror'`** عبر `MirrorConsole.guard` (`lib/services/api/mirror_console_guard.dart`) بعد الميدلوير؛ الأجهزة الأخرى والرمز المشترك القديم (بلا صف إقران) **لا يمسّها** الحارس.
+
+| الطلب من جهاز مرآة | الشرط | الرفض |
+|---|---|---|
+| أي طلب بجلسة مستخدم | يملك المستخدم `mirror_console` (يُعاد فحصه في كل طلب) | `403 {code:'mirror_console_denied'}` |
+| ترويسة `X-Branch-Id` | ضمن نطاق فروع المستخدم (`getUserAccessibleBranchIds`، وفارغ+وصول كامل ⇒ كل الفروع) | `403 branch_access_denied`؛ قيمة غير صحيحة/≤0 ⇒ `400 invalid_branch` |
+| كتابة (غير GET/HEAD/OPTIONS) | جلسة `X-Session-Token` (عدا `/api/auth/`, `/api/pair`, `/api/sync/heartbeat`) | `401 session_required` |
+| جسم الكتابة `branchId`/`branch_id` | ضمن النطاق | `403 branch_access_denied` |
+| جسم الكتابة `actorUserId`/`userId` | يساوي مستخدم الجلسة، أو (لاختلاف المعرّف المحلي) يحمل الجسم `createdByUsername`/`userGlobalId` يخص مستخدم الجلسة | `403 actor_mismatch` |
+
+- **الإسناد:** الخادم يكتب `actorUserId` و`userId` = مستخدم الجلسة في الجسم قبل المعالج؛ مسارات إدارة المستخدمين (`/api/users`, `/api/user-*`, `/api/roles`, `/api/role_permissions`, `/api/permissions`) يبقى `userId` فيها **هدفًا** ولا يُعاد كتابته. `WriteRouter.stampAdminAttribution` **حُذف**؛ بدله `WriteRouter.stampBranchContext` (يضيف `branchId` الفرع الحالي فقط حين لا يحمل الجسم المفتاح).
+- **`GET /api/mirror/context`** (bearer الجهاز + جلسة): `200 {userId, fullAccess, canConsole, branches:[{id,name,code}], defaultBranchId, serverTime}`؛ الفروع = نطاق المستخدم بالضبط. بلا جلسة ⇒ `401 session_required`. تصنيف rate-limit: `read`.
+- **مغذّيات النطاق:** `/api/user-branch-access` يُحصر بنطاق المستخدم (مثل `/api/users` الذي يستعمل `_usersFeedScope` الكامل).
+- **WebSocket `/ws`:** وضع المشترك وفرعه من صف الإقران (`ApiAuthMiddleware.wsSubscriber`)، ولا يُصدَّق الاستعلام إلا للرمز القديم.
+- **الجهاز:** `MirrorBranchContext` (الإعداد المحلي `mirror_current_branch_id` ∈ `kDeviceLocalSettingKeys`) يغذّي `activeBranchIdProvider` وترويسة `X-Branch-Id` في `ServerProxy` وفرع الكتابة؛ `AuthRepositoryImpl._requireConsole` يرفض على الجهاز غير الحاملين لـ`mirror_console` برسالة الكونسول؛ `MirrorConnectivity` (online ≤30ث، degraded، readOnly >5د) يغذّي `mutationGuardProvider` (مؤقّت + `MirrorState.markHandshakeFailed`) و`MirrorStatusStrip` (مبدّل الفرع + زر «تحقق الآن») و`ClientWriteInterceptor` الذي يرفض الكتابة بـ`MirrorOfflineException.refused` بدل محاولتها.
+- **M3 (مسارات الفقد):** baseline `mirror_write_dispatch_test` صار **فارغًا**: فتح الوردية (`openShiftAndSync`) HQ-first على المرآة، وإضافة صنف برصيد افتتاحي بلا حركة محلية على المرآة، وفاتورة البيع المحلية-أولًا **تُرفض** على المرآة (`invoiceRefused`).
+- **الرمز المشترك القديم:** لم يُغلق؛ اختبار `legacy_token_console_compat_test.dart`.
+- **الاختبارات:** `test/integration/mirror_console_host_test.dart` و`mirror_console_fleet_test.dart` و`legacy_token_console_compat_test.dart` و`test/unit/auth/mirror_console_gate_test.dart` و`test/unit/mirror/*` و`test/widget/mirror_{status_strip,mutation_guard_timer}_test.dart`.
 
 ### M3 — صفر مسارات فقد كتابة على المرآة (2 يوم؛ **P2**؛ بعد M2) [جديد 2026-10-24]
 - جرد baseline `test/structural/mirror_write_dispatch_test.dart` وتحويل كل مسار إلى `dispatchWrite` أو منعه على المرآة برسالة (MIR-009). **القبول:** baseline فارغ.

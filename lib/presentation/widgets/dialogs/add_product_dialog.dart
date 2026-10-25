@@ -22,6 +22,7 @@ import '../../../core/logging/diagnostic_logger.dart';
 import '../../../services/license_service.dart';
 import '../../../data/providers/providers.dart';
 import '../../../services/client_write_interceptor.dart';
+import '../../../services/write_router.dart';
 import '../../../core/utils/uuid_v7.dart';
 
 /// Result returned when a product is successfully added
@@ -1254,35 +1255,33 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
         }
       }
 
-      // Cluster 023 / Issue 7 — opening stock balance. Mirrors the Excel
-      // import pattern (excel_service._applyOpeningStock) so stock_movements
-      // (type=opening_stock) + inventory_balances + products.current_stock
-      // are populated atomically. Without going through adjustStock, the
-      // products.current_stock would exist but inventory_balances would be
-      // missing → POS sales fail with "الصنف غير متوفر فى المستودع".
+      // Cluster 023 / Issue 7 — opening stock via adjustStock (as the Excel
+      // import does) so stock_movements + inventory_balances + current_stock
+      // stay consistent; otherwise POS sales fail "الصنف غير متوفر".
       final openingBalance =
           NumberUtils.tryParseLocale(_openingBalanceController.text) ?? 0.0;
       if (openingBalance > 0 && _selectedWarehouseId != null) {
         try {
-          final inventoryRepo = ref.read(inventoryRepositoryProvider);
-          await inventoryRepo.adjustStock(
-            productId: productId,
-            warehouseId: _selectedWarehouseId!,
-            quantity: openingBalance,
-            type: 'opening_stock',
-            notes: tr('رصيد افتتاحى — إضافة صنف'),
+          // Console: HQ first (no outbox) - the pull brings the movement (M3).
+          if (!WriteRouter.isMirrorActive) {
+            await ref.read(inventoryRepositoryProvider).adjustStock(
+              productId: productId,
+              warehouseId: _selectedWarehouseId!,
+              quantity: openingBalance,
+              type: 'opening_stock',
+              notes: tr('رصيد افتتاحى — إضافة صنف'),
+            );
+          }
+          await ClientWriteInterceptor.dispatchWrite(
+            () => ClientWriteInterceptor.adjustStock(
+              productId: productId,
+              warehouseId: _selectedWarehouseId!,
+              quantity: openingBalance,
+              type: 'opening_stock',
+              notes: tr('رصيد افتتاحى — إضافة صنف'),
+            ),
+            tag: 'AddProductDialog',
           );
-          // Fire-and-forget server sync (client mode only; no-op otherwise).
-          unawaited(ClientWriteInterceptor.adjustStock(
-            productId: productId,
-            warehouseId: _selectedWarehouseId!,
-            quantity: openingBalance,
-            type: 'opening_stock',
-            notes: tr('رصيد افتتاحى — إضافة صنف'),
-          ).catchError((e) {
-            debugPrint('[AddProductDialog] server adjustStock failed (queued): $e');
-            return false;
-          }));
           await DiagnosticLogger.log(
               'ADD-PROD', 'step4.5 opening_stock OK qty=$openingBalance wh=$_selectedWarehouseId');
         } catch (e, st) {

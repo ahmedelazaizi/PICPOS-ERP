@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../services/mirror_connectivity.dart';
 import '../../services/mirror_state.dart';
 import '../../services/network_service.dart';
 
@@ -76,7 +77,7 @@ class _MirrorOfflineBannerState extends State<MirrorOfflineBanner> {
             final visible = MirrorOfflineBanner.shouldShow(
               mode: NetworkService.instance.mode,
               lastHandshakeAt: MirrorState.instance.lastHandshakeAt,
-              now: DateTime.now(),
+              now: MirrorConnectivity.clock(),
             );
             if (!visible) return const SizedBox.shrink();
             return Material(
@@ -100,7 +101,7 @@ class _MirrorOfflineBannerState extends State<MirrorOfflineBanner> {
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          tr('فقد الاتصال بـ HQ-Server — التعديلات معطّلة حتى يُستعاد الاتصال'),
+                          tr('فقد الاتصال بالسيرفر الرئيسي — المرآة للقراءة فقط حتى يعود الاتصال.'),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,

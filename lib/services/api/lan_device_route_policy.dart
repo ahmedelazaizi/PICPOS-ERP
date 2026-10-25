@@ -37,9 +37,20 @@ class LanDeviceRoutePolicy {
   static bool _matches(String path, List<String> prefixes) =>
       prefixes.any((p) => path == p || path.startsWith('$p/'));
 
+  /// Exact paths a mirror may READ (GET) although they are in
+  /// [mirrorDeniedPaths]: the shared sync engine pulls the terminal registry
+  /// (FLEET-1); only registering a terminal is POS.
+  static const List<String> mirrorReadablePaths = ['/api/pos-terminals'];
+
   /// Whether a device of [kind] may call [path] (`/api/...`, no query).
-  static bool allows(String? kind, String path) {
-    if (kind == mirrorKind) return !_matches(path, mirrorDeniedPaths);
+  /// [method] is the HTTP method; only the mirror's read exception uses it.
+  static bool allows(String? kind, String path, {String method = 'POST'}) {
+    if (kind == mirrorKind) {
+      if (method.toUpperCase() == 'GET' && mirrorReadablePaths.contains(path)) {
+        return true;
+      }
+      return !_matches(path, mirrorDeniedPaths);
+    }
     if (kind != warehouseKind) return true;
     return _matches(path, warehousePaths);
   }

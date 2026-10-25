@@ -43,7 +43,7 @@ import '../../core/i18n/locale_provider.dart';
 import '../widgets/sync_management_dialog.dart';
 import '../widgets/sync_status_badge.dart';
 import '../widgets/mirror_badge.dart';
-import '../widgets/mirror_offline_banner.dart';
+import '../widgets/mirror_status_strip.dart';
 import '../widgets/legacy_db_key_banner.dart';
 import '../../services/mirror_state.dart';
 
@@ -921,8 +921,8 @@ class _AppShellState extends ConsumerState<AppShell> {
             : null,
          floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
         body: Column(children: [
-          // MM.D mirror-offline banner (self-collapses outside mirror mode).
-          const MirrorOfflineBanner(),
+          // MM.D/M2 console strip: link state + branch (collapses off a mirror).
+          const MirrorStatusStrip(),
           const LegacyDbKeyBanner(), // SEC-005 (admin-only, self-collapsing)
           Expanded(child: Row(
           children: [

@@ -61,5 +61,8 @@ extension ApiHandlerReadRoutes on ApiHandler {
     router.get('/api/party-follow-ups', _getPartyFollowUps);
     router.get('/api/supplier-claims', _getSupplierClaims);
     router.get('/api/accounting-periods', _getAccountingPeriods);
+    // FLEET-1 / FLEET-3 — the sync engine pulls both; they had no read route.
+    router.get('/api/pos-terminals', _getPosTerminals);
+    router.get('/api/sale-bom-consumptions', _getSaleBomConsumptions);
   }
 }

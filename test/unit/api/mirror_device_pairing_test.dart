@@ -135,6 +135,17 @@ void main() {
       ]) {
         expect(ok('mirror', p), isFalse, reason: p);
       }
+      expect(
+          LanDeviceRoutePolicy.allows('mirror', '/api/pos-terminals', method: 'GET'),
+          isTrue,
+          reason: 'the registry is READ by the shared sync engine (FLEET-1)');
+      expect(
+          LanDeviceRoutePolicy.allows('mirror', '/api/pos-terminals', method: 'POST'),
+          isFalse);
+      expect(
+          LanDeviceRoutePolicy.allows('mirror', '/api/pos-terminals/register',
+              method: 'GET'),
+          isFalse);
       expect(ok('mirror', '/api/sales'), isTrue, reason: 'a prefix match, not a substring');
       expect(ok('pos', '/api/sales/held'), isTrue, reason: 'other kinds unchanged');
       expect(ok('client', '/api/pos-terminals/register'), isTrue);
@@ -149,6 +160,8 @@ void main() {
       final pos = await m.post('/api/pos-terminals/register', {}, withSession: false);
       expect(pos.status, 403);
       expect(pos.body, contains('device_scope'));
+      expect((await m.get('/api/pos-terminals', withSession: false)).status, 200,
+          reason: 'FLEET-1: the console READS the terminal registry');
       expect((await m.get('/api/users', withSession: false)).status, 200);
       expect((await m.get('/api/branches', withSession: false)).status, 200);
       await m.dispose();

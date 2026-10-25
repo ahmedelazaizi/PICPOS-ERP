@@ -232,9 +232,13 @@ class _CwiCoreSupport {
   }) async {
     await enrichPayloadWithUsername(payload);
     final mirrorMode = WriteRouter.isMirrorActive;
-    if (mirrorMode) WriteRouter.stampAdminAttribution(payload);
+    if (mirrorMode) {
+      MirrorConnectivity.ensureWritable(); // read-only link: refuse, don't attempt
+      WriteRouter.stampBranchContext(payload);
+    }
     final idempotencyKey = const Uuid().v7();
     payload['idempotency_key'] = idempotencyKey;
+    ApprovalProofCarrier.instance.stamp(payload); // P5: survives the outbox
     try {
       final result = await serverCall(idempotencyKey);
       _refreshAfterWrite();
@@ -299,6 +303,7 @@ class _CwiCoreSupport {
     required String tag,
   }) async {
     if (SyncInterceptor.isMirrorMode) {
+      MirrorConnectivity.ensureWritable();
       await submit();
       return;
     }
@@ -320,9 +325,13 @@ class _CwiCoreSupport {
   }) async {
     await enrichPayloadWithUsername(payload);
     final mirrorMode = WriteRouter.isMirrorActive;
-    if (mirrorMode) WriteRouter.stampAdminAttribution(payload);
+    if (mirrorMode) {
+      MirrorConnectivity.ensureWritable(); // read-only link: refuse, don't attempt
+      WriteRouter.stampBranchContext(payload);
+    }
     final idempotencyKey = const Uuid().v7();
     payload['idempotency_key'] = idempotencyKey;
+    ApprovalProofCarrier.instance.stamp(payload); // P5: survives the outbox
     try {
       await serverCall(idempotencyKey);
       _refreshAfterWrite();

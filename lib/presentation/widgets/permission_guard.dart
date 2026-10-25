@@ -1,15 +1,11 @@
-import 'package:picpos_erp/core/i18n/tr.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/permissions/manager_approval_rules.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../../data/providers/providers.dart';
-import '../../services/login_rate_limiter.dart';
 import '../../services/manager_approval_cache.dart';
+import 'manager_approval_dialog.dart';
 
 /// النص اللي بيتعرض بدل المبلغ لما صلاحية العرض ناقصة.
 const String kMaskedValuePlaceholder = '••••';
@@ -523,7 +519,7 @@ class _ManagerOverrideWrapperState
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => _ManagerOverrideDialog(
+      builder: (ctx) => ManagerApprovalDialog(
         permission: widget.permission,
         actionName: widget.actionName,
       ),
@@ -561,225 +557,6 @@ class _ManagerOverrideWrapperState
       '→ فُك القفل.',
     );
     _unlock();
-  }
-}
-
-/// Dialog for manager password entry
-class _ManagerOverrideDialog extends ConsumerStatefulWidget {
-  final String permission;
-  final String? actionName;
-
-  /// بابُ الطلب — يمنع صرفَ الإذن في بابٍ آخرَ يتقاسم نفسَ الكود.
-  final String? scope;
-
-  const _ManagerOverrideDialog({
-    required this.permission,
-    this.actionName,
-    this.scope,
-  });
-
-  @override
-  ConsumerState<_ManagerOverrideDialog> createState() =>
-      _ManagerOverrideDialogState();
-}
-
-class _ManagerOverrideDialogState
-    extends ConsumerState<_ManagerOverrideDialog> {
-  final _passwordController = TextEditingController();
-  bool _isLoading = false;
-  String? _errorMessage;
-  bool _obscurePassword = true;
-
-  @override
-  void dispose() {
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _verifyPassword() async {
-    final password = _passwordController.text.trim();
-    if (password.isEmpty) {
-      setState(() => _errorMessage = tr('الرجاء إدخال كلمة المرور'));
-      return;
-    }
-
-    // SEC-009: bounded attempts for the override dialog, per requesting user.
-    final limitKey = 'override:${ref.read(authProvider).user?.id}';
-    final locked = LoginRateLimiter.getLockoutRemaining(limitKey);
-    if (locked != null) {
-      setState(() => _errorMessage = tr(
-          'محاولات فاشلة كثيرة — أعد المحاولة بعد {p0} دقيقة',
-          {'p0': locked.inMinutes + 1}));
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final authRepo = ref.read(authRepositoryProvider);
-
-      // Authenticate by password or MSR card code
-      final userWithRole = await authRepo.authenticateByPasswordOrCard(password);
-
-      if (userWithRole == null) {
-        LoginRateLimiter.recordFailure(limitKey);
-        setState(() {
-          _isLoading = false;
-          _errorMessage = tr('كلمة المرور غير صحيحة');
-        });
-        return;
-      }
-
-      // Check if authenticated user has the required permission or is system admin
-      final userPermissions = await authRepo.getUserPermissionCodes(
-        userWithRole.user.id,
-      );
-
-      // AUTHZ-001 four-eyes: approver = ANOTHER user with an unconditional
-      // grant ([ManagerApprovalRules]).
-      final approverId = userWithRole.user.id;
-      final requesterId = ref.read(authProvider).user?.id;
-      final approved = ManagerApprovalRules.canApprove(
-        approverId: approverId,
-        requesterId: requesterId,
-        approverPermissions: userPermissions,
-        permission: widget.permission,
-      );
-
-      if (approved) {
-        // Authorizes this SINGLE action only: no session-wide `elevate`. The
-        // 60s single-use ManagerApprovalCache token spares a second prompt for
-        // the same logical action (button → payment → save).
-        ManagerApprovalCache.instance
-            .grant(widget.permission, scope: widget.scope);
-        if (mounted) {
-          Navigator.of(context).pop(true);
-        }
-      } else {
-        setState(() {
-          _isLoading = false;
-          _errorMessage =
-              approverId == requesterId
-                  ? tr('لا يمكنك الموافقة على إجراءٍ طلبتَه بنفسك — يلزم مسؤولٌ آخر')
-                  : tr('المستخدم "{p0}" ليس لديه صلاحية لهذا الإجراء', {'p0': userWithRole.user.displayName});
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = tr('حدث خطأ: {e}', {'e': e});
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: ui.TextDirection.rtl,
-      child: AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                PhosphorIconsBold.shieldWarning,
-                color: AppColors.warning,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-             Expanded(
-              child: Text(
-                tr('تصريح المسؤول مطلوب'),
-                style: const TextStyle(fontSize: 18),
-              ),
-            ),
-          ],
-        ),
-        content: SizedBox(
-          width: 350,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (widget.actionName != null) ...[
-                Text(
-                  tr('الإجراء: {p0}', {'p0': widget.actionName}),
-                  style: const TextStyle(
-                    color: AppColors.textMuted,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-               Text(
-                tr('هذا الإجراء يتطلب صلاحية خاصة.\nالرجاء إدخال كلمة مرور المسؤول للمتابعة.'),
-                style: const TextStyle(fontSize: 14),
-              ),
-              const SizedBox(height: 20),
-              TextField(
-                controller: _passwordController,
-                obscureText: _obscurePassword,
-                autofocus: true,
-                decoration: InputDecoration(
-                  labelText: tr('كلمة مرور المسؤول'),
-                  prefixIcon: const Icon(PhosphorIconsBold.lock),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? PhosphorIconsBold.eye
-                          : PhosphorIconsBold.eyeSlash,
-                    ),
-                    onPressed: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  errorText: _errorMessage,
-                ),
-                onSubmitted: (_) => _verifyPassword(),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: _isLoading
-                ? null
-                : () => Navigator.of(context).pop(false),
-            child:  Text(tr('إلغاء')),
-          ),
-          ElevatedButton.icon(
-            onPressed: _isLoading ? null : _verifyPassword,
-            icon: _isLoading
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(PhosphorIconsBold.checkCircle, size: 18),
-            label:  Text(tr('تأكيد')),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -823,7 +600,7 @@ Future<bool> requestManagerApproval(
   final result = await showDialog<bool>(
     context: context,
     barrierDismissible: false,
-    builder: (ctx) => _ManagerOverrideDialog(
+    builder: (ctx) => ManagerApprovalDialog(
       permission: permission,
       actionName: actionName,
       scope: scope,

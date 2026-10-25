@@ -16,7 +16,10 @@ import 'legacy_identifiers.dart';
 import 'storage_key_migration.dart';
 import '../core/config/brand.dart';
 import '../domain/models/voucher_book.dart';
+import 'approval/approval_proof_carrier.dart';
+import 'mirror_branch_context.dart';
 
+part 'server_proxy/server_proxy_console.dart';
 part 'server_proxy/server_proxy_trading.dart';
 part 'server_proxy/server_proxy_cash.dart';
 part 'server_proxy/server_proxy_master_data.dart';
@@ -184,6 +187,7 @@ class ServerProxy {
         'Authorization': 'Bearer $_apiToken',
       if (deviceId != null && deviceId.isNotEmpty) 'X-Device-Id': deviceId,
       'X-Session-Token': ?sessionToken,
+      ..._consoleHeaders(), // M2 X-Branch-Id (mirror) + P5 X-Approval-Proof
       if (ClientSchemaGate.clientSchemaVersion != null) // SYNC-001
         'X-Client-Schema': '${ClientSchemaGate.clientSchemaVersion}',
     };
@@ -234,7 +238,7 @@ class ServerProxy {
     if (idempotencyKey != null) {
       headers['X-Idempotency-Key'] = idempotencyKey;
     }
-    final body = json.encode(data);
+    final body = _encodeBody(headers, data);
     final rng = Random();
 
     for (int attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -293,7 +297,7 @@ class ServerProxy {
         .post(
           url,
           headers: headers,
-          body: json.encode(data),
+          body: _encodeBody(headers, data),
         )
         .timeout(ServerProxy.requestTimeout); // Fast-fail → outbox on slow network
 
@@ -321,7 +325,7 @@ class ServerProxy {
         .put(
           url,
           headers: headers,
-          body: json.encode(data),
+          body: _encodeBody(headers, data),
         )
         .timeout(ServerProxy.requestTimeout);
 

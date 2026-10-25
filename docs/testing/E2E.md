@@ -21,17 +21,17 @@
 ```powershell
 # الكل بالترتيب مع جدول نهائي (رمز الخروج ≠ 0 عند أي فشل)
 powershell -NoProfile -ExecutionPolicy Bypass -File tool/run_e2e.ps1      # أو: pwsh tool/run_e2e.ps1
-# مجموعات محددة: server, packages, mobile, mobile_admin, mobile_pos, mobile_warehouse, root, web
+# مجموعات محددة: server, packages, mobile, mobile_admin, mobile_pos, mobile_warehouse, root, web, fleet
 powershell -File tool/run_e2e.ps1 -Only server,mobile
 powershell -File tool/run_e2e.ps1 -Skip root,web
 # مزامنة نسخ المساعد المشترك بعد تعديل الأصل
 powershell -File tool/run_e2e.ps1 -SyncHelpers
 ```
 
-الترتيب: Postgres ← `server` ← `packages` ← `mobile` ← `mobile_admin` ← `mobile_pos` ← `mobile_warehouse` ← `root` ← `web`. سجلات كل مجموعة في `build/e2e_logs/<suite>.log`.
+الترتيب: Postgres ← `server` ← `packages` ← `mobile` ← `mobile_admin` ← `mobile_pos` ← `mobile_warehouse` ← `root` ← `web` ← `fleet`. سجلات كل مجموعة في `build/e2e_logs/<suite>.log`.
 
 يدويًا (كل أمر من مجلده): `dart test -j 1 test/e2e` (server) · `dart test test/e2e` (packages/picpos_api_client) ·
-`flutter test test/e2e` (mobile، mobile_admin، mobile_pos، والجذر) · `flutter test test/integration/web_client_e2e_test.dart` (الجذر، الويب).
+`flutter test test/e2e` (mobile، mobile_admin، mobile_pos، والجذر) · `flutter test test/integration/web_client_e2e_test.dart` (الجذر، الويب) · `flutter test test/e2e_fleet --concurrency=1` (الجذر، أسطول الأجهزة).
 
 ## البنية المشتركة
 
@@ -65,6 +65,9 @@ powershell -File tool/run_e2e.ps1 -SyncHelpers
 
 ### `web` — `test/integration/web_client_e2e_test.dart` (القائم، 2)
 دخول حقيقي، قراءة عبر القناة، رفض كتابة/جدول غير مسموح. لا يُعدَّل؛ المشغّل يشغّله فقط.
+
+### `fleet` — `test/e2e_fleet/` (أسطول الأجهزة الأربعة على loopback)
+أمر واحد: `flutter test test/e2e_fleet --concurrency=1` (≈10–12 د؛ لا Postgres). الرئيسي (`LanHost` + `shelf_io` حقيقي على منفذ loopback، قاعدة drift في الذاكرة، المُوجِّه الحقيقي خلف محدِّد المعدل وبرمجية المصادقة) + جهاز المحاسب + جهاز الكاشير (عميلان للفرع B1) + المرآة (كونسول المدير)؛ لكل جهاز قاعدته الخاصة، ويُثبَّت بالخدمات الإنتاجية فقط (`ServerSetupWriter`، `ClientLinkService`، `FirstUserVerifier`، `ModeActivator`، `AuthRepositoryImpl` بالبوابة وسياسة الأوفلاين). الساعة مُحقَنة (`Fleet.now`) فلا نوم. المساعد: `test/helpers/fleet_harness.dart` (+ `lan_host_harness.dart` المشترك). السيناريوهات: F1 ترتيب التثبيت، F2 تدفق البيانات، F3 الأوفلاين وانتهاء المهلة وإعادة تشغيل الرئيسي، F4 تغييرات الرئيسي (مستخدم/كلمة مرور/تعطيل/فرع/دور)، F5 تغيير كلمة المرور الإجباري، F6 المرآة، F7 الإبطال، F8 إعادة التوفير (عميل↔مرآة)، F9 السلبيات الأمنية، F10 تبنّي الإعدادات، F11 العيوب المعروفة. ما كشفه التشغيل: `docs/audits/2026-10-24-mirror-and-admin-login/FLEET-E2E-RESULTS.md`. الاختبارات التي تثبّت عيبًا منتجًا مؤجَّلة بـ `KNOWN-DEFECT-<id>: ...`؛ `FLEET_RUN_KNOWN_DEFECTS=1` يشغّلها (تفشل عمدًا = الدليل).
 
 ## المؤجَّل (skip مبرَّر) وما اكتُشف
 

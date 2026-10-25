@@ -75,9 +75,13 @@ class ClientVoucherInterceptor {
     );
     await _CwiCoreSupport.enrichPayloadWithUsername(payload);
     final mirror = WriteRouter.isMirrorActive;
-    if (mirror) WriteRouter.stampAdminAttribution(payload);
+    if (mirror) {
+      MirrorConnectivity.ensureWritable();
+      WriteRouter.stampBranchContext(payload);
+    }
     final key = const Uuid().v7();
     payload['idempotency_key'] = key;
+    ApprovalProofCarrier.instance.stamp(payload); // P5: survives the outbox
     try {
       final id = await ClientWriteInterceptor._proxy
           .submitVoucher(payload, idempotencyKey: key);

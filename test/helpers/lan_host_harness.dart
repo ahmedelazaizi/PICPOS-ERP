@@ -63,6 +63,8 @@ class LanHost {
   static Future<LanHost> start({
     bool legacyToken = false,
     DateTime Function()? now,
+    shelf.Middleware? innerShim,
+    shelf.Middleware? outerShim,
   }) async {
     driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
     DiagnosticLogger.enableTestMode();
@@ -87,18 +89,33 @@ class LanHost {
     ApiAuthMiddleware.clearToken();
     if (legacyToken) ApiAuthMiddleware.setToken('legacy-shared-token');
     ApiAuthMiddleware.markReady();
-    host.handler = const shelf.Pipeline()
-        .addMiddleware(ApiRateLimiter.createMiddleware())
-        .addMiddleware(ApiAuthMiddleware.createMiddleware())
-        .addHandler(ApiHandler(db).buildRouter().call);
+    var pipeline = const shelf.Pipeline()
+        .addMiddleware(ApiRateLimiter.createMiddleware());
+    // Fleet harness only: BEFORE auth (answers routes the router lacks).
+    if (outerShim != null) pipeline = pipeline.addMiddleware(outerShim);
+    pipeline = pipeline.addMiddleware(ApiAuthMiddleware.createMiddleware());
+    // Fleet harness only: sits AFTER auth (sees the authenticated context).
+    if (innerShim != null) pipeline = pipeline.addMiddleware(innerShim);
+    host.handler = pipeline.addHandler(ApiHandler(db).buildRouter().call);
     return host;
   }
 
   /// Serves [handler] on loopback; returns the base URL.
-  Future<String> serve() async {
-    _server = await shelf_io.serve(handler, InternetAddress.loopbackIPv4, 0);
+  /// [port] lets a fleet restart the SAME address after [stopServing].
+  Future<String> serve({int port = 0}) async {
+    _server = await shelf_io.serve(handler, InternetAddress.loopbackIPv4, port);
     return 'http://127.0.0.1:${_server!.port}';
   }
+
+  /// Stops the socket only (database and pairing state survive): the main is
+  /// "down" for its devices while its data stays.
+  Future<void> stopServing() async {
+    final s = _server;
+    _server = null;
+    await s?.close(force: true);
+  }
+
+  bool get isServing => _server != null;
 
   Future<PairingOffer> issue({
     String? kind,

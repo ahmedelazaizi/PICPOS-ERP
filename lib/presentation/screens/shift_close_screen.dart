@@ -1,5 +1,4 @@
 import 'package:picpos_erp/core/i18n/tr.dart';
-import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +7,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/providers/providers.dart';
-import '../../services/client_write_interceptor.dart';
+import '../../services/shift_open_sync.dart';
 import '../pos/providers/pos_closing_controller.dart';
 import '../pos/widgets/pos_cashier_closing_dialog.dart';
 import '../pos/widgets/pos_opening_balance_dialog.dart';
@@ -180,25 +179,9 @@ class _ShiftCloseScreenState extends ConsumerState<ShiftCloseScreen> {
       }
 
       final treasuryRepo = ref.read(treasuryRepositoryProvider);
-      await treasuryRepo.openShift(userId, opening, branchId: scopedBranchId);
-
-      // Mirror to server (fire-and-forget — queues if offline), forwarding
-      // the freshly-inserted local shift's id/globalId — same pattern as
-      // `_enforceShiftForCashier` in app_main_screen.dart.
-      try {
-        final active = await treasuryRepo.getCurrentOpenShift(userId);
-        unawaited(
-          ClientWriteInterceptor.openShift(
-            userId,
-            opening,
-            localShiftId: active?.id,
-            branchId: scopedBranchId,
-            globalId: active?.globalId,
-          ),
-        );
-      } catch (_) {
-        // Non-fatal — the local open already succeeded.
-      }
+      // Local-first on a branch device, HQ-first on the console (M3 / MIR-009).
+      await openShiftAndSync(treasuryRepo, userId, opening,
+          branchId: scopedBranchId);
 
       ref.invalidate(posClosingControllerProvider);
     } finally {

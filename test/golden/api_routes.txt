@@ -49,6 +49,8 @@ GET /api/purchase-orders
 GET /api/party-follow-ups
 GET /api/supplier-claims
 GET /api/accounting-periods
+GET /api/pos-terminals
+GET /api/sale-bom-consumptions
 POST /api/pos-terminals/register
 POST /api/sales
 POST /api/sales/return
@@ -162,6 +164,8 @@ POST /api/activity-logs/push
 POST /api/auth/verify-admin
 POST /api/auth/session
 POST /api/auth/change-password
+POST /api/approvals/grant
+GET /api/mirror/context
 POST /api/web/session
 POST /api/web/ws-ticket
 POST /api/web/logout

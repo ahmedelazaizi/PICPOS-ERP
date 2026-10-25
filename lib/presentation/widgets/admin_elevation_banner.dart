@@ -66,7 +66,7 @@ class _AdminElevationBannerState extends ConsumerState<AdminElevationBanner> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                guard.reason,
+                tr(guard.reason),
                 style: TextStyle(
                   color: Colors.orange.shade900,
                   fontWeight: FontWeight.w600,

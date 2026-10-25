@@ -302,4 +302,79 @@ extension ApiHandlerDirectoryGets on ApiHandler {
     }
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  // FLEET-1 / FLEET-3 — القراءتان اللتان تسحبهما المزامنة ولا مسار لهما
+  // ═══════════════════════════════════════════════════════════════
+
+  /// GET /api/pos-terminals — سجلّ الطرفيات (بيانات أساسية: الاقتران قبل
+  /// الدخول يحتاجه، فلا يُغلق مقفولاً على غياب الجلسة كبقية `_getX` المرجعية).
+  /// محصور بنطاق فروع المستدعي ([_resolveBranchScope]): العميل بفرعه، و«مدير
+  /// فروع» المرآة بفروعه كلها، والمدير العام بلا حصر.
+  Future<Response> _getPosTerminals(Request request) async {
+    try {
+      final scope = await _resolveBranchScope(request);
+      final query = _db.select(_db.posTerminals);
+      if (scope != null) {
+        query.where((t) => t.branchId.isIn(scope));
+      }
+      final rows = await query.get();
+      final jsonList = rows
+          .map((t) => <String, dynamic>{
+                'id': t.id,
+                'globalId': t.globalId,
+                'name': t.name,
+                'deviceId': t.deviceId,
+                'branchId': t.branchId,
+                'isActive': t.isActive,
+                'notes': t.notes,
+                'createdAt': t.createdAt.toIso8601String(),
+              })
+          .toList();
+      return _json({'pos_terminals': jsonList, 'count': jsonList.length});
+    } catch (e) {
+      return ApiErrors.fail(e, 'Failed to fetch POS terminals');
+    }
+  }
+
+  /// GET /api/sale-bom-consumptions — سجلّ استهلاك المواد (تكلفة البيع).
+  /// بيانات معاملاتية: بلا هوية متحقَّقة ⇒ صفر صفوف (كبقية القراءات
+  /// المعاملاتية)، ومعها هوية ⇒ صفوف فروع المستدعي، أي ما يحمل `branch_id`
+  /// ضمن النطاق أو ما تتبع فاتورتُه فرعاً ضمن النطاق.
+  Future<Response> _getSaleBomConsumptions(Request request) async {
+    try {
+      final scope = await _resolveBranchScope(request,
+          failClosedOnNoIdentity: true);
+      final query = _db.select(_db.saleBomConsumptions);
+      if (scope != null) {
+        final parentSales = _db.selectOnly(_db.salesInvoices)
+          ..addColumns([_db.salesInvoices.id])
+          ..where(_db.salesInvoices.branchId.isIn(scope));
+        query.where((c) =>
+            c.branchId.isIn(scope) | c.saleInvoiceId.isInQuery(parentSales));
+      }
+      final rows = await query.get();
+      final jsonList = rows
+          .map((c) => <String, dynamic>{
+                'id': c.id,
+                'globalId': c.globalId,
+                'saleInvoiceId': c.saleInvoiceId,
+                'saleInvoiceItemId': c.saleInvoiceItemId,
+                'bomId': c.bomId,
+                'rawMaterialId': c.rawMaterialId,
+                'consumedQty': c.consumedQty,
+                'unitCostAtSale': c.unitCostAtSale,
+                'wastageApplied': c.wastageApplied,
+                'warehouseId': c.warehouseId,
+                'branchId': c.branchId,
+                'reversedByReturnId': c.reversedByReturnId,
+                'createdAt': c.createdAt.toIso8601String(),
+              })
+          .toList();
+      return _json(
+          {'sale_bom_consumptions': jsonList, 'count': jsonList.length});
+    } catch (e) {
+      return ApiErrors.fail(e, 'Failed to fetch sale BOM consumptions');
+    }
+  }
+
 }

@@ -38,6 +38,9 @@ import 'api_product_handler.dart';
 import 'api_purchase_handler.dart';
 import 'api_auth_handler.dart';
 import 'api_password_change_handler.dart';
+import 'api_approval_handler.dart';
+import 'mirror_console_guard.dart';
+import 'server_login_throttle.dart';
 import 'api_web_session_handler.dart';
 import 'm1_wh/wh_read_handlers.dart';
 import 'web_static_handler.dart';
@@ -93,6 +96,7 @@ class ApiHandler {
   late final ApiPurchaseHandler _purchases;
   late final ApiAuthHandler _auth;
   late final ApiPasswordChangeHandler _passwordChange;
+  late final ApiApprovalHandler _approvals;
   // الويب: لا يرث ApiHandlerBase (كي لا يُسجَّل _registeredInstance).
   late final ApiWebSessionHandler _webSession;
   late final WebReadChannelHost _webRead;
@@ -111,6 +115,9 @@ class ApiHandler {
     _purchases = ApiPurchaseHandler(_db, _wsClients);
     _auth = ApiAuthHandler(_db, _wsClients);
     _passwordChange = ApiPasswordChangeHandler(_db, _wsClients);
+    _approvals = ApiApprovalHandler(_db, _wsClients);
+    MirrorConsole.configure(_db);
+    ServerLoginThrottle.configure(_db); // FLEET-6: lockouts survive a restart
     _webSession = ApiWebSessionHandler(_db);
     WebSessionGuard.configure(_db);
     _webRead = WebReadChannelHost(_db);

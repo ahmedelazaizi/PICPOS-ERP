@@ -15,6 +15,10 @@ extension ApiHandlerAuthPublicRoutes on ApiHandler {
     router.post('/api/auth/session', _auth.issueSession);
     // P1 (plan 2026-10-24): a user sets his OWN password (proves the current one).
     router.post('/api/auth/change-password', _passwordChange.changePassword);
+    // P5: a second user's credential -> a signed four-eyes approval proof.
+    router.post('/api/approvals/grant', _approvals.grant);
+    // M2: the branch-manager console's working context (branches in scope).
+    router.get('/api/mirror/context', MirrorConsole.context);
     // الويب (م3-4/م3-5): دخول بالاعتماد → رمز جلسة 12 ساعة؛ تذكرة لمرة واحدة؛
     // ثم قناة drift للقراءة. ⚠️ /webdb لا يبدأ بـ/ws (انظر الإعفاءات).
     router.post('/api/web/session', _webSession.login);

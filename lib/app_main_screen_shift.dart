@@ -95,35 +95,9 @@ Future<void> enforceShiftForUser(
     debugPrint('[ShiftGuard] BranchScope lookup failed (non-fatal): $e');
   }
 
-  // Open shift locally first so the cashier can work even while offline.
-  await treasuryRepo.openShift(
-    userId,
-    opening ?? 0.0,
-    branchId: scopedBranchId,
-  );
-
-  // Mirror to server (fire-and-forget — will queue if offline).
-  // R9 (2026-05-12 fix): forward the local shift's globalId so the server
-  // resolves close-shift by globalId — fixes the recurring "Shift not
-  // found" 500 / DEAD-LETTER on every close.
-  try {
-    int? localShiftId;
-    String? localShiftGlobalId;
-    final active = await treasuryRepo.getCurrentOpenShift(userId);
-    localShiftId = active?.id;
-    localShiftGlobalId = active?.globalId;
-    unawaited(
-      ClientWriteInterceptor.openShift(
-        userId,
-        opening ?? 0.0,
-        localShiftId: localShiftId,
-        branchId: scopedBranchId,
-        globalId: localShiftGlobalId,
-      ),
-    );
-  } catch (e) {
-    debugPrint('[ShiftGuard] openShift server mirror failed (non-fatal): $e');
-  }
+  // Local-first on a branch device, HQ-first on the console (M3 / MIR-009).
+  await openShiftAndSync(treasuryRepo, userId, opening ?? 0.0,
+      branchId: scopedBranchId);
   // Re-fetch the freshly inserted shift so the diag entry carries id +
   // globalId — these are the values the server-side close-shift now keys
   // off, so logging them lets us correlate the open ↔ close end-to-end.

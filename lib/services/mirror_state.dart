@@ -113,6 +113,19 @@ class MirrorState {
     _revision.value++;
   }
 
+  /// A heartbeat that did NOT get through (M2 / MIR-008). Nothing is stored; the
+  /// revision bump makes every listener (status strip, mutation guard) re-judge
+  /// the link at once instead of waiting for a success that may never come.
+  void markHandshakeFailed() {
+    _lastFailureAt = DateTime.now().toUtc();
+    _revision.value++;
+  }
+
+  DateTime? _lastFailureAt;
+
+  /// When the most recent heartbeat failed (memory only).
+  DateTime? get lastFailureAt => _lastFailureAt;
+
   /// Wipe all mirror state — called when the operator switches away from
   /// `NetworkMode.mirror`. Symmetric with `NetworkService.dispose()` for
   /// client mode.

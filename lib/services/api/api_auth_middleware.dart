@@ -10,6 +10,7 @@ import 'api_web_session_handler.dart';
 import 'lan_device_route_policy.dart';
 import 'lan_pairing_api_handler.dart';
 import 'lan_pairing_service.dart';
+import 'mirror_console_guard.dart';
 import 'client_address.dart';
 import 'constant_time.dart';
 import 'path_prefix_match.dart';
@@ -155,6 +156,23 @@ class ApiAuthMiddleware {
     return _activeToken!;
   }
 
+  /// M2/MIR-011: who a realtime subscriber really is. A PAIRED device's mode
+  /// (`mirror` iff its pairing row is a mirror) and branch come from its row;
+  /// a legacy-token / unknown caller keeps what it claimed.
+  static Future<(String, int?)> wsSubscriber(
+    String deviceId,
+    String claimedMode,
+    int? claimedBranch,
+  ) async {
+    final d = deviceId.isEmpty ? null : await _pairingService?.deviceById(deviceId);
+    if (d == null) return (claimedMode, claimedBranch);
+    return (d.deviceKind == 'mirror' ? 'mirror' : 'client', d.branchId ?? claimedBranch);
+  }
+
+  /// The paired device row of [deviceId] (null: legacy-token / unknown).
+  static Future<LanPairingDevice?> pairedDevice(String deviceId) async =>
+      deviceId.isEmpty ? null : await _pairingService?.deviceById(deviceId);
+
   /// يتحقق من رمز حامل (جهاز مقترن أو الرمز القديم داخل نافذته) دون تسجيل
   /// الجهاز؛ يُستعمل لقناة `/ws` التي لا تمرّ بالميدلوير.
   static Future<bool> verifyCredential(String token, String deviceId) async {
@@ -298,7 +316,8 @@ class ApiAuthMiddleware {
             await pairing.verifyDeviceToken(token: token, deviceId: deviceId)) {
           await pairing.recordSeen(deviceId: deviceId, name: deviceName, ip: ip);
           paired = await pairing.deviceById(deviceId);
-          if (!LanDeviceRoutePolicy.allows(paired?.deviceKind, path)) {
+          if (!LanDeviceRoutePolicy.allows(paired?.deviceKind, path,
+              method: request.method)) {
             return _json(403, 'device_scope');
           }
         } else if (_tokenMatches(token)) {
@@ -333,7 +352,9 @@ class ApiAuthMiddleware {
         if (uid != null) {
           enriched = enriched.change(context: {ApiUserCtx.userIdKey: uid});
         }
-        return innerHandler(enriched);
+        // M2: the branch-manager console is authorised per request (a no-op
+        // for every other device kind).
+        return MirrorConsole.guard(enriched, innerHandler);
       };
     };
   }
