@@ -91,18 +91,17 @@ void main() {
       expect(await p.canLogin(p.client, 'cashier1', 'Changed#Pass789'), isTrue);
     });
 
-    test('a user changing their OWN password stays local (host route needs '
-        'users_manage; dedicated endpoint is plan P2) and queues nothing',
+    test('updateUserPassword is administrative for EVERY target, the signed-in '
+        'user included: routed to the host (the forced self-change uses '
+        'changeOwnPassword - online only, see online_authoritative_login_test)',
         () async {
       p.asClient();
       final repo = await repoWithSyncedUsers();
       SyncInterceptor.currentUserId = p.cashierId;
       await repo.updateUserPassword(
           userId: p.cashierId, newPassword: 'Changed#Pass789');
-      expect(await outboxCount(), 0);
-      expect(await p.canLogin(p.client, 'cashier1', 'Changed#Pass789'), isTrue);
+      expect(await outboxCount(), 1);
     });
-
     test('the bootstrap admin can still not be disabled or locked (guard kept '
         'before routing; nothing queued)', () async {
       p.asClient();

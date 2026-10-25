@@ -31,7 +31,7 @@ import 'core/config/supabase_config.dart';
 import 'data/providers/providers.dart';
 import 'data/repositories/settings_repository_cached.dart';
 import 'presentation/screens/login_screen.dart';
-import 'presentation/screens/first_run/first_run_entry.dart';
+import 'presentation/screens/first_run/provisioning_gate.dart';
 import 'presentation/touch_keyboard/providers/touch_mode_provider.dart';
 import 'presentation/widgets/admin_elevation_banner.dart';
 import 'presentation/widgets/connection_health_wrapper.dart';
@@ -491,17 +491,9 @@ void main() async {
         onEnterDevTools: () {
           debugPrint('[FATAL-SCREEN] user chose: enter developer tools');
         },
-        onResetWizard: () {
-          debugPrint('[FATAL-SCREEN] user chose: reset wizard');
-          unawaited(() async {
-            try {
-              await dbForReconcile.setSetting('setup_completed', '');
-              await dbForReconcile.setSetting('setup_in_progress', '');
-            } catch (err) {
-              debugPrint('[FATAL-SCREEN] reset failed: $err');
-            }
-          }());
-        },
+        // A1: the device record would re-assert `setup_completed`; reset it all.
+        onResetWizard: () => unawaited(runProvisioningResetFlow(
+            () => resetProvisioning(dbForReconcile))),
       ));
       return; // Stop main() — Fatal app owns the UI now.
     } catch (e) {
@@ -797,7 +789,7 @@ void main() async {
         debugPrint('[STARTUP] 🔑 --reset-setup-wizard observed — clearing setup flags + dev password');
         await sharedDb.customStatement(
           "DELETE FROM settings WHERE \"key\" IN "
-          "('setup_completed', 'setup_in_progress', "
+          "('setup_completed', 'setup_in_progress', 'device_provisioning_v1', "
           "'developer_password_salt', 'developer_password_hash')",
         );
         debugPrint('[STARTUP] ✅ setup flags cleared — wizard will run on this boot');
@@ -1379,9 +1371,11 @@ class _CashierMarketAppState extends ConsumerState<CashierMarketApp> {
           ),
         ),
       ),
-      home: isAuthenticated
-          ? const _SetupGate()
-          : const LoginScreen(),
+      // A1: the provisioning gate comes BEFORE the login (a new device needs no
+      // seeded admin); an unfinished setup / a due self-check shows first.
+      home: ProvisioningGate(
+        child: isAuthenticated ? const MainScreen() : const LoginScreen(),
+      ),
     );
   }
 }
@@ -1525,83 +1519,6 @@ class _TouchKeyboardViewInsets extends ConsumerWidget {
   }
 }
 
-
-// =======================================================================
-// SETUP GATE — checks if first-run wizard is needed
-// =======================================================================
-
-/// One-time gate: shows Setup Wizard on first run, MainScreen after.
-class _SetupGate extends ConsumerWidget {
-  const _SetupGate();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final db = ref.watch(databaseProvider);
-    return FutureBuilder<String?>(
-      future: db.getSettingValue('setup_completed'),
-      builder: (context, snapshot) {
-        // While checking, show branded splash screen
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Scaffold(
-            backgroundColor: const Color(0xFF1A1A2E),
-            body: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // App icon/logo area
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0F3460),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: const Icon(
-                      Icons.point_of_sale_rounded,
-                      size: 56,
-                      color: Color(0xFF16C79A),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    AppConfig.appName,
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  const SizedBox(
-                    width: 36,
-                    height: 36,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 3,
-                      color: Color(0xFF16C79A),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'جاري التحميل...',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white70,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-        return resolveSetupGateChild(
-          setupCompleted: snapshot.data,
-          completed: () => const MainScreen(),
-        );
-      },
-    );
-  }
-}
 
 
 /// True when [e] is PostgreSQL's `42501 insufficient_privilege`.

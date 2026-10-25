@@ -1,5 +1,24 @@
 import '../../data/database/database.dart';
 
+/// The main system accepted the credential but demands a NEW password first
+/// (HTTP 403 `password_change_required`). Carries no secret: the caller already
+/// holds the credential the user typed. [viaCard]: the proof was a card code.
+class PasswordChangeRequired implements Exception {
+  const PasswordChangeRequired({this.userId, required this.username, this.viaCard = false});
+  final int? userId;
+  final String username;
+  final bool viaCard;
+  @override
+  String toString() => 'PasswordChangeRequired(user=$username)';
+}
+
+/// A sign-in refused for a reason the OPERATOR must read (branch, lock-out,
+/// revoked device, "not delivered by the main", expired grace...). A StateError
+/// so existing handlers keep working; screens show [message] as written.
+class AuthRejectedException extends StateError {
+  AuthRejectedException(super.message);
+}
+
 /// Authentication and User Management Repository Interface
 abstract class IAuthRepository {
   // Users
@@ -52,6 +71,16 @@ abstract class IAuthRepository {
   Future<UserWithRole?> authenticateUser(String username, String password);
   Future<UserWithRole?> authenticateByCardCode(String cardCode);
   Future<UserWithRole?> authenticateByPasswordOrCard(String input);
+
+  /// عميل/مرآة، متصلٌ فقط: المستخدم يغيّر كلمته على الرئيسي (لا طابور)، ثم تُكتب
+  /// البصمةُ المُعادة محليًّا. يرمي StateError برسالةٍ مترجَمة عند أيّ إخفاق.
+  /// في المستقلّ/الرئيسي: مساره المحلي `updateUserPassword`.
+  Future<void> changeOwnPassword({
+    required String username,
+    String? currentPassword,
+    String? cardCode,
+    required String newPassword,
+  });
   
   // Roles & Permissions
   Future<List<Role>> getAllRoles();

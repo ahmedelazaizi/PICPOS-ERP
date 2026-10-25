@@ -2,7 +2,7 @@
 // middleware chain (in-process): validation, throttling shared with
 // /api/auth/session, device-branch scope, duplicate password, idempotent
 // replay, session revocation, audit without secrets, rate-limit class.
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart' show Value, Variable;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:picpos_erp/core/auth/password_policy.dart';
@@ -134,6 +134,42 @@ void main() {
       expect('${l.description} ${l.oldValue} ${l.newValue}',
           isNot(anyOf(contains('My#NewPass456'), contains(kInitialPw))));
     }
+  });
+
+  test('a successful change advances users.last_modified_at (sync watermark), '
+      'a refused one does not', () async {
+    Future<int> stamp() async {
+      final r = await host.db
+          .customSelect('SELECT last_modified_at AS v FROM users WHERE id = ?',
+              variables: [Variable.withInt(fx.cashierId)])
+          .getSingle();
+      // NULL until the first UPDATE (the SQLite trigger is AFTER UPDATE only).
+      return (r.data['v'] as num?)?.toInt() ?? 0;
+    }
+
+    // A fresh in-memory schema has no v129 delta-sync trigger (it comes from
+    // migrations); install the production one so this proves the password write
+    // is a plain UPDATE that leaves `row_version` to the trigger (what the PG
+    // twin in test/integration_pg/auth_password_flow_pg_test.dart relies on).
+    await host.db.customStatement('''
+      CREATE TRIGGER IF NOT EXISTS users_bump_version
+      AFTER UPDATE ON users FOR EACH ROW
+      WHEN NEW.row_version = OLD.row_version
+      BEGIN
+        UPDATE users SET last_modified_at = strftime('%s', 'now'),
+          row_version = OLD.row_version + 1 WHERE id = NEW.id;
+      END
+    ''');
+    final before = await stamp();
+    expect((await change(body('cashier1', 'wrong', 'My#NewPass456'))).status,
+        401);
+    expect(await stamp(), before, reason: 'a refused change must not bump');
+    await Future<void>.delayed(const Duration(milliseconds: 1100));
+    expect((await change(body('cashier1', kInitialPw, 'My#NewPass456'))).status,
+        200);
+    expect(await stamp(), greaterThan(before),
+        reason: 'the sync-pull watermark must advance so other devices get '
+            'the new hash');
   });
 
   test('503 while the session key is not derived', () async {

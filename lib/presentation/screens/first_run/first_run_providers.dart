@@ -7,10 +7,11 @@ import 'dart:io' show InternetAddressType, NetworkInterface;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/providers/providers.dart';
-import '../../../services/server_proxy.dart';
 import '../../../services/setup/branch_account_verifier.dart';
 import '../../../services/setup/client_link_service.dart';
 import '../../../services/setup/first_run_storage_probe.dart';
+import '../../../services/setup/first_user_verifier.dart';
+import '../../../services/setup/main_auth_port.dart';
 import '../../../services/setup/server_provisioning_service.dart';
 import '../../../services/setup/server_setup_writer.dart';
 import '../setup_wizard/setup_persistence_riverpod.dart';
@@ -63,11 +64,18 @@ final clientLinkPortProvider = Provider<ClientLinkPort>((ref) {
   );
 });
 
-/// التحقّقُ من الحساب المركزيّ المعتمد (‏جلسةُ الخادم شرطٌ — SEC-004).
-final branchAccountVerifierProvider = Provider<BranchAccountVerifierPort>((ref) {
-  return BranchAccountVerifier(
-    auth: ref.read(authRepositoryProvider),
-    hasServerSession: (id) => ServerProxy.instance.hasSessionToken(id),
+/// نداءاتُ المصادقة على الرئيسيّ بتوكن هذا الجهاز نفسه (‏بلا مفتاح مشترك).
+final mainAuthPortProvider =
+    Provider.autoDispose<MainAuthPort>((ref) => HttpMainAuthPort.fromRuntime());
+
+/// A1/P4: أوّلُ مستخدمٍ يُتحقَّق منه **على الرئيسي**، ثم تُسلَّم اعتماداتُ فرعه
+/// ويُسحب `admin/admin` المزروع.
+final branchAccountVerifierProvider =
+    Provider.autoDispose<BranchAccountVerifierPort>((ref) {
+  return FirstUserVerifier(
+    db: ref.read(databaseProvider),
+    port: ref.read(mainAuthPortProvider),
+    permissionCodes: ref.read(authRepositoryProvider).getUserPermissionCodes,
     saveClientBranchId: ref.read(setupPersistenceProvider).saveClientBranchId,
   );
 });

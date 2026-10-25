@@ -1,9 +1,9 @@
 // MIR-002 / MIR-020 (plan P0): a MIRROR device must get the same login-time
 // recovery as a client, and must not run the boot-time admin heal.
 //
-//  * login_screen: "local auth failed -> pull users from the host -> retry" and
-//    the post-login refresh of role / defaultScreen / permissions run for
-//    client AND mirror;
+//  * login: "local auth failed -> ask the host (B.6.3)" lives in the session gate
+//    (client AND mirror); the post-login refresh of role / defaultScreen /
+//    permissions in login_screen runs for client AND mirror;
 //  * main.dart: `_bootTimeAdminHeal` (resets admin to admin/admin when the hash
 //    is structurally corrupt) is skipped on client AND mirror — the credentials
 //    there are host-authoritative;
@@ -33,9 +33,13 @@ void main() {
   group('static guards', () {
     const login = 'lib/presentation/screens/login_screen.dart';
 
-    test('login fallback pull covers mirror', () {
-      final l = _lineWith(login, 'user == null && (NetworkService.instance.isClient');
-      expect(l, contains('NetworkService.instance.isMirror'));
+    test('the "unknown user -> ask the main" fallback (plan P2, B.6.3) lives in '
+        'the gate and covers client AND mirror (SyncInterceptor.isClientMode)', () {
+      const gate = 'lib/data/repositories/auth_session_gate.dart';
+      final src = File(gate).readAsStringSync();
+      final body = src.substring(src.indexOf('Future<UserWithRole?> verifyViaMain'));
+      expect(body.substring(0, 700), contains('SyncInterceptor.isClientMode'));
+      expect(src, isNot(contains('NetworkService.instance.isClient')));
     });
 
     test('post-login refresh covers mirror', () {
@@ -43,9 +47,11 @@ void main() {
       expect(l, contains('NetworkService.instance.isMirror'));
     });
 
-    test('a mirror never runs the heavy full-sync last resort on a typo', () {
-      final l = _lineWith(login, 'user == null && !NetworkService.instance.isMirror');
-      expect(l, isNotEmpty);
+    test('the login screen runs no users/full sync on a typo at all (that pull '
+        'was the CRED-WIPE trigger)', () {
+      final src = File(login).readAsStringSync();
+      expect(src, isNot(contains('performFullSync')));
+      expect(src, isNot(contains("performTableSync(serverUrl, 'users')\n")));
     });
 
     test('boot-time admin heal is skipped on client and mirror', () {

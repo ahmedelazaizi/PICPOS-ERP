@@ -9,7 +9,9 @@ library;
 
 import '../../core/i18n/tr.dart';
 import '../../data/database/database_barrel.dart';
+import '../api/lan_pairing_client.dart';
 import '../delta_pull_service.dart';
+import '../deployment/mode_activator.dart';
 import '../mirror_pairing_service.dart';
 import '../network_service.dart';
 import '../server_proxy.dart';
@@ -79,21 +81,12 @@ abstract interface class ClientLinkPort {
     required int port,
     required Future<bool> Function() confirmRePair,
     void Function(String message)? onProgress,
+    bool mirror = false,
   });
 
-  Future<ClientLinkResult> pairMirror({
-    required String host,
-    required int port,
-    required String adminUsername,
-    required String adminPassword,
-  });
-}
-
-/// M1 (plan 2026-10-24): mirror pairing by the one-time CODE the administrator
-/// issued for kind mirror (per-device token; no shared key, no admin login).
-/// A separate interface so existing ClientLinkPort implementations (the
-/// wizard's fakes) keep compiling; the first-run UI adopts it with A1.
-abstract interface class ClientLinkMirrorCodePort {
+  /// A1/M1: mirror pairing by the one-time CODE the administrator issued for
+  /// kind mirror (per-device token; no shared key, no admin login). The legacy
+  /// admin-credentials handshake is no longer part of the first-run flow.
   Future<ClientLinkResult> pairMirrorWithCode({
     required String host,
     required int port,
@@ -102,7 +95,7 @@ abstract interface class ClientLinkMirrorCodePort {
   });
 }
 
-class ClientLinkService implements ClientLinkPort, ClientLinkMirrorCodePort {
+class ClientLinkService implements ClientLinkPort {
   ClientLinkService({
     required this.db,
     required this.loadBranches,
@@ -135,12 +128,29 @@ class ClientLinkService implements ClientLinkPort, ClientLinkMirrorCodePort {
     String? deviceName,
   }) async {
     try {
-      final paired = await _network.pairLanClient(
-        address: address,
-        port: port,
-        code: code,
-        deviceName: deviceName,
-      );
+      // A1: a branch device states its kind, so a MIRROR code is refused (the
+      // chosen path decides the mode, never the code). `client` first, then
+      // `pos` (a kind mismatch does not burn the one-time code).
+      var paired = await LanPairingClient.pair(
+          address: address,
+          port: port,
+          code: code,
+          deviceName: deviceName,
+          deviceKind: 'client');
+      var kind = 'client';
+      if (paired['success'] != true &&
+          '${paired['error']}'.contains('النوع')) {
+        paired = await LanPairingClient.pair(
+            address: address,
+            port: port,
+            code: code,
+            deviceName: deviceName,
+            deviceKind: 'pos');
+        kind = 'pos';
+      }
+      if (paired['success'] == true) {
+        ActivationHints.deviceKind = '${paired['deviceKind'] ?? kind}';
+      }
       if (paired['success'] != true) {
         return ClientLinkResult(
           ClientLinkOutcome.pairFailed,
@@ -172,14 +182,16 @@ class ClientLinkService implements ClientLinkPort, ClientLinkMirrorCodePort {
     required int port,
     required Future<bool> Function() confirmRePair,
     void Function(String message)? onProgress,
+    bool mirror = false,
   }) async {
     try {
       final ns = _network;
 
-      // CRITICAL: عنوانُ الخادم قبل تبديل النمط كي يحفظ `saveSettings()`
-      // داخل `setMode` الرابطَ الصحيح.
+      // The server address first (saveSettings keeps it). A1: NO DB write of
+      // `network_mode` here - the mode is committed only by ModeActivator at the
+      // end; a branch device behaves as a client in memory for the first sync.
       ns.setServerAddress(address, port: port);
-      await ns.setMode(NetworkMode.client, db: db);
+      if (!mirror) await ns.setMode(NetworkMode.client);
       await ns.saveSettings();
 
       // اختبارُ الاتصال أوّلاً (‏يستخرج رمزَ الـAPI من نقطة الصحّة).
@@ -197,7 +209,8 @@ class ClientLinkService implements ClientLinkPort, ClientLinkMirrorCodePort {
 
       // Spec 001: بذرُ القاعدة المحلّية جرى قبل معرفة النمط — تُمسح صفوفُها
       // الرئيسيّة قبل السحب. وجهازٌ مقترنٌ سلفاً يطلب تأكيداً صريحاً.
-      final firstSyncService = ClientFirstSyncService(db: db);
+      final firstSyncService =
+          mirror ? ClientFirstSyncService.mirror(db: db) : ClientFirstSyncService(db: db);
       final pending = await firstSyncService.isFirstSyncPending();
       if (!pending) {
         if (!await confirmRePair()) {
@@ -270,6 +283,7 @@ class ClientLinkService implements ClientLinkPort, ClientLinkMirrorCodePort {
           message: '$icon ${result.message}',
         );
       }
+      ActivationHints.deviceKind = 'mirror';
       return ClientLinkResult(
         ClientLinkOutcome.paired,
         message: tr(
@@ -283,44 +297,4 @@ class ClientLinkService implements ClientLinkPort, ClientLinkMirrorCodePort {
     }
   }
 
-  /// مصافحةُ المرآة: يتحقّق من وصول HQ ويخزّن الرمز ويسجّل هويّة الخادم في
-  /// `MirrorState`. تفعيلُ النمط نفسُه مؤجَّلٌ إلى الإنهاء (Spec 097).
-  @override
-  Future<ClientLinkResult> pairMirror({
-    required String host,
-    required int port,
-    required String adminUsername,
-    required String adminPassword,
-  }) async {
-    try {
-      final result = await MirrorPairingService.instance.pair(
-        host: host,
-        port: port,
-        adminUsername: adminUsername,
-        adminPassword: adminPassword,
-        // Spec 151 P1-8b — جلسةُ مديرٍ كي تسحب مزامنةُ الإنهاء كلَّ الفروع.
-        acquireAdminSession: true,
-      );
-      if (!result.isSuccess) {
-        final icon = result.outcome == MirrorPairingOutcome.missingFields
-            ? '⚠️'
-            : '❌';
-        return ClientLinkResult(
-          ClientLinkOutcome.error,
-          message: '$icon ${result.message}',
-        );
-      }
-      return ClientLinkResult(
-        ClientLinkOutcome.paired,
-        message: tr(
-            '✅ تم التحقق من المدير "{p0}" — سيتم تفعيل وضع المرآة عند إنهاء المعالج',
-            {'p0': result.adminDisplayName}),
-      );
-    } catch (e) {
-      return ClientLinkResult(
-        ClientLinkOutcome.error,
-        message: tr('❌ خطأ: {e}', {'e': e}),
-      );
-    }
-  }
 }

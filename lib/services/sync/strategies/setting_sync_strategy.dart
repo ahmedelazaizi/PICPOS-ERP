@@ -159,4 +159,14 @@ const kDeviceLocalSettingKeys = <String>[
       'last_committed_mode',
       'server_setup_completed',
       'standalone_setup_completed',
+      // A1: the device record is the single source of truth for the mode.
+      'device_provisioning_v1',
+      // P2/P3 (users/login/sync plan): what THIS device knows about its users'
+      // credentials. Pushing or pulling these would hand one device's trust
+      // (stamps, revocation, the shadow/enforce switch) to another.
+      'offline_cred_stamps_v1',
+      'offline_cred_stamps_bootstrapped_v1',
+      'offline_login_max_seen_v1',
+      'offline_login_mode', // shadow | enforce
+      'device_revoked_v1',
 ];

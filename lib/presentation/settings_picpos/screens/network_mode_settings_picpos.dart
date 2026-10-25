@@ -1,7 +1,5 @@
-// نسخة حرفية من lib/presentation/screens/settings/network_mode_settings.dart
-// (مصيدة النسخ §٥.٨) — أي إصلاح منطقي يتصلّح في المصدر أولاً ثم يُنقل بـ patch
-// لهذا الملف. لا يُنسخ أبداً من D:\URAL-ERP. `part of` فقط تغيّر — لا تعديل
-// منطقي ولا تسمية (الكلاس خاص، لا تعارض عبر المكتبات).
+// نسخة من lib/presentation/screens/settings/network_mode_settings.dart (مصيدة
+// النسخ §٥.٨) — أي إصلاح منطقي يتصلّح في المصدر أولاً. لا يُنسخ من D:\URAL-ERP.
 part of 'settings_picpos_screen.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -62,6 +60,8 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const DeviceReprovisionSection(),
+          const SizedBox(height: 12),
           // Mode selector
           Row(
             children: [
@@ -119,12 +119,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
       ),
       selected: isSelected,
       selectedColor: AppColors.primary,
-      onSelected: (selected) async {
-        if (selected) {
-          await syncRepo.setMode(mode);
-          setState(() {});
-        }
-      },
+      onSelected: null, // display only (A1)
     );
   }
 

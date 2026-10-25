@@ -19,10 +19,22 @@ class AccountVerification {
     required this.permissionCount,
     this.topPermissions = const [],
   })  : ok = true,
-        error = null;
+        error = null,
+        needsPasswordChange = false;
 
   const AccountVerification.failure(String this.error)
       : ok = false,
+        needsPasswordChange = false,
+        userId = null,
+        displayName = null,
+        roleName = null,
+        permissionCount = 0,
+        topPermissions = const [];
+
+  /// The main accepted the temporary password but requires a new one first.
+  const AccountVerification.passwordChangeRequired(String this.error)
+      : ok = false,
+        needsPasswordChange = true,
         userId = null,
         displayName = null,
         roleName = null,
@@ -30,6 +42,7 @@ class AccountVerification {
         topPermissions = const [];
 
   final bool ok;
+  final bool needsPasswordChange;
   final String? error;
   final int? userId;
   final String? displayName;
@@ -41,10 +54,14 @@ class AccountVerification {
 }
 
 abstract interface class BranchAccountVerifierPort {
+  /// [branchId] is `null` for a mirror (not branch-bound). [newPassword] answers
+  /// a `passwordChangeRequired` result (the temporary password is replaced ON
+  /// THE MAIN, never only locally).
   Future<AccountVerification> verify({
     required String username,
     required String password,
-    required int branchId,
+    int? branchId,
+    String? newPassword,
   });
 }
 
@@ -67,8 +84,12 @@ class BranchAccountVerifier implements BranchAccountVerifierPort {
   Future<AccountVerification> verify({
     required String username,
     required String password,
-    required int branchId,
+    int? branchId,
+    String? newPassword,
   }) async {
+    if (branchId == null) {
+      return AccountVerification.failure(tr('اختر فرع هذا الجهاز أولًا.'));
+    }
     final name = username.trim();
     if (name.isEmpty || password.isEmpty) {
       return AccountVerification.failure(

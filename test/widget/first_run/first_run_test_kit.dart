@@ -310,8 +310,9 @@ class FakeLink implements ClientLinkPort {
     required int port,
     required Future<bool> Function() confirmRePair,
     void Function(String message)? onProgress,
+    bool mirror = false,
   }) async {
-    events.add('sync');
+    events.add(mirror ? 'sync-mirror' : 'sync');
     syncCalls++;
     if (!online) {
       return const ClientLinkResult(ClientLinkOutcome.connectFailed,
@@ -326,17 +327,19 @@ class FakeLink implements ClientLinkPort {
   }
 
   @override
-  Future<ClientLinkResult> pairMirror({
+  Future<ClientLinkResult> pairMirrorWithCode({
     required String host,
     required int port,
-    required String adminUsername,
-    required String adminPassword,
+    required String code,
+    String? deviceName,
   }) async {
     events.add('pair-mirror');
-    mirrorAdmin = adminUsername;
-    return adminPassword == 'Mirror#Pass1'
+    lastCode = code;
+    lastAddress = '$host:$port';
+    lastDeviceName = deviceName;
+    return pairOk
         ? const ClientLinkResult(ClientLinkOutcome.paired, message: 'mirror ok')
-        : const ClientLinkResult(ClientLinkOutcome.error, message: 'bad admin');
+        : const ClientLinkResult(ClientLinkOutcome.pairFailed, message: 'bad code');
   }
 }
 
@@ -346,18 +349,24 @@ class FakeVerifier implements BranchAccountVerifierPort {
   final List<String> events;
   int? lastBranchId;
   String? lastUser;
+  String? newPasswordSeen;
   bool serverSession = true;
 
   @override
   Future<AccountVerification> verify({
     required String username,
     required String password,
-    required int branchId,
+    int? branchId,
+    String? newPassword,
   }) async {
     events.add('verify');
+    newPasswordSeen = newPassword;
+    if (password == 'Temp#Pass1' && (newPassword ?? '').isEmpty) {
+      return const AccountVerification.passwordChangeRequired('change it');
+    }
     lastBranchId = branchId;
     lastUser = username;
-    if (password != 'Good#Pass1') {
+    if (password != 'Good#Pass1' && password != 'Temp#Pass1') {
       return const AccountVerification.failure('wrong password');
     }
     if (!serverSession) {

@@ -20,7 +20,8 @@ import '../../data/providers/providers.dart';
 import '../../services/login_rate_limiter.dart';
 import '../../services/network_service.dart';
 import '../../services/server_proxy.dart';
-import '../widgets/dialogs/force_change_password_dialog.dart';
+import '../../domain/repositories/auth_repository.dart' show AuthRejectedException, PasswordChangeRequired;
+import 'login/login_password_change_flow.dart';
 import '../widgets/user_language_selector.dart';
 import '../../core/i18n/locale_provider.dart';
 
@@ -125,47 +126,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         return authRepo.authenticateByPasswordOrCard(_passwordController.text);
       }
 
-      user = await tryAuth();
-
-      // Client/mirror: a user created on the host may not exist locally yet —
-      // pull users (SyncService.syncTable, the path known to work here) and retry.
-      // The merge never replaces a valid local credential (user_credential_merge).
-      if (user == null && (NetworkService.instance.isClient || NetworkService.instance.isMirror)) {
-        try {
-          final serverUrl = NetworkService.instance.buildServerUrl();
-          if (serverUrl.isNotEmpty) {
-            debugPrint('[Login] Local auth failed in client mode — '
-                'pulling users from server before giving up');
-            final syncRepo = ref.read(syncRepositoryProvider);
-            // Targeted users sync first (fast path).
-            try {
-              await syncRepo.performTableSync(serverUrl, 'users')
-                  .timeout(const Duration(seconds: 6));
-              user = await tryAuth();
-              if (user != null) {
-                debugPrint('[Login] Auth succeeded after users-only sync ✓');
-              }
-            } catch (e) {
-              debugPrint('[Login] users-only sync failed: $e');
-            }
-            // Full sync as a last resort (client only; a mirror never full-syncs here).
-            if (user == null && !NetworkService.instance.isMirror) {
-              await syncRepo.performFullSync(serverUrl).timeout(
-                const Duration(seconds: 10),
-                onTimeout: () => throw 'sync timeout',
-              );
-              user = await tryAuth();
-              if (user != null) {
-                debugPrint('[Login] Auth succeeded after full sync ✓');
-              }
-            }
-          }
-        } catch (e) {
-          debugPrint('[Login] Server user sync failed: $e — '
-              'staying on local auth result');
+      try {
+        // Client/mirror: the repository asks the MAIN when the local check
+        // fails (B.6.3) and applies its live verdict - no anonymous users pull.
+        user = await tryAuth();
+      } on PasswordChangeRequired catch (e) {
+        if (!mounted) return;
+        final typed = _passwordController.text;
+        user = await runForcedPasswordChange(
+          context,
+          ref,
+          username: e.username.isNotEmpty ? e.username : _usernameController.text,
+          viaMain: true,
+          currentPassword: e.viaCard ? null : typed,
+          cardCode: e.viaCard ? typed : null,
+        );
+        if (user == null) {
+          if (mounted) setState(() => _errorMessage = tr('يجب تغيير كلمة المرور للمتابعة'));
+          return;
         }
       }
-
       // ── Client mode: refresh user data from server after successful auth ──
       // A user who logged in before may have had server-side changes since
       // (e.g. admin updated defaultScreen, role, permissions). If we navigate
@@ -350,25 +330,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         // Check if password change is forced
         if (user.user.forcePasswordChange) {
           if (!mounted) return;
-          final changed = await showDialog<bool>(
-            context: context,
-            barrierDismissible: false,
-            builder: (context) => ForceChangePasswordDialog(
-              userId: user!.user.id,
-              username: user.user.username,
-            ),
-          );
-
-          if (changed != true) {
-            if (mounted) {
-              setState(() => _errorMessage = tr('يجب تغيير كلمة المرور للمتابعة'));
-            }
+          user = await runForcedPasswordChange(context, ref,
+              username: user.user.username, userId: user.user.id);
+          if (user == null) {
+            if (mounted) setState(() => _errorMessage = tr('يجب تغيير كلمة المرور للمتابعة'));
             return;
           }
-
-          // Re-fetch user to get updated state
-          user = await authRepo.getUserById(user.user.id);
-          if (user == null) return;
         }
 
         ref.read(authProvider.notifier).login(user);
@@ -402,7 +369,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = friendlyError(e, context: 'LOGIN');
+        _errorMessage = e is AuthRejectedException
+            ? e.message
+            : friendlyError(e, context: 'LOGIN');
       });
     } finally {
       // On successful login, main.dart navigates away while this finally
@@ -425,30 +394,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
     try {
       final authRepo = ref.read(authRepositoryProvider);
-      var user = await authRepo.authenticateByCardCode(cardCode);
+      UserWithRole? user;
+      try {
+        user = await authRepo.authenticateByCardCode(cardCode);
+      } on PasswordChangeRequired catch (e) {
+        if (!mounted) return;
+        user = await runForcedPasswordChange(context, ref,
+            username: e.username, viaMain: true, cardCode: cardCode);
+        if (user == null) {
+          if (mounted) setState(() => _errorMessage = tr('يجب تغيير كلمة المرور للمتابعة'));
+          return;
+        }
+      }
       if (user != null) {
-        // Check if password change is forced
         if (user.user.forcePasswordChange) {
           if (!mounted) return;
-          final changed = await showDialog<bool>(
-            context: context,
-            barrierDismissible: false,
-            builder: (context) => ForceChangePasswordDialog(
-              userId: user!.user.id,
-              username: user.user.username,
-            ),
-          );
-
-          if (changed != true) {
-            if (mounted) {
-              setState(() => _errorMessage = tr('يجب تغيير كلمة المرور للمتابعة'));
-            }
+          user = await runForcedPasswordChange(context, ref,
+              username: user.user.username, userId: user.user.id);
+          if (user == null) {
+            if (mounted) setState(() => _errorMessage = tr('يجب تغيير كلمة المرور للمتابعة'));
             return;
           }
-
-          // Re-fetch user
-          user = await authRepo.getUserById(user.user.id);
-          if (user == null) return;
         }
 
         ref.read(authProvider.notifier).login(user);
@@ -469,7 +435,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _errorMessage = friendlyError(e, context: 'LOGIN-CARD'));
+        setState(() => _errorMessage = e is AuthRejectedException
+            ? e.message
+            : friendlyError(e, context: 'LOGIN-CARD'));
       }
     } finally {
       // Same dispose-race as _login above — guard with mounted.

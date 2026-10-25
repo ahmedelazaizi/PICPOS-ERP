@@ -35,8 +35,6 @@ class StepLink extends ConsumerStatefulWidget {
 }
 
 class _StepLinkState extends ConsumerState<StepLink> {
-  bool _visible = false;
-
   @override
   void initState() {
     super.initState();
@@ -44,7 +42,7 @@ class _StepLinkState extends ConsumerState<StepLink> {
     Future<void>(() {
       if (!mounted) return;
       final d = ref.read(firstRunControllerProvider).draft;
-      if (d.path == FirstRunPath.branch && d.deviceName.trim().isEmpty) {
+      if (d.path != FirstRunPath.standalone && d.deviceName.trim().isEmpty) {
         final host = _hostName();
         if (host.isNotEmpty) {
           ref.read(firstRunControllerProvider.notifier)
@@ -65,12 +63,6 @@ class _StepLinkState extends ConsumerState<StepLink> {
 
     void edit(FirstRunDraft Function(FirstRunDraft x) change, inv.FirstRunField f) =>
         ctl.update((x) => inv.invalidate(change(x), f));
-
-    final eye = IconButton(
-      tooltip: _visible ? tr('إخفاء') : tr('إظهار'),
-      icon: Icon(_visible ? Icons.visibility_off : Icons.visibility, size: 18),
-      onPressed: () => setState(() => _visible = !_visible),
-    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,56 +98,34 @@ class _StepLinkState extends ConsumerState<StepLink> {
           ],
         ),
         const SizedBox(height: 12),
-        if (!mirror) ...[
-          FirstRunField(
-            key: const Key('first_run_link_device'),
-            label: tr('اسم هذا الجهاز'),
-            value: d.deviceName,
-            onChanged: (v) =>
-                edit((x) => x.copyWith(deviceName: v), inv.FirstRunField.deviceName),
-          ),
-          const SizedBox(height: 12),
-          FirstRunField(
-            key: const Key('first_run_link_code'),
-            label: tr('رمز الإقران (8 أحرف من السيرفر الرئيسي)'),
-            hint: 'XXXXXXXX',
-            value: secrets.pairingCode,
-            ltr: true,
-            maxLength: 8,
-            onChanged: (v) {
-              ctl.updateSecrets((s) => s.copyWith(pairingCode: v.toUpperCase()));
-              ctl.update((x) => inv.invalidate(x, inv.FirstRunField.pairingCode));
-            },
-          ),
-        ] else ...[
-          FirstRunField(
-            key: const Key('first_run_link_admin'),
-            label: tr('اسم مدير السيرفر الرئيسي'),
-            value: d.accountUsername,
-            ltr: true,
-            onChanged: (v) => edit(
-                (x) => x.copyWith(accountUsername: v), inv.FirstRunField.pairingCode),
-          ),
-          const SizedBox(height: 12),
-          FirstRunField(
-            key: const Key('first_run_link_admin_password'),
-            label: tr('كلمة مرور المدير'),
-            value: secrets.accountPassword,
-            obscure: !_visible,
-            ltr: true,
-            suffix: eye,
-            onChanged: (v) =>
-                ctl.updateSecrets((s) => s.copyWith(accountPassword: v)),
-          ),
-        ],
+        // A1: branch AND mirror devices are paired by the one-time code the
+        // main issued (it carries the device kind and, for a branch, the branch).
+        FirstRunField(
+          key: const Key('first_run_link_device'),
+          label: tr('اسم هذا الجهاز'),
+          value: d.deviceName,
+          onChanged: (v) =>
+              edit((x) => x.copyWith(deviceName: v), inv.FirstRunField.deviceName),
+        ),
+        const SizedBox(height: 12),
+        FirstRunField(
+          key: const Key('first_run_link_code'),
+          label: tr('رمز الإقران (8 أحرف من السيرفر الرئيسي)'),
+          hint: 'XXXXXXXX',
+          value: secrets.pairingCode,
+          ltr: true,
+          maxLength: 8,
+          onChanged: (v) {
+            ctl.updateSecrets((s) => s.copyWith(pairingCode: v.toUpperCase()));
+            ctl.update((x) => inv.invalidate(x, inv.FirstRunField.pairingCode));
+          },
+        ),
         const SizedBox(height: 14),
         Row(
           children: [
             FilledButton.icon(
               key: const Key('first_run_link_connect'),
-              onPressed: ops.anyBusy
-                  ? null
-                  : (mirror ? opsCtl.pairMirror : opsCtl.pairDevice),
+              onPressed: ops.anyBusy ? null : opsCtl.pairDevice,
               icon: ops.linkBusy
                   ? const SizedBox(
                       width: 16,
@@ -163,7 +133,7 @@ class _StepLinkState extends ConsumerState<StepLink> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.link, size: 18),
-              label: Text(mirror ? tr('اتصال وتحقق من المدير') : tr('إقران واعتماد الربط')),
+              label: Text(tr('إقران واعتماد الربط')),
             ),
             const SizedBox(width: 12),
             if (d.checks.linked)
@@ -202,7 +172,7 @@ class _StepLinkState extends ConsumerState<StepLink> {
               ? tr('المرآة تعرض بيانات المقر وتعمل بحساب مدير.')
               : tr('التهيئة الأولى تحتاج اتصالًا بالسيرفر الرئيسي.'),
           body: mirror
-              ? tr('يُفعَّل وضع المرآة عند إنهاء الإعداد.')
+              ? tr('يصدر رمز المرآة من الإعدادات › الشبكة على السيرفر الرئيسي، ويُفعَّل الوضع عند إنهاء الإعداد.')
               : tr('يصدر رمز الإقران من الإعدادات › الشبكة على السيرفر الرئيسي.'),
         ),
       ],

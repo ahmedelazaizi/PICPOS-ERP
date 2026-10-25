@@ -37,12 +37,9 @@ import '../../core/config/runtime_config_snapshot.dart';
 import '../../core/theme/app_colors.dart';
 import '../../services/admin/data_wipe_service.dart';
 import '../../data/providers/providers.dart';
-import '../../services/deployment/commit_result.dart';
-import '../../services/deployment/deployment_mode_committer.dart';
-import '../../services/mirror_state.dart';
-import '../../services/network_service.dart';
 import '../picpos_shell/picpos_danger_confirm.dart';
-import '../widgets/settings/mirror_pairing_dialog.dart';
+import 'first_run/provisioning_providers.dart';
+import 'first_run/reprovision_confirm_dialog.dart';
 
 class DeveloperToolsScreen extends ConsumerWidget {
   const DeveloperToolsScreen({super.key});
@@ -572,165 +569,23 @@ class _ChangeModeSection extends ConsumerStatefulWidget {
 class _ChangeModeSectionState extends ConsumerState<_ChangeModeSection> {
   late DeploymentMode _selected = widget.snapshot.mode;
 
+  /// A1: developer tools no longer switch the mode in place. The single path is
+  /// "re-provision this device" (forget the mode and the pairing; the first-run
+  /// setup returns after a restart), so the choice made there is the choice that
+  /// is committed.
   Future<void> _apply() async {
     if (_selected == widget.snapshot.mode) return;
-
-    // Spec 097: flipping TO mirror requires a successful pairing handshake
-    // FIRST. If the device is not paired (or its MirrorState was wiped),
-    // open the pairing dialog inline. Only proceed with `changeMode` after
-    // the dialog returns success. This keeps deployment_mode and
-    // network_mode from drifting into a half-configured mirror state.
-    if (_selected == DeploymentMode.mirror &&
-        !MirrorState.instance.isConfigured) {
-      final paired = await MirrorPairingDialog.show(context);
-      if (!paired) {
-        // Pairing cancelled or failed — revert the segmented control to
-        // the current mode so the UI matches reality.
-        if (mounted) {
-          setState(() => _selected = widget.snapshot.mode);
-        }
-        return;
-      }
+    if (!await confirmReprovision(context)) {
+      if (mounted) setState(() => _selected = widget.snapshot.mode);
+      return;
     }
-
-    // Spec 125 (US4 / FR-009 / FR-010): for modes that include a wipe
-    // (client, mirror) require type-to-confirm. Otherwise a plain confirm.
-    final needsWipe = _selected == DeploymentMode.client ||
-        _selected == DeploymentMode.mirror;
-    final ok = needsWipe
-        ? await _showTypeToConfirmDialog(_selected)
-        : await _showPlainConfirmDialog(_selected);
-    if (ok != true) return;
-
-    // Spec 125 (US4 / FR-008): route through DeploymentModeCommitter so
-    // Dev Tools uses the exact same atomic pipeline as the Setup Wizard.
-    // forceResync=true → re-runs first-sync (data may have drifted since
-    // the last commit; the user explicitly asked to switch mode now).
-    // Empty creds → committer skips pair (pairing was handled above via
-    // MirrorPairingDialog when needed; or the target mode has no pair step).
-    try {
-      final db = ref.read(databaseProvider);
-      final committer = DeploymentModeCommitter(db: db);
-      final contract = committer.buildContract(
-        target: _toNetworkMode(_selected),
-        serverPort: NetworkService.instance.serverPort,
-        serverHost: NetworkService.instance.serverAddress,
-      );
-      final result = await committer.commit(
-        contract: contract,
-        forceResync: true,
-      );
-      if (!mounted) return;
-      if (result is CommitFailed) {
-        AppToast.show(
-          context,
-          tr('فشل تغيير نمط التشغيل: {p0}', {'p0': result.reasonAr}),
-          type: ToastType.error,
-        );
-        return;
-      }
-      // Refresh the riverpod state so the snapshot picker reflects the
-      // new mode immediately. (ConfigService.changeMode also called
-      // applyFromService — we replicate the minimal subset here.)
-      ref.read(deploymentModeProvider.notifier).applyFromService(_selected);
-      AppToast.show(
-        context,
-        tr('تم تغيير نمط التشغيل بنجاح — يفضّل إعادة تشغيل التطبيق'),
-        type: ToastType.success,
-      );
-    } catch (e) {
-      if (mounted) {
-        AppToast.show(context, '$e', type: ToastType.error);
-      }
-    }
-  }
-
-  Future<bool?> _showPlainConfirmDialog(DeploymentMode target) {
-    return showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title:  Text(tr('تأكيد تغيير نمط التشغيل')),
-        content: Text(
-          tr('سيتم تحويل النظام إلى وضع "{p0}".\n\nتغيير نمط التشغيل يتطلّب إعادة تشغيل التطبيق ليأخذ تأثيره الكامل (network service / sync). هل تريد المتابعة؟', {'p0': _modeLabelAr(target)}),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child:  Text(tr('إلغاء')),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child:  Text(tr('تطبيق')),
-          ),
-        ],
-      ),
+    await ref.read(provisioningActionsProvider).reprovision();
+    if (!mounted) return;
+    AppToast.show(
+      context,
+      tr('تمت إعادة التوفير. أعد تشغيل البرنامج لبدء الإعداد من جديد.'),
+      type: ToastType.success,
     );
-  }
-
-  /// Spec 125 FR-010 — type-to-confirm for wipe-inducing modes (client/mirror).
-  /// User must type "تأكيد" verbatim before the action button enables.
-  Future<bool?> _showTypeToConfirmDialog(DeploymentMode target) {
-    final controller = TextEditingController();
-    final sentinel = tr('تأكيد');
-    return showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setStateD) {
-          final matches = controller.text.trim() == sentinel;
-          return AlertDialog(
-            title:  Text(tr('تأكيد تغيير نمط التشغيل (إجراء حرج)')),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  tr('سيتم تحويل النظام إلى وضع "{p0}".\n\nسيُمسح: البيانات الأساسية المحلية (الفروع، المخازن، الخزن، الحسابات).\nسيُستعاد من السيرفر: نفس البيانات بالنسخ الرسمية.\nالمدة المتوقعة: 10-30 ثانية على شبكة LAN عادية.\n\nاكتب "تأكيد" أدناه للمتابعة:', {'p0': _modeLabelAr(target)}),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: controller,
-                  textDirection: TextDirection.rtl,
-                  decoration:  InputDecoration(
-                    border: const OutlineInputBorder(),
-                    hintText: tr('تأكيد'),
-                  ),
-                  onChanged: (_) => setStateD(() {}),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child:  Text(tr('إلغاء')),
-              ),
-              ElevatedButton(
-                onPressed: matches ? () => Navigator.pop(ctx, true) : null,
-                child:  Text(tr('تنفيذ التحويل')),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  NetworkMode _toNetworkMode(DeploymentMode m) {
-    switch (m) {
-      case DeploymentMode.standalone: return NetworkMode.standalone;
-      case DeploymentMode.server:     return NetworkMode.server;
-      case DeploymentMode.client:     return NetworkMode.client;
-      case DeploymentMode.mirror:     return NetworkMode.mirror;
-    }
-  }
-
-  String _modeLabelAr(DeploymentMode m) {
-    switch (m) {
-      case DeploymentMode.standalone: return tr('مستقل');
-      case DeploymentMode.server:     return tr('سيرفر');
-      case DeploymentMode.client:     return tr('عميل');
-      case DeploymentMode.mirror:     return tr('مرآة');
-    }
   }
 
   @override

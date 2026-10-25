@@ -36,6 +36,7 @@ import '../network_service.dart';
 import '../sync/client_first_sync_service.dart';
 import '../sync_service.dart';
 import 'commit_result.dart';
+import 'provisioning_record.dart';
 import 'settings_keys.dart';
 import 'setup_contract.dart';
 
@@ -82,6 +83,7 @@ class DeploymentModeCommitter {
     required SetupContract contract,
     CommitProgressCallback? onProgress,
     bool forceResync = false,
+    String? deviceKind,
   }) async {
     if (_committing) {
       throw StateError(
@@ -294,7 +296,7 @@ class DeploymentModeCommitter {
         'جارٍ حفظ الإعدادات النهائية...',
       );
       try {
-        await _writeOwnedSettings(target);
+        await _writeOwnedSettings(target, deviceKind: deviceKind);
       } catch (e, st) {
         // A0 (ADP-001): the mode is already set in memory/DB here. Undo it,
         // stop the heartbeat and (mirror) drop the pairing so the device is not
@@ -566,10 +568,22 @@ class DeploymentModeCommitter {
 
   /// Atomic write of the owned settings keys (excluding network_mode which
   /// NetworkService.setMode already wrote). Per data-model.md §2.2.
-  Future<void> _writeOwnedSettings(NetworkMode mode) async {
+  Future<void> _writeOwnedSettings(NetworkMode mode,
+      {String? deviceKind}) async {
+    // A1: the device record is written in THIS transaction, with the derived
+    // keys - so the record and the keys can never disagree after a crash.
+    final record = await ProvisioningRecord.capture(
+      mode,
+      previous: await ProvisioningStore.read(db),
+      deviceKind: deviceKind,
+    );
     final companions = <SettingsCompanion>[
       SettingsCompanion(
         key: const Value(DeploymentSettingsKeys.lastCommittedMode),
+        value: Value(mode.name),
+      ),
+      SettingsCompanion(
+        key: const Value('deployment_mode'),
         value: Value(mode.name),
       ),
     ];
@@ -597,6 +611,7 @@ class DeploymentModeCommitter {
       for (final c in companions) {
         await db.into(db.settings).insertOnConflictUpdate(c);
       }
+      await ProvisioningStore.write(db, record);
     });
   }
 }

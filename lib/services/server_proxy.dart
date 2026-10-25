@@ -21,6 +21,7 @@ part 'server_proxy/server_proxy_trading.dart';
 part 'server_proxy/server_proxy_cash.dart';
 part 'server_proxy/server_proxy_master_data.dart';
 part 'server_proxy/server_proxy_admin.dart';
+part 'server_proxy/server_proxy_auth.dart';
 part 'server_proxy/server_proxy_reads.dart';
 
 /// Centralized proxy for all write operations in client mode.
@@ -459,7 +460,7 @@ class ServerProxy {
   /// leave the token unset, so the next login / reconnect cycle retries. When
   /// the server is unreachable at login (offline-first) no token is minted
   /// here; [ensureSession] fills it in once the server becomes reachable.
-  Future<void> acquireSession({
+  Future<SessionMintResult> acquireSession({
     required int userId,
     String? username,
     String? password,
@@ -472,14 +473,16 @@ class ServerProxy {
     // keeps the original gate. See [MirrorPairingService.pair].
     bool bypassModeGate = false,
   }) async {
-    if (!bypassModeGate && !SyncInterceptor.isClientMode) return;
+    if (!bypassModeGate && !SyncInterceptor.isClientMode) {
+      return const SessionMintResult(SessionMintOutcome.unreachable);
+    }
     // Remember the proof (in memory only) so a token can be re-minted later.
     _sessionProofs[userId] = _SessionProof(
       username: username,
       password: password,
       cardCode: cardCode,
     );
-    await _mintSession(userId);
+    return _mintSession(userId);
   }
 
   /// Reconnect / deferred-issuance hook. For the current signed-in user, if we
@@ -554,50 +557,6 @@ class ServerProxy {
     return uid != null ? _sessionTokens[uid] : null;
   }
 
-  /// POST the remembered proof for [userId] to `/api/auth/session` and cache
-  /// the returned opaque token. No-op when no usable proof is held. Swallows
-  /// ALL errors — a failed mint leaves any previously-cached token untouched
-  /// (never clears a good token on a transient failure). Never logs the token
-  /// or the credential.
-  Future<void> _mintSession(int userId) async {
-    final proof = _sessionProofs[userId];
-    if (proof == null) return;
-
-    final body = <String, dynamic>{};
-    if (proof.cardCode != null && proof.cardCode!.isNotEmpty) {
-      body['cardCode'] = proof.cardCode;
-    } else if (proof.username != null &&
-        proof.username!.isNotEmpty &&
-        proof.password != null &&
-        proof.password!.isNotEmpty) {
-      body['username'] = proof.username;
-      body['password'] = proof.password;
-    } else {
-      return; // nothing usable to send
-    }
-
-    try {
-      final url = Uri.parse('$_baseUrl/api/auth/session');
-      final response = await TlsTrust.httpClient()
-          .post(url, headers: _authHeaders, body: json.encode(body))
-          .timeout(ServerProxy.requestTimeout);
-      if (_isSuccessStatusCode(response.statusCode) &&
-          response.body.isNotEmpty) {
-        final data = json.decode(response.body) as Map<String, dynamic>;
-        final token = data['token'] as String?;
-        if (token != null && token.isNotEmpty) {
-          _sessionTokens[userId] = token;
-          _sessionMintedAt[userId] = DateTime.now();
-          debugPrint('[ServerProxy] session token acquired for uid=$userId');
-          return;
-        }
-      }
-      debugPrint('[ServerProxy] session token NOT acquired for uid=$userId '
-          '(HTTP ${response.statusCode})');
-    } catch (e) {
-      debugPrint('[ServerProxy] acquireSession failed for uid=$userId: $e');
-    }
-  }
 }
 
 /// In-memory credential proof used to (re-)mint a signed session token for a

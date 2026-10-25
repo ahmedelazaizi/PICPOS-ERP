@@ -22,6 +22,7 @@ import 'api/lan_pairing_service.dart';
 import 'api/lan_pairing_client.dart';
 import 'api/api_rate_limiter.dart';
 import 'api/api_errors.dart';
+import 'deployment/provisioning_applier.dart';
 import 'deployment/reconcile_result.dart';
 import 'deployment/settings_keys.dart';
 import 'mirror_state.dart';
@@ -268,10 +269,8 @@ class NetworkService {
     _webAllowedOrigins = prefs.getStringList(_prefWebOrigins) ?? const [];
     _webStaticDir = prefs.getString(_prefWebDir);
 
-    // ⚠️ تحميلُ البصمة المثبَّتة **هنا** لا عند أوّلِ فحصِ اتّصالٍ فقط.
-    // `TlsTrust` تقبل أيَّ شهادةٍ لمضيفٍ لا بصمةَ له في الذاكرة — فلو
-    // انتظرنا الفحصَ لكانت كلُّ مزامنةٍ بعد إقلاعٍ بارد (وهي تبدأ فوراً)
-    // تجري **بلا إنفاذ**: تثبيتٌ محفوظٌ على القرص لا يحرس شيئاً.
+    // Load the pinned fingerprint HERE (TlsTrust trusts any cert of a host
+    // with no in-memory pin, so a cold-boot sync would run unenforced).
     if (_serverAddress != null && _serverAddress!.isNotEmpty) {
       final pinUri = Uri.tryParse(buildServerUrl());
       if (pinUri != null && pinUri.host.isNotEmpty) {
@@ -322,6 +321,7 @@ class NetworkService {
   /// - DB empty AND prefs is 'standalone' or null → no conflict;
   ///   propagate 'standalone' to the DB so future boots short-circuit.
   Future<ReconcileResult> reconcileWithDb(AppDatabase db) async {
+    await ProvisioningApplier.ensure(db); // A1: the device record wins first
     String? dbValue;
     try {
       dbValue = (await db.getSettingValue('network_mode'))?.trim();

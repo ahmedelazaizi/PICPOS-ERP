@@ -35,6 +35,10 @@ abstract class DeploymentSettingsKeys {
   /// in the same transaction, but kept for diagnostic resilience).
   static const lastCommittedMode = 'last_committed_mode';
 
+  /// A1: the ONE device record (JSON) every other key below is derived from -
+  /// see `ProvisioningRecord`. Strictly per device (never synced).
+  static const deviceProvisioning = 'device_provisioning_v1';
+
   // ── Helper sets ────────────────────────────────────────────────────────
 
   /// All keys owned by the committer — used by grep test to enforce
@@ -46,5 +50,6 @@ abstract class DeploymentSettingsKeys {
     standaloneSetupCompleted,
     serverSetupCompleted,
     lastCommittedMode,
+    deviceProvisioning,
   };
 }

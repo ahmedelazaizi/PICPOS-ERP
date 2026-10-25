@@ -105,17 +105,15 @@ FirstRunIssue? validateStep(
       if (port == null || port < 1 || port > 65535) {
         return FirstRunIssue.portInvalid;
       }
-      if (d.path == FirstRunPath.mirror) {
-        if (d.accountUsername.trim().isEmpty) {
-          return FirstRunIssue.mirrorAdminRequired;
-        }
-      } else if (d.deviceName.trim().isEmpty) {
-        return FirstRunIssue.deviceNameRequired;
-      }
+      // A1: branch AND mirror devices are paired by a code + a device name.
+      if (d.deviceName.trim().isEmpty) return FirstRunIssue.deviceNameRequired;
       return d.checks.linked ? null : FirstRunIssue.linkNotVerified;
     case FirstRunStep.firstSync:
       if (!d.checks.firstSyncDone) return FirstRunIssue.firstSyncPending;
-      return d.selectedBranchId == null ? FirstRunIssue.branchNotSelected : null;
+      // A mirror is not branch-bound; a branch device must pick its branch.
+      return d.path == FirstRunPath.branch && d.selectedBranchId == null
+          ? FirstRunIssue.branchNotSelected
+          : null;
     case FirstRunStep.account:
       return d.checks.accountVerified ? null : FirstRunIssue.accountNotVerified;
   }

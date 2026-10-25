@@ -78,8 +78,16 @@ void main() {
         .customSelect('SELECT last_modified_at FROM users WHERE id = ?',
             variables: [d.Variable<int>(id)])
         .getSingle();
+    // `last_modified_at` is BIGINT epoch SECONDS. `DateTime.tryParse('$v')`
+    // read those digits as an ISO date (year 179289, "day" = last two
+    // digits), so the isAfter comparison flipped whenever the last digits
+    // wrapped (e.g. ...99 -> ...03): a flaky test, not a product regression.
     final v = row.data['last_modified_at'];
-    return v is DateTime ? v : DateTime.tryParse('$v');
+    if (v is DateTime) return v;
+    if (v is num) {
+      return DateTime.fromMillisecondsSinceEpoch(v.toInt() * 1000, isUtc: true);
+    }
+    return null;
   }
 
   test('change-password: Argon2id, flag cleared, audit row, watermark bumped, '

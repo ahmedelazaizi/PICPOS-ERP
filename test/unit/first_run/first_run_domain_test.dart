@@ -36,10 +36,10 @@ const _okSecrets = FirstRunSecrets(
 
 void main() {
   group('الخطوات', () {
-    test('ست خطوات لكل مسار رئيسي (والمرآة ثلاث)، بلا تفعيل، ونجاح خارج المسار', () {
+    test('ست خطوات لكل مسار رئيسي (والمرآة خمس)، بلا تفعيل، ونجاح خارج المسار', () {
       for (final p in FirstRunPath.values) {
         final steps = stepsFor(p);
-        expect(steps, hasLength(p == FirstRunPath.mirror ? 3 : 6), reason: p.name);
+        expect(steps, hasLength(p == FirstRunPath.mirror ? 5 : 6), reason: p.name);
         expect(steps.first, FirstRunStep.mode);
         expect(steps.last, FirstRunStep.review);
         expect(steps, isNot(contains(FirstRunStep.success)));

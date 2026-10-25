@@ -27,6 +27,7 @@ import 'package:picpos_erp/services/api/api_session_token.dart';
 import 'package:picpos_erp/services/api/lan_pairing_api_handler.dart';
 import 'package:picpos_erp/services/api/lan_pairing_service.dart';
 import 'package:picpos_erp/services/api/server_login_throttle.dart';
+import 'package:picpos_erp/services/password_collision_scanner.dart';
 import 'package:picpos_erp/services/sync/strategies/user_sync_strategy.dart';
 
 const kHostAdminPw = 'AdminCustom#2026';
@@ -136,8 +137,9 @@ class LanHost {
 
   Future<void> close() async {
     // updateUserPassword fires a password-collision scan without awaiting it;
-    // let it finish before the database goes away.
-    await Future<void>.delayed(const Duration(milliseconds: 400));
+    // wait for exactly those scans (not a fixed sleep: Argon2 under load takes
+    // longer than any guess) before the database goes away.
+    await PasswordCollisionScanner.drain(db);
     await _server?.close(force: true);
     ApiAuthMiddleware.clearPairingService();
     ApiAuthMiddleware.clearReady();
@@ -226,7 +228,12 @@ class LanDevice {
   Future<bool> canLogin(String username, String password) async =>
       (await db.authenticateUser(username, password)) != null;
 
-  Future<void> dispose() async => _db?.close();
+  Future<void> dispose() async {
+    final d = _db;
+    if (d == null) return;
+    await PasswordCollisionScanner.drain(d);
+    await d.close();
+  }
 }
 
 /// The canonical host data used by the credential tests.

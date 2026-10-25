@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/auth/bootstrap_admin.dart';
-import '../../core/i18n/tr.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../services/auth/credential_stamp_store.dart';
 import '../../services/auth/offline_login_policy.dart';
 import '../../services/client_write_interceptor.dart';
 import '../../services/delta_pull_service.dart';
@@ -15,6 +15,7 @@ import '../../services/server_proxy.dart';
 import '../../services/sync_service.dart';
 import '../database/database.dart';
 import '../database/sync_interceptor.dart';
+import 'auth_session_gate.dart';
 /// Signature for the lazy server-side `user_branch_access` fetch invoked by
 /// [AuthRepositoryImpl._verifyBranchAccess] when the local assignments table
 /// is empty. Returning `false` (or throwing) is treated as "no rows came
@@ -51,6 +52,15 @@ Future<bool> _defaultFetchUserBranchAccess(AppDatabase db) async {
   return true;
 }
 
+/// بعد رفضٍ حيّ: اسحب users (بهويةٍ إن وُجدت؛ آمنٌ بلا هويةٍ بعد إصلاح CRED-WIPE).
+Future<void> _defaultRefreshUsers(AppDatabase db) async {
+  final serverUrl = NetworkService.instance.buildServerUrl();
+  if (serverUrl.isEmpty) return;
+  final s = SyncService(serverUrl: serverUrl, localDb: db);
+  await s.initialize();
+  await s.syncTable('users').timeout(const Duration(seconds: 8));
+}
+
 class AuthRepositoryImpl implements IAuthRepository {
   final AppDatabase db;
 
@@ -58,21 +68,36 @@ class AuthRepositoryImpl implements IAuthRepository {
   /// network-backed fetch.
   final UserBranchAccessFetcher _fetchUserBranchAccess;
 
-  /// سياسةُ الدخول دون اتصال (P7) — قابلةٌ للحقن في الاختبار.
+  /// سياسةُ الدخول دون اتصال (P3) — قابلةٌ للحقن في الاختبار.
   late final OfflineLoginPolicy _offlinePolicy;
+
+  /// رفضُ الرئيسي الحيّ + التحقّق عبر الرئيسي + الطوابع (P2/P3).
+  late final AuthSessionGate _gate;
 
   AuthRepositoryImpl(
     this.db, {
     UserBranchAccessFetcher? fetchUserBranchAccess,
     OfflineLoginPolicy? offlinePolicy,
+    SessionAuthorityPort? authority,
+    Future<void> Function()? refreshUsers,
+    void Function(OfflineLoginVerdict, int)? onShadowWouldReject,
   }) : _fetchUserBranchAccess =
             fetchUserBranchAccess ?? _defaultFetchUserBranchAccess {
     _offlinePolicy = offlinePolicy ??
         OfflineLoginPolicy(
           store: SecureOfflineLoginStore(),
+          stamps: CredentialStampStore.forDb(db),
           readGraceDays: () async =>
               int.tryParse(await db.getSettingValue('offline_login_grace_days') ?? ''),
         );
+    _gate = AuthSessionGate(
+      db: db,
+      policy: _offlinePolicy,
+      stamps: _offlinePolicy.stamps,
+      authority: authority,
+      refreshUsers: refreshUsers ?? () => _defaultRefreshUsers(db),
+      onShadowWouldReject: onShadowWouldReject,
+    );
   }
 
   @override
@@ -145,10 +170,9 @@ class AuthRepositoryImpl implements IAuthRepository {
     required int userId,
     required String newPassword,
   }) async {
-    // A user changing their OWN password is not an admin reset (the host route
-    // needs users_manage): that flow stays local until the dedicated
-    // change-password endpoint (plan P2).
-    if (SyncInterceptor.isClientMode && SyncInterceptor.currentUserId != userId) {
+    // A forced change by the user himself goes through [changeOwnPassword]
+    // (online-only); everything here is an administrative write.
+    if (SyncInterceptor.isClientMode) {
       await ClientWriteInterceptor.updateUserPassword(userId, newPassword);
       if (SyncInterceptor.isMirrorMode) return;
     }
@@ -285,7 +309,7 @@ class AuthRepositoryImpl implements IAuthRepository {
     }
 
     if (assignments.isEmpty || !assignments.contains(localBranchId)) {
-      throw StateError('ليس لديك صلاحية الدخول لهذا الفرع');
+      throw AuthRejectedException('ليس لديك صلاحية الدخول لهذا الفرع');
     }
   }
 
@@ -296,140 +320,107 @@ class AuthRepositoryImpl implements IAuthRepository {
     final lockout = LoginRateLimiter.getLockoutRemaining(username);
     if (lockout != null) {
       final minutes = lockout.inMinutes + 1;
-      throw StateError(
+      throw AuthRejectedException(
         'تم قفل الحساب مؤقتاً. يرجى المحاولة بعد $minutes دقيقة',
       );
     }
 
-    final result = await db.authenticateUser(username, password);
+    // B.6.3: unknown to this device (or stale here) ⇒ the main decides; no
+    // anonymous users pull ever (CRED-WIPE).
+    final result = await db.authenticateUser(username, password) ??
+        await _gate.verifyViaMain(
+          username: username,
+          password: password,
+          retryLocal: () => db.authenticateUser(username, password),
+        );
 
     if (result != null) {
       await _verifyBranchAccess(result);
       LoginRateLimiter.recordSuccess(username);
-      // Spec 151 (P1-8) — mint a signed server session token while the
-      // plaintext credential is still in scope (client/mirror mode only).
-      await _acquireServerSession(result, username: username, password: password);
-      await _enforceOfflineLoginPolicy(result);
-    } else {
-      final remaining = LoginRateLimiter.recordFailure(username);
-      if (remaining == 0) {
-        throw StateError(
-          'تم قفل الحساب مؤقتاً بعد ${LoginRateLimiter.maxAttempts} محاولات فاشلة',
-        );
-      }
+      // Spec 151 (P1-8) — the main verifies the same credential (live rejection,
+      // session token, credential stamp, shadow/enforce offline policy).
+      return _acquireServerSession(result, username: username, password: password);
     }
-
-    return result;
-  }
-
-  /// P7 — جهازُ فرعٍ (عميل/مرآة): جلسةُ الخادم الناجحة تجدّد مدةَ السماح؛ وبدونها
-  /// (‏الخادمُ غيرُ متاح) يُرفض الدخولُ إن انقضت المدةُ منذ آخر تحقّق ناجح أو رُجعت
-  /// ساعةُ الجهاز. مستخدمٌ بلا طابعٍ قطّ (‏مثبَّتٌ قبل هذا الإصدار) يُسمح له ويبدأ
-  /// عدُّه من أوّل اتصال — لئلّا يُقفل الكاشيرُ حتى يتصل مرّة. فشلُ التخزين الآمن لا
-  /// يمنع الدخول (‏يُسجَّل فقط).
-  Future<void> _enforceOfflineLoginPolicy(UserWithRole result) async {
-    if (!SyncInterceptor.isClientMode) return;
-    final id = result.user.id;
-    final OfflineLoginVerdict verdict;
-    try {
-      if (ServerProxy.instance.hasSessionToken(id)) {
-        await _offlinePolicy.recordVerified(id);
-        return;
-      }
-      verdict = await _offlinePolicy.check(id);
-    } catch (e) {
-      debugPrint('[Auth] offline login policy unavailable: $e');
-      return;
+    final remaining = LoginRateLimiter.recordFailure(username);
+    if (remaining == 0) {
+      throw AuthRejectedException(
+        'تم قفل الحساب مؤقتاً بعد ${LoginRateLimiter.maxAttempts} محاولات فاشلة',
+      );
     }
-    switch (verdict.decision) {
-      case OfflineLoginDecision.expired:
-        throw StateError(tr(
-          'انتهت مدة الدخول دون اتصال ({p0} يومًا). اتصل بالرئيسي لتجديد التحقق.',
-          {'p0': verdict.graceDays},
-        ));
-      case OfflineLoginDecision.clockRolledBack:
-        throw StateError(
-            tr('تعذّر التحقق من وقت الجهاز. اتصل بالرئيسي لتجديد التحقق.'));
-      case OfflineLoginDecision.allowed:
-      case OfflineLoginDecision.neverVerified:
-        return;
-    }
+    return null;
   }
 
   @override
   Future<UserWithRole?> authenticateByCardCode(String cardCode) async {
-    final result = await db.authenticateByCardCode(cardCode);
-    if (result != null) {
-      await _verifyBranchAccess(result);
-      // Spec 151 (P1-8) — POS card-swipe → session token via cardCode.
-      await _acquireServerSession(result, cardCode: cardCode);
-      await _enforceOfflineLoginPolicy(result);
-    }
-    return result;
+    final result = await db.authenticateByCardCode(cardCode) ??
+        await _gate.verifyViaMain(
+          cardCode: cardCode,
+          retryLocal: () => db.authenticateByCardCode(cardCode),
+        );
+    if (result == null) return null;
+    await _verifyBranchAccess(result);
+    // Spec 151 (P1-8) — POS card-swipe → session token via cardCode.
+    return _acquireServerSession(result, cardCode: cardCode);
   }
 
   @override
   Future<UserWithRole?> authenticateByPasswordOrCard(String input) async {
-    final result = await db.authenticateByPasswordOrCard(input);
-    if (result != null) {
-      await _verifyBranchAccess(result);
-      // Spec 151 (P1-8) — this is the primary login-screen path (password-only,
-      // username blank) AND the manager-elevation path (app_shell). The DAO
-      // tries `input` as a password first, then as a card code, so disambiguate
-      // by the resolved user: if `input` is the user's card code, mint via
-      // cardCode; otherwise it matched as a password → mint via
-      // username(resolved)+password(input).
-      if (result.user.cardCode != null && result.user.cardCode == input) {
-        await _acquireServerSession(result, cardCode: input);
-      } else {
-        await _acquireServerSession(
-          result,
-          username: result.user.username,
-          password: input,
+    final result = await db.authenticateByPasswordOrCard(input) ??
+        await _gate.verifyViaMain(
+          cardCode: input,
+          passwordOnly: true,
+          retryLocal: () => db.authenticateByPasswordOrCard(input),
         );
-      }
-      await _enforceOfflineLoginPolicy(result);
+    if (result == null) return null;
+    await _verifyBranchAccess(result);
+    // This is the primary login-screen path (password-only) AND the
+    // manager-elevation path: disambiguate by the resolved user — if `input`
+    // is the user's card code mint via cardCode, else via username+password.
+    if (result.user.cardCode != null && result.user.cardCode == input) {
+      return _acquireServerSession(result, cardCode: input);
     }
-    return result;
+    return _acquireServerSession(result,
+        username: result.user.username, password: input);
   }
 
+  @override
+  Future<void> changeOwnPassword({
+    required String username,
+    String? currentPassword,
+    String? cardCode,
+    required String newPassword,
+  }) =>
+      _gate.changeOwnPassword(
+        username: username,
+        currentPassword: currentPassword,
+        cardCode: cardCode,
+        newPassword: newPassword,
+      );
+
   /// Spec 151 (P1-8) — single choke point that hands the just-verified
-  /// credential to [ServerProxy.acquireSession] so a client/mirror device
-  /// obtains a signed `X-Session-Token`. Gated on [SyncInterceptor.isClientMode]
-  /// inside [ServerProxy.acquireSession] (client OR mirror). It swallows all
-  /// errors and fast-fails, so awaiting it never blocks or breaks login.
-  Future<void> _acquireServerSession(
+  /// credential to the main ([AuthSessionGate]) so a client/mirror device
+  /// obtains a signed `X-Session-Token`, or is refused. Returns the user
+  /// (a stale local force-change flag may have been cleared).
+  Future<UserWithRole> _acquireServerSession(
     UserWithRole result, {
     String? username,
     String? password,
     String? cardCode,
   }) async {
-    if (!SyncInterceptor.isClientMode) return;
-    await ServerProxy.instance.acquireSession(
-      userId: result.user.id,
-      username: username,
-      password: password,
-      cardCode: cardCode,
-    );
+    if (!SyncInterceptor.isClientMode) return result;
+    final user = await _gate.afterLocalSuccess(result,
+        username: username, password: password, cardCode: cardCode);
     // Spec 151 P1-8b — the moment a session token exists, backfill the
     // branch-scoped transactional tables that first-sync / boot skipped while
-    // tokenless. Without this a fresh client shows EMPTY sales/purchase/GL/
-    // stock/shift history until the first write (or the next app boot), because
-    // nothing else re-triggers a pull post-login. Fire-and-forget — DeltaPull
-    // no-ops if already pulling; the transactional watermarks are unseeded so
-    // this is a full, branch-scoped dump.
-    if (ServerProxy.instance.hasSessionToken(result.user.id)) {
+    // tokenless (fire-and-forget; DeltaPull no-ops if already pulling), and
+    // product_batches, which is not a DeltaPull table (Tier-2 strategy).
+    if (ServerProxy.instance.hasSessionToken(user.user.id)) {
       unawaited(DeltaPullService.instance.pullAll());
-      // Spec 151 residual #1 — product_batches is NOT a DeltaPull table (absent
-      // from `pullTables`), so `pullAll()` above won't backfill it. Its GET now
-      // fail-closes tokenless, so a fresh client provisions with EMPTY batches
-      // (breaking FEFO/expiry) until the next periodic fullSync. Heal it now
-      // with the token present via its own Tier-2 strategy (branch-scoped).
       unawaited(SyncService.instance?.syncTable('product_batches') ??
           Future<void>.value());
     }
+    return user;
   }
-
   @override
   Future<List<Role>> getAllRoles() => db.getAllRoles();
 

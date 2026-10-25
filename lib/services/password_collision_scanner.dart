@@ -38,6 +38,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 
 import '../data/database/database.dart';
 import 'network_service.dart';
@@ -52,6 +53,59 @@ class PasswordCollisionScanner {
   PasswordCollisionScanner(this._db);
 
   final AppDatabase _db;
+
+  /// Fire-and-forget scans still running, per database. The save path never
+  /// waits for a scan, but whoever owns the database can: `await drain(db)`
+  /// before `db.close()` so a scan never touches a closed connection ("Can't
+  /// re-open a database after closing it"). Scan errors are informational
+  /// (FR-013) and never escape as unhandled async errors.
+  static final Map<AppDatabase, Set<Future<void>>> _pending = {};
+
+  /// Starts [scan] in the background and registers it for [drain].
+  static void track(AppDatabase db, Future<void> Function() scan) {
+    late final Future<void> run;
+    run = (() async {
+      try {
+        await scan();
+      } catch (e) {
+        debugPrint('[PasswordCollisionScanner] background scan skipped: $e');
+      }
+    })()
+        .whenComplete(() => _pending[db]?.remove(run));
+    (_pending[db] ??= <Future<void>>{}).add(run);
+  }
+
+  /// Background scan for a freshly created user (never blocks the save).
+  static void scanAfterCreate(AppDatabase db, int userId, String plaintext) =>
+      track(
+        db,
+        () => PasswordCollisionScanner(db)
+            .scanAndNotify(affectedUserId: userId, plaintext: plaintext),
+      );
+
+  /// Background resolve-then-rescan after a password change; [oldUser] is the
+  /// row BEFORE the write (FR-017 self-equality check).
+  static void scanAfterPasswordChange(
+          AppDatabase db, int userId, String plaintext, User? oldUser) =>
+      track(db, () async {
+        final scanner = PasswordCollisionScanner(db);
+        await scanner.resolveCollisionsInvolving(userId);
+        await scanner.scanAndNotify(
+          affectedUserId: userId,
+          plaintext: plaintext,
+          skipIfMatchesHash: oldUser?.passwordHash,
+          skipIfMatchesSalt: oldUser?.passwordSalt,
+        );
+      });
+
+  /// Completes when every scan started on [db] has finished.
+  static Future<void> drain(AppDatabase db) async {
+    final set = _pending[db];
+    while (set != null && set.isNotEmpty) {
+      await Future.wait(set.toList());
+    }
+    _pending.remove(db);
+  }
 
   /// New ActivityLog action constant adopted by US2. Public so other code
   /// (security-alerts panel, audit-log filters) can reference it without

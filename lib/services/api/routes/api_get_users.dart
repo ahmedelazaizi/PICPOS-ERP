@@ -25,7 +25,7 @@ extension ApiHandlerUserGets on ApiHandler {
       final pairingOpen = ApiAuthMiddleware.isPairingOpen;
       final hasIdentity = ApiUserCtx.userIdOf(request) != null;
       // رمزُ جلسة الويب لا يستحقّ الاعتمادات أبداً (WebSessionGuard).
-      final serveCredentials = WebSessionGuard.mayServeUserCredentials(
+      final serveCreds = WebSessionGuard.mayServeUserCredentials(
         request,
         pairingOpen: pairingOpen,
         hasIdentity: hasIdentity,
@@ -99,9 +99,24 @@ extension ApiHandlerUserGets on ApiHandler {
       }
 
       final users = await query.get();
+      final requesterId = ApiUserCtx.userIdOf(request);
+      final adminRow = await (_db.select(_db.users)
+            ..where((u) => u.username.equals('admin'))
+            ..limit(1))
+          .getSingleOrNull();
+      final adminId = adminRow?.id ?? 1;
       final jsonList = users
           .map(
-            (u) => <String, dynamic>{
+            (u) {
+              // R1-g: other users' sessions never receive the admin hash.
+              final serveCredentials = serveCreds &&
+                  WebSessionGuard.mayServeCredentialsOf(
+                    rowUserId: u.id,
+                    adminId: adminId,
+                    requesterId: requesterId,
+                    pairingOpen: pairingOpen,
+                  );
+              return <String, dynamic>{
               'id': u.id,
               'username': u.username,
               'displayName': u.displayName,
@@ -138,6 +153,7 @@ extension ApiHandlerUserGets on ApiHandler {
               //    مُنادٍ إنتاجي)، فالحقل كان بيتبعت بلا أي مستهلك.
               //    الـPIN بقى سرّاً محلياً: بيتظبط عبر
               //    `POST /api/users/<id>/pin` وبيتحقق محلياً.
+              };
             },
           )
           .toList();

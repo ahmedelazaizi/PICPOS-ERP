@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/i18n/tr.dart';
+import '../../../../domain/models/first_run/first_run_path.dart';
 import '../../../picpos_shell/picpos_surface.dart';
 import '../first_run_controller.dart';
 import '../first_run_ops.dart';
@@ -136,7 +137,7 @@ class _StepFirstSyncState extends ConsumerState<StepFirstSync> {
             body: tr('لا تُعاد المعاملات نفسها مرتين: لكل حركة معرّف فريد.'),
           ),
         ],
-        if (done) ...[
+        if (done && d.path == FirstRunPath.branch) ...[
           const SizedBox(height: 16),
           Text(
             tr('اختر فرع هذا الجهاز'),

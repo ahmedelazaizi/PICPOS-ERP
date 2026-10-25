@@ -2,19 +2,33 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../../core/auth/password_policy.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
 
-/// Dialog to force user to change their password on first login or after reset
+/// Dialog to force user to change their password on first login or after reset.
+///
+/// [viaMain] (client/mirror, plan P2): the change is made ON THE MAIN SYSTEM -
+/// online only, never queued - proving identity with [currentPassword] or
+/// [cardCode] (kept in memory, never persisted). [onPasswordChanged] hands the
+/// new password to the caller so it can complete the login with it.
 class ForceChangePasswordDialog extends ConsumerStatefulWidget {
-  final int userId;
+  final int? userId;
   final String username;
+  final bool viaMain;
+  final String? currentPassword;
+  final String? cardCode;
+  final ValueSetter<String>? onPasswordChanged;
 
   const ForceChangePasswordDialog({
     super.key,
-    required this.userId,
+    this.userId,
     required this.username,
+    this.viaMain = false,
+    this.currentPassword,
+    this.cardCode,
+    this.onPasswordChanged,
   });
 
   @override
@@ -41,9 +55,9 @@ class _ForceChangePasswordDialogState extends ConsumerState<ForceChangePasswordD
       return;
     }
 
-    // BUG-U30: enforce a stronger minimum than 4.
-    if (_passwordController.text.length < 6) {
-      setState(() => _errorMessage = tr('يجب أن تكون كلمة المرور 6 خانات على الأقل'));
+    if (_passwordController.text.length < kMinPasswordLength) {
+      setState(() => _errorMessage = tr(
+          'يجب أن تكون كلمة المرور {p0} خانات على الأقل.', {'p0': kMinPasswordLength}));
       return;
     }
 
@@ -59,16 +73,27 @@ class _ForceChangePasswordDialogState extends ConsumerState<ForceChangePasswordD
 
     try {
       final authRepo = ref.read(authRepositoryProvider);
-      await authRepo.updateUserPassword(
-        userId: widget.userId,
-        newPassword: _passwordController.text,
-      );
+      if (widget.viaMain) {
+        await authRepo.changeOwnPassword(
+          username: widget.username,
+          currentPassword: widget.currentPassword,
+          cardCode: widget.cardCode,
+          newPassword: _passwordController.text,
+        );
+      } else {
+        await authRepo.updateUserPassword(
+          userId: widget.userId!,
+          newPassword: _passwordController.text,
+        );
+      }
+      widget.onPasswordChanged?.call(_passwordController.text);
 
       if (!mounted) return;
       AppToast.show(context, tr('تم تغيير كلمة المرور بنجاح'), type: ToastType.success);
       Navigator.of(context).pop(true);
     } catch (e) {
-      setState(() => _errorMessage = e.toString().replaceFirst('Exception: ', ''));
+      setState(() => _errorMessage =
+          e is StateError ? e.message : e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

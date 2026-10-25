@@ -281,10 +281,33 @@ extension ApiHandlerSyncPull on ApiHandler {
         ...ClientSchemaGate.columnsToStrip(table, clientSchema),
       };
 
+      // R1-g: the bootstrap admin's credential columns reach only the admin's
+      // own session (or an open pairing window) - not any other identified one.
+      int? adminId;
+      if (table == 'users' && serveCredentials) {
+        adminId = (await (_db.select(_db.users)
+                  ..where((u) => u.username.equals('admin'))
+                  ..limit(1))
+                .getSingleOrNull())
+            ?.id ??
+            1;
+      }
+      final requesterId = ApiUserCtx.userIdOf(request);
       final jsonRows = rows.map((r) {
         final out = <String, dynamic>{};
+        final stripAdminCreds = adminId != null &&
+            !WebSessionGuard.mayServeCredentialsOf(
+              rowUserId: (r.data['id'] as num?)?.toInt() ?? -1,
+              adminId: adminId,
+              requesterId: requesterId,
+              pairingOpen: ApiAuthMiddleware.isPairingOpen,
+            );
         for (final entry in r.data.entries) {
           if (denied.contains(entry.key)) continue;
+          if (stripAdminCreds &&
+              credentialColumns['users']!.contains(entry.key)) {
+            continue;
+          }
           final v = entry.value;
           if (v is DateTime) {
             // Drift-native datetime → epoch seconds (matches client schema).

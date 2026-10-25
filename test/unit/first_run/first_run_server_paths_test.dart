@@ -124,17 +124,29 @@ void main() {
           (true, true, false));
     });
 
-    test('المرآة: ثلاث خطوات، مدير بدل اسم الجهاز', () {
-      expect(stepsFor(FirstRunPath.mirror),
-          [FirstRunStep.mode, FirstRunStep.link, FirstRunStep.review]);
+    test('المرآة (A1): إقران برمز ثم مزامنة ثم حساب - بلا مدير ولا مفتاح مشترك', () {
+      expect(stepsFor(FirstRunPath.mirror), [
+        FirstRunStep.mode,
+        FirstRunStep.link,
+        FirstRunStep.firstSync,
+        FirstRunStep.account,
+        FirstRunStep.review,
+      ]);
       final m = const FirstRunDraft(draftId: 'm', path: FirstRunPath.mirror)
           .copyWith(endpoint: '10.0.0.1');
-      FirstRunIssue? v(FirstRunDraft d) =>
-          validateStep(FirstRunStep.link, d, const FirstRunSecrets());
-      expect(v(m), FirstRunIssue.mirrorAdminRequired);
-      final named = m.copyWith(accountUsername: 'admin');
-      expect(v(named), FirstRunIssue.linkNotVerified, reason: 'اسم الجهاز غير مطلوب');
-      expect(v(named.copyWith(checks: const FirstRunChecks(linked: true))), isNull);
+      FirstRunIssue? v(FirstRunStep s, FirstRunDraft d) =>
+          validateStep(s, d, const FirstRunSecrets());
+      expect(v(FirstRunStep.link, m), FirstRunIssue.deviceNameRequired);
+      final named = m.copyWith(deviceName: 'MGR');
+      expect(v(FirstRunStep.link, named), FirstRunIssue.linkNotVerified);
+      final linked = named.copyWith(checks: const FirstRunChecks(linked: true));
+      expect(v(FirstRunStep.link, linked), isNull);
+      // a mirror is not branch-bound: no branch selection is demanded
+      expect(v(FirstRunStep.firstSync, linked), FirstRunIssue.firstSyncPending);
+      final synced = linked.copyWith(
+          checks: const FirstRunChecks(linked: true, firstSyncDone: true));
+      expect(v(FirstRunStep.firstSync, synced), isNull);
+      expect(v(FirstRunStep.account, synced), FirstRunIssue.accountNotVerified);
     });
   });
 

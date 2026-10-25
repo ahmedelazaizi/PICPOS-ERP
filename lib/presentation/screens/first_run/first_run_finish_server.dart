@@ -80,6 +80,16 @@ ServerSetupInput buildServerSetupInput(FirstRunDraft d, FirstRunSecrets s) {
   );
 }
 
+/// A1: the network mode a path COMMITS - one explicit mapping, so the mode the
+/// owner chose in the first step is the mode that is committed (never client
+/// for a mirror, as the old wizard's logs showed).
+NetworkMode networkModeForPath(FirstRunPath path) => switch (path) {
+      FirstRunPath.standalone => NetworkMode.standalone,
+      FirstRunPath.hq => NetworkMode.server,
+      FirstRunPath.branch => NetworkMode.client,
+      FirstRunPath.mirror => NetworkMode.mirror,
+    };
+
 /// المنفّذُ المناسب لمسار [path].
 FirstRunFinisher serverBoundFinisher({
   required ServerSetupWriter writer,
@@ -112,7 +122,7 @@ FirstRunFinisher serverBoundFinisher({
           }
           return runFinishTail(
             p: p,
-            mode: NetworkMode.server,
+            mode: networkModeForPath(draft.path),
             serverPort: 8080,
             auditPayload: audit,
             enter: enter,
@@ -127,7 +137,7 @@ FirstRunFinisher serverBoundFinisher({
           }
           return runFinishTail(
             p: p,
-            mode: NetworkMode.client,
+            mode: networkModeForPath(draft.path),
             serverPort: int.tryParse(draft.port.trim()) ?? 8080,
             auditPayload: {...audit, 'branch_id': branchId},
             enter: enter,
@@ -136,16 +146,16 @@ FirstRunFinisher serverBoundFinisher({
               branchId: branchId,
               syncedBranches: await p.getAllBranches(),
             ),
-            extras: () => runExtras(draft, p),
+            extras: () => runDeviceExtras(draft, p),
           );
         case FirstRunPath.mirror:
           return runFinishTail(
             p: p,
-            mode: NetworkMode.mirror,
+            mode: networkModeForPath(draft.path),
             serverPort: int.tryParse(draft.port.trim()) ?? 8080,
             auditPayload: audit,
             enter: enter,
-            extras: () => runExtras(draft, p),
+            extras: () => runDeviceExtras(draft, p),
           );
         case FirstRunPath.standalone:
           throw StateError('standalone uses SetupFinishRunner');

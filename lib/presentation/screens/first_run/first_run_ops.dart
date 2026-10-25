@@ -13,6 +13,7 @@ import '../../../core/i18n/tr.dart';
 import '../../../data/providers/providers.dart' show Branche;
 import '../../../domain/models/first_run/first_run_draft.dart';
 import '../../../domain/models/first_run/first_run_invalidation.dart';
+import '../../../domain/models/first_run/first_run_path.dart';
 import '../../../services/setup/branch_account_verifier.dart';
 import '../../../services/setup/client_link_service.dart';
 import '../../../services/setup/server_provisioning_service.dart';
@@ -196,12 +197,16 @@ class FirstRunOps extends Notifier<FirstRunOpsState> {
       return;
     }
     state = state.copyWith(linkBusy: true, clearLinkMessage: true);
-    final r = await ref.read(clientLinkPortProvider).pairDevice(
-          address: d.endpoint.trim(),
-          port: int.tryParse(d.port.trim()) ?? 8080,
-          code: code,
-          deviceName: d.deviceName.trim(),
-        );
+    final link = ref.read(clientLinkPortProvider);
+    final address = d.endpoint.trim();
+    final port = int.tryParse(d.port.trim()) ?? 8080;
+    // A1: the PATH decides the device kind (a mirror pairs only with a mirror
+    // code; a branch only with a client / pos code) - never the other way.
+    final r = d.path == FirstRunPath.mirror
+        ? await link.pairMirrorWithCode(
+            host: address, port: port, code: code, deviceName: d.deviceName.trim())
+        : await link.pairDevice(
+            address: address, port: port, code: code, deviceName: d.deviceName.trim());
     state = state.copyWith(
       linkBusy: false,
       linkMessageOk: r.ok,
@@ -209,27 +214,6 @@ class FirstRunOps extends Notifier<FirstRunOpsState> {
     );
     if (r.ok) {
       _ctl.updateSecrets((s) => s.copyWith(pairingCode: ''));
-      _setChecks((c) => c.copyWith(linked: true));
-    }
-  }
-
-  Future<void> pairMirror() async {
-    if (state.anyBusy) return;
-    final d = _ui.draft;
-    state = state.copyWith(linkBusy: true, clearLinkMessage: true);
-    final r = await ref.read(clientLinkPortProvider).pairMirror(
-          host: d.endpoint.trim(),
-          port: int.tryParse(d.port.trim()) ?? 8080,
-          adminUsername: d.accountUsername.trim(),
-          adminPassword: _ui.secrets.accountPassword,
-        );
-    state = state.copyWith(
-      linkBusy: false,
-      linkMessageOk: r.ok,
-      linkMessage: r.message,
-    );
-    if (r.ok) {
-      _ctl.updateSecrets((s) => s.copyWith(accountPassword: ''));
       _setChecks((c) => c.copyWith(linked: true));
     }
   }
@@ -258,6 +242,7 @@ class FirstRunOps extends Notifier<FirstRunOpsState> {
           // الإعدادُ لم يكتمل بعد: لا بياناتَ عملٍ محليّةً تُفقَد بإعادة الربط.
           confirmRePair: () async => true,
           onProgress: (m) => state = state.copyWith(syncMessage: m),
+          mirror: d.path == FirstRunPath.mirror,
         );
     state = state.copyWith(
       syncBusy: false,
@@ -268,7 +253,9 @@ class FirstRunOps extends Notifier<FirstRunOpsState> {
     );
     if (!r.ok) return;
     _setChecks((c) => c.copyWith(firstSyncDone: true));
-    if (r.branches.length == 1) await selectBranch(r.branches.single);
+    if (d.path == FirstRunPath.branch && r.branches.length == 1) {
+      await selectBranch(r.branches.single);
+    }
   }
 
   Future<void> selectBranch(Branche b) async {
@@ -290,16 +277,21 @@ class FirstRunOps extends Notifier<FirstRunOpsState> {
     if (state.anyBusy) return;
     final d = _ui.draft;
     final branchId = d.selectedBranchId;
-    if (branchId == null) return;
+    final mirror = d.path == FirstRunPath.mirror;
+    if (branchId == null && !mirror) return;
     state = state.copyWith(accountBusy: true, clearAccount: true);
     final r = await ref.read(branchAccountVerifierProvider).verify(
           username: d.accountUsername,
           password: _ui.secrets.accountPassword,
-          branchId: branchId,
+          branchId: mirror ? null : branchId,
+          newPassword: _ui.secrets.accountNewPassword,
         );
     state = state.copyWith(accountBusy: false, account: r);
-    // كلمةُ المرور لا تبقى بعد المحاولة، نجحت أم فشلت.
-    _ctl.updateSecrets((s) => s.copyWith(accountPassword: ''));
+    // A temporary password stays in memory for the NEXT call only (the change
+    // is made on the main); otherwise no password survives the attempt.
+    _ctl.updateSecrets((s) => r.needsPasswordChange
+        ? s.copyWith(accountNewPassword: '')
+        : s.copyWith(accountPassword: '', accountNewPassword: ''));
     _setChecks((c) => c.copyWith(accountVerified: r.ok));
   }
 

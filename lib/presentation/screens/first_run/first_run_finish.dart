@@ -99,6 +99,11 @@ Future<void> runExtras(FirstRunDraft d, SetupPersistence p) async {
   }
 }
 
+/// عميلٌ/مرآة: تفضيلُ الجهاز وحده - حالةُ المؤسسة مِلكُ السيرفر (ADP-006).
+Future<void> runDeviceExtras(FirstRunDraft d, SetupPersistence p) async {
+  if (d.touchMode) await p.saveCachedSetting('touchMode', 'true');
+}
+
 /// المنفِّذ الافتراضيّ: المستقلّ بمشغّلٍ واحدٍ يعيش بين المحاولات ليتذكّر ما
 /// نجح، والمقرّ/الفرع/المرآة بالمنفّذ المرتبط بخادم (‏serverBoundFinisher).
 FirstRunFinisher defaultFinisher({

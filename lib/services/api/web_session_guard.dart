@@ -121,6 +121,17 @@ class WebSessionGuard {
     required bool hasIdentity,
   }) =>
       !isWebRequest(request) && (pairingOpen || hasIdentity);
+
+  /// R1-g: the bootstrap admin's credentials are served to the admin's own
+  /// session (or inside an operator-opened pairing window) - never to any
+  /// other identified session (a cashier must not receive the admin hash).
+  static bool mayServeCredentialsOf({
+    required int rowUserId,
+    required int? adminId,
+    required int? requesterId,
+    required bool pairingOpen,
+  }) =>
+      pairingOpen || rowUserId != adminId || requesterId == adminId;
 }
 
 /// بوابة قراءة GET لرمز الويب: بادئةُ المسار → الجداول التي يقرؤها.

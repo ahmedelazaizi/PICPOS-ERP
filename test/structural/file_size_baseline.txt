@@ -24,7 +24,7 @@ lib/data/database/daos/sales_mutations_dao.dart 73590
 lib/data/database/daos/tables_dao.dart 33560
 lib/data/database/daos/treasury_reports_dao.dart 31028
 lib/data/database/daos/treasury_voucher_dao.dart 38847
-lib/data/database/daos/user_dao.dart 32596
+lib/data/database/daos/user_dao.dart 32572
 lib/data/database/database.dart 40457
 lib/data/database/database_seeder_permissions.dart 62492
 lib/data/database/database_seeder_postgres.dart 32662
@@ -100,7 +100,7 @@ lib/presentation/screens/fixed_assets_dialogs.dart 70219
 lib/presentation/screens/invoice_designer/invoice_designer_properties.dart 47246
 lib/presentation/screens/invoice_designer/invoice_section_editor.dart 80458
 lib/presentation/screens/journal_entries_screen.dart 46153
-lib/presentation/screens/login_screen.dart 40567
+lib/presentation/screens/login_screen.dart 39472
 lib/presentation/screens/offers/offer_dialogs.dart 51760
 lib/presentation/screens/parties/party_dialogs.dart 46032
 lib/presentation/screens/parties/party_groups_tab.dart 35586

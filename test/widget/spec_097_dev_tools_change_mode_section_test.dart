@@ -5,7 +5,8 @@
 // Before Spec 097 the SegmentedButton in Developer Tools' _ChangeModeSection
 // rendered only 3 options (standalone/server/client). Mirror was reachable
 // ONLY from the Setup Wizard. These source pins enforce the 4th option
-// and the inline pairing-dialog launch on first selection.
+// (A1 update: applying a target no longer opens a pairing dialog; every target
+// goes through "re-provision this device" - see the pins below.)
 //
 // _ChangeModeSection is a private widget so we pin via source — same
 // pattern as `spec_088_admin_bypass_test.dart`.
@@ -24,14 +25,16 @@ void main() {
           .readAsStringSync();
 
   group('Spec 097 — Dev Tools _ChangeModeSection', () {
-    test('imports MirrorState + MirrorPairingDialog', () {
-      expect(devToolsSrc, contains("import '../../services/mirror_state.dart'"),
-          reason: 'Pairing-gate check needs MirrorState.isConfigured.');
-      expect(
-          devToolsSrc,
-          contains(
-              "import '../widgets/settings/mirror_pairing_dialog.dart'"),
-          reason: 'The 4th-option apply path opens MirrorPairingDialog.');
+    // A1 (intentional redesign): the section no longer pairs/switches in place.
+    // Every target (mirror included) goes through "re-provision this device",
+    // so the pairing dialog + MirrorState gate are gone from this screen.
+    test('imports the re-provision confirm dialog, not MirrorPairingDialog', () {
+      expect(devToolsSrc,
+          contains("import 'first_run/reprovision_confirm_dialog.dart'"),
+          reason: 'The apply path asks confirmReprovision.');
+      expect(devToolsSrc, isNot(contains('mirror_pairing_dialog.dart')),
+          reason: 'No direct mirror pairing path from Developer Tools.');
+      expect(devToolsSrc, isNot(contains('MirrorPairingDialog')));
     });
 
     test('renders 4 ButtonSegment values including DeploymentMode.mirror', () {
@@ -53,8 +56,8 @@ void main() {
       expect(block, contains("Text(tr('مرآة'))"));
     });
 
-    test('_apply opens MirrorPairingDialog when target is mirror + unconfigured',
-        () {
+    test('_apply sends EVERY target (mirror included) through re-provision; '
+        'no direct mode switch, no pairing dialog', () {
       // Scope to _ChangeModeSection — there's also a profile-section _apply.
       final sectionStart =
           devToolsSrc.indexOf('class _ChangeModeSectionState');
@@ -63,20 +66,30 @@ void main() {
       final applyStart =
           devToolsSrc.indexOf('Future<void> _apply() async {', sectionStart);
       expect(applyStart, isNot(-1));
-      final body = devToolsSrc.substring(applyStart, applyStart + 1800);
+      final applyEnd = devToolsSrc.indexOf('Widget build(', applyStart);
+      expect(applyEnd, greaterThan(applyStart));
+      final body = devToolsSrc.substring(applyStart, applyEnd);
 
-      // The gating predicate must check BOTH "target = mirror" AND
-      // "MirrorState not configured". Without the second clause we'd
-      // re-prompt on every mode-flip back to mirror.
-      expect(body, contains('DeploymentMode.mirror'));
-      expect(body, contains('MirrorState.instance.isConfigured'));
-      expect(body, contains('MirrorPairingDialog.show'));
+      // Confirm first, then re-provision (the committed choice is made in the
+      // first-run flow after the restart).
+      final confirm = body.indexOf('confirmReprovision(context)');
+      final reprovision =
+          body.indexOf('provisioningActionsProvider).reprovision()');
+      expect(confirm, isNot(-1));
+      expect(reprovision, greaterThan(confirm),
+          reason: 'reprovision() must run only after the operator confirmed.');
 
-      // If pairing fails, the UI must revert _selected so the segmented
-      // control matches the actual current mode — otherwise a stuck
-      // "selected mirror" state lies to the operator.
-      expect(body, contains('widget.snapshot.mode'),
-          reason: 'Revert path must restore the original mode on failure.');
+      // No target-specific branch: a mirror target is not special-cased.
+      expect(body, isNot(contains('DeploymentMode.mirror')));
+      expect(body, isNot(contains('MirrorState')));
+      expect(body, isNot(contains('MirrorPairingDialog')));
+      expect(body, isNot(contains('.setMode(')),
+          reason: 'A1: the mode changes through re-provisioning only.');
+
+      // A declined confirmation must revert _selected so the segmented
+      // control matches the actual current mode.
+      expect(body, contains('_selected = widget.snapshot.mode'),
+          reason: 'Declined confirmation must restore the original mode.');
     });
 
     test('_modeLabel covers all 4 enum values', () {

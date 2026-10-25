@@ -107,8 +107,12 @@ class FirstRunSecrets {
     this.pairingCode = '',
     this.pgPassword = '',
     this.accountPassword = '',
+    this.accountNewPassword = '',
     this.userPasswords = const {},
   });
+
+  /// كلمةُ المرور الجديدة حين يُلزم الرئيسيُّ بتغيير المؤقتة (‏في الذاكرة فقط).
+  final String accountNewPassword;
 
   /// كلمةُ مرور PostgreSQL وكلمةُ حساب الفرع/مدير المرآة وكلماتُ مستخدمي
   /// المقرّ الأوليّة (بمفتاح rowId) — كلُّها في الذاكرة فقط.
@@ -130,11 +134,13 @@ class FirstRunSecrets {
     String? pairingCode,
     String? pgPassword,
     String? accountPassword,
+    String? accountNewPassword,
     Map<int, String>? userPasswords,
   }) =>
       FirstRunSecrets(
         pgPassword: pgPassword ?? this.pgPassword,
         accountPassword: accountPassword ?? this.accountPassword,
+        accountNewPassword: accountNewPassword ?? this.accountNewPassword,
         userPasswords: userPasswords ?? this.userPasswords,
         adminPassword: adminPassword ?? this.adminPassword,
         adminPasswordConfirm: adminPasswordConfirm ?? this.adminPasswordConfirm,

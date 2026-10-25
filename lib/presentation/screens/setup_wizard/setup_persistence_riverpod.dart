@@ -13,7 +13,7 @@ import '../../../core/config/business_profile_provider.dart';
 import '../../../data/providers/providers.dart';
 import '../../../services/audit_log.dart';
 import '../../../services/deployment/commit_result.dart';
-import '../../../services/deployment/deployment_mode_committer.dart';
+import '../../../services/deployment/mode_activator.dart';
 import '../../../services/developer_auth_service.dart';
 import '../../../services/network_service.dart';
 import 'setup_finish_runner.dart';
@@ -136,20 +136,25 @@ class RiverpodSetupPersistence implements SetupPersistence, SetupTablesPort {
   // `network_mode`.
   @override
   Future<String?> commitDeploymentMode(NetworkMode mode, int serverPort) async {
-    final committer = DeploymentModeCommitter(db: _ref.read(databaseProvider));
-    final contract = committer.buildContract(
-      target: mode,
-      serverPort: serverPort,
-      serverHost: NetworkService.instance.serverAddress,
+    // A1: the ModeActivator is the single committer; the mode is the CHOSEN one.
+    final result = await ModeActivator(db: _ref.read(databaseProvider)).commit(
+      ActivationPlan(
+        mode: mode,
+        port: serverPort,
+        host: NetworkService.instance.serverAddress,
+      ),
     );
-    final result = await committer.commit(contract: contract);
     return result is CommitFailed ? result.reasonAr : null;
   }
 
+  // ADP-011: the branch lives in the DB (the device record) AND the prefs cache.
   @override
   Future<void> saveClientBranchId(int branchId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('client_branch_id', branchId);
+    await _ref
+        .read(settingsRepositoryProvider)
+        .saveSetting('client_branch_id', '$branchId');
   }
 
   @override

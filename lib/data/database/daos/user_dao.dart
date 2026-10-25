@@ -206,12 +206,7 @@ extension UserDao on AppDatabase {
     // For brand-new users the branch set is empty until setUserBranchAccess
     // runs, in which case the scanner exits early — a known minor limitation
     // documented in the implementation. The save path never blocks.
-    unawaited(
-      PasswordCollisionScanner(this).scanAndNotify(
-        affectedUserId: newUserId,
-        plaintext: password,
-      ),
-    );
+    PasswordCollisionScanner.scanAfterCreate(this, newUserId, password);
 
     return newUserId;
   }
@@ -291,15 +286,8 @@ extension UserDao on AppDatabase {
     // entirely), then trigger a fresh scan. The scanner self-gates on
     // NetworkService.isClient and on the FR-017 self-equality check, so
     // updates that didn't change the password produce no warning at all.
-    final scanner = PasswordCollisionScanner(this);
-    unawaited(scanner.resolveCollisionsInvolving(userId).then((_) {
-      return scanner.scanAndNotify(
-        affectedUserId: userId,
-        plaintext: newPassword,
-        skipIfMatchesHash: oldUser?.passwordHash,
-        skipIfMatchesSalt: oldUser?.passwordSalt,
-      );
-    }));
+    PasswordCollisionScanner.scanAfterPasswordChange(
+        this, userId, newPassword, oldUser);
 
     // If the operator just changed the built-in `admin` user's password,
     // raise the `admin_password_customized` sentinel so the startup
@@ -411,9 +399,9 @@ extension UserDao on AppDatabase {
     return null;
   }
 
-  /// Silently upgrade a user's stored hash from PBKDF2-SHA256 → Argon2id.
-  /// Called in the background after a successful login with an old-format hash.
+  /// PBKDF2 → Argon2id after login; never on client/mirror (the main owns the hash).
   Future<void> _rehashToArgon2(int userId, String plainPassword) async {
+    if (SyncInterceptor.isClientMode) return;
     try {
       final newHash = await SecurityService.hashPasswordArgon2(plainPassword);
       await (update(users)..where((u) => u.id.equals(userId))).write(

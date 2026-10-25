@@ -704,6 +704,34 @@
 - **حراس:** `file_size_ratchet_test`, `i18n_coverage_test`, `dark_mode_guard_test`، وحارس `kDeviceLocalSettingKeys` إن وُجد (المنفّذ يبحث عن اختبار يقرأ القائمة).
 - **الأمر:** `flutter test test/unit/auth test/security test/structural`.
 
+#### P2 + P3 — العقد المنفَّذ (implemented contract) [2026-10-24]
+> نُفِّذ P2 وP3 في الفرع `feat/tables-reservations-permissions`. بلا تغيير مخطط. كلّه مشروطٌ بـ`SyncInterceptor.isClientMode` (عميل أو مرآة)؛ المستقلّ والرئيسي لا يمرّان به (يحرسه اختبار).
+
+**قرارات المالك المطبَّقة:** الرئيسي مصدر الحقيقة الوحيد؛ مدة السماح الافتراضية 7 أيام من وقت **استلام/تأكيد** الرئيسي لاعتماد المستخدم؛ الكاشير والمحاسب يعملان بلا رئيسي ضمن المدة؛ `neverVerified` أُزيل (= `notProvisioned`)؛ `admin` يدخل بلا اتصال ضمن المدة؛ التنصيبات القائمة تُختم عند الترقية؛ P3 يبدأ `shadow` بمفتاح محلي للجهاز؛ الحد الأدنى للكلمة 8.
+
+**P2 — الرفض الحيّ** (`lib/data/repositories/auth_session_gate.dart`، `lib/services/server_proxy/server_proxy_auth.dart`):
+- بعد نجاح التحقّق المحلي يطلب الجهازُ جلسةً من الرئيسي (`POST /api/auth/session`) والجوابُ مصنَّف `SessionMintOutcome`: `ok | invalidCredential | passwordChangeRequired | branchDenied | mirrorDenied | lockedOut | deviceRevoked | deviceUnpaired | unreachable`.
+- **رفض الرئيسي ملزِم في الوضعين** (`shadow` و`enforce`) حتى لو طابقت البصمةُ المحلية: `invalidCredential`/`branchDenied`/`mirrorDenied` ⇒ رفضٌ + طابع `rejected` ببصمة المستخدم الحالية (يبقى الرفضُ بعد انقطاعٍ لاحق إلى أن تصل بصمةٌ جديدة أو يقبله الرئيسي) + جدولة سحب `users`. `lockedOut` ⇒ رفضٌ بلا طابع رفض. `passwordChangeRequired` ⇒ `PasswordChangeRequired(username, viaCard)`.
+- **حماية الرفض الخاطئ:** 401 لا يُلزم إن تغيّر `sessionKeyId` المعلَن في `/api/health` عمّا عُرف (مضيفٌ أُعيدت تهيئتُه) ⇒ يُعامَل كـ`deviceUnpaired` أي سياسة الأوفلاين.
+- `deviceRevoked` ⇒ علمٌ محلي `device_revoked_v1` يرفض كلَّ دخول (بما فيه بلا اتصال) حتى يقبل الرئيسيُّ الجهازَ بجلسةٍ ناجحة (يُمسح عندها).
+- **التحقّق عبر الرئيسي (B.6.3):** فشل المحلي ⇒ `mintDirect` (بلا حفظ إثبات) ⇒ عند `ok` تُسحب `/api/users` و`/api/user-branch-access` **برمز ذلك المستخدم** (الصفوف غير القابلة للتطبيق محلياً تُهمَل) ⇒ إعادة التحقّق المحلي. كلمةٌ بلا اسم مستخدمٍ لا تُرسل كلمةَ مرور أبدًا (تُرسل فقط كبطاقة)، وعلى جهازٍ لم يستلم اعتماداً بعد تظهر «أدخل اسم المستخدم…». أُزيل سحب `users` بلا هوية من `login_screen`.
+- **تغيير الكلمة (متصل فقط):** `IAuthRepository.changeOwnPassword` ⇒ `POST /api/auth/change-password`؛ تُكتب بصمةُ الرئيسي المُعادة محلياً (`applyServerCredential`) وتُمسح علامةُ الإلزام ويُختم الاعتماد. لا طابور ولا كتابة محلية قبل النجاح. `ForceChangePasswordDialog(viaMain: true, currentPassword | cardCode, onPasswordChanged)`؛ الحد الأدنى 8.
+- **نسخ `forcePasswordChange`:** `UserSyncStrategy` يأخذ علم الرئيسي إن وُجد المفتاح (غيابه ⇒ القاعدة القديمة)؛ والتغيير من الجهاز لا يُمحى بالمزامنة التالية لأن الرئيسي يحمل البصمة الجديدة.
+- `updateUserPassword` إداريٌّ لكل الأهداف في وضع العميل (يمرّ بالمُعترِض)؛ و`_rehashToArgon2` معطَّلٌ على العميل/المرآة (يُبطل الطابع ويُكتب فوقه).
+- رسائل الرفض `AuthRejectedException extends StateError` تُعرض كما هي في شاشة الدخول.
+
+**P3 — الطوابع** (`lib/services/auth/credential_stamp_store.dart`، `offline_login_policy.dart`):
+- **صيغة الطابع** في الإعداد المحلي `offline_cred_stamps_v1` (JSON): `{"<userId>": {"at": "<ISO-8601 UTC>", "fp": "<أول 16 hex من sha256(passwordHash)>", "src": "sync|session|upgrade|breakglass|rejected"}}`.
+- `at` = وقت الخادم إن كان ضمن ±10 دقائق من ساعة الجهاز، وإلا ساعة الجهاز (انحرافُ ساعةٍ لا يقفل ولا يمدّد). كتابةُ طابعٍ ببصمةٍ مطابقة لا ترجع بـ`at` إلى الخلف.
+- **الكتابة:** `UserSyncStrategy` (لقطة) و`preserveUserSecrets` (دلتا) عند **تسليم الاعتماد فعلاً** فقط (`src=sync`)؛ الدخولُ الناجح على الرئيسي `src=session`؛ تغيير الكلمة `session`. سحبٌ بلا اعتماد لا يمسّ طابعاً ولا بصمة. لقطةٌ سلّمت الاعتماد تحذف طوابعَ المستخدمين المحليين الغائبين عنها (الصفّ يبقى).
+- **القرار** (`OfflineLoginDecision`): `allowed | notProvisioned | credentialChanged | rejectedByMain | expired | clockRolledBack`. المدة من `at`. فشلُ قراءة التخزين ⇒ `notProvisioned` (لا سماحَ صامت).
+- **الوضع** `offline_login_mode` = `shadow` (الافتراضي) | `enforce` — **محلي للجهاز** (∈ `kDeviceLocalSettingKeys`)، ويُقلَب بـ`AuthSessionGate.setMode(db, OfflineLoginMode.enforce)` ويُرجَع إلى `shadow` بنفس الدالة. `shadow` يرفض فقط `expired` و`clockRolledBack` و`rejectedByMain`؛ و`notProvisioned`/`credentialChanged` يُسجَّلان («SHADOW: offline login would be rejected») ولا يُرفضان. `enforce` يرفض الكلّ.
+- كلمةٌ مؤقتة (`forcePasswordChange` محلياً) لا تفتح العمل بلا اتصال ⇒ «تغيير كلمة المرور يتطلب اتصالاً…».
+- **ساعة الجهاز:** أعلى وقتٍ شوهد في مخزنين (التخزين الآمن `offline_auth_verified_v1[_max_seen]` + الإعداد المحلي `offline_login_max_seen_v1`) يُؤخذ الأكبر؛ وطابعٌ مؤرَّخٌ في المستقبل ⇒ `clockRolledBack`. لم يُغذَّ `maxSeen` بوقت الخادم عمداً (انحرافُ ساعةٍ مشروع كان سيقفل الكاشير).
+- **الترحيل عند الترقية:** `bootstrapIfNeeded` (يسبق أول طابعٍ جديد وأول دخول): يختم كلَّ مستخدمٍ `isActive && !isLocked` بصمتُه ليست `UnusableCredential`، ولا عليه تغييرٌ إلزامي، وليس `admin/admin` الافتراضي ⇒ `src=upgrade, at=الآن`. العلم `offline_cred_stamps_bootstrapped_v1='true'` يُكتب **أخيراً** (إعادةٌ بعد انقطاع تُكمل بلا تجديد ما ختمته). طوابع التخزين الآمن القديمة تتحوّل إلى `session` ببصمة اليوم.
+- **مفاتيح محلية جديدة:** `offline_cred_stamps_v1`، `offline_cred_stamps_bootstrapped_v1`، `offline_login_max_seen_v1`، `offline_login_mode`، `device_revoked_v1`.
+
+**انحرافات عن نص الخطة:** (أ) `offline_login_mode` محلي للجهاز لا مزامَن (قرار المالك). (ب) رفضُ الرئيسي الحيّ ملزِمٌ حتى في `shadow` (قرار المالك «لا» الملزِمة) بدل «تسجيل فقط». (ج) `device_revoked_v1` يُمسح بجلسةٍ ناجحة من الرئيسي لا بإقرانٍ جديد (الإقران ملكية A1). (د) لم يُضف شريطُ «تبقّى N يوم» ولا مفتاحٌ في الواجهة لـ`enforce`.
 ### P4 — مسار الفرع في الإعداد (2–3 أيام؛ بعد P1+P2+P3)
 - **[2026-10-24]** يُنفَّذ **داخل مرحلة A1 في خطة الإعداد الأول** (العامل نفسه W4). المنطق والاختبارات أدناه تبقى مرجعًا، والشاشات وترتيب الخطوات والفحص الذاتي تملكها خطة الإعداد. **ويُطبَّق على المرآة أيضًا:** خطوة «حساب الجهاز» للمرآة تتحقق على السيرفر بمستخدم يملك `mirror_console`.
 - **الهدف:** B.7.3.

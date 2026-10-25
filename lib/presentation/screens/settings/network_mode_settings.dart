@@ -115,12 +115,8 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
       ),
       selected: isSelected,
       selectedColor: AppColors.primary,
-      onSelected: (selected) async {
-        if (selected) {
-          await syncRepo.setMode(mode);
-          setState(() {});
-        }
-      },
+      // A1: display only - the mode changes through "re-provision this device".
+      onSelected: null,
     );
   }
 

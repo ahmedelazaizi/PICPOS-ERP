@@ -141,16 +141,35 @@ void main() {
   });
 
   group('عميل LAN مصادَق (السلوك الشرعي محفوظ)', () {
-    test('bearer + جلسة جهاز ⇒ cardCode والهاش يصلان للمزامنة', () async {
-      final r = await getUsers({
-        'authorization': 'Bearer bearer-xyz',
-        ApiSessionToken.headerName: ApiSessionToken.mint(managerId),
-      });
-      expect(r.statusCode, 200);
-      final users = ((jsonDecode(await r.readAsString()) as Map)['users']
-              as List<dynamic>)
-          .cast<Map<String, dynamic>>();
-      final admin = users.firstWhere((u) => u['username'] == 'admin');
+    test('bearer + جلسة جهاز ⇒ cardCode والهاش يصلان للمزامنة (لمن يستحقها)',
+        () async {
+      Future<List<Map<String, dynamic>>> feed(int uid) async {
+        final r = await getUsers({
+          'authorization': 'Bearer bearer-xyz',
+          ApiSessionToken.headerName: ApiSessionToken.mint(uid),
+        });
+        expect(r.statusCode, 200);
+        return ((jsonDecode(await r.readAsString()) as Map)['users']
+                as List<dynamic>)
+            .cast<Map<String, dynamic>>();
+      }
+
+      // A1 / R1-g: the ADMIN's credentials (hash, salt, card) reach the admin's
+      // own session only - a manager's session no longer receives them ...
+      final asManager = await feed(managerId);
+      final adminForManager =
+          asManager.firstWhere((u) => u['username'] == 'admin');
+      expect(adminForManager.containsKey('cardCode'), isFalse);
+      expect(adminForManager.containsKey('passwordHash'), isFalse);
+      expect(adminForManager.containsKey('passwordSalt'), isFalse);
+      // ... while every OTHER in-scope user's credentials still arrive.
+      for (final u in asManager.where((u) => u['username'] != 'admin')) {
+        expect(u['passwordHash'], isNotEmpty, reason: '${u['username']}');
+      }
+
+      // the admin's own session gets everything (the legitimate path)
+      final asAdmin = await feed(1);
+      final admin = asAdmin.firstWhere((u) => u['username'] == 'admin');
       expect(admin['cardCode'], 'ADMIN-CARD-000');
       expect(admin['passwordHash'], isNotEmpty);
     });

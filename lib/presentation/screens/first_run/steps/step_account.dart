@@ -64,6 +64,18 @@ class _StepAccountState extends ConsumerState<StepAccount> {
             ctl.update((x) => inv.invalidate(x, inv.FirstRunField.branchUser));
           },
         ),
+        if (acc != null && acc.needsPasswordChange) ...[
+          const SizedBox(height: 12),
+          FirstRunField(
+            key: const Key('first_run_account_new_password'),
+            label: tr('كلمة المرور الجديدة'),
+            value: secrets.accountNewPassword,
+            obscure: !_visible,
+            ltr: true,
+            onChanged: (v) =>
+                ctl.updateSecrets((s) => s.copyWith(accountNewPassword: v)),
+          ),
+        ],
         const SizedBox(height: 14),
         Row(
           children: [
@@ -93,8 +105,8 @@ class _StepAccountState extends ConsumerState<StepAccount> {
           FirstRunCallout(
             key: const Key('first_run_account_error'),
             title: acc.error ?? '',
-            tone: FirstRunTone.danger,
-            icon: Icons.error_outline,
+            tone: acc.needsPasswordChange ? FirstRunTone.warning : FirstRunTone.danger,
+            icon: acc.needsPasswordChange ? Icons.password_outlined : Icons.error_outline,
           ),
         ],
         if (acc != null && acc.ok && d.checks.accountVerified) ...[
@@ -112,7 +124,9 @@ class _StepAccountState extends ConsumerState<StepAccount> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${acc.roleName} / ${d.selectedBranchName}',
+                  d.selectedBranchName.isEmpty
+                      ? '${acc.roleName}'
+                      : '${acc.roleName} / ${d.selectedBranchName}',
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     color: context.picposText,

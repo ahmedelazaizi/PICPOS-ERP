@@ -2,6 +2,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart';
 import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/sync_interceptor.dart';
+import 'package:picpos_erp/services/auth/credential_stamp_store.dart';
 import 'package:picpos_erp/services/sync/user_credential_merge.dart';
 import 'package:picpos_erp/services/sync/sync_strategy.dart';
 import 'package:picpos_erp/services/sync_event_bus.dart';
@@ -18,6 +20,13 @@ class UserSyncStrategy extends SyncStrategy {
   @override
   Future<void> syncFromJson(Map<String, dynamic> json) async {
     final users = json['users'] as List;
+    final stamps = CredentialStampStore.forDb(db);
+    final stampDevice = SyncInterceptor.isClientMode; // B.8: only branch devices
+    final serverTime = json['serverTime'] is num
+        ? DateTime.fromMillisecondsSinceEpoch((json['serverTime'] as num).toInt(), isUtc: true)
+        : null;
+    var deliveredCredentials = false;
+    final deliveredIds = <int>{};
     for (final u in users) {
       final id = parseInt(u['id']);
       final username = u['username'] as String;
@@ -88,9 +97,17 @@ class UserSyncStrategy extends SyncStrategy {
             'unusable credential stored, forcePasswordChange enabled');
       }
 
+      // The host's flag is the truth when it sends one (P1 /api/users); an
+      // older host omits it ⇒ the previous rule (credential-less NEW user).
       final forceChange = cred.source == CredentialSource.unusable &&
           existingUser == null &&
           deactivatedDuplicate == null;
+      // A NEW user still without a usable credential stays flagged (SEC-004).
+      final hostFlag = forceChange
+          ? const Value(true)
+          : u.containsKey('forcePasswordChange')
+              ? Value(parseBool(u['forcePasswordChange'], false))
+              : const Value<bool>.absent();
 
       await db.into(db.users).insertOnConflictUpdate(
         UsersCompanion(
@@ -111,9 +128,22 @@ class UserSyncStrategy extends SyncStrategy {
           cardCode: u.containsKey('cardCode')
               ? Value(u['cardCode'] as String?)
               : const Value.absent(),
-          forcePasswordChange: forceChange ? const Value(true) : const Value.absent(),
+          forcePasswordChange: hostFlag,
         ),
       );
+      deliveredIds.add(rowId);
+      // The credential came from the main ⇒ stamp it (bound to this hash).
+      // A pull without credentials never touches the stamp (CRED-WIPE rule).
+      if (stampDevice && cred.source == CredentialSource.server) {
+        deliveredCredentials = true;
+        await stamps.stampFromSync(rowId, hashToSave, serverTime: serverTime);
+      }
+    }
+    // A snapshot that delivered credentials is the full truth for this device:
+    // users missing from it lose their stamp (the row stays: invoices FK).
+    if (stampDevice && deliveredCredentials) {
+      final local = await db.select(db.users).get();
+      await stamps.reconcileSnapshot(deliveredIds, [for (final r in local) r.id]);
     }
     // Force UI refresh after sync
     if (users.isNotEmpty) {

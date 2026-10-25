@@ -463,6 +463,15 @@ app closed in committing ⇒ resume: review مع banner «إعداد غير مك
   - تغيير ترتيب البوابة/الدخول يمسّ كل إقلاع ⇒ `ADOPT-BACKFILL` يُختبر على نسخة قاعدة حقيقية من تركيب قائم (مستقل، عميل، مرآة) قبل الدمج.
   - التراجع: revert للـcommit، والسجل يُهمل (المفاتيح القديمة باقية).
 
+#### A1 — العقد المنفَّذ (implemented contract) [2026-10-25]
+- **السجل:** `device_provisioning_v1` (`provisioning_record.dart`، محلي للجهاز، في `kDeviceLocalSettingKeys` و`DeploymentSettingsKeys.ownedKeys`). يكتبه `DeploymentModeCommitter` في **المعاملة نفسها** مع المفاتيح المشتقّة (`network_mode`، `deployment_mode`، `last_committed_mode`، أعلام المزامنة الأولى…). حقول: النمط، نوع الجهاز، العنوان/المنفذ، بصمة TLS، `deviceId`، الفرع، `pairedAt/firstSyncAt/setupCompletedAt`، هوية المرآة، `selfCheckPending`، `credentialsDeliveredAt`.
+- **المعتمِد:** `ModeActivator` هو المدخل الوحيد لاعتماد نمط (يغلّف الـcommitter): النمط المعتمد = المختار (`networkModeForPath`)، يشترط اقتران المرآة، يُسقط هوية مرآة قديمة عند اعتماد عميل، ويتحقق بعد الاعتماد من (الذاكرة + المفتاح + السجل + `MirrorState`) وإلا `MODE_MISMATCH`. **المزامنة الأولى بقيت في خطوة المعالج** (لها شاشة تقدّم) ولا تكتب `network_mode`؛ الـcommitter يشغّلها إن لم تكن تمّت.
+- **كل إقلاع:** `NetworkService.reconcileWithDb` يستدعي `ProvisioningApplier.ensure` أولًا: السجل يفوز (`ADOPT-REPAIR`)، التركيب القديم يُبنى له سجل مرة (`ADOPT-BACKFILL`)، السجل التالف يُتجاهل، ضياع prefs يُسترجع منه (العنوان والفرع وهوية المرآة)، وضياع رمز الجهاز يرفع `rePairRequired` ⇒ **شاشة الفحص الذاتي** لا Fatal.
+- **البوابة:** `ProvisioningGate` تحيط بـ`home` **قبل الدخول**: غير مكتمل ⇒ الإعداد الأول بلا دخول؛ إعداد شبكي انتهى ⇒ `FirstRunSelfCheckScreen` مرة واحدة (`self_check.dart`: سجل · نمط · اقتران · خادم · مزامنة أولى · بيانات دخول المستخدمين · لا `admin/admin`؛ فشل النمط/الاقتران/المزامنة يمنع الدخول)؛ وإلا الدخول.
+- **المرآة والفرع بالرمز:** المرآة صارت `mode ← link(رمز+اسم جهاز) ← firstSync ← account ← review`؛ `ClientLinkPort.pairMirrorWithCode`؛ مسار المفتاح القديم/المدير حُذف من تدفق الإعداد. الفرع يعلن نوعه (`client` ثم `pos`) فيُرفض رمز المرآة.
+- **المستخدم الأول (P4):** `FirstUserVerifier` + `HttpMainAuthPort`: جلسة على الرئيسي ⇒ تغيير الكلمة المؤقتة على الرئيسي ⇒ `GET /api/users` بتلك الجلسة ⇒ تطبيق ⇒ `retireSeededAdmin` (الاعتماد الافتراضي يُستبدل باعتماد غير قابل للاستعمال) ⇒ تحقق محلي. الرئيسي لا يسلّم اعتماد `admin` لغير جلسة الـadmin نفسه (R1-g).
+- **مدخل واحد لتغيير النمط:** «إعادة توفير هذا الجهاز» (`DeviceReprovisionTile` في إعدادات الشبكة، تتطلب `settings_edit` واتصالًا للعميل/المرآة؛ شاشة الفحص الذاتي؛ أدوات المطوّر تحوّل إليه). رقائق النمط للعرض فقط. حارس: `test/static/mode_change_single_entry_test.dart` (مواقع `setMode` القديمة مسمّاة ولا يُضاف غيرها).
+- **غير منفّذ:** فحص «سحب delta خلال 60 ثانية»، فحص الشركة/العملة/الباقة مقابل الخادم، إعادة توفير مسار `database_settings_widget`/`main_desktop` عبر المعتمِد، وفحص ذاتي لمسار المقرّ (PG لا يحمل السجل ⇒ backfill بلا فحص).
 ### D.9 مصفوفة حالات القبول (من دليل النموذج §7)
 | الحالة | المرحلة | الاختبار |
 |---|---|---|

@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/sync_interceptor.dart';
+import 'package:picpos_erp/services/auth/credential_stamp_store.dart';
 import 'package:picpos_erp/services/unusable_credential.dart';
 
 /// CRED-WIPE fix — the single rule deciding which password credential a
@@ -82,6 +84,11 @@ Future<Map<String, dynamic>> preserveUserSecrets(
     final sSalt = out['password_salt'];
     if (isCredentialComplete(sHash is String ? sHash : null,
         sSalt is String ? sSalt : null)) {
+      // The main delivered this credential: stamp it (P3). A payload without
+      // credentials never reaches here, so it cannot refresh a stamp.
+      if (SyncInterceptor.isClientMode && rowId > 0) {
+        await CredentialStampStore.forDb(db).stampFromSync(rowId, sHash as String);
+      }
       return out;
     }
     final username = out['username'] as String?;

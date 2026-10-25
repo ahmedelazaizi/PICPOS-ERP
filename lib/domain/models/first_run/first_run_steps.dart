@@ -35,6 +35,8 @@ List<FirstRunStep> stepsFor(FirstRunPath path) => switch (path) {
       FirstRunPath.mirror => const [
           FirstRunStep.mode,
           FirstRunStep.link,
+          FirstRunStep.firstSync,
+          FirstRunStep.account,
           FirstRunStep.review,
         ],
       FirstRunPath.branch => const [
