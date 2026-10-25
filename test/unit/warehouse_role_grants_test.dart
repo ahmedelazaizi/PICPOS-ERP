@@ -13,11 +13,24 @@ Set<String> _grants(String role) => RoleGrantMatrix.defaultGrants[role]!;
 
 void main() {
   test('the matrix gives each persona exactly the implemented warehouse codes', () {
-    expect(_grants(kWarehouseClerkRole), {'warehouse_mobile_access', 'inventory_view'});
-    expect(_grants(kWarehouseSupervisorRole),
-        {'warehouse_mobile_access', 'inventory_view', 'inventory_edit', 'inventory_transfer'});
-    expect(_grants('مخزني'), containsAll(['warehouse_mobile_access', 'inventory_transfer', 'inventory_view']));
-    expect(_grants('مدير مخزون'), containsAll(['warehouse_mobile_access', 'inventory_transfer', 'products_cost_view']));
+    expect(_grants(kWarehouseClerkRole),
+        {'warehouse_mobile_access', 'inventory_view', 'goods_receipt_mobile', 'stock_count_submit'});
+    expect(_grants(kWarehouseSupervisorRole), {
+      'warehouse_mobile_access', 'inventory_view', 'inventory_edit', 'inventory_transfer',
+      'goods_receipt_mobile', 'stock_count_submit', 'stock_adjust_approve',
+    });
+    expect(_grants('مخزني'), containsAll(['warehouse_mobile_access', 'inventory_transfer', 'inventory_view',
+      'goods_receipt_mobile', 'stock_count_submit']));
+    expect(_grants('مدير مخزون'), containsAll(['warehouse_mobile_access', 'inventory_transfer', 'products_cost_view',
+      'goods_receipt_mobile', 'stock_count_submit', 'stock_adjust_approve']));
+  });
+
+  test('the approval code is held by the supervisor and manager only, never by clerk or keeper', () {
+    final holders = [
+      for (final e in RoleGrantMatrix.defaultGrants.entries)
+        if (e.value.contains('stock_adjust_approve')) e.key,
+    ];
+    expect(holders, unorderedEquals([kWarehouseSupervisorRole, 'مدير مخزون']));
   });
 
   test('the clerk has no transfer, no edit and no cost view', () {
@@ -35,10 +48,11 @@ void main() {
     expect(holders, ['مدير النظام']);
   });
 
-  test('both new codes are in the master list under one category', () {
+  test('all warehouse codes are in the master list under one category', () {
     final byCode = {for (final e in PermissionCodes.masterList) e['code']!: e['category']};
-    expect(byCode['devices_pair_manage'], 'warehouse_mobile');
-    expect(byCode['warehouse_mobile_access'], 'warehouse_mobile');
+    for (final c in ['devices_pair_manage', 'warehouse_mobile_access', 'goods_receipt_mobile', 'stock_count_submit', 'stock_adjust_approve']) {
+      expect(byCode[c], 'warehouse_mobile', reason: c);
+    }
     expect(PermissionCodes.categoryNames.containsKey('warehouse_mobile'), isTrue);
   });
 

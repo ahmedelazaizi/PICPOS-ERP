@@ -67,19 +67,30 @@ class WhSessionInfo {
 }
 
 class WhStockLine {
-  const WhStockLine({required this.warehouseId, required this.warehouse, required this.quantity, required this.reserved});
+  const WhStockLine({
+    required this.warehouseId,
+    required this.warehouse,
+    required this.quantity,
+    required this.reserved,
+    this.blind = false,
+  });
   final int warehouseId;
   final String? warehouse;
 
-  /// Decimal string, as sent.
+  /// Decimal string, as sent. Empty when [blind].
   final String quantity;
   final String reserved;
+
+  /// The server withheld the quantity: a count of this item is open and the
+  /// signed-in user is a counter (blind count).
+  final bool blind;
 
   factory WhStockLine.fromJson(Map<String, Object?> m) => WhStockLine(
         warehouseId: (m['warehouseId'] as num).toInt(),
         warehouse: m['warehouse'] as String?,
-        quantity: '${m['quantity'] ?? '0'}',
-        reserved: '${m['reserved'] ?? '0'}',
+        blind: m['blind'] == true,
+        quantity: m['blind'] == true ? '' : '${m['quantity'] ?? '0'}',
+        reserved: m['blind'] == true ? '' : '${m['reserved'] ?? '0'}',
       );
 }
 

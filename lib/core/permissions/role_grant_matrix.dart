@@ -216,6 +216,8 @@ class RoleGrantMatrix {
       'inventory_edit',
       // Warehouse app (plan §B.4): the app user = «مسؤول المخزن».
       'warehouse_mobile_access',
+      'goods_receipt_mobile',
+      'stock_count_submit',
       'inventory_transfer',
       'products_view',
       'products_add',
@@ -242,14 +244,20 @@ class RoleGrantMatrix {
     },
     // Warehouse app roles (plan §B.4). Created idempotently by
     // ensureWarehouseRoles (grantMissingDefaults only grants, never creates).
-    // goods_receipt_mobile / stock_count_submit / stock_adjust_approve join
-    // these rows in the phases (W2-W4) that enforce them.
-    kWarehouseClerkRole: {'warehouse_mobile_access', 'inventory_view'},
+    kWarehouseClerkRole: {
+      'warehouse_mobile_access',
+      'inventory_view',
+      'goods_receipt_mobile',
+      'stock_count_submit',
+    },
     kWarehouseSupervisorRole: {
       'warehouse_mobile_access',
       'inventory_view',
       'inventory_edit',
       'inventory_transfer',
+      'goods_receipt_mobile',
+      'stock_count_submit',
+      'stock_adjust_approve',
     },
     'محاسب': {
       // ── إرسالُ مستندات العميل على واتساب (2026-09-12) ─────────────────
@@ -454,6 +462,9 @@ class RoleGrantMatrix {
       'inventory_view',
       'inventory_transfer',
       'warehouse_mobile_access',
+      'goods_receipt_mobile',
+      'stock_count_submit',
+      'stock_adjust_approve',
       'products_add',
       'purchases_create',
       'reports_view',

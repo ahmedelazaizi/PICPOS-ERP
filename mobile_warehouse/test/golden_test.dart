@@ -21,7 +21,12 @@ void main() {
       for (final MapEntry(key: sizeName, value: size) in kSizes.entries) {
         testWidgets('golden home $lang ${mode.name} $sizeName', (tester) async {
           setSurface(tester, size);
-          final desktop = FakeDesktop()..supervisor = true;
+          final desktop = FakeDesktop()
+            ..supervisor = true
+            ..permissions = [
+              'warehouse_mobile_access', 'inventory_view', 'inventory_edit', 'inventory_transfer',
+              'goods_receipt_mobile', 'stock_count_submit', 'stock_adjust_approve',
+            ];
           final session = desktop.session(MemorySecretStore());
           await session.restore();
           await session.pair(PairingPayload.parse(desktop.qr()));

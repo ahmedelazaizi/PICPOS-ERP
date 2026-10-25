@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:picpos_ui/picpos_ui.dart';
 
 import 'l10n/strings.dart';
+import 'printing/label_printer.dart';
+import 'scan/camera_scan_view.dart';
+import 'sync/wh_ops.dart' show Scanner;
 import 'screens/login_page.dart';
 import 'screens/onboarding_page.dart';
 import 'session/app_lock.dart';
@@ -20,11 +23,17 @@ class PicPosWarehouseApp extends StatelessWidget {
     required this.store,
     this.initialDestination = 0,
     this.lockEnabled = true,
+    this.printer = const NoPrinter(),
+    this.scanner = scanWithCamera,
   });
   final PicPosAppSettings settings;
   final WhSession session;
   final WhLocalStore store;
   final int initialDestination;
+
+  /// Where labels print. Default: nothing connected (said so, never faked).
+  final LabelPrinter printer;
+  final Scanner scanner;
 
   /// The local PIN gate. Always on in the app; widget tests may bypass it.
   final bool lockEnabled;
@@ -40,7 +49,8 @@ class PicPosWarehouseApp extends StatelessWidget {
           if (!session.restored) return const Scaffold(body: Center(child: CircularProgressIndicator()));
           if (!session.paired) return OnboardingPage(session: session);
           if (!session.loggedIn) return LoginPage(session: session);
-          final shell = WarehouseShell(session: session, store: store, initialIndex: initialDestination);
+          final shell = WarehouseShell(
+              session: session, store: store, initialIndex: initialDestination, printer: printer, scanner: scanner);
           return lockEnabled ? AppLockGate(session: session, child: shell) : shell;
         },
       ),

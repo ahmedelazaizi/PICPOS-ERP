@@ -82,7 +82,7 @@ void main() {
     }
   });
 
-  testWidgets('home: clerk sees no transfer/approval capabilities; supervisor does; unbuilt features say so', (tester) async {
+  testWidgets('home: capabilities follow the permissions the office returned', (tester) async {
     setSurface(tester, kPhone);
     final desktop = FakeDesktop();
     final settings = PicPosAppSettings(locale: const Locale('en'));
@@ -92,14 +92,18 @@ void main() {
     expect(find.text('Main store'), findsOneWidget);
     expect(find.text('Warehouse clerk / keeper'), findsOneWidget);
     expect(find.text('Transfer between warehouses'), findsNothing);
-    expect(find.text('Not available yet'), findsWidgets, reason: 'receive/count are not built: the UI must say so');
+    expect(find.text('Not available yet'), findsWidgets, reason: 'receive/count are not granted to this user: the UI says so');
+    expect(find.text('Approve counts and variances'), findsNothing);
 
-    desktop.supervisor = true;
+    desktop
+      ..supervisor = true
+      ..permissions = ['warehouse_mobile_access', 'inventory_view', 'inventory_transfer', 'goods_receipt_mobile', 'stock_count_submit', 'stock_adjust_approve'];
     await tester.pumpWidget(app(await _signedIn(desktop), settings));
     await tester.pumpAndSettle();
     expect(find.text('Supervisor / stock manager'), findsOneWidget);
     expect(find.text('Transfer between warehouses'), findsOneWidget);
     expect(find.text('Approve counts and variances'), findsOneWidget);
+    expect(find.text('Not available yet'), findsNothing, reason: 'every capability this user holds is built');
   });
 
   testWidgets('home: a branch with no allowed warehouse says so', (tester) async {
@@ -110,17 +114,17 @@ void main() {
     expect(find.byKey(const Key('home.noWarehouses')), findsOneWidget);
   });
 
-  testWidgets('documents and outbox are honest placeholders (nothing simulated)', (tester) async {
+  testWidgets('documents show only what the user may do; the empty outbox says so', (tester) async {
     setSurface(tester, kPhone);
-    final desktop = FakeDesktop();
+    final desktop = FakeDesktop()..permissions = ['warehouse_mobile_access'];
     final settings = PicPosAppSettings(locale: const Locale('en'));
     await tester.pumpWidget(app(await _signedIn(desktop), settings, dest: 2));
     await tester.pumpAndSettle();
-    expect(find.textContaining('not implemented in this version'), findsOneWidget);
+    expect(find.textContaining('no document permission'), findsOneWidget);
+    expect(find.byKey(const Key('doc.receive')), findsNothing);
     await tester.pumpWidget(app(await _signedIn(desktop), settings, dest: 3));
     await tester.pumpAndSettle();
     expect(find.text('Nothing is waiting to be sent.'), findsOneWidget);
-    expect(find.textContaining('not enabled yet'), findsOneWidget);
   });
 
   testWidgets('lookup: barcode -> stock in scope; unknown -> empty message; unreachable -> error', (tester) async {

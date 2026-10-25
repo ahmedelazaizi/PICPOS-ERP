@@ -16,6 +16,9 @@ class FakeDesktop {
   bool userAllowed = true;
   bool validPassword = true;
   bool supervisor = false;
+
+  /// Overrides the permissions the office reports for the signed-in user.
+  List<String>? permissions;
   List<Map<String, Object?>> warehouses = const [
     {'id': 1, 'name': 'Main store'}
   ];
@@ -44,11 +47,12 @@ class FakeDesktop {
             jsonEncode({
               'user': {'id': 7, 'username': 'ali', 'displayName': 'Ali Hassan', 'roleName': 'x'},
               'device': {'id': 'x', 'kind': 'warehouse', 'branchId': 3, 'branchName': 'Cairo'},
-              'permissions': [
-                'warehouse_mobile_access',
-                'inventory_view',
-                if (supervisor) 'inventory_transfer',
-              ],
+              'permissions': permissions ??
+                  [
+                    'warehouse_mobile_access',
+                    'inventory_view',
+                    if (supervisor) 'inventory_transfer',
+                  ],
               'warehouses': warehouses,
             }));
       case '/api/m1/wh/items':

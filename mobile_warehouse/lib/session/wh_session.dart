@@ -8,12 +8,26 @@ import 'package:picpos_device/picpos_device.dart';
 /// the certificate fingerprint from the pairing payload (lan_pinning.dart).
 typedef WhClientFactory = WarehouseLanClient Function(Uri baseUri, String fingerprint, ApiCredentials credentials);
 
+/// Domain refusals of the warehouse documents (server `error` codes) that have
+/// their own message in `S.table` (`err_<code>`); a structural test keeps the
+/// two lists equal.
+const kDomainCodes = <String>{
+  'idempotency_conflict', 'stale', 'invalid_transition', 'stock_changed', 'batch_expired', 'over_receipt',
+  'po_not_receivable', 'po_not_found', 'product_not_in_order', 'batch_required', 'invalid_condition',
+  'invalid_quantity', 'bins_disabled', 'location_not_found', 'warehouse_forbidden', 'doc_not_found',
+  'doc_mismatch', 'not_owner', 'empty_document', 'self_approval', 'staged_transfers_disabled', 'same_warehouse',
+  'warehouse_not_found', 'product_not_found', 'reason_required', 'count_not_open', 'incomplete_count',
+  'recount_required', 'already_finalized', 'count_not_submitted', 'task_not_found', 'nothing_to_post',
+  'accounts_not_mapped', 'no_barcode', 'item_not_found',
+};
+
 /// Stable code of an error, for `S.errorText`.
 String errorCode(Object e) {
   if (e is PairingFormatError) return e.code;
   if (e is FormatException) return e.message.isEmpty ? 'incomplete' : e.message;
   if (e is UrlPolicyException) return 'not_https';
   if (e is ApiError) {
+    if (kDomainCodes.contains(e.code)) return e.code;
     return switch (e.kind) {
       ApiErrorKind.network => 'network',
       ApiErrorKind.unauthorized => 'unauthorized',

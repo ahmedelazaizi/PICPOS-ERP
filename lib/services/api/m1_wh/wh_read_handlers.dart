@@ -18,6 +18,7 @@ import '../../../core/permissions/warehouse_permission_codes.dart';
 import '../../../data/database/database.dart';
 import '../../network_service.dart';
 import '../api_user_context.dart';
+import 'wh_blind.dart';
 import 'wh_scope.dart';
 
 const int kWhApiLevel = 1;
@@ -29,6 +30,10 @@ const List<String> kWhVisiblePermissions = [
   'inventory_view',
   'inventory_edit',
   'inventory_transfer',
+  WarehousePermissionCodes.goodsReceiptMobile,
+  WarehousePermissionCodes.stockCountSubmit,
+  WarehousePermissionCodes.stockAdjustApprove,
+  'purchases_create',
 ];
 
 class WhApi {
@@ -136,6 +141,12 @@ class WhApi {
                   b.productId.isIn([for (final p in found) p.id]) & b.warehouseId.isIn(scope.warehouseIds.toList())))
             .get();
     final names = {for (final w in scope.warehouses) w.id: w.name};
+    // Blind count (ADR-MC3): a counter gets NO quantity for goods under an
+    // open count, only `blind: true`.
+    final hidden = <(int, int)>{
+      for (final b in balances)
+        if (!await canSeeQuantity(db, g.userId, b.productId, b.warehouseId)) (b.productId, b.warehouseId),
+    };
     return _json({
       'items': [
         for (final p in found)
@@ -148,12 +159,15 @@ class WhApi {
             'stock': [
               for (final b in balances)
                 if (b.productId == p.id)
-                  {
-                    'warehouseId': b.warehouseId,
-                    'warehouse': names[b.warehouseId],
-                    'quantity': b.quantity.toString(),
-                    'reserved': b.reservedQuantity.toString(),
-                  },
+                  if (hidden.contains((b.productId, b.warehouseId)))
+                    {'warehouseId': b.warehouseId, 'warehouse': names[b.warehouseId], 'blind': true}
+                  else
+                    {
+                      'warehouseId': b.warehouseId,
+                      'warehouse': names[b.warehouseId],
+                      'quantity': b.quantity.toString(),
+                      'reserved': b.reservedQuantity.toString(),
+                    },
             ],
           },
       ],

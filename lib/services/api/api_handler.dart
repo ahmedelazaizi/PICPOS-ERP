@@ -42,7 +42,7 @@ import 'api_approval_handler.dart';
 import 'mirror_console_guard.dart';
 import 'server_login_throttle.dart';
 import 'api_web_session_handler.dart';
-import 'm1_wh/wh_read_handlers.dart';
+import 'm1_wh/wh_apis.dart';
 import 'web_static_handler.dart';
 import 'web_session_guard.dart';
 import '../web_read/web_read_channel_host.dart';

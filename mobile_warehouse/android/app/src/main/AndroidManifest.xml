@@ -8,12 +8,14 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
-    <!-- picpos_device bundles the Bluetooth printer plugin. W0-W1 never print
-         (label printing is plan phase W5), so its permissions are stripped. -->
-    <uses-permission android:name="android.permission.BLUETOOTH" tools:node="remove" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" tools:node="remove" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" tools:node="remove" />
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" tools:node="remove" />
+    <!-- Label printing (plan W5) over a paired Bluetooth printer. Android 12+
+         uses BLUETOOTH_CONNECT (we only talk to already-paired printers, never
+         scan for location); older versions use the two legacy permissions. -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" tools:targetApi="s" />
+    <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
     <!-- HTTPS only: cleartext is refused by the platform stack (see
          res/xml/network_security_config.xml; the debug variant allows
          cleartext for LAN testing). Dart's HttpClient does not read these

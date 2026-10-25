@@ -5,14 +5,17 @@
 ///   pair -> POST /api/pair            (one-time code, kind `warehouse`)
 ///   login -> POST /api/auth/session   (device bearer + user credentials)
 ///   session / items -> GET /api/m1/wh/*  (device bearer + session token)
-/// Idempotency keys (`x-idempotency-key`) are attached by [command] helpers
-/// for the write routes that arrive in W2+.
+/// Document operations (W2-W5) live in `wh_client_ops.dart`; every write
+/// attaches `x-idempotency-key` = the caller's command id.
 library;
 
 import 'api_error.dart';
 import 'headers.dart';
 import 'transport.dart';
 import 'wh_contracts.dart';
+import 'wh_doc_contracts.dart';
+
+part 'wh_client_ops.dart';
 
 /// What `POST /api/pair` returns for a warehouse phone.
 class WhPairingResult {

@@ -538,3 +538,86 @@
 الأكواد `goods_receipt_mobile` و`stock_count_submit` و`stock_adjust_approve` **لم تُضف بعد**: تُضاف مع المرحلة التي تفرضها (W2–W4) كي لا يظهر كود بلا إنفاذ.
 
 **فجوات معروفة:** حجب الأرصدة أثناء جرد نشط (W4)؛ بقية G-3 (نافذة bearer القديمة SEC-006)، وG-5 لغير أجهزة المخازن (`/api/parties` بلا جلسة)؛ فحص العلامة على الـAPK في CI؛ لا إبطال لرمز الجلسة عند الخروج (رمز موقَّع بلا حالة)؛ لم تُجرَّب أي أجهزة فعلية.
+
+---
+
+## العقد المنفَّذ — W2…W5 (2026-10-25)
+
+> ما كُتب هنا هو **ما نُفِّذ فعلًا وخُتبر**؛ يعلو على نص المراحل أعلاه عند التعارض. الاختبارات: `test/integration/{wh_po_receipt_flow,staged_transfer_conservation,wh_voucher_flow,wh_blind_count_leak,wh_count_finalize,wh_approvals_labels}_test.dart` على الموجّه والـmiddleware الحقيقيين، و`test/e2e/warehouse_docs_lan_e2e_test.dart` (العميل الحقيقي `WarehouseLanClient` على socket loopback)، و`test/integration_pg/wh_mobile_docs_pg_test.dart`.
+
+### قرار التخزين: بلا جداول Drift وبلا ترحيل
+- المستندات في ثلاثة جداول SQL خام `wh_mobile_docs` و`wh_mobile_doc_lines` و`wh_mobile_doc_events` (`lib/data/database/wh_mobile_docs_schema.dart`) على نمط `lan_pairing_schema` و`warehouse_locations_schema`.
+- **لا تغيير في `database.g.dart` ولا `schemaVersion` (يبقى 196) ولا `database.dart` ولا `database_startup.dart`** (كلاهما في الـratchet).
+- الجداول تُنشأ كسولًا عند أول عملية مستند (`CREATE TABLE IF NOT EXISTS`، مرة واحدة لكل اتصال)، لا في `_safeMigrate`. SQLite وPostgreSQL.
+- **لا مزامنة** إلى عملاء سطح المكتب: المستندات تعيش على الحاسوب الرئيسي الذي يخدم الهواتف. هذا بديل عن بند «المزامنة» في W2 ويحتاج قرارًا إن أُريد صندوق اعتماد على سطح مكتب عميل.
+- سجل الأوامر `wh_mobile_doc_events` (`command_id UNIQUE`) يُكتب **داخل معاملة الأثر** نفسها؛ إعادة الإرسال تُجاب من السجل (`replayed:true`) ولا تُنفَّذ ثانية؛ نفس المعرّف بجسم مختلف ⇒ `409 idempotency_conflict`.
+
+### قواعد عامة لكل مسارات `/api/m1/wh/*` (الجديدة)
+- جهاز `warehouse` فقط (`403 device_scope` لغيره)، مستخدم حيّ، `warehouse_mobile_access` + كود المسار، والنطاق = مخازن فرع الجهاز ∩ مخازن المستخدم (`WhScope`).
+- كل كتابة تتطلب `X-Idempotency-Key` (≥ 8 محارف، = معرّف الأمر في outbox الجهاز) وإلا `400 idempotency_key_required`.
+- الكميات نصوص. لا تكلفة في أي استجابة. الخطأ غير المتوقع `500 internal` **بلا نص** (حتى لا تتسرب كمية).
+- الأخطاء: `permission_denied | stale | invalid_transition | stock_changed | batch_expired | idempotency_conflict | over_receipt | self_approval | warehouse_forbidden | staged_transfers_disabled | …` (القائمة الكاملة في `mobile_warehouse/lib/session/wh_session.dart: kDomainCodes` ولكل كود نص عربي/إنجليزي).
+- الاعتماد: `stock_adjust_approve` عبر `ApiUserCtx.requirePermission`، وهو يقبل أيضًا بصمة المدير P5 (`x-approval-proof`، مرتبطة بالكود)؛ **المعتمِد الفعلي** = المستخدم إن حمل الكود وإلا مُعتمِد البصمة، ويُرفض `403 self_approval` إن كان منشئ المستند أو مُرسِله أو مستلمه أو أحد عدّاديه، بلا استثناء لمدير النظام.
+
+### W2 — الاستلام مقابل أمر شراء (مكتمل)
+| الطريقة والمسار | الكود | الوصف |
+|---|---|---|
+| `GET /api/m1/wh/po?warehouse=&status=open` | `goods_receipt_mobile` | أوامر `sent`/`confirmed` غير المحوَّلة في النطاق، مع المطلوب/المستلم، بلا تكلفة |
+| `GET /api/m1/wh/po/<ref>` | نفسه | أمر واحد (`ref` = `globalId` أو الرقم) |
+| `POST /api/m1/wh/po/<ref>/receipts` | نفسه | جسم `{globalId, note?, lines:[{lineGlobalId, productId, quantity, condition: ok\|damaged, batchNumber?, expiryDate?, locationBarcode?}]}`؛ ينشئ/يُلحق مسودة. صنف `trackExpiry` يتطلب دفعة وتاريخًا (`batch_required`) |
+| `POST /api/m1/wh/receipts/<gid>/submit` | نفسه | مسودة ← `submitted`؛ يزيد `purchase_order_items.received_quantity`؛ الكاتب فقط (`not_owner`)؛ **زيادة عن المطلوب (سماحية `wh_receipt_overage_pct`، الافتراضي 0) ⇒ `409 over_receipt` ولا يُسجَّل شيء** |
+| `GET /api/m1/wh/receipts?state=` | نفسه | استلاماتي |
+| `GET /api/m1/wh/locations/by-barcode/<code>` | `inventory_view` | موقع `BIN-…` في النطاق |
+| `POST /api/m1/wh/receipts/<gid>/convert` | `purchases_create` | **المحاسب**: `createPurchaseInvoice` بالكميات `ok` فقط مع الدفعة/الانتهاء وبـ`userId` الحقيقي ثم put-away إلى الموقع الممسوح؛ يختم الأمر `converted` فقط إن اكتمل المستلم ولا استلام آخر معلّق |
+- **R-A محترم:** الاستلام لا يحرّك مخزونًا ولا قيدًا قبل `convert`؛ التالف لا يدخل المخزون؛ التحويل مرة واحدة (حالة `posted` + إعادة الأمر بنفس المفتاح تُجاب من السجل).
+- **انحرافات:** (1) الزيادة تُرفض ولا تُسجَّل `over` بانتظار المدير؛ (2) لا شاشة «طلبات المخازن» على سطح المكتب: التحويل لفاتورة بالمسار أعلاه لمن يملك `purchases_create` (تطبيق/خدمة)، وواجهة المحاسب على سطح المكتب **غير مبنية**؛ (3) لا حالة `partially_received` على الأمر (التقدم يُقرأ من `received_quantity`).
+
+### W3 — التحويل المرحلي والسندات (مكتمل خلف إعداد مطفأ)
+- الإعداد `wh_staged_transfers_enabled` (الافتراضي **غير موجود = مطفأ**) يحرس كل مسارات التحويل: `409 staged_transfers_disabled` وتقول الواجهة ذلك. لا يُفعَّل قبل توقيع المحاسب على حساب `goods_in_transit`.
+- **مسار LAN المعيب (E-9أ) مسوَّر:** جهاز `warehouse` يأخذ `403 device_scope` على `POST /api/inventory/transfer` و`/adjust` و`/bond` و`/api/purchase-orders` (اختبار). مستندات المخازن لا تستعمله؛ و`transferStock` لم يُلمَس. **لم يُصلَح** المسار نفسه لأجهزة سطح المكتب (خارج النطاق).
+- الحالات: `requested → approved → in_transit → received | received_short → closed` (+`rejected`).
+| المسار | الكود |
+|---|---|
+| `POST /transfers` `{globalId, fromWarehouseId, toWarehouseId, note?, lines:[{lineGlobalId, productId, quantity}]}` | `inventory_transfer` |
+| `GET /transfers?state=` | `inventory_transfer` |
+| `POST /transfers/<gid>/approve` · `/reject` | `stock_adjust_approve` (+ four-eyes) |
+| `POST /transfers/<gid>/dispatch` | `inventory_transfer`؛ المصدر في النطاق |
+| `POST /transfers/<gid>/receive` `{lines:[{lineGlobalId, received, damaged}]}` | `inventory_transfer`؛ الوجهة في النطاق |
+| `POST /transfers/<gid>/resolve` `{resolution: return_to_source\|write_off_loss}` | `stock_adjust_approve` |
+- **dispatch:** فحص رصيد صريح (لا سالب أبدًا حتى مع `enable_negative_sales`)، تغطية دفعة صالحة (`batch_expired`)، التكلفة تُجمَّد على السطر (متوسط المصدر)، خصم المصدر `transfer_out` عبر `adjustStock`، حمل الدفعات، قيد Dr `goods_in_transit` / Cr `inventory`.
+- **receive:** إدخال الوجهة بالتكلفة المجمَّدة، استعادة الدفعات، قيد Dr `inventory` / Cr `goods_in_transit`؛ التالف يُستلم ثم يُنشأ تلقائيًا سند `damage` معلّق؛ النقص يبقى في الطريق (`received_short`)؛ الزيادة `409 over_receipt`.
+- **resolve:** `return_to_source` (إدخال للمصدر + قيد عكسي) أو `write_off_loss` (Dr `inventory_shrinkage` / Cr `goods_in_transit`)؛ المعتمِد ≠ المنشئ ≠ المُرسِل ≠ المستلم؛ بعده `goods_in_transit` = صفر (مُختبَر).
+- **السندات:** `POST /vouchers` `{globalId, type: in\|out\|damage, warehouseId, reason (إلزامي), lines:[…]}` (`inventory_edit`)، `GET /vouchers?state=`، `POST /vouchers/<gid>/approve|reject` (`stock_adjust_approve`، المعتمِد ≠ المنشئ). الترحيل عند الاعتماد فقط عبر `adjustStock` (`adjustment`/`damage` فيُقيَّد تلقائيًا)، والصادر يُعاد فحص رصيده داخل المعاملة.
+- **غير منفَّذ:** اقتراح FEFO بالموقع، `dispatch` بمسح الدفعة/الموقع، override الدفعة بسبب، وجهة تحويل خارج مخازن المستخدم من واجهة التطبيق (الخادم يقبلها).
+
+### W4 — الجرد الأعمى (مكتمل)
+| المسار | الكود |
+|---|---|
+| `GET /api/m1/wh/counts/tasks` | `stock_count_submit`؛ مهام `pending/in_progress` في النطاق التي يحق للمستخدم عدّها؛ DTO العدّاد = `{ref, warehouseId, warehouse, date, draftGlobalId?, items:[{productId, code, name, barcode}]}` **بلا أي كمية** |
+| `POST /counts/<ref>/entries` `{globalId, entries:[{lineGlobalId, productId, quantity≥0, locationBarcode?, batchNumber?}]}` | نفسه |
+| `POST /counts/<ref>/submit` `{globalId}` | نفسه؛ **الجواب `{globalId, state:'submitted'}` فقط** (لا يُخبَر العدّاد بحاجة إعادة العد) |
+| `GET /counts/<ref>/review` | `stock_adjust_approve`؛ المتوقع (الرصيد الحالي) والمعدود والفرق وحركات منذ العدّ (`recountAdvised`) |
+| `POST /counts/<ref>/approve` | `stock_adjust_approve`؛ `finalizeCycleCountTask` مرة واحدة |
+- `<ref>` = `globalId` المهمة أو رقمها. المهام تُنشأ على سطح المكتب (`generateCycleCountTask`)؛ إنشاؤها من الهاتف **غير منفَّذ**.
+- E-4 (الافتراضي): أي فرق ≠ 0 في المرور الأول يفرض مرورًا ثانيًا بعدّاد **آخر** (الأول لا يرى المهمة بعد إرساله)، والاعتماد قبله `409 recount_required`. المرور الثاني يستبدل القيم. العدّ يجب أن يغطي كل الأصناف (`incomplete_count`)، والصنف خارج المهمة يُضاف بمتوقع = الرصيد الحالي.
+- المعتمِد ≠ كل العدّادين (حتى مدير النظام) وإلا `self_approval`؛ بعد الاعتماد `already_finalized`.
+- **عدم التسرب (مُختبَر بتسلسل كل استجابة):** العدّاد = من يحمل `stock_count_submit` بلا `stock_adjust_approve`. `GET /items` يعيد `blind:true` بلا كمية للصنف تحت جرد مفتوح؛ ورفض `stock_changed` لا يحمل `available` لعدّاد ذلك الصنف؛ كل خطأ غير متوقع `500` بلا نص. ليس في الاستجابات حقل `expected|variance|system`.
+- E-6 (الافتراضي): الاعتماد بسلوك `finalizeCycleCountTask` (المعدود − الرصيد الحالي) مع شارة «حركة بعد العدّ».
+
+### W5 — الاعتمادات والطباعة وoutbox (مكتمل إلا العتاد)
+- `GET /api/m1/wh/approvals` (`stock_adjust_approve`): طلبات تحويل، نقص تحويل، سندات، جرد جاهز؛ **يستبعد ما أنشأه/نفّذه/عدّه المستدعي** (four-eyes). `GET /api/m1/wh/labels?kind=item|location&ref=` (`inventory_view`): بيانات ملصق بلا تكلفة (`no_barcode` إن لم يكن للصنف باركود).
+- **التطبيق:** `lib/printing/label_builder.dart` يبني `Receipt` مستقلًا عن النقل (Code128؛ وQR للموقع)؛ `LabelPrinter` منفذ طباعة: `NoPrinter` (الافتراضي: «لا توجد طابعة متصلة» ولا يدّعي الطباعة) و`ServiceLabelPrinter` فوق `PrintService` (Bluetooth SPP أو شبكة 9100، 58/80 مم) بطابور إعادة؛ فشل الطباعة لا يمسّ المخزون. شاشة اختيار الطابعة. أذونات Bluetooth أُضيفت للـmanifest الآن (`BLUETOOTH_CONNECT`، و`BLUETOOTH_SCAN` بـ`neverForLocation`، والقديمان حتى SDK 30).
+- **outbox:** `WhOutbox` فوق `SqlCipherLocalStore` المشفَّر؛ معرّف الإدخال = `x-idempotency-key`؛ إرسال بالترتيب. قواعد التعارض: 2xx مقبول (`replayed` ⇒ مكرر)، لا اتصال/429/5xx يبقى معلّقًا، 401 يبقى معلّقًا ويطلب دخولًا، **أي 4xx آخر (stale، stock_changed، self_approval، over_receipt…) مرفوض نهائي لا يُعاد إرساله بهوية جديدة** ويظهر بسببه مع زر «إخفاء». شريط عدم اتصال/عمليات معلّقة فوق كل التبويبات.
+- **الشاشات:** المستندات (استلام، جرد، تحويلات، سند، اعتمادات، ملصقات حسب صلاحيات الجلسة)، الـoutbox، الإعدادات (الطابعة).
+- **غير منفَّذ (يقول ذلك ولا يزيّف):** `ScanIntentPlugin` وملفات Zebra/Honeywell/Urovo (تحتاج عتادًا — E-11؛ المدعوم الكاميرا وماسح لوحة المفاتيح)، `docs/mobile/warehouse-hardware-checklist.md`، طلب إذن Bluetooth وقت التشغيل (الواجهة تعرض رسالة «امنح الإذن من الإعدادات»)، تخزين قائمة أوامر الشراء للعمل بلا اتصال (الشاشة تقول إنها تحتاج المكتب)، إرسال بصمة الموافقة P5 من واجهة التطبيق (العميل `command(..., approvalProof:)` يدعمها والخادم يقبلها ومُختبَر).
+
+### مصفوفة الصلاحيات المنفَّذة (محدَّثة)
+| الدور | الأكواد |
+|---|---|
+| موظف مخزن | `warehouse_mobile_access`، `inventory_view`، `goods_receipt_mobile`، `stock_count_submit` |
+| مخزني | الموجود + `warehouse_mobile_access`، `goods_receipt_mobile`، `stock_count_submit`، `inventory_transfer` |
+| مشرف مخزن | `warehouse_mobile_access`، `inventory_view`، `inventory_edit`، `inventory_transfer`، `goods_receipt_mobile`، `stock_count_submit`، `stock_adjust_approve` |
+| مدير مخزون | الموجود + `warehouse_mobile_access`، `inventory_transfer`، `goods_receipt_mobile`، `stock_count_submit`، `stock_adjust_approve` |
+| مدير النظام | + `devices_pair_manage` |
+- الأكواد الثلاثة الجديدة معرَّفة في `lib/core/permissions/warehouse_permission_codes.dart` ومسجَّلة في `masterList` عبر السطر القائم (بلا نمو في `permission_codes.dart`).
+- نقاط الإنفاذ: `goods_receipt_mobile` ← `wh_receipt_handlers.dart`، `stock_count_submit` ← `wh_count_handlers.dart` وحجب الجرد، `stock_adjust_approve` ← `wh_stock_doc_handlers.dart` و`wh_count_handlers.dart` و`wh_approval_handlers.dart`.

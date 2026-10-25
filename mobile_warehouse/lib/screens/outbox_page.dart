@@ -3,47 +3,88 @@ import 'package:picpos_device/picpos_device.dart';
 import 'package:picpos_ui/picpos_ui.dart';
 
 import '../l10n/strings.dart';
-import '../store/wh_local_store.dart';
+import '../sync/wh_ops.dart';
 
-/// Pending / accepted / rejected operations of this phone. Skeleton for W2+:
-/// shows what is stored, and says that sending is not enabled yet.
-class OutboxPage extends StatelessWidget {
-  const OutboxPage({super.key, required this.store});
-  final WhLocalStore store;
+/// Pending / accepted / rejected operations of this phone (W5 offline queue).
+/// Pending ones are re-sent in order with the same ids; a rejected one is final
+/// - the reason is shown and the user decides (it is never silently re-sent).
+class OutboxPage extends StatefulWidget {
+  const OutboxPage({super.key, required this.ops});
+  final WhOps ops;
+
+  @override
+  State<OutboxPage> createState() => _OutboxPageState();
+}
+
+class _OutboxPageState extends State<OutboxPage> {
+  late Future<List<OutboxEntry>> _entries = _load();
+
+  Future<List<OutboxEntry>> _load() async {
+    final all = await widget.ops.store.store.outbox();
+    return [for (final e in all.reversed) if (e.error != 'dismissed') e];
+  }
+
+  Future<void> _sendNow() async {
+    await widget.ops.outbox.drain();
+    if (mounted) setState(() => _entries = _load());
+  }
 
   @override
   Widget build(BuildContext context) {
     final t = S.of(context);
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      PicPosPageHeader(title: t('navOutbox'), subtitle: t('outboxSub'), icon: Icons.outbox_outlined),
-      Expanded(
-        child: FutureBuilder<List<OutboxEntry>>(
-          future: store.store.outbox(),
-          builder: (context, snap) {
-            if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-            final entries = snap.data!;
-            if (entries.isEmpty) {
-              return EmptyState(icon: Icons.outbox_outlined, title: t('outboxEmpty'), message: t('outboxNote'));
-            }
-            return ListView(padding: const EdgeInsets.all(PicPosSpacing.lg), children: [
-              Text(t('outboxNote')),
-              for (final e in entries)
-                ListTile(
-                  title: Text(e.kind, textDirection: TextDirection.ltr),
-                  subtitle: Text(e.error ?? e.globalId, textDirection: TextDirection.ltr),
-                  trailing: StatusPill(
-                    label: e.status.name,
-                    tone: switch (e.status) {
-                      OutboxStatus.pending => PicPosTone.warning,
-                      OutboxStatus.accepted => PicPosTone.success,
-                      OutboxStatus.rejected => PicPosTone.error,
-                    },
-                  ),
-                ),
-            ]);
-          },
+    return ListenableBuilder(
+      listenable: widget.ops.sync,
+      builder: (context, _) => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        PicPosPageHeader(
+          title: t('navOutbox'),
+          subtitle: t('outboxSub'),
+          icon: Icons.outbox_outlined,
+          actions: [IconButton(key: const Key('outbox.send'), tooltip: t('sendNow'), onPressed: _sendNow, icon: const Icon(Icons.sync))],
         ),
-      ),
-    ]);
+        Expanded(
+          child: FutureBuilder<List<OutboxEntry>>(
+            future: _entries,
+            builder: (context, snap) {
+              if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+              final entries = snap.data!;
+              if (entries.isEmpty) return EmptyState(icon: Icons.outbox_outlined, title: t('outboxEmpty'), message: t('outboxNote'));
+              return ListView(padding: const EdgeInsets.all(PicPosSpacing.lg), children: [
+                Text(t('outboxNote')),
+                Text(t('queueCounts', {'p': '${widget.ops.sync.pending}', 'r': '${widget.ops.sync.rejected}'}), key: const Key('outbox.counts')),
+                for (final e in entries)
+                  ListTile(
+                    key: Key('outbox.${e.globalId}'),
+                    title: Text(e.kind, textDirection: TextDirection.ltr),
+                    subtitle: Text(
+                      e.status == OutboxStatus.rejected
+                          ? S.errorText(context, e.error ?? 'rejected')
+                          : e.error == 'transport'
+                              ? t('waitingNetwork')
+                              : t('attempts', {'n': '${e.attempts}'}),
+                    ),
+                    trailing: e.status == OutboxStatus.rejected
+                        ? Row(mainAxisSize: MainAxisSize.min, children: [
+                            StatusPill(label: t('status_rejected'), tone: PicPosTone.error),
+                            IconButton(
+                              key: Key('outbox.dismiss.${e.globalId}'),
+                              tooltip: t('dismiss'),
+                              onPressed: () async {
+                                await widget.ops.outbox.dismiss(e);
+                                if (mounted) setState(() => _entries = _load());
+                              },
+                              icon: const Icon(Icons.close),
+                            ),
+                          ])
+                        : StatusPill(
+                            label: t('status_${e.status.name}'),
+                            tone: e.status == OutboxStatus.pending ? PicPosTone.warning : PicPosTone.success,
+                          ),
+                  ),
+              ]);
+            },
+          ),
+        ),
+      ]),
+    );
   }
 }

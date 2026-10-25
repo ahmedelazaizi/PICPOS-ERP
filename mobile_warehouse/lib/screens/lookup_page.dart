@@ -122,7 +122,9 @@ class _LookupPageState extends State<LookupPage> {
                                       padding: const EdgeInsets.symmetric(vertical: 2),
                                       child: Row(children: [
                                         Expanded(child: Text(t('stockIn', {'wh': s.warehouse ?? '${s.warehouseId}'}))),
-                                        Text(s.quantity, textDirection: TextDirection.ltr, style: tt.titleMedium),
+                                        s.blind
+                                            ? Text(t('blindQty'), key: const Key('lookup.blind'), style: tt.bodyMedium)
+                                            : Text(s.quantity, textDirection: TextDirection.ltr, style: tt.titleMedium),
                                       ]),
                                     ),
                                 ]),

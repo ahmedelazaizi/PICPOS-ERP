@@ -4,6 +4,8 @@ import 'package:picpos_ui/picpos_ui.dart';
 import '../app.dart';
 import '../l10n/strings.dart';
 import '../session/wh_session.dart';
+import '../sync/wh_ops.dart';
+import 'printer_settings_page.dart';
 
 /// Asks before wiping the pairing; returns true when confirmed.
 Future<bool> confirmUnpair(BuildContext context) async {
@@ -23,8 +25,9 @@ Future<bool> confirmUnpair(BuildContext context) async {
 }
 
 class SettingsPage extends StatelessWidget {
-  const SettingsPage({super.key, required this.session});
+  const SettingsPage({super.key, required this.session, this.ops});
   final WhSession session;
+  final WhOps? ops;
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +57,23 @@ class SettingsPage extends StatelessWidget {
                     ),
                   ]),
                 ),
+                if (ops != null) ...[
+                  const SizedBox(height: PicPosSpacing.lg),
+                  PicPosBlock(
+                    title: t('printerTitle'),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(ops!.printer.hasPrinter ? t('printerCurrent', {'name': ops!.printer.printerName ?? ''}) : t('noPrinterConnected'),
+                          key: const Key('settings.printerStatus')),
+                      const SizedBox(height: PicPosSpacing.sm),
+                      OutlinedButton.icon(
+                        key: const Key('settings.printer'),
+                        onPressed: () => Navigator.push(context, MaterialPageRoute<void>(builder: (_) => PrinterSettingsPage(ops: ops!))),
+                        icon: const Icon(Icons.print_outlined),
+                        label: Text(t('choosePrinter')),
+                      ),
+                    ]),
+                  ),
+                ],
                 const SizedBox(height: PicPosSpacing.lg),
                 PicPosBlock(
                   title: t('pairing'),

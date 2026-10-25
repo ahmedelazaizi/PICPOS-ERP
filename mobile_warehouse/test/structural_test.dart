@@ -8,6 +8,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:picpos_warehouse/l10n/strings.dart';
+import 'package:picpos_warehouse/session/wh_session.dart' show kDomainCodes;
 
 final _colorLiteral = RegExp(r'\bColors\.(?!transparent\b)\w+|\bColor\(0x|\bColor\.fromA?RGBO?\(');
 
@@ -39,6 +40,25 @@ void main() {
       expect(_colorLiteral.hasMatch(bad), isTrue, reason: bad);
     }
     expect(_colorLiteral.hasMatch('Colors.transparent'), isFalse);
+  });
+
+  test('every domain refusal code has its own message, and nothing else claims one', () {
+    final have = {for (final k in S.table.entries.keys) if (k.startsWith('err_')) k.substring(4)};
+    for (final c in kDomainCodes) {
+      expect(have, contains(c), reason: 'err_$c is missing from S.table');
+    }
+  });
+
+  test('dynamic keys (state_*, type_*, status_*, printer_*) exist for every value the code can produce', () {
+    const keys = [
+      'state_requested', 'state_approved', 'state_in_transit', 'state_received', 'state_received_short',
+      'state_closed', 'state_rejected', 'state_pending', 'state_posted',
+      'type_transfer_request', 'type_transfer_shortage', 'type_voucher', 'type_count',
+      'status_pending', 'status_accepted', 'status_rejected', 'printer_permission', 'printer_bluetoothOff',
+    ];
+    for (final k in keys) {
+      expect(S.table.entries, contains(k), reason: k);
+    }
   });
 
   test("every t('key') used in lib/ exists in the string table", () {
