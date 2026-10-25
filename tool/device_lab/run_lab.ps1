@@ -86,8 +86,21 @@ function New-Code([string]$branch = 'B1') {
   for ($i = 0; $i -lt 20; $i++) { Start-Sleep -Milliseconds 700; if (@($(Host-Json).codes).Count -gt $n) { break } }
   return @($(Host-Json).codes)[-1].code
 }
+# True when the i-th EditText of the pairing form already holds the wanted value.
+function Edit-Has([int]$i, [string]$v) {
+  $e = @(All-Nodes (Get-Dump) | Where-Object { $_.class -eq 'android.widget.EditText' })
+  if ($e.Count -le $i) { return $false }
+  return ("$($e[$i].text)").Contains($v)   # FULL value: ports 18080/18443 share a 10-char prefix
+}
 function Pair-Form([string]$addr, [string]$code, [string]$fp) {
-  Type-Edit 0 $addr | Out-Null; Type-Edit 1 $code | Out-Null; Type-Edit 2 $fp | Out-Null
+  # Type each field, then VERIFY it from the dump and retype a field that stayed empty (S5.3 once left the
+  # address empty right after "pm clear" -> app said "بيانات الإقران ناقصة" and the lab blamed the product).
+  $vals = @($addr, $code, $fp)
+  for ($round = 0; $round -lt 3; $round++) {
+    for ($i = 0; $i -lt 3; $i++) { if (-not (Edit-Has $i $vals[$i])) { Type-Edit $i $vals[$i] | Out-Null } }
+    if ((Edit-Has 0 $vals[0]) -and (Edit-Has 1 $vals[1]) -and (Edit-Has 2 $vals[2])) { break }
+    Log "Pair-Form: a field is still empty, retyping (round $round)"
+  }
   Hide-Keyboard; Start-Sleep 3   # let the IME animation + Flutter semantics settle (a dump taken too early misses the button)
   if (-not (Tap-Node '^\|ربط$' 25)) {
     # fallback: the button sits ~171 px under the fingerprint field (seen in every dump of this form)
@@ -119,8 +132,14 @@ function Handle-Pin {   # create-PIN screen on first login, unlock screen on lat
 }
 function Fresh-Pair-And-Login([string]$user, [string]$pw, [string]$branch = 'B1') {
   A shell pm clear $Pkg.wh | Out-Null; Launch $Pkg.wh; Start-Sleep 4
-  $code = New-Code $branch
-  Pair-Form $H.address $code $H.fingerprint
+  # ONE pending pairing offer exists on the host at a time: a retry must issue a NEW code (the old one is gone/consumed).
+  for ($attempt = 1; $attempt -le 2; $attempt++) {
+    $code = New-Code $branch
+    Pair-Form $H.address $code $H.fingerprint
+    if (On-Login) { break }
+    Log "Fresh-Pair-And-Login: not on the login screen after attempt $attempt (screen text length $((Screen-Text).Length))"
+    if ($attempt -eq 1) { A shell pm clear $Pkg.wh | Out-Null; Launch $Pkg.wh; Start-Sleep 4 }
+  }
   if (-not (On-Login)) { return $false }
   Login $user $pw
   $null = Handle-Pin

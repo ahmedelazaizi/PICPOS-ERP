@@ -107,3 +107,93 @@ APK under test: `mobile_warehouse/build/app/outputs/flutter-apk/app-release.apk`
 - Launching `run_lab.ps1` through a hidden `Start-Process` with redirected output made UI dumps unreliable (pairing form button missing, login not detected) in 3 runs; the same script run as a tool background job paired fine. Pair-Form now also waits for the IME and falls back to a geometry tap.
 - Replays by command id, DTO checks and the accountant convert are driven from the host process (probe phone / real service), not from the app UI.
 - Camera, printer hardware, Arabic typing not covered. Legacy S1-S5 not re-run on the new APK.
+
+# Addendum 3: full rerun after the lab-script fixes (run `20261026-012136`, 2026-10-26)
+
+Evidence root: `D:\qa\device-lab\20261026-012136\` (`steps.log`, `NN-*.png`, `facts-*.json`, `api-*.json`, `summary.md`, `logcat.txt`, `host.log`).
+APK under test: `mobile_warehouse/build/app/outputs/flutter-apk/app-release.apk` (signed, built 2026-10-26 00:27), **85,042,968 bytes, SHA-256 `5C4A8BF6EE8D903C55F516F47B58FBA2EA19FE7CCBCC1FFCAA51D19D689A0D58`**, copied fresh to `D:\qa\device-lab\apks\warehouse.apk` by the run (row `ENV-APK-wh identity`). Host = REAL `NetworkService.startServer` (TLS) from the working tree; full run (S1-S5, S2, S3, W2-W5), emulator `emulator-5554` (android-34).
+
+**Result: 67 PASS, 0 FAIL, 2 NOT_APPLICABLE** (69 rows incl. ENV rows and LOGCAT). The previous run `20261026-002725` (same APK) had 61 PASS / 6 FAIL / 2 NOT_APPLICABLE; all six FAILs were lab-script problems, none a product defect:
+
+| Previous FAIL | Cause (verified) | Fix in `tool/device_lab` |
+|---|---|---|
+| S5.3 pm clear -> unpaired | lab: after `pm clear` the address field stayed empty (`16-s5-repaired.png` of the old run shows the app's own "بيانات الإقران ناقصة"), so the re-pair never happened; the pairing code itself was fine | `Pair-Form` re-reads the three fields from the UI dump and retypes a missing one; `Fresh-Pair-And-Login` retries once with a NEW code (one pending offer only) |
+| W2.1c outbox ops accepted | lab: asserted the internal name `receipt_submit`; the UI shows "استلام: إرسال" / "استلام: الأصناف" + "مقبولة" | primary = host events (1x `receipt_submit` + 1x `receipt_lines`), secondary = Arabic UI text |
+| W3.2e / W3.2f transfer receive | lab: `transfer_pages.dart:67` and `:71` open TWO keypad sheets (received qty, then "منها تالف (المرسل n)"); the driver confirmed only the first, so no receive was ever sent. App is correct: with both sheets confirmed the doc becomes `received`, stock 6/4, in-transit 0 (`43-w32-after-receive.png`, `facts-w32-received.json`). W3.2f failed only as a consequence (its own new-key receive performed the first receive) | driver waits for each sheet title and confirms both; `Enter-Qty` waits 1 s for the slide-in animation |
+| W5.3a / W5.3b offline queue + relaunch | lab: asserted `receipt_submit` text; UI shows the two receipt ops with "بانتظار الإرسال" chips, counter "بانتظار الإرسال: N · مرفوضة: M" and the banner "لا اتصال بالمكتب. العمليات المحفوظة: N" | host-side "no document yet" is primary, Arabic UI text secondary (`>=2` pending, because the rejected W3.3 dispatch also sits in the outbox) |
+
+During the rerun one more lab bug of mine was caught and fixed before the final run: the new field check compared only a 10-character prefix, and `10.0.2.2:18080` / `10.0.2.2:18443` share it (S1.4 failed); it now compares the full value.
+
+| Id | Result | Evidence (under the run folder) |
+|---|---|---|
+| ENV-APK-wh identity | PASS | `steps.log` (size 85,042,968, SHA-256 below) |
+| ENV-HOST | PASS | `steps.log` |
+| ENV-EMULATOR | PASS | `steps.log` |
+| ENV-INSTALL-wh | PASS | `steps.log` |
+| ENV-INSTALL-pos | PASS | `steps.log` |
+| ENV-INSTALL-admin | PASS | `steps.log` |
+| ENV-INSTALL-van | PASS | `steps.log` |
+| S1.1 launch (no crash, onboarding) | PASS | `01-s1-launch.png` |
+| S1.2 plain-HTTP host refused | PASS | `02-s1-plain-http.png` |
+| S1.3 wrong fingerprint refused (pin enforced) | PASS | `03-s1-wrong-fp.png` |
+| S1.4 pair over 10.0.2.2 with code + fingerprint (TLS) | PASS | `04-s1-paired.png` |
+| S1.5a wrong password refused | PASS | `05-s1-login-bad.png` |
+| S1.5b user without warehouse_mobile_access refused | PASS | `06-s1-login-cashier.png` |
+| S1.6 login + role-aware home (clerk: branch One, only B1 warehouse) | PASS | `07-s1-home.png` |
+| S1.7 item lookup scoped to the device branch | PASS | `08-s1-lookup-barcode.png` |
+| S1.7b name search also branch-scoped | PASS | `09-s1-lookup-name.png` |
+| S4 offline: honest error, no stale/fake data, no crash | PASS | `10-s4-offline-lookup.png` |
+| S4b recovery after network returns | PASS | `11-s4-back-online.png` |
+| S5.1 force-stop + restart keeps pairing | PASS | `12-s5-restart.png`, `13-s5-after-unlock.png` |
+| S5.2 background/resume keeps pairing | PASS | `14-s5-background-resume.png` |
+| S1.8 host revokes device -> app wipes/locks on next call | PASS | `15-s1-after-revoke.png` |
+| S5.3 pm clear -> unpaired | PASS | `16-s5-repaired.png`, `17-s5-after-pm-clear.png` |
+| S2a pos launch (no crash, UI renders) | PASS | `18-S2a-pos-launch.png` |
+| S2b admin launch (no crash, UI renders) | PASS | `19-S2b-admin-launch.png` |
+| S3 van launch (no crash, UI renders) | PASS | `20-S3-van-launch.png` |
+| S2a.2 cashier LAN pairing | NOT_APPLICABLE | `21-s2a-pos-disabled.png` |
+| S2b.2 admin pairing against the lab host | NOT_APPLICABLE | source refs `admin_session.dart:109`, `manage_client.dart:226` |
+| W0 fixtures + defaults | PASS | `steps.log` |
+| W-LOGIN clerk1 | PASS | `steps.log` |
+| W5.1a approvals inbox hidden from the clerk (UI + API) | PASS | `22-w51-clerk-docs.png` |
+| W2.1a receive PO by barcode: receipt document exists (submitted, 2 lines) | PASS | `24-recv-PO-00001-after-send.png` |
+| W2.1b design R-A: submit moves NO stock and posts NO ledger entry | PASS | `steps.log` |
+| W2.1c outbox shows both receipt ops accepted, nothing pending | PASS | `25-w21-outbox.png` |
+| W2.4 accountant convert posts stock once (invoice, balances, PO closed) | PASS | `steps.log` |
+| W2.4b second convert refused (no double posting) | PASS | `steps.log` |
+| W2.2 replay of the SAME submit command id creates no duplicate | PASS | `steps.log` |
+| W2.2b a NEW command id on an already-posted receipt is refused (no second effect) | PASS | `steps.log` |
+| W2.3a over-receipt (11 of 10) is refused by the host, nothing counted as received | PASS | `28-w23-outbox.png` |
+| W2.3b the user is told the quantity was refused (outbox rejected + reason) | PASS | `steps.log` |
+| W2.3c receive screen does not claim success for a refused receipt | PASS | `27-recv-PO-00002-after-send.png` |
+| W4.1a counter UI never shows the expected quantity (lookup + count page) | PASS | `29-w41-lookup-blind.png`, `30-w41-count-page.png` |
+| W4.1b counter API responses carry no expected/variance/quantity (tasks DTO, items DTO; review 403) | PASS | `steps.log` |
+| W4.2a first count submitted (counter clerk1, variance recorded privately) | PASS | `32-w42-count-sent.png` |
+| W4.2b the counter cannot approve his own count (refused, stock unchanged) | PASS | `steps.log` |
+| W4.2c supervisor cannot approve while a recount by another counter is required | PASS | `steps.log` |
+| W5.2 label print with no printer: honest "no printer connected", no fake success, no stock effect | PASS | `33-w52-label-print.png`, `34-w52-printer-settings.png` |
+| W4.2d recount by a DIFFERENT counter (clerk3) accepted | PASS | `35-w42-recount-sent.png` |
+| W3.1 transfer with the setting OFF is refused honestly (API 409 + UI list message, no document) | PASS | `36-w31-transfers-off.png`, `37-w31-new-transfer-off.png` |
+| W3.2a store1 requests two transfers (setting now ON) | PASS | `steps.log` |
+| W3.2b the requester (no approve right) cannot approve his own transfer | PASS | `steps.log` |
+| W5.1b approvals inbox hidden from the storekeeper (UI tile + API) | PASS | `steps.log` |
+| W5.1c approvals inbox visible to the supervisor (2 transfer requests + the count) | PASS | `40-w51-super-inbox.png` |
+| W3.2c supervisor (different user) approves both transfer requests from the inbox | PASS | `steps.log` |
+| W3.2d dispatch reduces source stock and books the in-transit entry | PASS | `42-w32-after-dispatch.png` |
+| W3.3 transfer larger than available (8 of 3) is refused at dispatch, no negative stock | PASS | `steps.log` |
+| W3.2e receive at destination completes it: stock conserved, in-transit cleared | PASS | `43-w32-after-receive.png` |
+| W3.2f never double: replayed command ids answer from the log, fresh dispatch/receive refused, stock unchanged | PASS | `steps.log` |
+| W4.2e supervisor (not a counter) approves in the inbox -> adjustment posted once | PASS | `44-w42-review-dialog.png`, `45-w42-after-approve.png` |
+| W4.2f a second approval does not post again | PASS | `steps.log` |
+| W5.1d approvals inbox visible to the stock manager | PASS | `46-w51-manager-docs.png` |
+| W5.1e accountant cannot use the warehouse app (login refused, no inbox) | PASS | `47-w51-accountant-login.png` |
+| W5.3a offline: receipt is queued in the outbox, host has nothing yet | PASS | `50-w53-outbox-offline.png` |
+| W5.3b queue survives app relaunch (encrypted store) | PASS | `51-w53-outbox-after-relaunch.png` |
+| W5.3c network back: the document replays exactly once and the app shows it | PASS | `52-w53-outbox-replayed.png` |
+| W5.3d second replay creates no duplicate | PASS | `steps.log` |
+| W5.4a revoked device: queued receipt is NOT replayed (no document on the host) | PASS | `55-w54-after-send-now.png`, `56-w54-after-home-refresh.png` |
+| W5.4b the user is told the phone was unpaired (and returns to pairing) | PASS | `steps.log` |
+| W-CRASH warehouse app alive / no crash buffer entries during W scenarios | PASS | `steps.log` |
+| LOGCAT crashes | PASS | `steps.log` |
+
+Product defects found in this run: **none**. The earlier defects recorded above for W2.3c / W5.4b did not reproduce on this APK (W2.3c and W5.4b PASS: the screen no longer claims success for a refused receipt; the unpaired message is shown). Not covered: camera/QR, Arabic typing, printer hardware (see `docs/testing/DEVICE-LAB.md` Limits). Emulator and host were stopped at the end of the run.

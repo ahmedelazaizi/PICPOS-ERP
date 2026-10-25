@@ -21,6 +21,7 @@ function Go-Shell {
 function Scan([string]$code) { Type-Edit 0 $code | Out-Null; A shell input keyevent KEYCODE_ENTER | Out-Null; Start-Sleep 2 }
 function Enter-Qty([string]$n) {
   Wait-Node '^\|تأكيد$' 10 | Out-Null
+  Start-Sleep 1   # keypad bottom-sheet slide-in animation: taps during it can miss (see docs/testing/DEVICE-LAB.md)
   foreach ($ch in $n.ToCharArray()) { if ("$ch" -eq '.') { Tap-Last '^\|\.$' | Out-Null } else { Tap-Last "^\|$ch`$" | Out-Null } }
   Tap-Node '^\|تأكيد$' | Out-Null; Start-Sleep 2
 }
@@ -102,7 +103,11 @@ function Run-WarehouseScenarios {
   Record 'W2.1a receive PO by barcode: receipt document exists (submitted, 2 lines)' (Pass $okDoc) "doc=$($rec[0].global_id) state=$($rec[0].state) lines=$(@($rec[0].lines | % { "$($_.product_id):$($_.qty_base)" }) -join ',') ; snackbar/screen right after send: $(Tail $r.Quick 160) ; $($r.Shot)"
   Record 'W2.1b design R-A: submit moves NO stock and posts NO ledger entry' (Pass $okStock) "B1 Rcv Rice stock after submit=$stockR1 (0/absent expected), purchase journal rows=$(@($f.journal | ? { $_.reference_type -like 'purchase*' }).Count), invoices=$(@($f.purchaseInvoices).Count); PO received_quantity (items, bumped at submit)=$($recvd -join ',')"
   $ob = Outbox-Text; $sO = Shot 'w21-outbox'
-  Record 'W2.1c outbox shows both receipt ops accepted, nothing pending' (Pass (($ob -match 'receipt_submit') -and ($ob -match 'بانتظار الإرسال: 0 · مرفوضة: 0'))) "$(Tail $ob 260); $sO"
+  # primary evidence = host events (one receipt_submit + one receipt_lines accepted); secondary = the outbox UI text:
+  # op titles are Arabic ("استلام: إرسال", "استلام: الأصناف"), status chip "مقبولة", counter line "بانتظار الإرسال: N · مرفوضة: M".
+  $hostOps = ((@(Ev $f 'receipt_submit').Count -eq 1) -and (@(Ev $f 'receipt_lines').Count -eq 1))
+  $uiOps = ($ob -match 'استلام:\s*إرسال') -and ($ob -match 'استلام:\s*الأصناف') -and ([regex]::Matches($ob, 'مقبولة').Count -ge 2) -and ($ob -match 'بانتظار الإرسال:\D*0\D*مرفوضة:\D*0')
+  Record 'W2.1c outbox shows both receipt ops accepted, nothing pending' (Pass ($hostOps -and $uiOps)) "host events receipt_submit=$(@(Ev $f 'receipt_submit').Count) receipt_lines=$(@(Ev $f 'receipt_lines').Count) (expected 1+1); UI: both op titles + 2x accepted chip + counter 0/0 = $uiOps; $(Tail $ob 260); $sO"
 
   # accountant converts (host side, real WhReceiptPosting.convert)
   $gid = $rec[0].global_id
@@ -248,12 +253,20 @@ function Run-WarehouseScenarios {
     Record 'W3.2d dispatch reduces source stock and books the in-transit entry' (Pass $okDisp) "Flour: B1 main=$s1a (10-4), second=$s1b, goods_in_transit balance=$git (4 x cost 10 = 40), doc state=$($g1.state); journal rows=$(@($f.journal | ? { $_.reference_type -eq 'wh_transfer_out' }).Count); $sD"
     Record 'W3.3 transfer larger than available (8 of 3) is refused at dispatch, no negative stock' (Pass (($g2.state -eq 'approved') -and ($s2a -eq 3))) "Salt doc state=$($g2.state) (stays approved), B1 main stock=$s2a (unchanged 3); outbox: $(Tail (Outbox-Text) 260)"
     Go-Shell | Out-Null; Open-Docs-Tile 'التحويلات'
-    if (Tap-Node '^\|استلام$' 6) { Start-Sleep 2; Tap-Node '^\|تأكيد$' | Out-Null; Start-Sleep 5 }   # sheet is pre-filled with the dispatched 4
+    # The receive action opens TWO keypad sheets per line (mobile_warehouse/lib/screens/transfer_pages.dart:67 received qty,
+    # :71 damaged qty); each is pre-filled (dispatched 4 / 0) and needs its own "تأكيد". Wait for each title (sheet animation).
+    $recvSheets = 0
+    if (Tap-Node '^\|استلام$' 6) {
+      if (Wait-Node 'الكمية المستلمة' 10) { Start-Sleep 1; if (Tap-Node '^\|تأكيد$') { $recvSheets++ } }
+      if (Wait-Node 'منها تالف' 10) { Start-Sleep 1; if (Tap-Node '^\|تأكيد$') { $recvSheets++ } }
+      Start-Sleep 5
+    }
+    Log "transfer receive: confirmed $recvSheets keypad sheet(s)"
     $sR = Shot 'w32-after-receive'
     $f = Get-Facts 'w32-received'
     $tr = @(Doc-Of $f 'transfer'); $g1 = $tr | ? { @($_.lines)[0].product_id -eq $fx.products.t1.id }
     $s1a = Qty $f $bcT1 $wh1; $s1b = Qty $f $bcT1 $wh1b; $git = [double]$f.goodsInTransitBalance
-    Record 'W3.2e receive at destination completes it: stock conserved, in-transit cleared' (Pass (($g1.state -eq 'received') -and ($s1a -eq 6) -and ($s1b -eq 4) -and ($git -eq 0))) "state=$($g1.state); Flour main=$s1a second=$s1b (sum $($s1a + $s1b) of 10); goods_in_transit=$git; $sR"
+    Record 'W3.2e receive at destination completes it: stock conserved, in-transit cleared' (Pass (($g1.state -eq 'received') -and ($s1a -eq 6) -and ($s1b -eq 4) -and ($git -eq 0))) "state=$($g1.state); Flour main=$s1a second=$s1b (sum $($s1a + $s1b) of 10); goods_in_transit=$git; keypad sheets confirmed=$recvSheets (2 expected); $sR"
     # never double: replay dispatch/receive command ids and fresh ids
     $dEv = (Ev $f 'transfer:dispatch')[0]; $rEv = (Ev $f 'transfer:receive')[0]
     $rp1 = Api-Call 'w32-replay-dispatch' 'super1' 'POST' "/api/m1/wh/transfers/$($g1.global_id)/dispatch" '{}' $dEv.command_id
@@ -295,10 +308,15 @@ function Run-WarehouseScenarios {
   $ob = Outbox-Text; $sO = Shot 'w53-outbox-offline'
   $f = Get-Facts 'w53-offline'
   $docsOff = @(Doc-Of $f 'po_receipt' | ? { $_.ref_id -eq "$($po53.id)" }).Count
-  Record 'W5.3a offline: receipt is queued in the outbox, host has nothing yet' (Pass (($docsOff -eq 0) -and ($ob -match 'receipt_submit') -and ($ob -match 'بانتظار الإرسال: [1-9]|بانتظار الاتصال'))) "host docs for PO=$docsOff; outbox: $(Tail $ob 300); screen after send: $(Tail $r.Quick 160); $sO"
+  # primary = host has no document; secondary = outbox UI: the two receipt ops with "بانتظار الإرسال" chips + counter pending >= 2
+  $uiQueued = ($ob -match 'استلام:\s*إرسال') -and ($ob -match 'استلام:\s*الأصناف') -and ($ob -match 'بانتظار الإرسال:\D*[2-9]')
+  Record 'W5.3a offline: receipt is queued in the outbox, host has nothing yet' (Pass (($docsOff -eq 0) -and $uiQueued)) "host docs for PO=$docsOff (0 expected); UI shows both queued receipt ops + pending counter>=2 = $uiQueued (offline banner present=$($ob -match 'لا اتصال بالمكتب')); outbox: $(Tail $ob 300); screen after send: $(Tail $r.Quick 160); $sO"
   A shell am force-stop $Pkg.wh | Out-Null; Start-Sleep 2; Launch $Pkg.wh; Start-Sleep 6; $null = Handle-Pin
   $ob2 = Outbox-Text; $sO2 = Shot 'w53-outbox-after-relaunch'
-  Record 'W5.3b queue survives app relaunch (encrypted store)' (Pass (($ob2 -match 'receipt_submit') -and ($ob2 -match 'receipt_lines'))) "$(Tail $ob2 260); $sO2"
+  $fRel = Get-Facts 'w53-relaunch'
+  $docsRel = @(Doc-Of $fRel 'po_receipt' | ? { $_.ref_id -eq "$($po53.id)" }).Count
+  $uiRel = ($ob2 -match 'استلام:\s*إرسال') -and ($ob2 -match 'استلام:\s*الأصناف') -and ($ob2 -match 'بانتظار الإرسال:\D*[2-9]')
+  Record 'W5.3b queue survives app relaunch (encrypted store)' (Pass (($docsRel -eq 0) -and $uiRel)) "after force-stop + relaunch (still offline): host docs for PO=$docsRel (0 expected, nothing lost/leaked), UI shows the same queued receipt ops + pending>=2 = $uiRel; $(Tail $ob2 260); $sO2"
   Net-On
   Tap-Node '^\|أرسل الآن' | Out-Null; Start-Sleep 6
   $ob3 = Screen-Text; $sO3 = Shot 'w53-outbox-replayed'

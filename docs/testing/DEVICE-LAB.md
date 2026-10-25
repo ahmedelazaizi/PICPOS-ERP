@@ -47,6 +47,39 @@ Notes: `LanPairingService` keeps **one** pending offer - every `issue` supersede
 code (the driver issues a fresh one before each pairing). Pre-existing lab-AVD packages signed with a
 different key are uninstalled before install.
 
+### Rerun a subset
+
+The runner has no per-scenario filter; it is split into two phases, and each phase can be run alone (the emulator is booted and
+the host started either way, ~2 min):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tool\device_lab\run_lab.ps1 -SkipLegacy      # only W2-W5 (warehouse documents), ~25 min
+powershell -NoProfile -ExecutionPolicy Bypass -File tool\device_lab\run_lab.ps1 -SkipWarehouse   # only S1-S5, S2, S3 (pairing, lookup, offline, other apps), ~12 min
+```
+
+To iterate on one step, start the host once by hand (`LAB_HOST=1 flutter test test/device_lab/serve_host_test.dart`), then run
+with `-SkipHostStart -KeepEmulator` and dot-source `lab_lib.ps1` in an interactive shell (`Get-Dump`, `Screen-Text`, `Tap-Node`,
+`Host-Do`, `Get-Facts`) to replay a single step against the booted emulator. Use `-RunId x` to keep evidence apart. Run the lab
+as a background job and poll in bounded loops: a full run takes ~35 min.
+
+### Lab rules learned the hard way
+
+- **One pending pairing offer.** The host keeps a single pending offer (`LanPairingService._pendingOffer`): every `issue` supersedes
+  the previous code, and a used code is gone. Any pairing (also a re-pair after `revoke-all` or `pm clear`) needs a **fresh**
+  `New-Code`, and two phones can never be paired in parallel. `Fresh-Pair-And-Login` retries once with a new code;
+  `Pair-Form` re-reads the three fields from the UI dump and retypes one that stayed empty (the app answers "بيانات الإقران ناقصة"
+  otherwise - once the address was lost right after `pm clear`).
+- **Keypad sheet timing.** Quantities are entered in a modal bottom sheet (`askQuantity`) that slides in; a tap during the slide
+  misses. `Enter-Qty` waits for the `تأكيد` node and then 1 s. A transfer **receive** opens TWO sheets per line, one after the other:
+  "الكمية المستلمة (المرسل n)" (pre-filled with the dispatched qty) and "منها تالف (المرسل n)" (pre-filled 0); each needs its own
+  `تأكيد`, so the driver waits for each title (`transfer_pages.dart:67,71`). Confirming only once leaves the second sheet open and
+  nothing is sent.
+- **Host facts are the primary evidence, UI text is secondary.** Outbox rows are Arabic (op titles "استلام: إرسال",
+  "استلام: الأصناف"; status chips "مقبولة" / "بانتظار الإرسال" / "مرفوضة"; counter line "بانتظار الإرسال: N · مرفوضة: M"; offline
+  banner "لا اتصال بالمكتب. العمليات المحفوظة: N"). Never match internal op names such as `receipt_submit`; assert the document /
+  event / stock on the host first, then the visible text. The outbox also lists every op queued earlier in the run (including the
+  rejected W3.3 dispatch), so pending counters are compared with `>=`, not `==`, except right after a drain.
+
 ### Host command channel (warehouse phases)
 
 `cmd.txt` lines are acknowledged in `ack.txt` (`<line-index>|<message>`; `Host-Do` in `lab_lib.ps1` waits for it, bounded).
