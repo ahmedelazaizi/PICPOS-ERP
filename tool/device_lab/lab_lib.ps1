@@ -115,3 +115,37 @@ function Type-Edit([int]$Index, [string]$Text) {
   return $true
 }
 
+
+# ───────────── warehouse W2-W5 helpers (host command channel with ack) ─────────────
+# Sends one '|' separated command to the host and waits (bounded) for its ack line "<n>|<msg>".
+function Host-Do([string]$Line, [int]$TimeoutSec = 45) {
+  $cmd = Join-Path $script:LabDir 'cmd.txt'; $ack = Join-Path $script:LabDir 'ack.txt'
+  $n = if (Test-Path $cmd) { @([IO.File]::ReadAllLines($cmd)).Count } else { 0 }
+  [IO.File]::AppendAllText($cmd, $Line + "`r`n")
+  $end = (Get-Date).AddSeconds($TimeoutSec)
+  while ((Get-Date) -lt $end) {
+    if (Test-Path $ack) {
+      foreach ($l in [IO.File]::ReadAllLines($ack)) { if ($l.StartsWith("$n|")) { Log "host-do[$n] $Line => $($l.Substring($l.IndexOf('|') + 1))"; return $l.Substring($l.IndexOf('|') + 1) } }
+    }
+    Start-Sleep -Milliseconds 400
+  }
+  Log "host-do[$n] $Line => TIMEOUT"; return 'TIMEOUT'
+}
+function Get-Facts([string]$Name) {
+  $r = Host-Do "facts|$Name"
+  $f = Join-Path $script:LabDir "facts-$Name.json"
+  if (-not (Test-Path $f)) { Log "facts $Name missing ($r)"; return $null }
+  Copy-Item $f (Join-Path $script:RunDir "facts-$Name.json") -Force
+  return (Get-Content $f -Raw -Encoding UTF8 | ConvertFrom-Json)
+}
+function Fixtures { Get-Content (Join-Path $script:LabDir 'fixtures.json') -Raw -Encoding UTF8 | ConvertFrom-Json }
+# Real HTTPS call from the host's probe phone; returns @{status; body} (also kept in the run dir).
+function Api-Call([string]$Label, [string]$User, [string]$Method, [string]$Path, [string]$Body = '', [string]$Key = '') {
+  $r = Host-Do "api|$Label|$User|$Method|$Path|$Body|$Key"
+  $f = Join-Path $script:LabDir "api-$Label.json"
+  if (-not (Test-Path $f)) { return $null }
+  Copy-Item $f (Join-Path $script:RunDir "api-$Label.json") -Force
+  return (Get-Content $f -Raw -Encoding UTF8 | ConvertFrom-Json)
+}
+function Doc-Of($facts, [string]$Kind) { @($facts.docs | Where-Object { $_.kind -eq $Kind }) }
+function Qty($facts, [string]$Barcode, $WhId) { $s = $facts.stock.$Barcode; if ($null -eq $s) { return $null }; $v = $s."$WhId"; if ($null -eq $v) { 0 } else { [double]$v } }

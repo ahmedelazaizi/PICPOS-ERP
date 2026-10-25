@@ -15,6 +15,7 @@ import 'package:shelf/shelf.dart';
 import '../../../data/database/database.dart';
 import '../api_user_context.dart';
 import '../approval_proof.dart';
+import 'wh_error_classifier.dart';
 import 'wh_scope.dart';
 
 class WhError implements Exception {
@@ -110,8 +111,32 @@ class WhHttp {
       return errorResponse(e);
     } on FormatException {
       return errorResponse(WhError('bad_request', 400));
-    } catch (_) {
-      return errorResponse(WhError('internal', 500));
+    } catch (e) {
+      return errorResponse(classifyWhFailure(e));
+    }
+  }
+}
+
+extension WhDeskRoutes on WhHttp {
+  /// Gate of the DESKTOP-side routes (`/api/m1/wh/desk/*`, WH-002): a signed-in
+  /// desktop session holding [permission]. A paired phone (`warehouse`) or a
+  /// mirror console is refused: the accountant's step is not a phone action.
+  Future<Response> runDesk(
+    Request request,
+    String permission,
+    Future<Response> Function(int userId, String deviceId) handler,
+  ) async {
+    try {
+      final kind = request.context['lanDeviceKind'];
+      if (kind == 'warehouse' || kind == 'mirror') return WhHttp.errorResponse(WhError('device_scope', 403));
+      final denied = await ApiUserCtx.requirePermission(request, db, permission);
+      if (denied != null) return denied;
+      final deviceId = request.context['lanDeviceId'];
+      return await handler(ApiUserCtx.userIdOf(request)!, deviceId is String ? deviceId : 'desktop');
+    } on WhError catch (e) {
+      return WhHttp.errorResponse(e);
+    } catch (e) {
+      return WhHttp.errorResponse(classifyWhFailure(e));
     }
   }
 }

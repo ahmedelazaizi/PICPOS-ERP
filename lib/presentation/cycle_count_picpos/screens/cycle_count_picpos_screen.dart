@@ -339,7 +339,7 @@ class _CycleCountPicposScreenState extends ConsumerState<CycleCountPicposScreen>
                         // → applyCycleCountAdjustments skips the item → no stock
                         // change but a success toast).
                         await _flushPendingCounts(repo, state);
-                        await repo.finalizeCycleCountTask(task.id);
+                        await repo.finalizeCycleCountTask(task.id, approverUserId: ref.read(authProvider).user?.id);
                         if (mounted) {
                           AppToast.show(context, tr('تم إكمال المهمة وتعديل المخزون'));
                           notifier.refresh();

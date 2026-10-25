@@ -460,6 +460,7 @@ class RoleGrantMatrix {
     },
     'مدير مخزون': {
       'inventory_view',
+      'inventory_edit', // §B.4 «كل ما سبق»: ينشئ السندات ويسردها (WH-013)
       'inventory_transfer',
       'warehouse_mobile_access',
       'goods_receipt_mobile',

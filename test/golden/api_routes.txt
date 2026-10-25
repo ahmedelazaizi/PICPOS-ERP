@@ -183,6 +183,8 @@ GET /api/m1/wh/receipts
 POST /api/m1/wh/receipts/<gid>/submit
 POST /api/m1/wh/receipts/<gid>/convert
 GET /api/m1/wh/locations/by-barcode/<code>
+GET /api/m1/wh/desk/receipts
+POST /api/m1/wh/desk/receipts/<gid>/convert
 GET /api/m1/wh/approvals
 GET /api/m1/wh/labels
 GET /api/m1/wh/counts/tasks

@@ -17,6 +17,10 @@ class FakeDesktop {
   bool validPassword = true;
   bool supervisor = false;
 
+  /// Who the office reports as signed in (`/api/auth/session`, `/wh/session`).
+  int userId = 7;
+  String username = 'ali';
+
   /// Overrides the permissions the office reports for the signed-in user.
   List<String>? permissions;
   List<Map<String, Object?>> warehouses = const [
@@ -38,14 +42,14 @@ class FakeDesktop {
             : const ApiResponse(401, '{"error":"رمز الإقران غير صحيح أو منتهي"}');
       case '/api/auth/session':
         return validPassword
-            ? const ApiResponse(200, '{"token":"SESS","userId":7,"expiresInMs":3600000}')
+            ? ApiResponse(200, '{"token":"SESS-$userId","userId":$userId,"expiresInMs":3600000}')
             : const ApiResponse(401, '{"error":"Invalid credentials"}');
       case '/api/m1/wh/session':
         if (!userAllowed) return const ApiResponse(403, '{"error":"User #7 lacks permission: warehouse_mobile_access"}');
         return ApiResponse(
             200,
             jsonEncode({
-              'user': {'id': 7, 'username': 'ali', 'displayName': 'Ali Hassan', 'roleName': 'x'},
+              'user': {'id': userId, 'username': username, 'displayName': 'Ali Hassan', 'roleName': 'x'},
               'device': {'id': 'x', 'kind': 'warehouse', 'branchId': 3, 'branchName': 'Cairo'},
               'permissions': permissions ??
                   [

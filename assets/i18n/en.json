@@ -11581,5 +11581,19 @@
   "تحقق من الاتصال الآن": "Check the connection now",
   "لا فروع مسندة لحسابك": "No branches are assigned to your account",
   "الفرع الحالي": "Current branch",
-  "تبديل الفرع": "Switch branch"
+  "تبديل الفرع": "Switch branch",
+  "أمر الشراء {p0} — {p1}": "Purchase order {p0} — {p1}",
+  "أمر الشراء لم يعد مفتوحاً لهذا الاستلام.": "The purchase order is no longer open for this receipt.",
+  "استلامات أرسلتها هواتف المخازن وتنتظر التحويل إلى فاتورة مشتريات": "Receipts sent by the warehouse phones, waiting to be converted into a purchase invoice",
+  "استلامات المخازن": "Warehouse receipts",
+  "الفترة المحاسبية مغلقة؛ لم يُسجَّل شيء.": "The accounting period is closed; nothing was recorded.",
+  "المخزن {p0} · أرسله {p1}": "Warehouse {p0} · sent by {p1}",
+  "تالف — لا يدخل المخزون": "Damaged — does not enter stock",
+  "تحويل لفاتورة": "Convert to invoice",
+  "تعذّر التحويل؛ لم يُسجَّل شيء.": "The conversion failed; nothing was recorded.",
+  "حسابات المخزون غير مربوطة؛ لم يُسجَّل شيء.": "Inventory accounts are not mapped; nothing was recorded.",
+  "حُوِّل الاستلام إلى فاتورة مشتريات.": "The receipt was converted into a purchase invoice.",
+  "حُوِّل هذا الاستلام من قبل. حدّث القائمة.": "This receipt was already converted. Refresh the list.",
+  "لا توجد استلامات بانتظار التحويل.": "No receipts are waiting to be converted.",
+  "ليست لديك صلاحية تحويل الاستلامات إلى فواتير.": "You do not have permission to convert receipts into invoices."
 }

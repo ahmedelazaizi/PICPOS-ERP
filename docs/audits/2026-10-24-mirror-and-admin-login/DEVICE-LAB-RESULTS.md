@@ -57,3 +57,53 @@ script encoding, `$pin`/`$PIN` case-insensitive clash, IME back-key); fixed in `
 
 `tool/device_lab/{lab_lib,run_lab,start_emulator,stop_emulator}.ps1`, `test/device_lab/serve_host_test.dart`,
 `docs/testing/DEVICE-LAB.md`, this file. Scratch: `D:\qa\device-lab\` (apks, src snapshot, run1-run6, logs).
+
+
+# Addendum: warehouse phases W2-W5 (run `w-20261025-193844`, 2026-10-25 evening)
+
+Evidence root: `D:\qa\device-lab\w-20261025-193844\` (`steps.log`, `NN-*.png`, `facts-*.json` = host facts per step, `api-*.json` = HTTPS probe responses, `summary.md`, `logcat.txt`, `host.log`).
+APK under test: `mobile_warehouse/build/app/outputs/flutter-apk/app-release.apk`, built 2026-10-25 15:30, **85,026,584 bytes, SHA-256 `76EB438FDCA68B9149442EB0BC5409FA0E50D66FACF4846940764B306C44D939`**, copied fresh to `D:\qa\device-lab\apks\warehouse.apk` by the run (the previous run had used an older 83,386,584-byte copy). Host = REAL `NetworkService.startServer` (TLS) from the working tree; run with `-SkipLegacy` (S1-S5 were NOT re-run on the new APK; last pass was run 20261025-181236 on the older APK).
+
+| Id | Result | Evidence |
+|---|---|---|
+| W0 fixtures/defaults (transfer setting OFF) | PASS | facts-w-start.json |
+| W-LOGIN clerk1 (pair with pin + login, new APK) | PASS | steps.log |
+| W5.1a inbox hidden from clerk (UI + API 403) | PASS | 01-w51-clerk-docs.png, api-w51-clerk-approvals.json |
+| W2.1a receive by barcode -> receipt `submitted`, 2 lines | PASS | 02/03-recv-PO-00001-*.png, facts-w21.json |
+| W2.1b receipt moves no stock, no ledger entry | PASS (lab assertion bug) | stock Rice absent, 0 purchase journal rows. The scripted check FAILED only because its invoice-count query errored (`no such column source_order_id`, now fixed in serve_host_test.dart); not re-run. Design R-A: `wh_receipt_handlers.dart:11`; PO `received_quantity` IS bumped at submit (6,5) before any stock posts |
+| W2.1c outbox shows ops accepted | PASS | 04-w21-outbox.png |
+| W2.4 accountant convert posts stock once; 2nd convert refused | PASS (invoice count check unreliable, same query bug; stock 6/5 and `posted_ref_id=1` confirm) | facts-w21-convert*.json |
+| W2.2 same command id replayed -> `replayed:true`, no duplicate; new id refused 409 | PASS | api-w22-*.json, facts-w22.json |
+| W2.3a over-receipt 11 of 10 refused by host, nothing counted | PASS | facts-w23.json (draft only, received 0) |
+| W2.3b user told (outbox rejected + reason) | PASS | 07-w23-outbox.png |
+| W2.3c receive screen does not claim success for a refused receipt | **FAIL (product)** | 06-recv-PO-00002-after-send.png shows "أُرسل الاستلام إلى المكتب." although the host rejected it. `mobile_warehouse/lib/screens/receive_pages.dart:139-141` (`report.complete` is true when the queue drained, rejected ops included) |
+| W4.1a counter UI never shows expected qty | PASS | lookup shows "الكمية محجوبة أثناء الجرد"; w41-*.png |
+| W4.1b counter API DTOs carry no expected/variance/quantity; review 403 | PASS | api-w41-*.json |
+| W4.2a-d count, self-approve 403, early approve `recount_required`, recount by clerk3 | PASS | api-w42-*.json, facts-w42-*.json |
+| W4.2e supervisor approves in inbox -> Oil 20 -> 18, both submissions `posted` | PASS | review dialog png, facts-w42-approved.json |
+| W4.2f second approval -> 409 `already_finalized`, stock unchanged | PASS | api-w42-second-approve.json |
+| W5.1b inbox hidden from storekeeper | PASS | api-w51-store-approvals.json |
+| W5.1c inbox visible to supervisor (2 transfers + count) | PASS | api-w51-super-approvals.json |
+| W5.1d visible to stock manager | PASS | w51-manager-docs.png |
+| W5.1e accountant cannot sign in ("no warehouse app permission") | PASS | w51-accountant-login.png |
+| W5.2 label print, no printer: honest message, no fake success | PASS | w52-label-print.png |
+| W3.1 transfer OFF -> 409 `staged_transfers_disabled`, screen says so, no doc | PASS | api-w31-off-request.json, w31-*.png |
+| W3.2a-f request/approve (different user)/dispatch (B1 10->6, GIT 40)/receive (6+4, GIT 0)/replays never double | PASS | facts-w32-*.json |
+| W3.3 transfer 8 of 3 refused at dispatch, doc stays `approved`, stock 3 | PASS | facts-w32-dispatched.json |
+| W5.3a-d offline queue, survives relaunch, replays once, 2nd drain no duplicate | PASS | w53-*.png, facts-w53-*.json |
+| W5.4a revoked device: queued receipt not replayed (0 docs) | PASS | facts-w54.json |
+| W5.4b user is told the phone was unpaired | **FAIL (product, UX)** | 34-w54-after-send-now.png: app is wiped back to the pairing screen with no explanatory message; the queued receipt is silently discarded. `wh_outbox.dart:101` rethrows `deviceRevoked`; wipe in `wh_session.dart:170-176`; `err_device_revoked` text is never shown on that path |
+| W-CRASH / LOGCAT | PASS | no FATAL/ANR |
+
+## Defects / observations
+1. **W2.3c** receive screen shows a success snackbar for a receipt the host refuses (`receive_pages.dart:141`). The truth is only in the Outbox tab.
+2. **W5.4b** revoked phone loses its queued documents silently (no message on pairing screen).
+3. With the transfer setting OFF the Transfers screen shows the honest message, but "طلب تحويل" and the whole request form stay usable (a request can be queued and will be rejected) - minor.
+4. Home role badge reads "مشرف / مدير مخزون" for the storekeeper (any `inventory_transfer` holder) (`wh_contracts.dart:49`) - labelling only.
+5. Sign-out keeps the outbox, so ops queued by one user would be sent under the next user who signs in (not exercised; read from `wh_session.dart:179`, `wh_outbox.dart`).
+6. `goods_in_transit` journal debit landed on account 1134 and the credit on 1136 (account names "مخزون البضاعة التامة الصنع" / "...للبيع"): mapping of `goods_in_transit` to a finished-goods inventory account is worth an accountant's review.
+
+## Lab limits / lessons
+- Launching `run_lab.ps1` through a hidden `Start-Process` with redirected output made UI dumps unreliable (pairing form button missing, login not detected) in 3 runs; the same script run as a tool background job paired fine. Pair-Form now also waits for the IME and falls back to a geometry tap.
+- Replays by command id, DTO checks and the accountant convert are driven from the host process (probe phone / real service), not from the app UI.
+- Camera, printer hardware, Arabic typing not covered. Legacy S1-S5 not re-run on the new APK.

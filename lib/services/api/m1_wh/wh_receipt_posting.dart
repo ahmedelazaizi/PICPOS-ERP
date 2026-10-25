@@ -9,7 +9,9 @@
 //     other receipt of it is still waiting; otherwise it stays open.
 import 'package:drift/drift.dart';
 
+import '../../../core/utils/financial_utils.dart';
 import '../../../data/database/database.dart';
+import 'wh_constants.dart';
 import 'wh_doc_store.dart';
 import 'wh_http.dart';
 import 'wh_locations.dart';
@@ -38,33 +40,59 @@ class WhReceiptPosting {
       final g = grouped[k];
       grouped[k] = (first: g?.first ?? l, qty: (g?.qty ?? 0) + l.qty);
     }
+    // WH-003: the invoice carries the PO line's discount and tax in the same
+    // proportion as the accepted quantity (a half-received line takes half of
+    // its discount and half of its tax), and the PO's cost centre.
+    double share(PurchaseOrderItem i, double qty) => i.quantity <= 0 ? 0 : qty / i.quantity;
     final items = <PurchaseInvoiceItemsCompanion>[
       for (final g in grouped.values)
-        PurchaseInvoiceItemsCompanion.insert(
-          invoiceId: 0,
-          productId: g.first.productId,
-          quantity: g.qty,
-          unitCost: poItems[g.first.poItemId]!.unitCost,
-          total: g.qty * poItems[g.first.poItemId]!.unitCost,
-          batchNumber: Value(g.first.batchNumber),
-          expiryDate: Value(g.first.expiry),
-        ),
+        () {
+          final pi = poItems[g.first.poItemId]!;
+          final f = share(pi, g.qty);
+          return PurchaseInvoiceItemsCompanion.insert(
+            invoiceId: 0,
+            productId: g.first.productId,
+            quantity: g.qty,
+            unitCost: pi.unitCost,
+            total: g.qty * pi.unitCost,
+            discount: Value(FinancialUtils.round(pi.discount * f)),
+            taxRate: Value(pi.taxRate),
+            taxAmount: Value(FinancialUtils.round(pi.taxAmount * f)),
+            batchNumber: Value(g.first.batchNumber),
+            expiryDate: Value(g.first.expiry),
+          );
+        }(),
     ];
+    // Header discount of the order, in proportion to the gross invoiced now.
+    final poGross = poItems.values.fold<double>(0, (s, i) => s + i.quantity * i.unitCost);
+    final invGross = grouped.values.fold<double>(0, (s, g) => s + g.qty * poItems[g.first.poItemId]!.unitCost);
+    final headerDiscount = poGross <= 0 ? 0.0 : FinancialUtils.round(po.discount * invGross / poGross);
 
     final complete = poItems.values.every((i) => i.receivedQuantity + 1e-9 >= i.quantity);
     final others = await store.list(kind: 'po_receipt', states: ['draft', 'submitted'], refType: 'purchase_order', refId: doc.refId);
     final stillWaiting = others.any((d) => d.id != doc.id);
 
+    // One transaction: invoice, PO stamp, bin moves and the document state move
+    // together or not at all (a failure may not leave a posted invoice behind a
+    // receipt that is still `submitted`, which a retry would post twice).
+    return db.transaction(() async {
     final invoiceId = await db.createPurchaseInvoice(
       supplierId: po.supplierId,
       warehouseId: po.warehouseId,
       items: items,
       paid: 0,
       paymentMethod: 'credit',
-      notes: 'استلام من تطبيق المخازن ${doc.gid}',
+      notes: '${WhConstants.receiptJournalNote} ${doc.gid}',
       userId: userId,
-      sourceOrderId: complete && !stillWaiting ? poId : null,
+      // `discount` is the document TOTAL (it must not be below the sum of the
+      // line discounts), so the line discounts are part of it.
+      discount: FinancialUtils.round(headerDiscount +
+          [for (final i in items) i.discount.value].fold<double>(0, (s, d) => s + d)),
+      costCenterId: po.costCenterId,
     );
+    // The PO is consumed through the receipt path only (WH-001), never by
+    // handing `sourceOrderId` to the legacy full-quantity guard.
+    if (complete && !stillWaiting) await db.markPurchaseOrderConvertedByReceipts(poId, invoiceId);
 
     if (await db.getSettingValue('warehouse_bins_enabled') == 'true') {
       final home = await defaultLocationId(db, po.warehouseId);
@@ -90,5 +118,6 @@ class WhReceiptPosting {
     final posted = await store.transition(doc, 'convert',
         approvedBy: userId, postedRefType: 'purchase_invoice', postedRefId: '$invoiceId');
     return {'receipt': await store.toJson(posted), 'invoiceId': invoiceId, 'orderClosed': complete && !stillWaiting};
+    });
   }
 }

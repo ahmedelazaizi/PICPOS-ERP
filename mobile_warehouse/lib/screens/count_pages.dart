@@ -103,15 +103,16 @@ class _CountPageState extends State<CountPage> {
     final t = S.of(context);
     final ref = Uri.encodeComponent(widget.task.ref);
     final ob = widget.ops.outbox;
-    await ob.enqueue('count_entries', '${WhDocPaths.counts}/$ref/entries', {
+    final entriesOp = await ob.enqueue('count_entries', '${WhDocPaths.counts}/$ref/entries', {
       'globalId': _docId,
       'entries': [for (final e in _entered.entries) {'lineGlobalId': e.value.id, 'productId': e.key, 'quantity': e.value.qty}],
     });
-    await ob.enqueue('count_submit', '${WhDocPaths.counts}/$ref/submit', {'globalId': _docId});
+    final submitOp = await ob.enqueue('count_submit', '${WhDocPaths.counts}/$ref/submit', {'globalId': _docId}, after: entriesOp);
     setState(() => _sent = true);
-    final r = await ob.drain();
+    final r = await ob.drainFor([entriesOp, submitOp]);
     if (!mounted) return;
-    showDone(context, r != null && r.complete ? t('countSent') : t('savedForLater'));
+    if (r.rejectedCode != null && r.rejectedIndex == 0) setState(() => _sent = false);
+    showOutcome(context, r, sent: t('countSent'), saved: t('savedForLater'));
   }
 
   @override

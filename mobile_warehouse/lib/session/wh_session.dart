@@ -18,7 +18,8 @@ const kDomainCodes = <String>{
   'doc_mismatch', 'not_owner', 'empty_document', 'self_approval', 'staged_transfers_disabled', 'same_warehouse',
   'warehouse_not_found', 'product_not_found', 'reason_required', 'count_not_open', 'incomplete_count',
   'recount_required', 'already_finalized', 'count_not_submitted', 'task_not_found', 'nothing_to_post',
-  'accounts_not_mapped', 'no_barcode', 'item_not_found',
+  'accounts_not_mapped', 'no_barcode', 'item_not_found', 'period_closed', 'duplicate_document', 'busy',
+  'dead_letter', 'dependency_rejected',
 };
 
 /// Stable code of an error, for `S.errorText`.
@@ -40,6 +41,12 @@ String errorCode(Object e) {
     };
   }
   return 'unknown';
+}
+
+/// Why the phone is back on the pairing screen: the office unpaired it.
+class UnpairNotice {
+  const UnpairNotice({required this.discardedOperations});
+  final int discardedOperations;
 }
 
 /// A pairing refusal decided locally (expired, wrong kind, no TLS).
@@ -137,6 +144,7 @@ class WhSession extends ChangeNotifier {
     serverUrl = payload.url;
     branchId = result.branchId;
     client = api;
+    unpairNotice = null;
     notifyListeners();
   }
 
@@ -167,9 +175,26 @@ class WhSession extends ChangeNotifier {
     }
   }
 
+  /// Set when the office unpaired this phone (revoked): the pairing screen
+  /// says so and how many unsent operations were thrown away (W5.4b). A wipe
+  /// the user asked for himself leaves it null.
+  UnpairNotice? unpairNotice;
+
+  /// Counts the operations still waiting in the outbox; the outbox registers
+  /// itself here so a revocation can tell the user what was lost.
+  Future<int> Function()? unsentCount;
+
+  /// The office revoked this device: remember how many unsent operations the
+  /// wipe discards, wipe, and leave the notice for the pairing screen.
+  Future<void> handleRevoked() async {
+    final lost = await unsentCount?.call() ?? 0;
+    unpairNotice = UnpairNotice(discardedOperations: lost);
+    await wipe();
+  }
+
   Future<void> _afterFailure(Object e, {required bool signOutOnError}) async {
     if (WarehouseLanClient.isRevoked(e)) {
-      await wipe();
+      await handleRevoked();
     } else if (signOutOnError ||
         (e is ApiError && (e.kind == ApiErrorKind.unauthorized || e.kind == ApiErrorKind.forbidden))) {
       await signOut();

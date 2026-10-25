@@ -76,6 +76,7 @@ part 'routes/api_branch_scope.dart';
 part 'routes/api_sync_pull_tables.dart';
 part 'routes/api_get_sync_pull.dart';
 part 'routes/api_helpers.dart';
+part 'routes/api_handler_notes.dart';
 
 /// REST API handler for embedded server.
 /// Exposes read-only endpoints for products, categories, units,
@@ -126,14 +127,7 @@ class ApiHandler {
     _display = ApiDisplayHandler(_db);
   }
 
-  // Spec 029 / US3 Bug A — admin self-heal flag.
-  // Production observed admin (id=1) absent from the `/api/users`
-  // response despite the source containing `u.id.equals(1)`. Root cause
-  // could be: row physically deleted, row renamed to `__dup_1_admin`,
-  // or `drift_postgres` empty-IN-list semantics on PostgreSQL. The
-  // defensive fix runs ONCE per process: at the first `_getUsers` call,
-  // if the bootstrap admin is missing or corrupted, restore it BEFORE
-  // executing the query. See contracts/bug-a-admin-self-heal.md.
+  // Spec 029 / US3 Bug A: admin self-heal, once per process (see api_handler_notes.dart).
   bool _adminSelfHealRan = false;
 
   /// عدد صفوف `IS NULL` في آخر سحب محصور — منفذ قياس للاختبار.
@@ -148,11 +142,7 @@ class ApiHandler {
   static void debugResetNullBranchLogThrottle() =>
       _lastLoggedNullBranchRows.clear();
 
-  /// Spec 151 P1-8b — exposed so a guard test can assert this stays IDENTICAL
-  /// to `DeltaPullService.branchScopedPullTables`. If the two drift apart, one
-  /// side silently reopens either the tokenless transactional leak (server
-  /// serves a table the client thinks is denied) or the watermark poison
-  /// (client seeds a watermark the server denies).
+  /// Spec 151 P1-8b: must stay IDENTICAL to DeltaPullService.branchScopedPullTables (see api_handler_notes.dart).
   @visibleForTesting
   static Set<String> get transactionalPullTablesForTest =>
       ApiHandlerSyncPullTables._transactionalPullTables;
@@ -172,18 +162,7 @@ class ApiHandler {
     return router;
   }
 
-  /// Public: Broadcast a data_changed event to connected WebSocket clients.
-  /// Call this from server-side screens when entities are modified directly
-  /// (e.g. branches, cost centers, accounts created via the server UI).
-  ///
-  /// Delegates to [ApiHandlerBase.broadcast] instead of re-implementing the
-  /// fan-out. The duplicate loop this replaces had two defects: it never
-  /// pushed to `_localChangeController`, so the SERVER's own open screens did
-  /// not refresh after an admin edit (only remote clients did); and it ignored
-  /// `WsSubscriberInfo.branchId` entirely, so it could not scope a broadcast
-  /// even when the caller knew the branch. Every current caller passes global
-  /// master data (accounts, branches, cost centers, role_permissions), which
-  /// correctly reaches everyone with [branchId] left null.
+  /// Public: broadcast a data_changed event to the WebSocket clients (see api_handler_notes.dart).
   void broadcastChange(String table, {int? branchId}) {
     _data.broadcast(table, branchId: branchId);
   }

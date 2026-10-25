@@ -76,7 +76,11 @@ class WhCountApi {
       });
 
   Future<Response> review(Request request, String ref) => _http.run(request, [_access, _approve], (ctx) async {
-        return WhHttp.json(await counts.managerReview(await _scoped(ctx, ref)));
+        final s = await _scoped(ctx, ref);
+        // WH-009: whoever counted (or started to count) this task does not read
+        // its system quantities, whatever his role.
+        if (await counts.countedBy(ctx.userId, s)) throw WhError('self_approval', 403);
+        return WhHttp.json(await counts.managerReview(s));
       });
 
   Future<Response> approve(Request request, String ref) => _http.run(request, [_access, _approve], (ctx) async {

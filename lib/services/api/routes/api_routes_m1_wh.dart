@@ -18,6 +18,9 @@ extension ApiHandlerWarehouseRoutes on ApiHandler {
     router.post('/api/m1/wh/receipts/<gid>/submit', rc.submit);
     router.post('/api/m1/wh/receipts/<gid>/convert', rc.convert);
     router.get('/api/m1/wh/locations/by-barcode/<code>', rc.locationLookup);
+    // WH-002: the accountant's inbox for DESKTOP sessions (never a phone).
+    router.get('/api/m1/wh/desk/receipts', rc.deskList);
+    router.post('/api/m1/wh/desk/receipts/<gid>/convert', rc.deskConvert);
     final ap = WhApprovalApi(_db);
     router.get('/api/m1/wh/approvals', ap.inbox);
     router.get('/api/m1/wh/labels', ap.label);

@@ -21,7 +21,9 @@ void main() {
   testWidgets('W2: receive a purchase order offline, outbox drains with the same idempotency key', (tester) async {
     final office = FakeOffice()..permissions = kClerk;
     final store = WhLocalStore.memory();
-    await openApp(tester, office, store: store);
+    // ONE pairing for the whole story: the saved operations belong to this user on this phone.
+    final session = await signedIn(office);
+    await openApp(tester, office, store: store, session: session);
     await tester.tap(find.byKey(const Key('doc.receive')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('po.PO1')));
@@ -46,12 +48,12 @@ void main() {
     for (final t in office.transports) {
       t.failWith = null;
     }
-    await openApp(tester, office, store: store);
+    await openApp(tester, office, store: store, session: session);
     expect(office.posts.map((p) => p.key), keys);
     expect(office.applied, 2);
 
     // And a second open (or a retry) cannot apply anything again.
-    await openApp(tester, office, store: store);
+    await openApp(tester, office, store: store, session: session);
     expect(office.applied, 2);
     expect((await store.store.outbox()).every((e) => e.status == OutboxStatus.accepted), isTrue);
   });
@@ -83,6 +85,8 @@ void main() {
     await tester.tap(find.byKey(const Key('transfer-e2e-0001.receive')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('qty.confirm')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('qty.confirm'))); // damaged: 0
     await tester.pumpAndSettle();
     expect(office.transfers['transfer-e2e-0001']!['state'], 'received');
     expect(office.posts.map((p) => p.key).toSet(), hasLength(office.posts.length), reason: 'every command has its own key');

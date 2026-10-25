@@ -36,6 +36,7 @@ import '../../picpos_shell/picpos_totals_bar.dart';
 import '../../picpos_shell/picpos_dialog.dart';
 import '../../picpos_shell/picpos_attachments_panel.dart';
 import 'purchases_picpos_account_choices.dart';
+import 'wh_receipts_inbox_dialog.dart';
 
 // ── Part files (mixin-based extraction — faithful copy of the UralCash
 // `part of` mixins; see purchases_picpos_crud.dart / purchases_picpos_details.dart
@@ -183,6 +184,17 @@ class _PurchasesPicposScreenState extends ConsumerState<PurchasesPicposScreen>
           const SizedBox(width: 8),
           _buildExcelMenu(context, ref),
           const SizedBox(width: 8),
+          // WH-002: the accountant converts the receipts the warehouse phones
+          // submitted (service re-checks `purchases_create`).
+          if (ref.watch(hasPermissionProvider(PermissionCodes.purchasesCreate)).value ?? false) ...[
+            OutlinedButton.icon(
+              key: const Key('purchases.whReceipts'),
+              onPressed: () => showWhReceiptsInboxDialog(context),
+              icon: const Icon(PhosphorIconsBold.package, size: 16),
+              label: Text(tr('استلامات المخازن')),
+            ),
+            const SizedBox(width: 8),
+          ],
           OutlinedButton.icon(
             onPressed: () {
               Navigator.of(context).push(

@@ -9,6 +9,7 @@
 //   counter (plan E-4 default: any variance forces a second count) -> approval.
 import 'package:drift/drift.dart';
 
+import '../../../core/permissions/warehouse_permission_codes.dart';
 import '../../../data/database/database.dart';
 import 'wh_doc_store.dart';
 import 'wh_http.dart';
@@ -32,8 +33,10 @@ class WhCountTaskState {
   /// Can [userId] still count it (open, and either first pass or a recount he did not do)?
   bool countableBy(int userId) {
     if (!open) return false;
-    if (task.assignedTo != null && task.assignedTo != userId) return false;
-    if (submitted.isEmpty) return true;
+    // WH-007: the assignment names who takes the FIRST pass only; the recount
+    // belongs to whichever other counter the system offers it to, otherwise an
+    // assigned task with a difference could never be recounted or approved.
+    if (submitted.isEmpty) return task.assignedTo == null || task.assignedTo == userId;
     return recountNeeded && !counters.contains(userId);
   }
 }
@@ -61,15 +64,21 @@ class WhCountService {
   }
 
   Future<List<WhCountTaskState>> tasksIn(Set<int> warehouseIds) async {
-    final tasks = await (db.select(db.cycleCountTasks)
-          ..where((t) => t.status.isIn(_openStatuses) & t.deletedAt.isNull())
-          ..orderBy([(t) => OrderingTerm.desc(t.id)])
-          ..limit(100))
-        .get();
+    if (warehouseIds.isEmpty) return const [];
+    // WH-014: the warehouse filter is part of the query. It used to run AFTER
+    // `limit(100)`, so 100 newer tasks of other branches could hide this
+    // branch's tasks.
+    final query = db.select(db.cycleCountTasks).join([
+      innerJoin(db.cycleCountPlans, db.cycleCountPlans.id.equalsExp(db.cycleCountTasks.planId)),
+    ])
+      ..where(db.cycleCountTasks.status.isIn(_openStatuses) &
+          db.cycleCountTasks.deletedAt.isNull() &
+          db.cycleCountPlans.warehouseId.isIn(warehouseIds))
+      ..orderBy([OrderingTerm.desc(db.cycleCountTasks.id)])
+      ..limit(100);
     final out = <WhCountTaskState>[];
-    for (final t in tasks) {
-      final s = await _state(t);
-      if (warehouseIds.contains(s.warehouseId)) out.add(s);
+    for (final row in await query.get()) {
+      out.add(await _state(row.readTable(db.cycleCountTasks)));
     }
     return out;
   }
@@ -208,6 +217,30 @@ class WhCountService {
       'readyForApproval': s.readyForApproval,
       'items': rows,
     };
+  }
+
+  /// Has [userId] started (draft) or submitted a count of this task? Such a
+  /// user is a counter of it whatever his role (WH-008/009).
+  Future<bool> countedBy(int userId, WhCountTaskState s) async {
+    if (s.counters.contains(userId)) return true;
+    final drafts = await store.list(
+        kind: 'count_submission', states: ['draft'], refType: 'cycle_count_task', refId: '${s.task.id}', createdBy: userId);
+    return drafts.isNotEmpty;
+  }
+
+  /// Does the task have phone count documents still waiting for the approval?
+  Future<bool> hasPhonePasses(int taskId) async =>
+      (await store.list(kind: 'count_submission', states: ['submitted'], refType: 'cycle_count_task', refId: '$taskId', limit: 1))
+          .isNotEmpty;
+
+  /// The desktop «إكمال» of a task that has phone passes (WH-008): the same
+  /// rule as the phone approval - recount first, an approver who is none of the
+  /// counters, the documents posted - not a back door around it.
+  Future<void> approveFromDesk(int taskId, int approver) async {
+    if (!await db.userHasPermission(approver, WarehousePermissionCodes.stockAdjustApprove)) {
+      throw WhError('permission_denied', 403);
+    }
+    await approve(await state('$taskId'), approver);
   }
 
   Future<void> approve(WhCountTaskState s, int approver) async {

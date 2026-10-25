@@ -24,9 +24,16 @@ class _OutboxPageState extends State<OutboxPage> {
     return [for (final e in all.reversed) if (e.error != 'dismissed') e];
   }
 
+  bool _mine(OutboxEntry e) =>
+      widget.ops.info == null || e.payload['userId'] == widget.ops.info!.userId;
+
   Future<void> _sendNow() async {
     await widget.ops.outbox.drain();
-    if (mounted) setState(() => _entries = _load());
+    if (mounted) {
+      setState(() {
+        _entries = _load();
+      });
+    }
   }
 
   @override
@@ -54,10 +61,12 @@ class _OutboxPageState extends State<OutboxPage> {
                 for (final e in entries)
                   ListTile(
                     key: Key('outbox.${e.globalId}'),
-                    title: Text(e.kind, textDirection: TextDirection.ltr),
+                    title: Text(S.table.entries.containsKey('kind_${e.kind}') ? t('kind_${e.kind}') : e.kind),
                     subtitle: Text(
                       e.status == OutboxStatus.rejected
                           ? S.errorText(context, e.error ?? 'rejected')
+                          : !_mine(e)
+                              ? t('forUser', {'u': '${e.payload['userName'] ?? ''}'})
                           : e.error == 'transport'
                               ? t('waitingNetwork')
                               : t('attempts', {'n': '${e.attempts}'}),
@@ -70,13 +79,17 @@ class _OutboxPageState extends State<OutboxPage> {
                               tooltip: t('dismiss'),
                               onPressed: () async {
                                 await widget.ops.outbox.dismiss(e);
-                                if (mounted) setState(() => _entries = _load());
+                                if (mounted) {
+      setState(() {
+        _entries = _load();
+      });
+    }
                               },
                               icon: const Icon(Icons.close),
                             ),
                           ])
                         : StatusPill(
-                            label: t('status_${e.status.name}'),
+                            label: e.status == OutboxStatus.pending && !_mine(e) ? t('status_locked') : t('status_${e.status.name}'),
                             tone: e.status == OutboxStatus.pending ? PicPosTone.warning : PicPosTone.success,
                           ),
                   ),

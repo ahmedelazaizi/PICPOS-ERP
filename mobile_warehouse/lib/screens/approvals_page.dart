@@ -148,7 +148,7 @@ class _ReviewDialog extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Text(
-                '${r.name ?? r.productId}: ${t('expectedShort')} ${r.expected} · ${t('countedShort')} ${r.counted ?? '—'} · Δ ${r.variance ?? '—'}'
+                '${r.name ?? r.productId}: ${t('expectedShort')} ${ltr(r.expected)} · ${t('countedShort')} ${ltr(r.counted ?? '—')} · Δ ${ltr(r.variance ?? '—')}'
                 '${r.movementsSinceCount > 0 ? ' · ⚠ ${t('movedSince')}' : ''}',
               ),
             ),

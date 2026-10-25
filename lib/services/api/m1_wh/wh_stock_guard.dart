@@ -8,6 +8,18 @@ import '../../../data/database/database.dart';
 import 'wh_blind.dart';
 import 'wh_http.dart';
 
+/// WH-006: on PostgreSQL the balance row is locked (`FOR UPDATE`, held to the
+/// end of the surrounding transaction) BEFORE it is read, so two concurrent
+/// withdrawals queue up and the second one sees the first one's result. On
+/// SQLite writers are already serialised.
+Future<void> lockBalanceRow(AppDatabase db, int productId, int warehouseId) async {
+  if (!db.isPostgres) return;
+  await db.customSelect(
+    'SELECT id FROM inventory_balances WHERE product_id = ? AND warehouse_id = ? FOR UPDATE',
+    variables: [Variable<int>(productId), Variable<int>(warehouseId)],
+  ).get();
+}
+
 /// Balance of [productId] in [warehouseId] (0 when no row).
 Future<double> availableQty(AppDatabase db, int productId, int warehouseId) async {
   final b = await (db.select(db.inventoryBalances)
@@ -27,6 +39,7 @@ Future<void> requireCoveredStock(
   required double qty,
   required int viewerId,
 }) async {
+  await lockBalanceRow(db, productId, warehouseId);
   final available = await availableQty(db, productId, warehouseId);
   if (available + 1e-9 < qty) {
     throw WhError('stock_changed', 409, {
@@ -50,4 +63,16 @@ Future<void> requireValidBatchCoverage(
   final lots = await db.getBatchesForIssue(productId, warehouseId: warehouseId);
   final valid = lots.where((l) => l.expiryDate.isAfter(now)).fold<double>(0, (s, l) => s + l.quantity);
   if (valid + 1e-9 < qty) throw WhError('batch_expired', 409, {'productId': productId});
+}
+
+/// Atomically adds [qty] to a PO line's received_quantity iff the result stays
+/// within [allowed] (WH-006). False = refused (excess or lost the race).
+Future<bool> addReceivedQuantity(AppDatabase db, int poItemId, double qty, double allowed) async {
+  final n = await db.customUpdate(
+    'UPDATE purchase_order_items SET received_quantity = received_quantity + ? '
+    'WHERE id = ? AND received_quantity + ? <= ?',
+    variables: [Variable<double>(qty), Variable<int>(poItemId), Variable<double>(qty), Variable<double>(allowed + 1e-9)],
+    updates: {db.purchaseOrderItems},
+  );
+  return n == 1;
 }

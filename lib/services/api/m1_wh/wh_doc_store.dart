@@ -11,6 +11,7 @@ import 'package:drift/drift.dart';
 import '../../../core/utils/uuid_v7.dart';
 import '../../../data/database/database.dart';
 import '../../../data/database/wh_mobile_docs_schema.dart';
+import '../../activity_logger.dart';
 import 'wh_http.dart';
 
 /// kind -> state -> action -> next state. Anything else is `invalid_transition`.
@@ -148,8 +149,14 @@ class WhDocStore {
     double? unitCost,
     Map<String, Object?> extra = const {},
   }) async {
-    final exists = await _rows('SELECT id FROM wh_mobile_doc_lines WHERE line_global_id = ?', [lineGid]);
-    if (exists.isNotEmpty) return false;
+    final exists = await _rows('SELECT id, doc_id FROM wh_mobile_doc_lines WHERE line_global_id = ?', [lineGid]);
+    if (exists.isNotEmpty) {
+      // WH-011: the same line id under ANOTHER document is a double tap that
+      // minted a second document id; it must not be swallowed (it left an
+      // empty document behind). Only the same document replays idempotently.
+      if ((exists.first['doc_id'] as num).toInt() != doc.id) throw WhError('doc_mismatch', 409);
+      return false;
+    }
     await db.customStatement(
       'INSERT INTO wh_mobile_doc_lines (doc_id, line_global_id, product_id, qty_base, location_id, '
       'batch_number, expiry_date, condition, po_item_id, pass, observed_at, counter_user_id, unit_cost, extra_json) '
@@ -289,8 +296,24 @@ class WhDocStore {
         [id, out.docId, action, ctx.userId, ctx.deviceId, hash, jsonEncode(out.result),
          DateTime.now().millisecondsSinceEpoch],
       );
+      // WH-018: every state change also lands in the hash-chained activity log
+      // (screen «سجل النشاط»), with the user and the device.
+      await _audit(ctx, action, out.docId);
       return out.result;
     });
+  }
+
+  Future<void> _audit(WhCtx ctx, String action, int? docId) async {
+    final u = await (db.select(db.users)..where((x) => x.id.equals(ctx.userId))).getSingleOrNull();
+    await ActivityLogger(db).log(
+      userId: u?.id, // null when the row is gone: the FK must never abort the command
+      userName: u?.username ?? '#${ctx.userId}',
+      action: 'wh_$action',
+      entityType: 'wh_mobile_doc',
+      entityId: docId,
+      description: 'wh_mobile_doc $action',
+      deviceInfo: ctx.deviceId,
+    );
   }
 
   Future<List<Map<String, Object?>>> events(int docId) =>

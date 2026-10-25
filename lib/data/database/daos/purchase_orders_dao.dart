@@ -185,8 +185,28 @@ extension PurchaseOrdersDao on AppDatabase {
           'أمر الشراء ${po.orderNumber} مرتبطٌ بالفاتورة رقم '
           '${po.convertedToInvoiceId} — لا يُحوَّل مرّتين');
     }
+    // WH-001: a phone receipt (submitted or already converted) moves
+    // `received_quantity`. The legacy full-quantity paths invoice the whole
+    // order, so they would enter the received part a second time (stock and
+    // supplier AP doubled). Such an order is invoiced ONLY through the receipt
+    // conversion (`WhReceiptPosting`), which stamps it via
+    // [markPurchaseOrderConvertedByReceipts].
+    final received = await (select(purchaseOrderItems)
+          ..where((i) => i.orderId.equals(orderId) & i.receivedQuantity.isBiggerThanValue(0))
+          ..limit(1))
+        .get();
+    if (received.isNotEmpty) {
+      throw Exception(
+          'أمر الشراء ${po.orderNumber} له استلام من تطبيق المخازن — '
+          'يُفوتَر من شاشة «استلامات المخازن» بالكميات المستلمة فقط');
+    }
     return po;
   }
+
+  /// Stamps the order consumed by the LAST warehouse-receipt invoice (the
+  /// receipts conversion calls this inside its transaction).
+  Future<void> markPurchaseOrderConvertedByReceipts(int orderId, int invoiceId) =>
+      _markPurchaseOrderConverted(orderId, invoiceId);
 
   /// يختم الأمرَ مستهلَكاً بالفاتورة — **داخلَ معاملةِ إنشائها**.
   ///

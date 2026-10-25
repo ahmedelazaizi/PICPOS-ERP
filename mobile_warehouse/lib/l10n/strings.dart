@@ -178,7 +178,44 @@ abstract final class S {
     'err_accounts_not_mapped': ('حسابات المخزون غير مربوطة في المكتب.', 'Inventory accounts are not mapped at the office.'),
     'err_no_barcode': ('لا باركود لهذا الصنف.', 'This item has no barcode.'),
     'err_item_not_found': ('الصنف غير موجود.', 'Item not found.'),
+    'err_period_closed': ('الفترة المحاسبية مغلقة في المكتب؛ لم يُنفَّذ شيء.', 'The accounting period is closed at the office; nothing was done.'),
+    'err_duplicate_document': ('هذا المستند مسجّل بالفعل في المكتب.', 'This document is already recorded at the office.'),
+    'err_busy': ('المكتب مشغول؛ ستُعاد المحاولة.', 'The office is busy; it will be retried.'),
+    'err_dead_letter': (
+      'تكرّر فشل هذه العملية في المكتب فأُوقف إرسالها وتحتاج مراجعة المدير.',
+      'The office kept failing on this operation, so sending stopped; ask the manager to review it.'
+    ),
+    'err_dependency_rejected': ('لم تُرسل لأن عملية سابقة مرتبطة بها رُفضت.', 'Not sent because an earlier operation it depends on was rejected.'),
+    'forUser': ('محفوظة للمستخدم {u}', 'Saved for user {u}'),
+    'status_locked': ('بانتظار صاحبها', 'Waiting for its owner'),
+    'bannerForeign': (
+      'عمليات محفوظة لمستخدم آخر: {n}. تُرسل عندما يدخل صاحبها.',
+      'Operations saved for another user: {n}. They are sent when that user signs in.'
+    ),
+    'unpairedNotice': (
+      'أُلغي ربط هذا الهاتف من المكتب. حُذفت {n} عملية غير مُرسلة.',
+      'This phone was unpaired from the office. {n} unsent operations were discarded.'
+    ),
+    'receiptRejected': ('رفض المكتب الاستلام: {why}', 'The office rejected the receipt: {why}'),
+    'opRejected': ('رفض المكتب العملية: {why}', 'The office rejected the operation: {why}'),
+    'damagedOf': ('منها تالف (المرسل {q})', 'Of which damaged (dispatched {q})'),
+    'qtyExceeds': ('المستلم والتالف معاً يتجاوزان المرسل.', 'Received plus damaged exceeds what was dispatched.'),
+    'transfersOffNote': (
+      'التحويل المرحلي متوقف في المكتب؛ لا يمكن إنشاء طلب جديد الآن.',
+      'Staged transfers are switched off at the office; a new request cannot be made now.'
+    ),
+    'badgeNeedsSetup': ('غير مفعّل لحسابك', 'Not enabled for your account'),
+    'kind_receipt_lines': ('استلام: الأصناف', 'Receipt: lines'),
+    'kind_receipt_submit': ('استلام: إرسال', 'Receipt: submit'),
+    'kind_count_entries': ('جرد: الكميات', 'Count: entries'),
+    'kind_count_submit': ('جرد: إرسال', 'Count: submit'),
+    'kind_transfer_request': ('طلب تحويل', 'Transfer request'),
+    'kind_transfer_dispatch': ('تحويل: إرسال البضاعة', 'Transfer: dispatch'),
+    'kind_transfer_receive': ('تحويل: استلام', 'Transfer: receive'),
+    'kind_voucher_create': ('سند مخزني', 'Stock voucher'),
     'roleClerk': ('موظف مخزن / مسؤول مخزن', 'Warehouse clerk / keeper'),
+    'roleKeeper': ('مسؤول مخزن', 'Warehouse keeper'),
+    'noPermission': ('ليست لديك صلاحية', 'No permission'),
     'roleSupervisor': ('مشرف / مدير مخزون', 'Supervisor / stock manager'),
     'hello': ('مرحباً {name}', 'Hello {name}'),
     'branch': ('الفرع: {name}', 'Branch: {name}'),

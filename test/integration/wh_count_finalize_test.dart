@@ -78,8 +78,9 @@ void main() {
     final self = await approve(h.supervisor);
     expect(self.status, 403);
     expect(self.error, 'self_approval');
-    expect((await approve(h.admin)).status, anyOf(200, 403));
-    expect((await approve(h.supervisor2)).status, anyOf(200, 409));
+    final byAdmin = await approve(h.admin);
+    expect(byAdmin.status, 200, reason: byAdmin.text);
+    expect((await approve(h.supervisor2)).error, 'already_finalized');
   });
 
   test('a counter without stock_adjust_approve can never approve his own count', () async {

@@ -1,5 +1,8 @@
 import '../database/database.dart' as db;
 import '../database/sync_interceptor.dart';
+import '../../services/api/m1_wh/wh_count_service.dart';
+import '../../services/api/m1_wh/wh_doc_store.dart';
+import '../../services/api/m1_wh/wh_http.dart' show WhError;
 import '../../domain/repositories/cycle_count_repository.dart';
 
 class CycleCountRepositoryImpl implements ICycleCountRepository {
@@ -120,7 +123,7 @@ class CycleCountRepositoryImpl implements ICycleCountRepository {
   }
 
   @override
-  Future<void> finalizeCycleCountTask(int taskId) {
+  Future<void> finalizeCycleCountTask(int taskId, {int? approverUserId}) async {
     // Pre-deploy BLOCKER (option B): same local-only silent-loss hazard as
     // stock-audit finalize — the cycle-count subsystem is not yet sync-aware, so
     // on a client/mirror device the applied adjustments + settlement JE never
@@ -129,6 +132,26 @@ class CycleCountRepositoryImpl implements ICycleCountRepository {
     if (SyncInterceptor.isClientMode) {
       throw StateError(
           'لا يمكن اعتماد الجرد من جهاز عميل أو مرآة. نفّذ الجرد واعتماده على الخادم الرئيسي.');
+    }
+    // WH-008: a task with count passes from the warehouse phones is approved by
+    // the SAME rule as on the phone (recount first, an approver who is none of
+    // the counters, the documents posted) - never by skipping it.
+    final counts = WhCountService(_db, WhDocStore(_db));
+    if (await counts.hasPhonePasses(taskId)) {
+      if (approverUserId == null) {
+        throw StateError('لهذه المهمة جرد من تطبيق المخازن؛ يلزم اعتماد مستخدم غير من عدّها.');
+      }
+      try {
+        await _db.transaction(() => counts.approveFromDesk(taskId, approverUserId));
+      } on WhError catch (e) {
+        throw StateError(switch (e.code) {
+          'recount_required' => 'يلزم عدّ ثانٍ بعدّاد آخر قبل الاعتماد.',
+          'self_approval' => 'لا يعتمد الجرد من عدّه أو أُسندت إليه المهمة؛ يعتمده مستخدم آخر.',
+          'permission_denied' => 'ليست لديك صلاحية اعتماد الجرد.',
+          _ => 'تعذّر اعتماد الجرد (${e.code}).',
+        });
+      }
+      return;
     }
     return _db.finalizeCycleCountTask(taskId);
   }

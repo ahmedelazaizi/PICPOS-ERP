@@ -291,24 +291,17 @@ extension ApiDataInventoryRoutes on ApiDataHandler {
         }
       }
 
-  // ignore: unused_local_variable
-      final transferBondId = await db.transaction(() async {
-        // Record the header and every stock movement atomically.
-        final transferBondId = await db.into(db.inventoryBonds).insert(
-          InventoryBondsCompanion.insert(
-            bondNumber: await db.generateInvoiceNumber('TRF'),
-            type: const Value('transfer'),
-            warehouseId: fromWarehouseId,
-            toWarehouseId: Value(toWarehouseId),
-            notes: Value(notes),
-            createdBy: Value(userId),
-            bondDate: Value(DateTime.now()),
-            globalId: Value(incomingGlobalId),
-          ),
-        );
-
-        final itemsList = (data['items'] as List? ?? []);
-        for (final item in itemsList) {
+      // WH-028: the transfer goes through the SAME pipeline as the desktop
+      // (`transferStock`): never below zero whatever `enable_negative_sales`
+      // says, the source warehouse cost travels with the goods, lots are
+      // carried and the in-transit entries are posted. The old body called
+      // adjustStock twice, so a negative quantity reversed the direction and an
+      // empty source went negative.
+      if (fromWarehouseId == toWarehouseId) {
+        return errorResponse('Source and destination warehouse are the same', statusCode: 400);
+      }
+      final lines = <Map<String, dynamic>>[];
+      for (final item in (data['items'] as List? ?? [])) {
         final m = item as Map<String, dynamic>;
         final resolvedPid = await resolveProductId(
           clientProductId: parseIntNullable(m['productId']),
@@ -319,33 +312,29 @@ extension ApiDataInventoryRoutes on ApiDataHandler {
         if (resolvedPid == null) {
           throw Exception('Validation Error: stock transfer item missing productId/productGlobalId');
         }
-        final productId = resolvedPid;
         final quantity = parseDouble(m['quantity']);
-
-        // Deduct from source warehouse
-        await db.adjustStock(
-          productId: productId,
-          warehouseId: fromWarehouseId,
-          quantity: -quantity,
-          type: 'transfer_out',
-          referenceType: 'stock_transfer',
-          referenceId: transferBondId,
-          notes: '$notes → مخزن $toWarehouseId',
-        );
-
-        // Add to destination warehouse
-        await db.adjustStock(
-          productId: productId,
-          warehouseId: toWarehouseId,
-          quantity: quantity,
-          type: 'transfer_in',
-          referenceType: 'stock_transfer',
-          referenceId: transferBondId,
-          notes: '$notes ← مخزن $fromWarehouseId',
-        );
+        if (!(quantity > 0)) {
+          return errorResponse('Transfer quantity must be greater than zero', statusCode: 400);
         }
-        return transferBondId;
-      });
+        lines.add({'productId': resolvedPid, 'quantity': quantity});
+      }
+      if (lines.isEmpty) return errorResponse('Transfer has no items', statusCode: 400);
+      try {
+        await db.transferStock(
+          fromWarehouseId: fromWarehouseId,
+          toWarehouseId: toWarehouseId,
+          items: lines,
+          notes: notes,
+          userId: userId,
+          globalId: incomingGlobalId,
+        );
+      } on Exception catch (e) {
+        // transferStock refuses a shortfall in Arabic ("... أقل من المطلوب").
+        if ('$e'.contains('أقل من المطلوب')) {
+          return errorResponse('insufficient_stock', statusCode: 409);
+        }
+        rethrow;
+      }
 
       broadcast('products');
       broadcast('inventory');

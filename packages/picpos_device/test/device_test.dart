@@ -130,6 +130,25 @@ void main() {
       expect(await outbox.isDrained(), isFalse); // a rejected doc blocks close-shift
     });
 
+    test('where: entries the caller may not send now are skipped, kept pending, and sent later in order', () async {
+      for (final id in ['a', 'b', 'c']) {
+        await outbox.enqueue(globalId: id, kind: 'sale', payload: {'owner': id == 'b' ? 'bob' : 'ali'});
+      }
+      final seen = <String>[];
+      Future<PushReply> send(OutboxEntry e) async {
+        seen.add(e.globalId);
+        return const PushReply(PushOutcome.accepted);
+      }
+
+      final r = await outbox.drain(send, where: (e) => e.payload['owner'] == 'ali');
+      expect(seen, ['a', 'c']);
+      expect(r.accepted, 2);
+      expect((await outbox.pending()).single.globalId, 'b');
+      await outbox.drain(send, where: (e) => e.payload['owner'] == 'bob');
+      expect(seen, ['a', 'c', 'b']);
+      expect(await outbox.isDrained(), isTrue);
+    });
+
     test('lost response: transport failure stops the drain, retry uses the same key, server dedups', () async {
       await outbox.enqueue(globalId: 'a', kind: 'sale', payload: {});
       await outbox.enqueue(globalId: 'b', kind: 'sale', payload: {});

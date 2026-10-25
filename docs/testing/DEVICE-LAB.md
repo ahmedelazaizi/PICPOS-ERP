@@ -18,8 +18,10 @@ driven with `adb` only (no Appium).
 
 - Windows, PowerShell 5.1+ (scripts are UTF-8 with BOM; run them with `powershell -File`), Flutter on `PATH`.
 - Android SDK at `D:\dev-cache\android-sdk` (override `ANDROID_SDK_ROOT`), AVD `PicPos_Van` (android-34 google_apis x86_64) and a hypervisor (WHPX/HAXM/Hyper-V).
-- Release APKs copied to `D:\qa\device-lab\apks\` as `warehouse.apk`, `pos.apk`, `admin.apk`, `van.apk`
+- Release APKs in `D:\qa\device-lab\apks\` as `warehouse.apk`, `pos.apk`, `admin.apk`, `van.apk`
   (copy from `<app>\build\app\outputs\flutter-apk\app-release.apk`; the lab never runs `flutter build`).
+  `run_lab.ps1` re-copies `mobile_warehouse\build\app\outputs\flutter-apk\app-release.apk` over `warehouse.apk` on every run
+  and logs its size + SHA-256 (`ENV-APK-wh identity` row of `summary.md`), so a stale copy cannot be tested by mistake.
 - Ports 18443 (HTTPS host) and 18080 (plain-HTTP decoy) free.
 - Only `emulator-5554` is ever touched (`LAB_SERIAL` overrides); other adb devices are ignored.
 
@@ -30,6 +32,7 @@ powershell -ExecutionPolicy Bypass -File tool\device_lab\run_lab.ps1            
 powershell -ExecutionPolicy Bypass -File tool\device_lab\run_lab.ps1 -Snapshot  # host from `git archive HEAD` in D:\qa\device-lab\src
                                                                                  #   (use when lib/ is mid-edit and does not compile)
 # options: -SkipHostStart (a host is already running)  -KeepEmulator  -HostMinutes 45  -RunId x
+#          -SkipLegacy (only the W2-W5 warehouse scenarios)  -SkipWarehouse (only S1-S5)
 ```
 
 Output: `D:\qa\device-lab\<run-id>\` - `steps.log` (timestamped), numbered screenshots,
@@ -43,6 +46,24 @@ writes `D:\qa\device-lab\host.json` (address, fingerprint, users, pairing codes 
 Notes: `LanPairingService` keeps **one** pending offer - every `issue` supersedes the previous
 code (the driver issues a fresh one before each pairing). Pre-existing lab-AVD packages signed with a
 different key are uninstalled before install.
+
+### Host command channel (warehouse phases)
+
+`cmd.txt` lines are acknowledged in `ack.txt` (`<line-index>|<message>`; `Host-Do` in `lab_lib.ps1` waits for it, bounded).
+Commands (`|` separated): `setting|key|value`, `product|key|barcode|name|cost|trackExpiry|qtyB1|qtyB1b|qtyB2` (stock goes in through
+the real `adjustStock`), `po|key|prod:qty,...` (open PO in B1 Main WH), `count|key|prod,...` (cycle-count task), `facts|name`
+(`facts-<name>.json`: stock per warehouse, `wh_mobile_docs` + lines, `wh_mobile_doc_events` = audit rows with actor/device/command id,
+purchase orders + received quantities, invoices, journal lines of `wh*`/`purchase*` entries, goods-in-transit balance, stock movements,
+batches, count tasks, settings, paired devices), `convert|receiptGid` (accountant step: the real `WhReceiptPosting.convert`),
+`api|label|user|METHOD|path|json|idempotencyKey` (a REAL HTTPS call to the host from a second paired *probe* warehouse phone that lives
+in the host process; response in `api-<label>.json`; `revoke-all` spares the probe). `fixtures.json` lists what `product/po/count` created.
+Every scenario creates its own products / PO / count task, so scenarios do not depend on each other's leftovers; the staged-transfer
+setting (`wh_staged_transfers_enabled`) is OFF until W3.2 switches it ON.
+
+Seeded personas (branch B1 unless noted): `clerk1`, `clerk3` (warehouse clerk: receive + count + lookup/labels), `store1`
+(`مخزني`: receive, count, transfer, NO approve), `super1` (warehouse supervisor incl. `stock_adjust_approve`; warehouses B1+B1b+B2),
+`mgr1` (`مدير مخزون`), `acct1` (`محاسب`: no warehouse-app access), `cashier1` (no warehouse-app access), `clerk2` (B2).
+Warehouses: `B1 Main WH`, `B1 Second WH` (transfers stay inside the device's branch), `B2 Main WH`.
 
 ## Scenarios and what they prove
 
@@ -61,6 +82,20 @@ different key are uninstalled before install.
 | S4 | Wi-Fi/data off + airplane mode: honest network error, no stale rows, no crash; recovery when back |
 | S5 | force-stop/restart and background/resume keep the pairing; `pm clear` -> unpaired |
 | LOGCAT | no `FATAL EXCEPTION`/ANR for `com.picpos.*` over the whole run |
+| W0 | fixtures seeded through the real services; transfer setting OFF by default |
+| W2.1 | receive against a PO by typed barcode + keypad quantity: a `po_receipt` document is `submitted`; **no stock and no ledger entry** until the accountant converts (design R-A, `wh_receipt_handlers.dart:11`); the PO's `received_quantity` is bumped at submit |
+| W2.2 | replaying the same command id returns `replayed:true` and creates nothing; a fresh id on an already-posted receipt is refused |
+| W2.3 | receiving 11 of 10 is refused by the host (`over_receipt`), nothing is counted, and the user is told (outbox: rejected + reason) |
+| W2.4 | accountant `convert` posts stock exactly once (invoice + balances); a second convert is refused |
+| W3.1 | transfer with the setting OFF: host answers `409 staged_transfers_disabled`, the Transfers screen says so, no document |
+| W3.2 | setting ON: request (store1) -> approve (super1, a different user) -> dispatch (source stock down, goods-in-transit entry) -> receive (destination up, in-transit cleared, sum conserved) -> replays / new ids never double |
+| W3.3 | transfer larger than available (8 of 3): dispatch refused (`stock_changed`), stock unchanged, never negative |
+| W4.1 | blind count: the counter's UI (lookup, count page) and API DTOs (tasks, items) carry no expected quantity; `review` is 403 for him |
+| W4.2 | variance -> second count by ANOTHER counter -> supervisor approves in the inbox -> adjustment posted once; the counter cannot approve (403); early approval = `recount_required` |
+| W5.1 | approvals inbox hidden (UI tile + API 403) for clerk / storekeeper, visible for supervisor and stock manager; the accountant cannot sign in |
+| W5.2 | label print with no printer: honest "no printer connected", no fake success, no stock effect |
+| W5.3 | offline: receipt queued in the outbox, survives app relaunch, replays exactly once when the network returns, a second drain adds nothing |
+| W5.4 | device revoked while the outbox holds a receipt: nothing is replayed; what the user is told |
 
 ## Limits
 
@@ -71,4 +106,11 @@ different key are uninstalled before install.
   owner's real data (`C:\Users\Dell\Documents\picpos_unified.db*`). It needs a throwaway Windows user/VM or a
   `PICPOS_DATA_DIR` product override first.
 - The offline check is for the warehouse app, which has no dedicated "offline" banner (see results).
+- The warehouse app has no Semantics labels / resource-ids; the W scenarios match Arabic text, the `NavigationBar` tab labels
+  (`<label> علامة التبويب n من 5`) and keypad digits (`Tap-Last`: the display and the key share the same text).
+- Camera scan is replaced by typing the barcode in the scan field + Enter; quantities go through the on-screen keypad.
+- No printer hardware: W5.2 only proves the honest "no printer" state; a real Bluetooth/network printer path is not exercised.
+- The accountant `convert` and the API-level replay/DTO probes are done by the host process (real service / real HTTPS socket), not by the
+  app (the app has no convert screen).
+- A persona change inside one run uses Settings > Sign out on the same paired phone (the outbox survives sign-out); ~40 s each.
 - UI matching is by Arabic text/index of fields (Flutter exposes no resource-ids); a UI copy change can break the driver.

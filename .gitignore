@@ -226,3 +226,7 @@ all_*.txt
 font_*.txt
 orig5.txt
 flutter_*.log
+
+# flutter golden mismatch artifacts (never commit)
+mobile_warehouse/test/failures/
+**/test/failures/

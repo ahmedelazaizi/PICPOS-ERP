@@ -20,6 +20,9 @@ import 'wh_doc_store.dart';
 import 'wh_http.dart';
 import 'wh_locations.dart';
 import 'wh_receipt_posting.dart';
+import 'wh_receipts_inbox.dart';
+import 'wh_scope.dart';
+import 'wh_stock_guard.dart';
 
 const _receivable = ['sent', 'confirmed'];
 
@@ -118,12 +121,17 @@ class WhReceiptApi {
           } else if (doc.state != 'draft') {
             throw WhError('invalid_transition', 409, {'state': doc.state, 'action': 'append'});
           }
-          final items = {for (final i in await db.getPurchaseOrderItems(po.id)) i.productId: i};
+          final poItems = await db.getPurchaseOrderItems(po.id);
+          final items = {for (final i in poItems) i.productId: i};
+          final byItemId = {for (final i in poItems) i.id: i};
           final products = await db.getProductsByIds(items.keys.toList());
           for (final raw in rawLines) {
             final l = (raw as Map).cast<String, Object?>();
-            final item = items[(l['productId'] as num?)?.toInt()];
-            if (item == null) throw WhError('product_not_in_order', 422);
+            // WH-026: an order may carry two lines of the same product; the phone
+            // names the line (poItemId), otherwise the product's line is used.
+            final named = (l['poItemId'] as num?)?.toInt();
+            final item = named != null ? byItemId[named] : items[(l['productId'] as num?)?.toInt()];
+            if (item == null || item.productId != (l['productId'] as num?)?.toInt()) throw WhError('product_not_in_order', 422);
             final qty = parseQty(l['quantity']);
             final cond = '${l['condition'] ?? 'ok'}';
             if (cond != 'ok' && cond != 'damaged') throw WhError('invalid_condition', 422);
@@ -173,19 +181,21 @@ class WhReceiptApi {
           for (final e in incoming.entries) {
             final item = items[e.key]!;
             final allowed = item.quantity * (1 + tolerance / 100);
-            if (item.receivedQuantity + e.value > allowed + 1e-9) {
+            // WH-006: ONE conditional UPDATE does the check and the write, so
+            // two concurrent receipts cannot both pass a stale read and
+            // overwrite each other (`received = received + ?` is relative, and
+            // the WHERE keeps it within the allowed quantity). Zero rows =
+            // someone else got there first or the excess is not accepted.
+            final n = await addReceivedQuantity(db, item.id, e.value, allowed) ? 1 : 0;
+            if (n != 1) {
               // The excess does not enter stock and is not recorded as received.
+              final fresh = (await db.getPurchaseOrderItems(po.id)).firstWhere((i) => i.id == item.id);
               throw WhError('over_receipt', 409, {
                 'productId': item.productId,
                 'ordered': fmtQty(item.quantity),
-                'alreadyReceived': fmtQty(item.receivedQuantity),
+                'alreadyReceived': fmtQty(fresh.receivedQuantity),
               });
             }
-          }
-          for (final e in incoming.entries) {
-            final item = items[e.key]!;
-            await (db.update(db.purchaseOrderItems)..where((i) => i.id.equals(item.id)))
-                .write(PurchaseOrderItemsCompanion(receivedQuantity: Value(item.receivedQuantity + e.value)));
           }
           doc = await store.transition(doc, 'submit', expectedVersion: (body['expectedVersion'] as num?)?.toInt());
           return (docId: doc.id, result: {'receipt': await store.toJson(doc)});
@@ -213,6 +223,21 @@ class WhReceiptApi {
           'id': loc.id, 'warehouseId': loc.warehouseId, 'binCode': loc.binCode, 'barcode': loc.barcode,
           'isDefault': loc.isDefault,
         });
+      });
+
+  // ── desktop side (WH-002): the accountant's inbox, not a phone route ──
+  Future<Response> deskList(Request request) => _http.runDesk(request, 'purchases_create', (userId, _) async {
+        return WhHttp.json({'receipts': await WhReceiptsInbox(db).list(userId)});
+      });
+
+  Future<Response> deskConvert(Request request, String gid) =>
+      _http.runDesk(request, 'purchases_create', (userId, deviceId) async {
+        final ctx = WhCtx(userId: userId, branchId: 0, deviceId: deviceId, scope: const WhScope(branchId: 0, warehouses: []), request: request);
+        final out = await store.command(ctx, action: 'receipt_convert', body: {'gid': gid}, effect: () async {
+          final r = await WhReceiptsInbox(db).convert(gid, userId, audit: false);
+          return (docId: (await store.mustGet(gid)).id, result: r);
+        });
+        return WhHttp.json(out);
       });
 
   Future<Response> convert(Request request, String gid) =>

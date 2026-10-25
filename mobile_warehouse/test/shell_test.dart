@@ -92,7 +92,7 @@ void main() {
     expect(find.text('Main store'), findsOneWidget);
     expect(find.text('Warehouse clerk / keeper'), findsOneWidget);
     expect(find.text('Transfer between warehouses'), findsNothing);
-    expect(find.text('Not available yet'), findsWidgets, reason: 'receive/count are not granted to this user: the UI says so');
+    expect(find.text('No permission'), findsWidgets, reason: 'receive/count are not granted to this user: the UI says so');
     expect(find.text('Approve counts and variances'), findsNothing);
 
     desktop
@@ -103,7 +103,7 @@ void main() {
     expect(find.text('Supervisor / stock manager'), findsOneWidget);
     expect(find.text('Transfer between warehouses'), findsOneWidget);
     expect(find.text('Approve counts and variances'), findsOneWidget);
-    expect(find.text('Not available yet'), findsNothing, reason: 'every capability this user holds is built');
+    expect(find.text('No permission'), findsNothing, reason: 'every capability this user holds is built');
   });
 
   testWidgets('home: a branch with no allowed warehouse says so', (tester) async {

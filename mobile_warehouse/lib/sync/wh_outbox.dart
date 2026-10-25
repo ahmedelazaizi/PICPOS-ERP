@@ -20,6 +20,10 @@ class WhSyncState extends ChangeNotifier {
   bool needsLogin = false;
   int pending = 0;
   int rejected = 0;
+
+  /// Pending operations that belong to ANOTHER user (or another pairing): they
+  /// wait, untouched, until their owner signs in again.
+  int foreign = 0;
   DateTime? lastSync;
 
   void reachable() {
@@ -36,9 +40,10 @@ class WhSyncState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void queue({required int pending, required int rejected}) {
+  void queue({required int pending, required int rejected, int foreign = 0}) {
     this.pending = pending;
     this.rejected = rejected;
+    this.foreign = foreign;
     notifyListeners();
   }
 
@@ -48,47 +53,113 @@ class WhSyncState extends ChangeNotifier {
   }
 }
 
+/// What happened to a set of operations one screen just queued (W2.3c): the
+/// screen shows "sent" only when the office ACCEPTED all of them.
+class SendOutcome {
+  const SendOutcome({required this.accepted, required this.rejectedCode, required this.waiting, this.rejectedIndex});
+
+  /// Position (in the ids passed to drainFor) of the operation the office refused.
+  final int? rejectedIndex;
+
+  /// Every operation was accepted (or answered as a duplicate) by the office.
+  final bool accepted;
+
+  /// Reason code of the first operation the office refused, or null.
+  final String? rejectedCode;
+
+  /// Some operation is still queued (no connection, session ended, backoff).
+  final bool waiting;
+}
+
 /// Offline outbox with replay (plan W5).
 ///
 /// * Storage: the encrypted SQLCipher store (`WhLocalStore`), key in the
 ///   Android Keystore - the queue is never plain text on the phone.
 /// * Every entry's `globalId` is the `x-idempotency-key` of its request, so a
 ///   replay after a lost answer is answered from the server's command log.
+/// * **Owner (WH-004):** each entry records the user and the device that made
+///   it. Only the signed-in owner's entries are sent, with his own session; the
+///   others stay queued ("saved for user X") and are shown, never sent under
+///   somebody else's identity.
 /// * Conflict rules, applied by [send]:
 ///     - 2xx                                  -> accepted (`replayed` -> duplicate)
-///     - no answer / 429 / 5xx                -> stay pending, retry later (same id)
+///     - no answer / 429                      -> stay pending, retry later (same id)
+///     - 5xx (the office answered but failed) -> retry with backoff; after
+///       [maxServerFailures] the entry is parked as `dead_letter` (needs the
+///       manager) instead of blocking the whole queue forever (WH-005)
 ///     - 401 session expired                  -> stay pending, ask for sign-in
-///     - 401 device revoked                   -> stay pending; the session wipes
-///     - any other 4xx (stale, stock_changed,
-///       invalid_transition, over_receipt,
-///       idempotency_conflict, permission...) -> REJECTED, terminal. It is never
-///       re-sent under a new identity; the user sees the reason and decides.
-///   Entries go out strictly in creation order.
+///     - 401 device revoked                   -> the phone is unpaired and the
+///       user is told how many operations were discarded
+///     - any other 4xx (stale, stock_changed, period_closed, ...) -> REJECTED,
+///       terminal; the user sees the reason and decides.
+///   Entries go out strictly in creation order. An entry queued with `after:`
+///   is not sent if the entry it depends on was rejected.
 class WhOutbox {
-  WhOutbox(this.store, this.session, this.sync);
+  WhOutbox(this.store, this.session, this.sync, {DateTime Function()? now, this.maxServerFailures = 5})
+      : _now = now ?? DateTime.now {
+    session.unsentCount = unsentCount;
+  }
   final WhLocalStore store;
   final WhSession session;
   final WhSyncState sync;
+  final int maxServerFailures;
+  final DateTime Function() _now;
 
-  /// Queues `POST [path]` with [body]; [kind] is only the label shown to the user.
-  Future<String> enqueue(String kind, String path, Map<String, Object?> body) async {
+  String? get _deviceId => session.client?.credentials.deviceId;
+
+  /// Queues `POST [path]` with [body]; [kind] is only the label shown to the
+  /// user. [after] is the id of an earlier entry this one depends on.
+  Future<String> enqueue(String kind, String path, Map<String, Object?> body, {String? after}) async {
+    final info = session.info;
+    final device = _deviceId;
+    if (info == null || device == null) {
+      throw const ApiError(kind: ApiErrorKind.unauthorized, code: 'unauthorized');
+    }
     final id = newId('op');
-    await store.outbox.enqueue(globalId: id, kind: kind, payload: {'path': path, 'body': body});
+    await store.outbox.enqueue(globalId: id, kind: kind, payload: {
+      'path': path,
+      'body': body,
+      'userId': info.userId,
+      'userName': info.username,
+      'deviceId': device,
+      'after': ?after,
+    });
     await _count();
     return id;
   }
 
+  bool _mine(OutboxEntry e) =>
+      session.info != null && e.payload['userId'] == session.info!.userId && e.payload['deviceId'] == _deviceId;
+
+  Future<int> unsentCount() async =>
+      (await store.store.outbox()).where((e) => e.status == OutboxStatus.pending).length;
+
   Future<void> _count() async {
     final all = await store.store.outbox();
+    // Before the office has said who is signed in, nothing is called foreign.
+    bool owned(OutboxEntry e) => session.info == null || _mine(e);
     sync.queue(
-      pending: all.where((e) => e.status == OutboxStatus.pending).length,
-      rejected: all.where((e) => e.status == OutboxStatus.rejected).length,
+      pending: all.where((e) => e.status == OutboxStatus.pending && owned(e)).length,
+      rejected: all.where((e) => e.status == OutboxStatus.rejected && owned(e)).length,
+      foreign: all.where((e) => e.status == OutboxStatus.pending && !owned(e)).length,
     );
   }
 
   Future<PushReply> send(OutboxEntry e) async {
     final client = session.client;
     if (client == null) throw const ApiError(kind: ApiErrorKind.network, code: 'network');
+    final after = e.payload['after'];
+    if (after is String) {
+      final parent = await store.store.outboxEntry(after);
+      if (parent != null && parent.status == OutboxStatus.rejected) {
+        return const PushReply(PushOutcome.rejected, code: 'dependency_rejected');
+      }
+    }
+    final retryAt = e.payload['retryAt'];
+    if (retryAt is int && _now().millisecondsSinceEpoch < retryAt) {
+      // Backoff after an office failure: wait, keeping the order.
+      throw const ApiError(kind: ApiErrorKind.unavailable, code: 'backoff');
+    }
     try {
       final r = await client.command(
         e.payload['path']! as String,
@@ -97,25 +168,80 @@ class WhOutbox {
       );
       return PushReply(r.replayed ? PushOutcome.duplicate : PushOutcome.accepted);
     } on ApiError catch (err) {
-      if (err.retryable) rethrow;
       if (err.kind == ApiErrorKind.unauthorized || err.kind == ApiErrorKind.deviceRevoked) rethrow;
+      if (err.kind == ApiErrorKind.unavailable && (err.status ?? 0) >= 500) {
+        // The office answered and failed. Retry a bounded number of times with
+        // backoff; then park it so the entries behind it are not held hostage.
+        final failures = ((e.payload['serverFailures'] as num?)?.toInt() ?? 0) + 1;
+        e.payload['serverFailures'] = failures;
+        if (failures >= maxServerFailures) return const PushReply(PushOutcome.rejected, code: 'dead_letter');
+        e.payload['retryAt'] = _now().add(Backoff.lan.delay(failures)).millisecondsSinceEpoch;
+        rethrow;
+      }
+      if (err.retryable) rethrow;
       return PushReply(PushOutcome.rejected, code: err.code);
     }
   }
 
-  /// Sends what is pending. Never throws; returns null when nothing ran.
+  /// Sends what is pending for the signed-in user. Never throws; returns null
+  /// when nothing ran.
   Future<DrainReport?> drain() async {
-    if (session.client == null) return null;
-    final report = await store.outbox.drain(send);
+    // After an app restart the session token is restored but not the user: ask
+    // the office who it is before deciding whose entries may go out.
+    if (session.info == null && session.loggedIn) {
+      try {
+        await session.refresh();
+      } on Object {
+        // Offline or refused: refresh() has already routed a revoked/expired session.
+      }
+    }
+    if (session.client == null || session.info == null) {
+      if (session.client != null) await _count();
+      return null;
+    }
+    final report = await store.outbox.drain(send, where: _mine);
     final failure = report.failure;
     if (failure == null) {
       sync.reachable();
-      sync.synced(DateTime.now());
+      sync.synced(_now());
+    } else if (failure is ApiError && failure.kind == ApiErrorKind.deviceRevoked) {
+      await session.handleRevoked();
     } else {
       sync.unreachable(login: failure is ApiError && failure.kind == ApiErrorKind.unauthorized);
     }
     await _count();
     return report;
+  }
+
+  /// [drain]s, then reports what happened to [ids] specifically.
+  Future<SendOutcome> drainFor(List<String> ids) async {
+    await drain();
+    final byId = {for (final e in await store.store.outbox()) e.globalId: e};
+    String? rejected;
+    int? at;
+    var waiting = false;
+    for (var i = 0; i < ids.length; i++) {
+      final e = byId[ids[i]];
+      if (e == null || e.status == OutboxStatus.pending) {
+        waiting = true;
+      } else if (e.status == OutboxStatus.rejected && rejected == null) {
+        rejected = e.error ?? 'rejected';
+        at = i;
+      }
+    }
+    // A dependent entry is rejected only because its parent was: show the
+    // parent's reason, which is the real one.
+    if (rejected == 'dependency_rejected') {
+      for (var i = 0; i < ids.length; i++) {
+        final e = byId[ids[i]];
+        if (e != null && e.status == OutboxStatus.rejected && e.error != 'dependency_rejected') {
+          rejected = e.error;
+          at = i;
+          break;
+        }
+      }
+    }
+    return SendOutcome(accepted: rejected == null && !waiting, rejectedCode: rejected, waiting: waiting, rejectedIndex: at);
   }
 
   /// Puts a rejected entry's reason in front of the user and lets him drop it.

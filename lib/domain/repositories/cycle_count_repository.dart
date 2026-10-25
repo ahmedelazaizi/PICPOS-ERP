@@ -57,5 +57,5 @@ abstract class ICycleCountRepository {
   /// variances, and posts ONE settlement JE in a single transaction. Replaces
   /// the old repo-level completeCycleCountTask + applyCycleCountAdjustments
   /// (removed — they had no callers once the screen switched to finalize).
-  Future<void> finalizeCycleCountTask(int taskId);
+  Future<void> finalizeCycleCountTask(int taskId, {int? approverUserId});
 }

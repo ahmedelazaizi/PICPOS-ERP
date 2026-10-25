@@ -8,7 +8,19 @@ import 'fakes.dart';
 /// `x-idempotency-key` like the real one: the same key is answered from the
 /// log (`replayed: true`) and applied once. Two phones can share one office.
 class FakeOffice extends FakeDesktop {
-  final posts = <({String path, String key, Map<String, Object?> body})>[];
+  final posts = <({String path, String key, Map<String, Object?> body, String? user})>[];
+
+  /// The next N new commands fail with a bare `500 internal` (an unclassified
+  /// exception at the office).
+  int serverErrors = 0;
+
+  /// The accounting period is closed: stock-posting commands answer 409
+  /// `period_closed`, as the real host does.
+  bool periodClosed = false;
+
+  // Rules the real host applies (WH-011 / over-receipt), kept in step with it.
+  final _lineOwner = <String, String>{}; // lineGlobalId -> receipt gid
+  final _receiptLines = <String, List<({int productId, double qty})>>{}; // receipt gid -> lines
   final _log = <String, Map<String, Object?>>{};
   final transfers = <String, Map<String, Object?>>{};
 
@@ -108,9 +120,38 @@ class FakeOffice extends FakeDesktop {
     final seen = _log[key];
     if (seen != null) return _json({...seen, 'replayed': true});
     if (rejectWith != null) return _json({'error': rejectWith!}, 409);
+    if (serverErrors > 0) {
+      serverErrors--;
+      return _json({'error': 'internal'}, 500);
+    }
+    final postsStock = p.endsWith('/approve') || p.endsWith('/dispatch') || p.endsWith('/receive') || p == '/api/m1/wh/vouchers';
+    if (periodClosed && postsStock) return _json({'error': 'period_closed'}, 409);
 
     final body = (r.body as Map?)?.cast<String, Object?>() ?? {};
-    posts.add((path: p, key: key, body: body));
+    // PO receipts: a line id belongs to ONE receipt; submit refuses an excess.
+    if (p.startsWith('/api/m1/wh/po/') && p.endsWith('/receipts')) {
+      final gid = body['globalId']! as String;
+      for (final l in (body['lines']! as List).cast<Map>()) {
+        final owner = _lineOwner[l['lineGlobalId']];
+        if (owner != null && owner != gid) return _json({'error': 'doc_mismatch'}, 409);
+      }
+      for (final l in (body['lines']! as List).cast<Map>()) {
+        _lineOwner[l['lineGlobalId']! as String] = gid;
+        (_receiptLines[gid] ??= []).add((productId: (l['productId']! as num).toInt(), qty: double.parse('${l['quantity']}')));
+      }
+    } else if (p.startsWith('/api/m1/wh/receipts/') && p.endsWith('/submit')) {
+      final gid = p.split('/')[p.split('/').length - 2];
+      final lines = _receiptLines[gid];
+      if (lines == null || lines.isEmpty) return _json({'error': 'doc_not_found'}, 404);
+      for (final item in (orders.first['items']! as List).cast<Map<String, Object?>>()) {
+        final incoming = lines.where((l) => l.productId == item['productId']).fold<double>(0, (s, l) => s + l.qty);
+        if (double.parse('${item['received']}') + incoming > double.parse('${item['ordered']}') + 1e-9) {
+          return _json({'error': 'over_receipt'}, 409);
+        }
+      }
+    }
+    final token = r.headers['x-session-token'] ?? '';
+    posts.add((path: p, key: key, body: body, user: token.startsWith('SESS-') ? token.substring(5) : null));
     applied++;
     Map<String, Object?> out = {'ok': true};
     if (p == '/api/m1/wh/transfers') {

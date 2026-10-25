@@ -25,6 +25,20 @@ void main() {
       'goods_receipt_mobile', 'stock_count_submit', 'stock_adjust_approve']));
   });
 
+  test('§B.4 «المدير»: كل ما سبق - the manager also holds inventory_edit (WH-013), exactly what the keeper does + approval', () {
+    final manager = _grants('مدير مخزون');
+    final keeper = _grants('مخزني');
+    // Everything the keeper may do in the app, the manager may do.
+    for (final c in ['warehouse_mobile_access', 'inventory_view', 'inventory_edit', 'inventory_transfer',
+      'goods_receipt_mobile', 'stock_count_submit']) {
+      expect(keeper, contains(c), reason: 'keeper $c');
+      expect(manager, contains(c), reason: 'manager $c');
+    }
+    expect(manager, contains('stock_adjust_approve'));
+    expect(manager, contains('products_cost_view'));
+    // ...and the voucher routes (inventory_edit) are then reachable for him.
+  });
+
   test('the approval code is held by the supervisor and manager only, never by clerk or keeper', () {
     final holders = [
       for (final e in RoleGrantMatrix.defaultGrants.entries)

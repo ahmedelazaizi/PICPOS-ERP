@@ -9,6 +9,13 @@ import 'package:picpos_warehouse/sync/wh_outbox.dart';
 import 'docs_flow_test.dart' show signedIn;
 import 'fake_office.dart';
 
+Map<String, Object?> _receiptBody(String gid) => {
+      'globalId': gid,
+      'lines': [
+        {'lineGlobalId': 'line-$gid', 'productId': 5, 'quantity': '1', 'condition': 'ok'},
+      ],
+    };
+
 void main() {
   late FakeOffice office;
   late WhLocalStore store;
@@ -31,7 +38,7 @@ void main() {
   Future<List<OutboxEntry>> entries() => store.store.outbox();
 
   test('entries are sent in creation order, each under its own id as the idempotency key', () async {
-    final a = await outbox.enqueue('receipt_lines', '/api/m1/wh/po/PO1/receipts', {'globalId': 'r1'});
+    final a = await outbox.enqueue('receipt_lines', '/api/m1/wh/po/PO1/receipts', _receiptBody('r1'));
     final b = await outbox.enqueue('receipt_submit', '/api/m1/wh/receipts/r1/submit', const {});
     final report = await outbox.drain();
     expect(report!.accepted, 2);
@@ -115,4 +122,118 @@ void main() {
     expect(stored!.payload['path'], '/api/m1/wh/po/PO1/receipts');
     expect(stored.payload['body'], {'globalId': 'r1'});
   });
-}
+
+  group('WH-004 an operation belongs to the user who made it', () {
+    test('A queues, signs out; B signs in: nothing goes out under B; A returns and it goes out as A', () async {
+      final session = await signedIn(office);
+      outbox = WhOutbox(store, session, sync);
+      await outbox.enqueue('voucher_create', '/api/m1/wh/vouchers', {'globalId': 'v1'});
+
+      session.signOut();
+      office
+        ..userId = 9
+        ..username = 'bob';
+      await session.login('bob', 'pw');
+      await outbox.drain();
+      expect(office.posts, isEmpty, reason: 'ali\'s operation is not sent with bob\'s session');
+      expect((await entries()).single.status, OutboxStatus.pending);
+      expect(sync.foreign, 1);
+      expect(sync.pending, 0);
+
+      // Bob's own operation goes out under bob; ali's still waits behind it.
+      await outbox.enqueue('voucher_create', '/api/m1/wh/vouchers', {'globalId': 'v2'});
+      await outbox.drain();
+      expect(office.posts.map((p) => p.user), ['9']);
+      expect(sync.foreign, 1);
+
+      session.signOut();
+      office
+        ..userId = 7
+        ..username = 'ali';
+      await session.login('ali', 'pw');
+      await outbox.drain();
+      expect(office.posts.map((p) => p.user), ['9', '7'], reason: 'ali\'s operation is created by ali');
+      expect(sync.foreign, 0);
+    });
+
+    test('an entry without an owner (written by an older build) is never sent', () async {
+      final session = await signedIn(office);
+      outbox = WhOutbox(store, session, sync);
+      await store.outbox.enqueue(globalId: 'op-legacy-1', kind: 'x', payload: {'path': '/api/m1/wh/vouchers', 'body': {'globalId': 'v1'}});
+      await outbox.drain();
+      expect(office.posts, isEmpty);
+    });
+  });
+
+  group('WH-005 a failing operation cannot block the queue forever', () {
+    late DateTime clock;
+    setUp(() async {
+      clock = DateTime(2026, 10, 25, 9);
+      outbox = WhOutbox(store, await signedIn(office), sync, now: () => clock);
+    });
+
+    test('a period closed at the office rejects the entry with its reason; the next one still goes', () async {
+      office.periodClosed = true;
+      await outbox.enqueue('voucher_create', '/api/m1/wh/vouchers', {'globalId': 'v1'});
+      await outbox.enqueue('count_submit', '/api/m1/wh/counts/T1/submit', {'globalId': 'c1'});
+      final report = await outbox.drain();
+      expect(report!.rejected, 1);
+      expect(report.accepted, 1, reason: 'the entry behind the refused one is sent');
+      final es = await entries();
+      expect(es.first.status, OutboxStatus.rejected);
+      expect(es.first.error, 'period_closed');
+      expect(es.last.status, OutboxStatus.accepted);
+    });
+
+    test('repeated 500s back off, then park the entry as dead_letter so the next one flows', () async {
+      office.serverErrors = 5;
+      await outbox.enqueue('voucher_create', '/api/m1/wh/vouchers', {'globalId': 'v1'});
+      await outbox.enqueue('count_submit', '/api/m1/wh/counts/T1/submit', {'globalId': 'c1'});
+
+      await outbox.drain();
+      expect(office.serverErrors, 4);
+      await outbox.drain(); // same instant: the backoff gate holds, the office is not hammered
+      expect(office.serverErrors, 4);
+      expect((await entries()).first.status, OutboxStatus.pending);
+
+      for (var i = 0; i < 4; i++) {
+        clock = clock.add(const Duration(hours: 1));
+        await outbox.drain();
+      }
+      final es = await entries();
+      expect(es.first.status, OutboxStatus.rejected);
+      expect(es.first.error, 'dead_letter');
+      expect(office.serverErrors, 0, reason: 'exactly five attempts were made');
+      expect(es.last.status, OutboxStatus.accepted, reason: 'the queue is no longer blocked: the entry behind it went out');
+    });
+
+    test('an operation that depends on a rejected one is not sent', () async {
+      office.rejectWith = 'po_not_receivable';
+      final a = await outbox.enqueue('receipt_lines', '/api/m1/wh/po/PO1/receipts', _receiptBody('r1'));
+      await outbox.enqueue('receipt_submit', '/api/m1/wh/receipts/r1/submit', const {}, after: a);
+      await outbox.drain();
+      final es = await entries();
+      expect(es.map((e) => e.error), ['po_not_receivable', 'dependency_rejected']);
+      expect(office.posts, isEmpty);
+    });
+  });
+
+  group('W5.4b a revoked phone says so and what it threw away', () {
+    test('2 unsent operations: the wipe leaves a notice with the count', () async {
+      final session = await signedIn(office);
+      outbox = WhOutbox(store, session, sync);
+      await outbox.enqueue('voucher_create', '/api/m1/wh/vouchers', {'globalId': 'v1'});
+      await outbox.enqueue('voucher_create', '/api/m1/wh/vouchers', {'globalId': 'v2'});
+      office.revoked = true;
+      await outbox.drain();
+      expect(session.paired, isFalse);
+      expect(session.unpairNotice, isNotNull);
+      expect(session.unpairNotice!.discardedOperations, 2);
+    });
+
+    test('a user-requested unpair leaves no notice', () async {
+      final session = await signedIn(office);
+      await session.wipe();
+      expect(session.unpairNotice, isNull);
+    });
+  });}

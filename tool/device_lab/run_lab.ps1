@@ -6,6 +6,8 @@ param(
   [switch]$Snapshot,        # run the host from `git archive HEAD` in D:\qa\device-lab\src (when lib/ is mid-edit)
   [switch]$SkipHostStart,   # a host (test/device_lab/serve_host_test.dart) is already running
   [switch]$KeepEmulator,
+  [switch]$SkipLegacy,      # skip S1-S5 (pairing/lookup/revoke/other apps) and run only the W2-W5 warehouse scenarios
+  [switch]$SkipWarehouse,   # skip the W2-W5 scenarios
   [int]$HostMinutes = 45,
   [string]$RunId = (Get-Date -Format 'yyyyMMdd-HHmmss')
 )
@@ -18,6 +20,18 @@ Log "run $RunId repo=$Repo"
 $Apk = @{ wh = "$($env:LAB_DIR)\apks\warehouse.apk"; pos = "$($env:LAB_DIR)\apks\pos.apk"
           admin = "$($env:LAB_DIR)\apks\admin.apk"; van = "$($env:LAB_DIR)\apks\van.apk" }
 $Pkg = @{ wh = 'com.picpos.warehouse'; pos = 'com.picpos.pos'; admin = 'com.picpos.admin'; van = 'com.picpos.picpos_van' }
+# Always copy the LATEST signed warehouse APK fresh (an older copy in apks\ was once used by mistake).
+$srcWh = Join-Path $Repo 'mobile_warehouse\build\app\outputs\flutter-apk\app-release.apk'
+if (Test-Path $srcWh) {
+  New-Item -ItemType Directory -Force (Split-Path $Apk.wh) | Out-Null
+  Copy-Item $srcWh $Apk.wh -Force
+}
+if (Test-Path $Apk.wh) {
+  $whItem = Get-Item $Apk.wh; $whSha = (Get-FileHash $Apk.wh -Algorithm SHA256).Hash
+  $built = (Get-Item $srcWh -ErrorAction SilentlyContinue).LastWriteTime
+  Log "warehouse APK source=$srcWh built=$built copied=$($whItem.FullName) size=$($whItem.Length) sha256=$whSha"
+  Record 'ENV-APK-wh identity' 'PASS' "warehouse.apk size=$($whItem.Length) sha256=$whSha (copied fresh from $srcWh, built $built)"
+}
 foreach ($k in $Apk.Keys) { if (-not (Test-Path $Apk[$k])) { Record "ENV-APK-$k" 'BLOCKED' "missing $($Apk[$k]) (copy the release APK there first)" } }
 $PIN = '123456'
 $HostProc = $null
@@ -74,7 +88,14 @@ function New-Code([string]$branch = 'B1') {
 }
 function Pair-Form([string]$addr, [string]$code, [string]$fp) {
   Type-Edit 0 $addr | Out-Null; Type-Edit 1 $code | Out-Null; Type-Edit 2 $fp | Out-Null
-  Hide-Keyboard; Tap-Node '^\|ربط$' | Out-Null; Start-Sleep 7
+  Hide-Keyboard; Start-Sleep 3   # let the IME animation + Flutter semantics settle (a dump taken too early misses the button)
+  if (-not (Tap-Node '^\|ربط$' 25)) {
+    # fallback: the button sits ~171 px under the fingerprint field (seen in every dump of this form)
+    $e = @(All-Nodes (Get-Dump) | Where-Object { $_.class -eq 'android.widget.EditText' })
+    if ($e.Count -ge 3 -and $e[2].bounds -match '\[\d+,\d+\]\[\d+,(\d+)\]') { Log 'Pair-Form fallback tap by geometry'; Tap-Xy 540 ([int]$Matches[1] + 171) }
+  }
+  # pairing = TLS handshake + /api/m1/info + /api/pair; poll (bounded) instead of a fixed sleep
+  for ($w = 0; $w -lt 10; $w++) { Start-Sleep 2; if (On-Login) { break } }
 }
 function On-Onboarding { (Screen-Text) -match 'أو أدخل البيانات يدوياً' }
 function On-Login { $s = Screen-Text; ($s -match 'بحسابك في PicPos') -and ($s -match 'فك الربط') }
@@ -112,6 +133,7 @@ function Lookup([string]$text) {
   return Screen-Text
 }
 
+if (-not $SkipLegacy) {
 # ───────────────────────── S1 warehouse ─────────────────────────
 A shell pm clear $Pkg.wh | Out-Null; A shell input keyevent KEYCODE_WAKEUP | Out-Null
 Launch $Pkg.wh; Start-Sleep 5
@@ -221,6 +243,14 @@ $dd = Get-Dump; $dis = @(All-Nodes $dd | Where-Object { $_.class -match 'Button'
 $ed = @(All-Nodes $dd | Where-Object { $_.class -eq 'android.widget.EditText' -and $_.enabled -eq 'false' })
 Record 'S2a.2 cashier LAN pairing' 'NOT_APPLICABLE' "mobile_pos/lib/screens/onboarding_screen.dart:53-55 onPressed:null; dump shows disabled buttons=$($dis.Count) disabled fields=$($ed.Count); known gap P7/M-5; shot $(Shot 's2a-pos-disabled')"
 Record 'S2b.2 admin pairing against the lab host' 'NOT_APPLICABLE' 'mobile_admin pairs with the CLOUD (/manage/pair, Ed25519 key confirm: admin_session.dart:109, manage_client.dart:226); the LAN host serves no /manage/pair and the app has no LAN /api/pair leg'
+
+}   # end of legacy S1-S5 / S2 / S3
+
+# ───────────────────────── W2-W5 warehouse phases ─────────────────────────
+if (-not $SkipWarehouse) {
+  . "$PSScriptRoot\wh_scenarios.ps1"
+  Run-WarehouseScenarios
+}
 
 # ───────────────────────── 3. logcat + wrap up ─────────────────────────
 $lc = Join-Path $script:RunDir 'logcat.txt'; A logcat -d | Set-Content $lc -Encoding utf8

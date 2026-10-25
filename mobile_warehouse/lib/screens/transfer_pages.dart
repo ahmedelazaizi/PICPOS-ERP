@@ -43,10 +43,10 @@ class _TransfersPageState extends State<TransfersPage> {
 
   Future<void> _queue(WhDoc d, String action, [Map<String, Object?> body = const {}]) async {
     final t = S.of(context);
-    await widget.ops.outbox.enqueue('transfer_$action', '${WhDocPaths.transfers}/${d.globalId}/$action', body);
-    final r = await widget.ops.outbox.drain();
+    final id = await widget.ops.outbox.enqueue('transfer_$action', '${WhDocPaths.transfers}/${d.globalId}/$action', body);
+    final r = await widget.ops.outbox.drainFor([id]);
     if (!mounted) return;
-    showDone(context, r != null && r.complete ? t('sentNow') : t('savedForLater'));
+    showOutcome(context, r, sent: t('sentNow'), saved: t('savedForLater'));
     await _load();
   }
 
@@ -66,7 +66,16 @@ class _TransfersPageState extends State<TransfersPage> {
     for (final l in d.lines) {
       final q = await askQuantity(context, title: t('receivedOf', {'q': l.quantity}), initial: l.quantity);
       if (q == null || !mounted) return;
-      got[l.lineGlobalId] = (q, '0');
+      // WH-012: the damaged part is entered here, otherwise it is booked as a
+      // shortage (or as good stock when the user folds it into the received).
+      final dmg = await askQuantity(context, title: t('damagedOf', {'q': l.quantity}), initial: '0');
+      if (dmg == null || !mounted) return;
+      final total = (double.tryParse(q) ?? 0) + (double.tryParse(dmg) ?? 0);
+      if (total > (double.tryParse(l.quantity) ?? 0) + 1e-9) {
+        showDone(context, t('qtyExceeds'));
+        return;
+      }
+      got[l.lineGlobalId] = (q, dmg);
     }
     await _queue(d, 'receive', {
       'lines': [for (final e in got.entries) {'lineGlobalId': e.key, 'received': e.value.$1, 'damaged': e.value.$2}],
@@ -103,10 +112,14 @@ class _TransfersPageState extends State<TransfersPage> {
       floatingActionButton: widget.ops.can('inventory_transfer')
           ? FloatingActionButton.extended(
               key: const Key('transfer.new'),
-              onPressed: () async {
-                await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => NewTransferPage(ops: widget.ops)));
-                await _load();
-              },
+              // The office switched staged transfers off: a request would only
+              // be refused, so the button is disabled and the page says why.
+              onPressed: _error == 'staged_transfers_disabled'
+                  ? null
+                  : () async {
+                      await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => NewTransferPage(ops: widget.ops)));
+                      await _load();
+                    },
               icon: const Icon(Icons.add),
               label: Text(t('newTransfer')),
             )
@@ -143,6 +156,10 @@ class NewTransferPage extends StatefulWidget {
 
 class _NewTransferPageState extends State<NewTransferPage> {
   final _lines = <PickedLine>[];
+  // One document id per page (WH-011): a double tap re-queues the SAME document
+  // instead of minting a second one, and a busy flag blocks the second tap.
+  final _docId = newId('transfer');
+  bool _busy = false;
   int? _from;
   int? _to;
 
@@ -175,18 +192,24 @@ class _NewTransferPageState extends State<NewTransferPage> {
             child: FilledButton(
               key: const Key('transfer.send'),
               style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(kBigTarget)),
-              onPressed: _from == null || _to == null || _from == _to || _lines.isEmpty
+              onPressed: _busy || _from == null || _to == null || _from == _to || _lines.isEmpty
                   ? null
                   : () async {
-                      await widget.ops.outbox.enqueue('transfer_request', WhDocPaths.transfers, {
-                        'globalId': newId('transfer'),
+                      if (_busy) return; // a second tap before the next frame
+                      setState(() => _busy = true);
+                      final id = await widget.ops.outbox.enqueue('transfer_request', WhDocPaths.transfers, {
+                        'globalId': _docId,
                         'fromWarehouseId': _from,
                         'toWarehouseId': _to,
                         'lines': [for (final l in _lines) l.toJson()],
                       });
-                      final r = await widget.ops.outbox.drain();
+                      final r = await widget.ops.outbox.drainFor([id]);
                       if (!context.mounted) return;
-                      showDone(context, r != null && r.complete ? t('sentNow') : t('savedForLater'));
+                      showOutcome(context, r, sent: t('sentNow'), saved: t('savedForLater'));
+                      if (r.rejectedCode != null) {
+                        setState(() => _busy = false);
+                        return;
+                      }
                       Navigator.pop(context);
                     },
               child: Text(t('sendRequest')),
@@ -210,6 +233,8 @@ class VoucherPage extends StatefulWidget {
 class _VoucherPageState extends State<VoucherPage> {
   final _lines = <PickedLine>[];
   final _reason = TextEditingController();
+  final _docId = newId('voucher'); // one document id per page (WH-011)
+  bool _busy = false;
   String _type = 'out';
   int? _wh;
 
@@ -257,19 +282,25 @@ class _VoucherPageState extends State<VoucherPage> {
             child: FilledButton(
               key: const Key('voucher.send'),
               style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(kBigTarget)),
-              onPressed: !ready
+              onPressed: !ready || _busy
                   ? null
                   : () async {
-                      await widget.ops.outbox.enqueue('voucher_create', WhDocPaths.vouchers, {
-                        'globalId': newId('voucher'),
+                      if (_busy) return; // a second tap before the next frame
+                      setState(() => _busy = true);
+                      final id = await widget.ops.outbox.enqueue('voucher_create', WhDocPaths.vouchers, {
+                        'globalId': _docId,
                         'type': _type,
                         'warehouseId': _wh,
                         'reason': _reason.text.trim(),
                         'lines': [for (final l in _lines) l.toJson()],
                       });
-                      final r = await widget.ops.outbox.drain();
+                      final r = await widget.ops.outbox.drainFor([id]);
                       if (!context.mounted) return;
-                      showDone(context, r != null && r.complete ? t('voucherSent') : t('savedForLater'));
+                      showOutcome(context, r, sent: t('voucherSent'), saved: t('savedForLater'));
+                      if (r.rejectedCode != null) {
+                        setState(() => _busy = false);
+                        return;
+                      }
                       Navigator.pop(context);
                     },
               child: Text(t('sendForApproval')),

@@ -58,12 +58,17 @@ class Outbox {
 
   /// Pushes pending entries in order. Concurrent calls are ignored (the
   /// second returns an empty report) so one entry is never in flight twice.
-  Future<DrainReport> drain(OutboxSender send) async {
+  ///
+  /// [where] limits the run to the entries the caller may send now (the
+  /// warehouse app sends only the signed-in user's entries; the others wait, in
+  /// order, until their owner is back).
+  Future<DrainReport> drain(OutboxSender send, {bool Function(OutboxEntry entry)? where}) async {
     if (_draining) return const DrainReport();
     _draining = true;
     var accepted = 0, rejected = 0;
     try {
       for (final e in await pending()) {
+        if (where != null && !where(e)) continue;
         e.attempts++;
         PushReply reply;
         try {

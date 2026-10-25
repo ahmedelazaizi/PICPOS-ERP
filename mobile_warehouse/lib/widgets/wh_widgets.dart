@@ -7,6 +7,10 @@ import '../session/wh_session.dart' show errorCode;
 import '../sync/wh_ops.dart';
 import '../sync/wh_outbox.dart';
 
+/// Isolates a number / code so it keeps its own direction inside Arabic text
+/// (a negative variance would otherwise flip: "-7" reads "7-").
+String ltr(Object? value) => '\u2066$value\u2069';
+
 /// Minimum touch target for primary actions (plan §B.3: >= 56 dp).
 const double kBigTarget = 56;
 
@@ -191,7 +195,9 @@ class OfflineBanner extends StatelessWidget {
                 ? t('bannerOffline', {'n': '${sync.pending}'})
                 : sync.pending > 0
                     ? t('bannerPending', {'n': '${sync.pending}'})
-                    : null;
+                    : sync.foreign > 0
+                        ? t('bannerForeign', {'n': '${sync.foreign}'})
+                        : null;
         if (text == null) return const SizedBox.shrink();
         final scheme = Theme.of(context).colorScheme;
         return Material(
@@ -219,6 +225,26 @@ void showFailure(BuildContext context, Object error) {
       content: Text(S.errorText(context, errorCode(error))),
       backgroundColor: Theme.of(context).colorScheme.error,
     ));
+}
+
+/// The office REFUSED an operation the user just queued: say so with the
+/// reason ([key] is `receiptRejected` / `opRejected`), never "sent".
+void showRejected(BuildContext context, String key, String code) {
+  final t = S.of(context);
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(
+      key: const Key('rejected.snack'),
+      content: Text(t(key, {'why': S.errorText(context, code)})),
+      backgroundColor: Theme.of(context).colorScheme.error,
+      duration: const Duration(seconds: 8),
+    ));
+}
+
+/// Result of a queued operation: success only for what the office accepted.
+void showOutcome(BuildContext context, SendOutcome r, {required String sent, required String saved, String rejectedKey = 'opRejected'}) {
+  if (r.rejectedCode != null) return showRejected(context, rejectedKey, r.rejectedCode!);
+  showDone(context, r.accepted ? sent : saved);
 }
 
 void showDone(BuildContext context, String message) {

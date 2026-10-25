@@ -89,6 +89,19 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 520),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                    // The office unpaired this phone: say so, and say what was lost (W5.4b).
+                    if (widget.session.unpairNotice != null) ...[
+                      Material(
+                        key: const Key('onboarding.unpaired'),
+                        color: Theme.of(context).colorScheme.errorContainer,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.all(PicPosSpacing.md),
+                          child: Text(t('unpairedNotice', {'n': '${widget.session.unpairNotice!.discardedOperations}'})),
+                        ),
+                      ),
+                      const SizedBox(height: PicPosSpacing.md),
+                    ],
                     Text(t('appTitle'),
                         style: tt.displaySmall?.copyWith(color: context.picposBrandInk), textAlign: TextAlign.center),
                     const SizedBox(height: PicPosSpacing.lg),

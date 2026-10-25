@@ -59,7 +59,7 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(height: PicPosSpacing.sm),
                 Wrap(spacing: PicPosSpacing.sm, children: [
                   StatusPill(
-                    label: t(info.isSupervisorLevel ? 'roleSupervisor' : 'roleClerk'),
+                    label: t(info.can('stock_adjust_approve') ? 'roleSupervisor' : info.isSupervisorLevel ? 'roleKeeper' : 'roleClerk'),
                     tone: PicPosTone.brand,
                     icon: Icons.badge_outlined,
                   ),
@@ -108,7 +108,7 @@ class _Capability extends StatelessWidget {
       child: Row(children: [
         Expanded(child: Text(label)),
         StatusPill(
-          label: available ? '✓' : t('notAvailable'),
+          label: available ? '✓' : t('noPermission'),
           tone: available ? PicPosTone.success : PicPosTone.warning,
         ),
       ]),

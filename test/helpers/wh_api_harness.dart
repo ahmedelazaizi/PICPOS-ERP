@@ -78,11 +78,14 @@ class WhHarness {
     return h;
   }
 
-  Future<void> pairPhone(String id, int branch) async {
+  Future<void> pairPhone(String id, int branch) => pairKind(id, 'warehouse', branch: branch);
+
+  /// Pairs a device of [kind] (`warehouse`, `pos`, `mirror`...).
+  Future<void> pairKind(String id, String kind, {int? branch}) async {
     final offer = await pairing.issuePairingCode(
-        serverHost: 'h', port: 1, serverFingerprint: 'ab' * 32, actorUserId: 1, deviceKind: 'warehouse', branchId: branch);
+        serverHost: 'h', port: 1, serverFingerprint: 'ab' * 32, actorUserId: 1, deviceKind: kind, branchId: branch ?? branchA);
     final r = await pairing.pair(LanPairingRequest(
-        code: offer.code, deviceId: id, deviceName: 'Phone $id', ip: '10.0.0.5', deviceKind: 'warehouse'));
+        code: offer.code, deviceId: id, deviceName: 'Device $id', ip: '10.0.0.5', deviceKind: kind));
     tokens[id] = r.token!;
   }
 

@@ -36,13 +36,15 @@ class WhApprovalApi {
         final items = <Map<String, Object?>>[];
 
         for (final d in await store.list(kind: 'transfer', states: ['requested'], warehouseIds: ctx.scope.warehouseIds)) {
-          if (d.createdBy == ctx.userId) continue;
+          // The approval needs the SOURCE warehouse in scope (WH-027): a request into
+          // my warehouse from elsewhere is not mine to approve.
+          if (d.createdBy == ctx.userId || !ctx.scope.allows(d.warehouseId)) continue;
           items.add({'type': 'transfer_request', 'ref': d.gid, 'warehouseId': d.warehouseId,
             'toWarehouseId': d.toWarehouseId, 'lines': (await store.lines(d.id)).length, 'ageMinutes': age(d.row['created_at'])});
         }
         for (final d in await store.list(kind: 'transfer', states: ['received_short'], warehouseIds: ctx.scope.warehouseIds)) {
           final data = d.data;
-          if ({d.createdBy, data['dispatchedBy'], data['receivedBy']}.contains(ctx.userId)) continue;
+          if ({d.createdBy, data['dispatchedBy'], data['receivedBy']}.contains(ctx.userId) || !ctx.scope.allows(d.warehouseId)) continue;
           items.add({'type': 'transfer_shortage', 'ref': d.gid, 'warehouseId': d.warehouseId,
             'toWarehouseId': d.toWarehouseId, 'ageMinutes': age(d.row['created_at'])});
         }

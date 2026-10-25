@@ -86,11 +86,16 @@ class WhReceiptLineInput {
     this.batchNumber,
     this.expiryDate,
     this.locationBarcode,
+    this.poItemId,
   });
   final String lineGlobalId;
   final int productId;
   final String quantity;
   final String condition; // ok | damaged
+
+  /// The PO line this quantity belongs to (two lines of one product in an order
+  /// are told apart by it, WH-026).
+  final int? poItemId;
   final String? batchNumber;
   final String? expiryDate; // yyyy-mm-dd
   final String? locationBarcode;
@@ -103,6 +108,7 @@ class WhReceiptLineInput {
         if (batchNumber != null) 'batchNumber': batchNumber,
         if (expiryDate != null) 'expiryDate': expiryDate,
         if (locationBarcode != null) 'locationBarcode': locationBarcode,
+        if (poItemId != null) 'poItemId': poItemId,
       };
 }
 

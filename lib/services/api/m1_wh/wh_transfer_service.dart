@@ -20,6 +20,7 @@ import 'package:drift/drift.dart';
 import '../../../core/utils/uuid_v7.dart';
 import '../../../data/database/database.dart';
 import '../../../domain/entities/accounting_entities.dart';
+import 'wh_constants.dart';
 import 'wh_doc_store.dart';
 import 'wh_http.dart';
 import 'wh_stock_guard.dart';
@@ -180,7 +181,7 @@ class WhTransferService {
       await db.adjustStock(
         productId: l.productId, warehouseId: doc.warehouseId, quantity: -l.qty, type: 'transfer_out',
         referenceType: 'wh_transfer', referenceId: doc.id, userId: ctx.userId, unitCost: cost,
-        notes: 'Transfer out to warehouse #${doc.toWarehouseId} (${doc.gid})',
+        notes: WhConstants.transferOutNote(doc.toWarehouseId, doc.gid),
       );
       if (bins) await db.syncDefaultBinStock(l.productId, doc.warehouseId);
       await db.customStatement('UPDATE wh_mobile_doc_lines SET unit_cost = ? WHERE id = ?', [cost, l.id]);
@@ -198,7 +199,7 @@ class WhTransferService {
       value += l.qty * cost;
     }
     await _post(
-      description: 'تحويل مرحلي — إرسال (${doc.gid})', warehouseId: doc.warehouseId, amount: value,
+      description: WhConstants.transferOutJournal(doc.gid), warehouseId: doc.warehouseId, amount: value,
       refType: 'wh_transfer_out', docId: doc.id, debit: 'goods_in_transit', credit: 'inventory',
     );
     return store.transition(doc, 'dispatch', expectedVersion: expectedVersion, data: {...doc.data, 'dispatchedBy': ctx.userId});
@@ -234,7 +235,7 @@ class WhTransferService {
         await db.adjustStock(
           productId: l.productId, warehouseId: to, quantity: total, type: 'transfer_in',
           referenceType: 'wh_transfer', referenceId: doc.id, userId: ctx.userId, unitCost: cost,
-          notes: 'Transfer in from warehouse #${doc.warehouseId} (${doc.gid})',
+          notes: WhConstants.transferInNote(doc.warehouseId, doc.gid),
         );
         for (final lot in taken) {
           await _restoreLot(l.productId, to, lot, (lot['qty']! as num).toDouble());
@@ -254,13 +255,13 @@ class WhTransferService {
       value += total * cost;
     }
     await _post(
-      description: 'تحويل مرحلي — استلام (${doc.gid})', warehouseId: to, amount: value,
+      description: WhConstants.transferInJournal(doc.gid), warehouseId: to, amount: value,
       refType: 'wh_transfer_in', docId: doc.id, debit: 'inventory', credit: 'goods_in_transit',
     );
     if (damagedLines.isNotEmpty) {
       final v = await store.create(
         kind: 'voucher', state: 'pending', warehouseId: to, createdBy: ctx.userId, deviceId: ctx.deviceId,
-        refType: 'wh_transfer', refId: doc.gid, reason: 'تالف عند استلام تحويل ${doc.gid}',
+        refType: 'wh_transfer', refId: doc.gid, reason: WhConstants.transferDamageReason(doc.gid),
         data: {'type': 'damage'},
       );
       for (final (l, q) in damagedLines) {
@@ -291,7 +292,7 @@ class WhTransferService {
         await db.adjustStock(
           productId: l.productId, warehouseId: doc.warehouseId, quantity: short, type: 'transfer_in',
           referenceType: 'wh_transfer', referenceId: doc.id, userId: approver, unitCost: cost,
-          notes: 'Short quantity returned to source (${doc.gid})',
+          notes: WhConstants.transferReturnNote(doc.gid),
         );
         for (final lot in _lotsOf(l, 'shortLots')) {
           await _restoreLot(l.productId, doc.warehouseId, lot, (lot['qty']! as num).toDouble());
@@ -302,7 +303,7 @@ class WhTransferService {
     }
     final back = resolution == 'return_to_source';
     await _post(
-      description: back ? 'تحويل مرحلي — إعادة النقص للمصدر (${doc.gid})' : 'تحويل مرحلي — فقد في الطريق (${doc.gid})',
+      description: back ? WhConstants.transferReturnJournal(doc.gid) : WhConstants.transferLossJournal(doc.gid),
       warehouseId: doc.warehouseId, amount: value, refType: 'wh_transfer_resolve', docId: doc.id,
       debit: back ? 'inventory' : 'inventory_shrinkage', credit: 'goods_in_transit',
     );

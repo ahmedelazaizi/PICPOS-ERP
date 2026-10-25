@@ -119,7 +119,7 @@ class _PoReceivePageState extends State<PoReceivePage> {
   Future<void> _send() async {
     final t = S.of(context);
     final ob = widget.ops.outbox;
-    await ob.enqueue('receipt_lines', '${WhDocPaths.po}/${Uri.encodeComponent(widget.order.ref)}/receipts', {
+    final linesOp = await ob.enqueue('receipt_lines', '${WhDocPaths.po}/${Uri.encodeComponent(widget.order.ref)}/receipts', {
       'globalId': _receiptId,
       'lines': [
         for (final d in _drafts)
@@ -131,14 +131,22 @@ class _PoReceivePageState extends State<PoReceivePage> {
             batchNumber: d.batch,
             expiryDate: d.expiry,
             locationBarcode: d.bin,
+            poItemId: d.item.itemId,
           ).toJson(),
       ],
     });
-    await ob.enqueue('receipt_submit', '${WhDocPaths.receipts}/$_receiptId/submit', const {});
+    final submitOp = await ob.enqueue('receipt_submit', '${WhDocPaths.receipts}/$_receiptId/submit', const {}, after: linesOp);
     setState(() => _sent = true);
-    final report = await ob.drain();
+    final r = await ob.drainFor([linesOp, submitOp]);
     if (!mounted) return;
-    showDone(context, report != null && report.complete ? t('receiptSent') : t('receiptSaved'));
+    // "Sent" only when the office ACCEPTED both steps (W2.3c): a refusal shows
+    // its reason. If the lines were refused nothing exists at the office, so
+    // the receipt can be corrected and sent again under the same ids.
+    if (r.rejectedCode != null) {
+      if (r.rejectedIndex == 0) setState(() => _sent = false);
+      return showRejected(context, 'receiptRejected', r.rejectedCode!);
+    }
+    showDone(context, r.accepted ? t('receiptSent') : t('receiptSaved'));
   }
 
   @override
@@ -172,11 +180,11 @@ class _PoReceivePageState extends State<PoReceivePage> {
               Text(t('thisReceipt'), style: tt.titleSmall),
               for (final d in _drafts)
                 ListTile(
-                  title: Text('${d.item.name} × ${d.qty}'),
+                  title: Text('${d.item.name} × ${ltr(d.qty)}'),
                   subtitle: Text([
                     if (d.condition == 'damaged') t('damaged'),
-                    if (d.batch != null) '${d.batch} ${d.expiry ?? ''}',
-                    if (d.bin != null) d.bin!,
+                    if (d.batch != null) ltr('${d.batch} ${d.expiry ?? ''}'),
+                    if (d.bin != null) ltr(d.bin!),
                   ].join(' · ')),
                   trailing: _sent ? null : IconButton(tooltip: t('remove'), onPressed: () => setState(() => _drafts.remove(d)), icon: const Icon(Icons.delete_outline)),
                 ),

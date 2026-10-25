@@ -114,6 +114,13 @@ void main() {
     expect((await h.db.select(h.db.productBatches).get()).single.batchNumber, 'L9');
   });
 
+  test('WH-013: the stock manager creates and lists vouchers (§B.4 «كل ما سبق»)', () async {
+    expect((await create(h.manager, 'out', '1')).status, 200);
+    final list = await h.call('GET', '/api/m1/wh/vouchers', user: h.manager);
+    expect(list.status, 200, reason: list.text);
+    expect((list.json['docs'] as List), hasLength(1));
+  });
+
   test('a replayed create (same key) answers from the log; a different body under that key conflicts', () async {
     final body = {
       'globalId': 'voucher-0001', 'type': 'out', 'warehouseId': h.a1, 'reason': 'x',

@@ -16,7 +16,19 @@ import 'database.dart';
 final Expando<Future<void>> _ensured = Expando('wh_mobile_docs_schema');
 
 extension WhMobileDocsSchema on AppDatabase {
-  Future<void> ensureWhMobileDocsSchema() => _ensured[this] ??= _create();
+  /// A failed attempt is NOT remembered (WH-025): a transient error on the first
+  /// call (a locked file, a PG hiccup) must not turn every document route into a
+  /// 500 until the server restarts - the next call retries the DDL.
+  Future<void> ensureWhMobileDocsSchema() {
+    final cached = _ensured[this];
+    if (cached != null) return cached;
+    final attempt = _create();
+    _ensured[this] = attempt;
+    attempt.catchError((Object _) {
+      _ensured[this] = null;
+    });
+    return attempt;
+  }
 
   Future<void> _create() async {
     final pg = isPostgres;

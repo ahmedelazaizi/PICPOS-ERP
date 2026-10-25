@@ -9,16 +9,28 @@
 // Also serves a PLAIN-HTTP decoy on LAB_HTTP_PORT (the app must refuse it).
 //
 // Outputs (LAB_DIR, default D:\qa\device-lab):  host.json  (codes, fingerprint,
-// users), host.log, devices.json (after `list`).
-// Control: append a line to LAB_DIR\cmd.txt:
+// users), host.log, devices.json (after `list`), fixtures.json (what the
+// `product|po|count` commands created), facts-<name>.json (`facts`),
+// api-<label>.json (`api`), ack.txt (one line per processed command).
+// Control: append a line to LAB_DIR\cmd.txt (line N gets "N|msg" in ack.txt):
 //   issue <B1|B2>   -> new warehouse pairing code (appended to host.json codes)
-//   revoke-all      -> revokes every paired device (real revoke())
+//   revoke-all      -> revokes every paired PHONE (the lab's own API probe device is spared)
 //   list            -> writes devices.json
 //   stop            -> shuts the host down
+// Warehouse-phase lab commands ('|' separated):
+//   setting|key|value
+//   product|key|barcode|name|cost|trackExpiry(0/1)|qtyB1|qtyB1b|qtyB2
+//   po|key|prodKey:qty,prodKey:qty          (open PO 'sent' in B1 Main WH)
+//   count|key|prodKey,prodKey               (cycle-count task in B1 Main WH)
+//   facts|name                              (stock, docs, events, journal, POs, counts)
+//   convert|receiptGid                      (accountant: receipt -> purchase invoice)
+//   api|label|user|METHOD|path|jsonBody|idempotencyKey   (real HTTPS call from a lab probe phone)
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
-import 'package:drift/drift.dart' show Value, driftRuntimeOptions;
+import 'package:crypto/crypto.dart';
+import 'package:drift/drift.dart' show BooleanExpressionOperators, Value, driftRuntimeOptions;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -29,14 +41,21 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:picpos_erp/core/logging/diagnostic_logger.dart';
 import 'package:picpos_erp/core/permissions/role_grant_matrix.dart';
 import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/data/database/wh_mobile_docs_schema.dart';
 import 'package:picpos_erp/services/api/api_session_token.dart';
+import 'package:picpos_erp/services/api/m1_wh/wh_doc_store.dart';
+import 'package:picpos_erp/services/api/m1_wh/wh_receipt_posting.dart';
 import 'package:picpos_erp/services/network_service.dart';
 import 'package:picpos_erp/services/role_grant_preflight_service.dart';
 import 'package:picpos_erp/services/setup/server_setup_writer.dart';
 
 const _pwClerk = 'WhClerk#2026';
 const _pwClerk2 = 'WhClerk2#2026';
+const _pwClerk3 = 'WhClerk3#2026';
 const _pwSuper = 'WhSuper#2026';
+const _pwStore = 'WhStore#2026';
+const _pwMgr = 'WhMgr#2026';
+const _pwAcct = 'WhAcct#2026';
 const _pwCashier = 'Cashier#2026';
 const _pwAdmin = 'LabAdmin#2026';
 
@@ -72,6 +91,8 @@ void _mockSecureStorage() {
   });
 }
 
+Object? _enc(Object? o) => o is DateTime ? o.toIso8601String() : o.toString();
+
 void main() {
   final on = Platform.environment['LAB_HOST'] == '1';
   test('device-lab host', skip: on ? false : 'LAB_HOST!=1 (device lab only)',
@@ -90,10 +111,19 @@ void main() {
     }
 
     logFile.writeAsStringSync('');
-    final cmdFile = File('${labDir.path}\\cmd.txt');
-    if (cmdFile.existsSync()) cmdFile.deleteSync();
+    for (final f in ['cmd.txt', 'ack.txt', 'fixtures.json']) {
+      final x = File('${labDir.path}\\$f');
+      if (x.existsSync()) x.deleteSync();
+    }
+    for (final f in labDir.listSync().whereType<File>()) {
+      final n = f.uri.pathSegments.last;
+      if (n.startsWith('facts-') || n.startsWith('api-')) f.deleteSync();
+    }
 
     TestWidgetsFlutterBinding.ensureInitialized();
+    // flutter_test replaces dart:io HttpClient with a stub that answers 400;
+    // the lab probe phone needs the real one.
+    HttpOverrides.global = null;
     driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
     I18nCatalog.setCatalog(const {});
     SharedPreferences.setMockInitialValues({});
@@ -129,14 +159,28 @@ void main() {
               name: 'Lab Clerk Two', username: 'clerk2', password: _pwClerk2,
               roleName: kWarehouseClerkRole, scope: 'B2', forcePasswordChange: false),
           ServerSetupUser(
+              name: 'Lab Clerk Three', username: 'clerk3', password: _pwClerk3,
+              roleName: kWarehouseClerkRole, scope: 'B1', forcePasswordChange: false),
+          ServerSetupUser(
               name: 'Lab Supervisor', username: 'super1', password: _pwSuper,
               roleName: kWarehouseSupervisorRole, scope: 'ALL', forcePasswordChange: false),
+          ServerSetupUser(
+              name: 'Lab Storekeeper', username: 'store1', password: _pwStore,
+              roleName: 'مخزني', scope: 'B1', forcePasswordChange: false),
+          ServerSetupUser(
+              name: 'Lab Stock Manager', username: 'mgr1', password: _pwMgr,
+              roleName: 'مدير مخزون', scope: 'B1', forcePasswordChange: false),
+          ServerSetupUser(
+              name: 'Lab Accountant', username: 'acct1', password: _pwAcct,
+              roleName: 'محاسب', scope: 'B1', forcePasswordChange: false),
           ServerSetupUser(
               name: 'Lab Cashier', username: 'cashier1', password: _pwCashier,
               roleName: 'كاشير', scope: 'B1', forcePasswordChange: false),
         ],
       ),
     );
+    // goods_in_transit / inventory / shrinkage accounts for the staged transfer.
+    await db.syncDefaultAccounts();
     final b1 = setup.branchIds['B1']!;
     final b2 = setup.branchIds['B2']!;
     Future<int> whOf(int branch, String name) async {
@@ -148,6 +192,8 @@ void main() {
 
     final wh1 = await whOf(b1, 'B1 Main WH');
     final wh2 = await whOf(b2, 'B2 Main WH');
+    // Second warehouse of branch B1 (transfers stay inside the device's branch).
+    final wh1b = await db.createWarehouseForBranch(name: 'B1 Second WH', branchId: b1);
     final p1 = await db.into(db.products).insert(ProductsCompanion.insert(
         code: 'LAB-1', name: 'Lab Milk', barcode: const Value('6221234567890')));
     final p2 = await db.into(db.products).insert(ProductsCompanion.insert(
@@ -157,12 +203,22 @@ void main() {
           productId: p, warehouseId: w, quantity: Value(q)));
     }
     final users = {for (final u in await db.select(db.users).get()) u.username: u.id};
+    final idToUser = {for (final e in users.entries) e.value: e.key};
+    final passwords = <String, String>{
+      'clerk1': _pwClerk, 'clerk2': _pwClerk2, 'clerk3': _pwClerk3, 'super1': _pwSuper,
+      'store1': _pwStore, 'mgr1': _pwMgr, 'acct1': _pwAcct, 'cashier1': _pwCashier,
+    };
     // Warehouse access: a clerk sees only his own branch's warehouse.
     await db.setUserWarehouseAccess(users['clerk1']!, [wh1]);
     await db.setUserWarehouseAccess(users['clerk2']!, [wh2]);
-    await db.setUserWarehouseAccess(users['super1']!, [wh1, wh2]);
+    await db.setUserWarehouseAccess(users['clerk3']!, [wh1]);
+    await db.setUserWarehouseAccess(users['super1']!, [wh1, wh1b, wh2]);
+    await db.setUserWarehouseAccess(users['store1']!, [wh1, wh1b]);
+    await db.setUserWarehouseAccess(users['mgr1']!, [wh1, wh1b]);
+    await db.setUserWarehouseAccess(users['acct1']!, [wh1, wh1b]);
     final adminId = users['admin']!;
-    log('seeded branches B1=$b1 B2=$b2 warehouses B1=$wh1 B2=$wh2 users=$users');
+    final acctId = users['acct1']!;
+    log('seeded branches B1=$b1 B2=$b2 warehouses B1=$wh1 B1b=$wh1b B2=$wh2 users=$users');
 
     // ── the REAL production server start (TLS on, 0.0.0.0) ──
     NetworkService.instance.debugSetModeForTests(NetworkMode.server);
@@ -181,6 +237,155 @@ void main() {
         InternetAddress.anyIPv4,
         httpPort);
     log('plain HTTP decoy on 0.0.0.0:${decoy.port}');
+
+    // ── lab probe phone: a second REAL paired warehouse device used ONLY to
+    //    make HTTPS calls from the host process (DTO assertions) ──
+    final probeClient = HttpClient()
+      ..badCertificateCallback = (cert, host, p) {
+        final got = sha256.convert(cert.der).toString();
+        final want = (fp ?? '').toLowerCase().replaceAll(':', '');
+        if (got != want) log('probe: certificate fingerprint differs from host fp (got $got) - loopback, accepted');
+        return true;
+      };
+    final probeDeviceId = 'lab-probe-${Random().nextInt(1 << 30).toRadixString(16)}';
+    String? probeToken;
+    final probeSessions = <String, String>{};
+
+    Future<({int status, String body})> rawHttp(String method, String path,
+        {Map<String, String> headers = const {}, String? body}) async {
+      final req = await probeClient.openUrl(method, Uri.parse('https://127.0.0.1:$port$path'));
+      headers.forEach(req.headers.set);
+      if (body != null) {
+        req.headers.set('content-type', 'application/json; charset=utf-8');
+        req.add(utf8.encode(body));
+      }
+      final res = await req.close();
+      return (status: res.statusCode, body: await res.transform(utf8.decoder).join());
+    }
+
+    Future<void> ensureProbe() async {
+      if (probeToken != null) return;
+      final offer = await NetworkService.instance.issueLanPairingCode(
+          actorUserId: adminId, deviceKind: 'warehouse', branchId: b1);
+      final r = await rawHttp('POST', '/api/pair',
+          body: jsonEncode({
+            'pairingCode': offer!.code,
+            'deviceId': probeDeviceId,
+            'deviceName': 'Lab probe',
+            'deviceKind': 'warehouse'
+          }));
+      expect(r.status, 200, reason: 'probe pairing: ${r.body}');
+      probeToken = (jsonDecode(r.body) as Map)['token'] as String;
+      log('probe phone paired as $probeDeviceId');
+    }
+
+    Future<String> probeLogin(String user) async {
+      await ensureProbe();
+      final r = await rawHttp('POST', '/api/auth/session',
+          headers: {'authorization': 'Bearer $probeToken', 'x-device-id': probeDeviceId},
+          body: jsonEncode({'username': user, 'password': passwords[user]}));
+      if (r.status != 200) throw StateError('probe login $user -> ${r.status} ${r.body}');
+      return probeSessions[user] = (jsonDecode(r.body) as Map)['token'] as String;
+    }
+
+    Future<Map<String, Object?>> probeCall(String user, String method, String path,
+        {String? body, String? key}) async {
+      Future<({int status, String body})> go(String session) => rawHttp(method, path, headers: {
+            'authorization': 'Bearer $probeToken',
+            'x-device-id': probeDeviceId,
+            'x-session-token': session,
+            if (method != 'GET') 'x-idempotency-key': key ?? 'probe-${DateTime.now().microsecondsSinceEpoch}',
+          }, body: body);
+      var r = await go(probeSessions[user] ?? await probeLogin(user));
+      if (r.status == 401) r = await go(await probeLogin(user));
+      Object? parsed;
+      try {
+        parsed = jsonDecode(r.body);
+      } catch (_) {
+        parsed = r.body;
+      }
+      return {'user': user, 'method': method, 'path': path, 'status': r.status, 'body': parsed};
+    }
+
+    // ── fixtures + facts ──
+    final fixtures = <String, Map<String, Object?>>{'products': {}, 'pos': {}, 'counts': {}};
+    void writeFixtures() =>
+        File('${labDir.path}\\fixtures.json').writeAsStringSync(const JsonEncoder.withIndent('  ').convert(fixtures));
+
+    Future<List<Map<String, Object?>>> q(String sql) async =>
+        [for (final r in await db.customSelect(sql).get()) r.data.cast<String, Object?>()];
+
+    Future<Object?> safe(Future<Object?> Function() f) async {
+      try {
+        return await f();
+      } catch (e) {
+        return {'error': '$e'};
+      }
+    }
+
+    Future<Map<String, Object?>> collectFacts(String name) async {
+      await db.ensureWhMobileDocsSchema();
+      final docs = await q('SELECT * FROM wh_mobile_docs ORDER BY id');
+      for (final d in docs) {
+        d['created_by_name'] = idToUser[(d['created_by'] as num?)?.toInt()];
+        d['approved_by_name'] = idToUser[(d['approved_by'] as num?)?.toInt()];
+        d['lines'] = await q('SELECT * FROM wh_mobile_doc_lines WHERE doc_id = ${d['id']} ORDER BY id');
+      }
+      final events = await q('SELECT * FROM wh_mobile_doc_events ORDER BY id');
+      for (final e in events) {
+        e['actor_name'] = idToUser[(e['actor_user_id'] as num?)?.toInt()];
+      }
+      final git = await db.getAccountByPurpose('goods_in_transit');
+      return {
+        'name': name,
+        'at': DateTime.now().toIso8601String(),
+        'warehouses': {'B1': wh1, 'B1b': wh1b, 'B2': wh2},
+        'users': users,
+        'stock': await safe(() async {
+          final out = <String, Map<String, Object?>>{};
+          for (final r in await q('SELECT p.barcode AS barcode, p.name AS name, ib.warehouse_id AS wh, ib.quantity AS qty '
+              'FROM inventory_balances ib JOIN products p ON p.id = ib.product_id ORDER BY p.id, ib.warehouse_id')) {
+            final bc = '${r['barcode']}';
+            out.putIfAbsent(bc, () => {'name': r['name']});
+            out[bc]!['${r['wh']}'] = r['qty'];
+          }
+          return out;
+        }),
+        'docs': docs,
+        'events': events,
+        'purchaseOrders': await safe(() async {
+          final pos = await q('SELECT * FROM purchase_orders ORDER BY id');
+          for (final p in pos) {
+            p['items'] = await q('SELECT * FROM purchase_order_items WHERE order_id = ${p['id']} ORDER BY id');
+          }
+          return pos;
+        }),
+        'purchaseInvoices': await safe(() => q('SELECT * FROM purchase_invoices ORDER BY id')),
+        'journal': await safe(() => q(
+            'SELECT je.id AS entry_id, je.description AS description, je.reference_type AS reference_type, '
+            'je.reference_id AS reference_id, a.code AS account_code, a.name AS account_name, jl.debit AS debit, jl.credit AS credit '
+            "FROM journal_entries je JOIN journal_entry_lines jl ON jl.entry_id = je.id JOIN accounts a ON a.id = jl.account_id "
+            "WHERE je.reference_type LIKE 'wh%' OR je.reference_type LIKE 'purchase%' ORDER BY je.id, jl.id")),
+        'goodsInTransitBalance': git == null
+            ? null
+            : await safe(() async => (await q('SELECT COALESCE(SUM(debit),0) - COALESCE(SUM(credit),0) AS bal FROM journal_entry_lines WHERE account_id = ${git.id}')).first['bal']),
+        'stockMovements': await safe(() => q(
+            "SELECT * FROM stock_movements WHERE reference_type LIKE 'wh%' OR reference_type LIKE 'purchase%' ORDER BY id")),
+        'batches': await safe(() => q('SELECT * FROM product_batches ORDER BY id')),
+        'countTasks': await safe(() async {
+          final ts = await q('SELECT * FROM cycle_count_tasks ORDER BY id');
+          for (final t in ts) {
+            t['items'] = await q('SELECT * FROM cycle_count_items WHERE task_id = ${t['id']} ORDER BY id');
+          }
+          return ts;
+        }),
+        'settings': {
+          for (final k in ['wh_staged_transfers_enabled', 'wh_receipt_overage_pct', 'warehouse_bins_enabled'])
+            k: await db.getSettingValue(k),
+        },
+        'devices': await safe(() => q('SELECT device_id, name, device_kind, branch_id, revoked, last_seen_at FROM lan_paired_devices')),
+      };
+    }
 
     final codes = <Map<String, dynamic>>[];
     late void Function() writeJson;
@@ -212,11 +417,15 @@ void main() {
         'plainHttpAddress': '10.0.2.2:$httpPort',
         'fingerprint': fp,
         'branches': {'B1': b1, 'B2': b2},
-        'warehouses': {'B1': wh1, 'B2': wh2},
+        'warehouses': {'B1': wh1, 'B1b': wh1b, 'B2': wh2},
         'users': {
-          'clerk1': {'password': _pwClerk, 'branch': 'B1'},
-          'clerk2': {'password': _pwClerk2, 'branch': 'B2'},
-          'super1': {'password': _pwSuper, 'branch': 'ALL'},
+          'clerk1': {'password': _pwClerk, 'branch': 'B1', 'role': 'warehouse clerk'},
+          'clerk2': {'password': _pwClerk2, 'branch': 'B2', 'role': 'warehouse clerk'},
+          'clerk3': {'password': _pwClerk3, 'branch': 'B1', 'role': 'warehouse clerk (second counter)'},
+          'super1': {'password': _pwSuper, 'branch': 'ALL', 'role': 'warehouse supervisor'},
+          'store1': {'password': _pwStore, 'branch': 'B1', 'role': 'storekeeper (transfer, no approve)'},
+          'mgr1': {'password': _pwMgr, 'branch': 'B1', 'role': 'stock manager'},
+          'acct1': {'password': _pwAcct, 'branch': 'B1', 'role': 'accountant'},
           'cashier1': {'password': _pwCashier, 'branch': 'B1', 'note': 'no warehouse_mobile_access'},
         },
         'products': {
@@ -230,48 +439,161 @@ void main() {
 
     // NOTE: LanPairingService keeps ONE pending offer; each issue supersedes
     // the previous code. The driver issues a fresh code before each pairing.
+    await ensureProbe();
     await issue('B1');
+
+    // ── command interpreter ──
+    Future<String> run(String cmd) async {
+      final parts = cmd.split('|');
+      switch (parts[0]) {
+        case 'setting':
+          await db.setSetting(parts[1], parts[2]);
+          return 'setting ${parts[1]}=${parts[2]}';
+        case 'product':
+          {
+            final (key, barcode, pname) = (parts[1], parts[2], parts[3]);
+            final cost = double.parse(parts[4]);
+            final id = await db.insertProduct(ProductsCompanion.insert(
+              code: 'LP-$key', name: pname, salePrice: Value(cost * 2), costPrice: Value(cost),
+              trackInventory: const Value(true), trackExpiry: Value(parts[5] == '1'), barcode: Value(barcode),
+            ));
+            for (final (w, qs) in [(wh1, parts[6]), (wh1b, parts[7]), (wh2, parts[8])]) {
+              final qty = double.parse(qs);
+              if (qty > 0) {
+                await db.adjustStock(productId: id, warehouseId: w, quantity: qty, type: 'purchase', unitCost: cost);
+              }
+            }
+            fixtures['products']![key] = {'id': id, 'barcode': barcode, 'name': pname};
+            writeFixtures();
+            return 'product $key id=$id';
+          }
+        case 'po':
+          {
+            final supplier = await db.into(db.parties).insert(
+                PartiesCompanion.insert(name: 'Lab Supplier ${parts[1]}', isSupplier: const Value(true)));
+            final lines = <Map<String, Object?>>[];
+            final items = <PurchaseOrderItemsCompanion>[];
+            for (final seg in parts[2].split(',')) {
+              final kv = seg.split(':');
+              final pid = (fixtures['products']![kv[0]]! as Map)['id'] as int;
+              final qty = double.parse(kv[1]);
+              items.add(PurchaseOrderItemsCompanion.insert(
+                  orderId: 0, productId: pid, quantity: qty, unitCost: 40, total: 40 * qty));
+              lines.add({'product': kv[0], 'productId': pid, 'ordered': qty});
+            }
+            final id = await db.createPurchaseOrder(
+                supplierId: supplier, warehouseId: wh1, orderDate: DateTime.now(), items: items);
+            await db.updatePurchaseOrderStatus(id, 'sent');
+            final po = await db.getPurchaseOrderById(id);
+            fixtures['pos']![parts[1]] = {
+              'id': id, 'ref': po?.globalId ?? '$id', 'orderNumber': po?.orderNumber, 'lines': lines,
+            };
+            writeFixtures();
+            return 'po ${parts[1]} id=$id number=${po?.orderNumber}';
+          }
+        case 'count':
+          {
+            final plan = await db.into(db.cycleCountPlans).insert(
+                CycleCountPlansCompanion.insert(name: 'Lab plan ${parts[1]}', warehouseId: wh1));
+            final prods = [for (final k in parts[2].split(',')) (fixtures['products']![k]! as Map)['id'] as int];
+            final task = await db.into(db.cycleCountTasks).insert(CycleCountTasksCompanion.insert(
+                planId: plan, taskDate: DateTime.now(), productCount: Value(prods.length)));
+            for (final pid in prods) {
+              final bal = await (db.select(db.inventoryBalances)
+                    ..where((b) => b.productId.equals(pid) & b.warehouseId.equals(wh1)))
+                  .getSingleOrNull();
+              await db.into(db.cycleCountItems).insert(CycleCountItemsCompanion.insert(
+                  taskId: task, productId: pid, expectedQty: bal?.quantity ?? 0));
+            }
+            final t = await (db.select(db.cycleCountTasks)..where((x) => x.id.equals(task))).getSingle();
+            fixtures['counts']![parts[1]] = {'taskId': task, 'ref': t.globalId ?? '$task', 'products': parts[2]};
+            writeFixtures();
+            return 'count ${parts[1]} task=$task';
+          }
+        case 'facts':
+          {
+            final f = await collectFacts(parts[1]);
+            File('${labDir.path}\\facts-${parts[1]}.json')
+                .writeAsStringSync(const JsonEncoder.withIndent('  ').convert(jsonDecode(jsonEncode(f, toEncodable: _enc))));
+            return 'facts ${parts[1]}';
+          }
+        case 'convert':
+          {
+            final store = WhDocStore(db);
+            Map<String, Object?> res;
+            try {
+              final doc = await store.mustGet(parts[1]);
+              res = await db.transaction(() => WhReceiptPosting(db, store).convert(doc, acctId));
+            } catch (e) {
+              res = {'error': '$e'};
+            }
+            File('${labDir.path}\\api-convert.json').writeAsStringSync(jsonEncode(res, toEncodable: _enc));
+            return 'convert ${parts[1]} -> ${jsonEncode(res, toEncodable: _enc)}';
+          }
+        case 'api':
+          {
+            // api|label|user|METHOD|path|body|key
+            final res = await probeCall(parts[2], parts[3], parts[4],
+                body: parts.length > 5 && parts[5].isNotEmpty ? parts[5] : null,
+                key: parts.length > 6 && parts[6].isNotEmpty ? parts[6] : null);
+            File('${labDir.path}\\api-${parts[1]}.json')
+                .writeAsStringSync(const JsonEncoder.withIndent('  ').convert(jsonDecode(jsonEncode(res, toEncodable: _enc))));
+            return 'api ${parts[1]} -> ${res['status']}';
+          }
+      }
+      return 'unknown command';
+    }
 
     // ── stay alive, obey commands ──
     final deadline = DateTime.now().add(Duration(minutes: minutes));
     var stop = false;
     var done = 0;
+    final ackFile = File('${labDir.path}\\ack.txt');
     while (!stop && DateTime.now().isBefore(deadline)) {
-      await Future<void>.delayed(const Duration(milliseconds: 500));
-      if (!cmdFile.existsSync()) continue;
-      final lines = cmdFile.readAsLinesSync();
+      await Future<void>.delayed(const Duration(milliseconds: 400));
+      if (!cmdFile(labDir).existsSync()) continue;
+      final lines = cmdFile(labDir).readAsLinesSync();
       for (; done < lines.length; done++) {
         final cmd = lines[done].trim();
-        if (cmd.isEmpty) continue;
-        log('CMD $cmd');
-        if (cmd.startsWith('issue')) {
-          await issue(cmd.split(' ').length > 1 ? cmd.split(' ')[1] : 'B1');
-        } else if (cmd == 'revoke-all' || cmd == 'list') {
-          final rows = await db
-              .customSelect('SELECT device_id, name, device_kind, branch_id, revoked, last_seen_at '
-                  'FROM lan_paired_devices')
-              .get();
-          if (cmd == 'revoke-all') {
-            for (final r in rows) {
-              await NetworkService.instance
-                  .revokeLanDevice(r.data['device_id'] as String, actorUserId: adminId);
-              log('revoked ${r.data['device_id']}');
-            }
-          }
-          final after = await db
-              .customSelect('SELECT device_id, name, device_kind, branch_id, revoked, last_seen_at '
-                  'FROM lan_paired_devices')
-              .get();
-          File('${labDir.path}\\devices.json').writeAsStringSync(
-              jsonEncode([for (final r in after) r.data]));
-        } else if (cmd == 'stop') {
-          stop = true;
+        var msg = 'ok';
+        if (cmd.isEmpty) {
+          ackFile.writeAsStringSync('$done|empty\n', mode: FileMode.append);
+          continue;
         }
+        log('CMD $cmd');
+        try {
+          if (cmd.startsWith('issue')) {
+            await issue(cmd.split(' ').length > 1 ? cmd.split(' ')[1] : 'B1');
+          } else if (cmd == 'revoke-all' || cmd == 'list') {
+            const sel = 'SELECT device_id, name, device_kind, branch_id, revoked, last_seen_at FROM lan_paired_devices';
+            if (cmd == 'revoke-all') {
+              for (final r in await db.customSelect(sel).get()) {
+                if (r.data['device_id'] == probeDeviceId) continue; // the lab's own API probe stays paired
+                await NetworkService.instance.revokeLanDevice(r.data['device_id'] as String, actorUserId: adminId);
+                log('revoked ${r.data['device_id']}');
+              }
+            }
+            File('${labDir.path}\\devices.json')
+                .writeAsStringSync(jsonEncode([for (final r in await db.customSelect(sel).get()) r.data]));
+          } else if (cmd == 'stop') {
+            stop = true;
+          } else {
+            msg = await run(cmd);
+          }
+        } catch (e, st) {
+          msg = 'ERROR $e';
+          log('CMD FAILED $cmd: $e\n$st');
+        }
+        log('ACK $done $msg');
+        ackFile.writeAsStringSync('$done|${msg.replaceAll('\n', ' ')}\n', mode: FileMode.append);
       }
     }
     log('host stopping');
+    probeClient.close(force: true);
     await decoy.close(force: true);
     await NetworkService.instance.stopServer();
     File('${labDir.path}\\host.json').writeAsStringSync('{"ready":false}');
   });
 }
+
+File cmdFile(Directory d) => File('${d.path}\\cmd.txt');
