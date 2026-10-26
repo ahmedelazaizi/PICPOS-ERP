@@ -84,12 +84,15 @@ class WhVoucherService {
       await requireCoveredStock(db,
           productId: l.productId, warehouseId: doc.warehouseId, qty: l.qty, viewerId: viewerId);
       await requireValidBatchCoverage(db, productId: l.productId, warehouseId: doc.warehouseId, qty: l.qty);
+      // WH-020: the lots of EVERY product follow the issue, not only expiry goods.
       if (product.trackExpiry) {
         try {
           await db.consumeBatchesForIssue(productId: l.productId, warehouseId: doc.warehouseId, quantity: l.qty);
         } on Object {
           throw WhError('batch_expired', 409, {'productId': l.productId});
         }
+      } else {
+        await db.consumeBatchesForIssue(productId: l.productId, warehouseId: doc.warehouseId, quantity: l.qty);
       }
       await db.adjustStock(
         productId: l.productId, warehouseId: doc.warehouseId, quantity: -l.qty,

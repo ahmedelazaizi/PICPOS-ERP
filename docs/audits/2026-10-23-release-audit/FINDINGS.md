@@ -443,3 +443,6 @@ Columns: **Status** C = CONFIRMED-BY-READING, S = SUSPECTED-NEEDS-REPRO. **Basis
 | G1b-#2 (report cards `ج.م`) | Fixed before HEAD; other sites open | UX-002 |
 | G1b-#1 (import: 353 errors with a green toast) | Reported fixed in FINAL-QA-VERDICT ("re-import of the same product file"); not re-verified by this audit | — (verify in G-round re-run) |
 | G2-#1 (Arabic company name) | Suspicion | UX-005 |
+
+
+**Status update 2026-10-26 (SEC-006):** closed for NEW servers - the legacy shared bearer is a server setting (default OFF on a server provisioned by this version, missing key = ON on an existing one), switchable by `devices_pair_manage`, with refused-attempt telemetry; existing servers are intentionally unchanged. See `docs/audits/2026-10-24-mirror-and-admin-login/PAIRING-AND-TOKEN-GATES.md`.

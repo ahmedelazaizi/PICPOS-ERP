@@ -60,6 +60,9 @@ class WhStockDocApi {
           if (kind == 'transfer') await transfers.requireEnabled();
           final doc = await store.mustGet(gid);
           if (doc.kind != kind || !_visible(ctx, doc)) throw WhError('doc_not_found', 404);
+          // WH-019: a decision on a stale read is refused first, whatever else
+          // the command would have checked or posted.
+          store.requireVersion(doc, (body['expectedVersion'] as num?)?.toInt());
           final res = await run(ctx, doc, body);
           return (docId: doc.id, result: {'doc': await store.toJson(res)});
         });

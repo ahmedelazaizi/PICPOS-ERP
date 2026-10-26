@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:io' show File, FileMode, Platform;
-import 'package:path_provider/path_provider.dart';
+import 'core/config/data_dir.dart';
+import 'core/config/data_dir_plugins.dart' show installDataDirPluginRedirects;
 
 import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/foundation.dart' show debugPrint, kIsWeb, kReleaseMode;
@@ -75,6 +76,7 @@ import 'app_main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  installDataDirPluginRedirects(); // PICPOS_DATA_DIR (lab) — no-op when unset
   await I18nCatalog.load();
   // All Cairo weights are bundled; never depend on network access at POS startup.
   GoogleFonts.config.allowRuntimeFetching = false;
@@ -1020,7 +1022,7 @@ Future<void> _bootTimeAdminHeal(AppDatabase db) async {
     }
     // Location B: Documents folder.
     try {
-      final dir = await getApplicationDocumentsDirectory();
+      final dir = await DataDir.documents();
       final f = File('${dir.path}${Platform.pathSeparator}${Brand.dbPrefix}_startup_log.txt');
       await f.writeAsString(body, mode: FileMode.append);
     } catch (e) {

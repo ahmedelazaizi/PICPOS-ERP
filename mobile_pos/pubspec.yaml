@@ -14,6 +14,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  mobile_scanner: ^7.4.2
   picpos_api_client:
     path: ../packages/picpos_api_client
   picpos_device:

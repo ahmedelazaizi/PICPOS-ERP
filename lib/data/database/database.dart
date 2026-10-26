@@ -3,7 +3,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
-import 'package:path_provider/path_provider.dart';
+import '../../core/config/data_dir.dart';
 import 'package:drift/drift.dart';
 import 'package:rxdart/rxdart.dart' show DebounceExtensions; // Spec 115 L2 — debounceTime
 import 'package:uuid/uuid.dart';

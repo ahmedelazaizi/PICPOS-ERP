@@ -10,6 +10,7 @@ import 'package:shelf/shelf.dart';
 
 import '../../core/auth/bootstrap_admin.dart';
 import '../../core/permissions/mirror_permission_codes.dart';
+import '../../core/permissions/permission_codes.dart';
 import '../../data/database/database.dart';
 import '../activity_logger.dart';
 import 'client_address.dart';
@@ -18,6 +19,7 @@ import 'client_address.dart';
 abstract final class AuthDenialCode {
   static const String branchAccessDenied = 'branch_access_denied';
   static const String mirrorConsoleDenied = 'mirror_console_denied';
+  static const String posAccessDenied = 'pos_access_denied';
 }
 
 /// Returns an [AuthDenialCode] when the device that carries [request] does not
@@ -34,6 +36,12 @@ Future<String?> deviceSessionDenial(
       MirrorPermissionCodes.mirrorConsole,
     );
     return allowed ? null : AuthDenialCode.mirrorConsoleDenied;
+  }
+  // A Cashier tablet only admits users who may use the point of sale.
+  if (request.context['lanDeviceKind'] == 'pos' &&
+      !isBootstrapAdmin(user.id, username: user.username) &&
+      !await db.userHasPermission(user.id, PermissionCodes.posAccess)) {
+    return AuthDenialCode.posAccessDenied;
   }
   final deviceBranch = request.context['lanDeviceBranchId'];
   if (deviceBranch is! int) return null;

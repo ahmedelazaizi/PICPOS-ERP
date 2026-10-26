@@ -178,6 +178,10 @@ void main() {
         makeCode: () => 'PAIR1234',
       );
       await dbPairing.initializeLegacyTransition();
+      // These tests model a server upgraded from before `legacy_token_enabled`
+      // existed (legacy ON, inside its window); a NEW server starts with the
+      // shared bearer OFF (test/security/legacy_token_gate_test.dart).
+      await dbPairing.setLegacyTokenEnabled(true, actorUserId: 1);
       ApiAuthMiddleware.setToken('legacy-token');
       ApiAuthMiddleware.setPairingService(dbPairing);
       LanPairingApiHandler.setService(dbPairing);

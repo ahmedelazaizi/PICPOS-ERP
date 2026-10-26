@@ -241,18 +241,22 @@ class WhCountReview {
 /// One thing waiting for the caller's approval. `type`: transfer_request |
 /// transfer_shortage | voucher | count.
 class WhApprovalItem {
-  const WhApprovalItem({required this.type, required this.ref, required this.warehouseId, required this.ageMinutes, required this.reason});
+  const WhApprovalItem({required this.type, required this.ref, required this.warehouseId, required this.ageMinutes, required this.reason, this.version});
   final String type;
   final String ref;
   final int warehouseId;
   final int ageMinutes;
   final String? reason;
+
+  /// WH-019: the document version the decision is taken on (null for a count task).
+  final int? version;
   factory WhApprovalItem.fromJson(Map<String, Object?> m) => WhApprovalItem(
         type: '${m['type']}',
         ref: '${m['ref']}',
         warehouseId: (m['warehouseId'] as num).toInt(),
         ageMinutes: (m['ageMinutes'] as num?)?.toInt() ?? 0,
         reason: m['reason'] as String?,
+        version: (m['version'] as num?)?.toInt(),
       );
 }
 

@@ -4,7 +4,10 @@ import 'package:picpos_device/picpos_device.dart';
 import 'label_builder.dart';
 
 /// Why a label did not reach paper, in the app's own terms.
-enum LabelPrintStatus { printed, noPrinter, queued }
+/// `permissionDenied`: Android refused (or the user declined) the Bluetooth
+/// permission; `printerNotFound`: the chosen printer could not be reached
+/// (off, out of range or no longer paired). Both keep the label queued.
+enum LabelPrintStatus { printed, noPrinter, permissionDenied, printerNotFound, queued }
 
 class LabelPrintResult {
   const LabelPrintResult(this.status, [this.error]);
@@ -56,8 +59,12 @@ class ServiceLabelPrinter implements LabelPrinter {
       label.title,
       (paper) => _raster(receipt, paper),
     );
-    return out.status == PrintStatus.printed
-        ? const LabelPrintResult(LabelPrintStatus.printed)
-        : LabelPrintResult(LabelPrintStatus.queued, out.error);
+    if (out.status == PrintStatus.printed) return const LabelPrintResult(LabelPrintStatus.printed);
+    return switch (out.error) {
+      'permission' || 'permissionBlocked' => LabelPrintResult(LabelPrintStatus.permissionDenied, out.error),
+      'connectFailed' when service.settings.kind == PrinterKind.bluetooth =>
+        LabelPrintResult(LabelPrintStatus.printerNotFound, out.error),
+      _ => LabelPrintResult(LabelPrintStatus.queued, out.error),
+    };
   }
 }

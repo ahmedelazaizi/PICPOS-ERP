@@ -10,11 +10,11 @@
 
     <!-- Label printing (plan W5) over a paired Bluetooth printer. Android 12+
          uses BLUETOOTH_CONNECT (we only talk to already-paired printers, never
-         scan for location); older versions use the two legacy permissions. -->
-    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+         scan for location); older versions use the two legacy permissions. The print_bluetooth_thermal plugin\n         declares the same permissions WITHOUT these limits; tools:node="replace"\n         makes this manifest win in the merged one (WH-015). -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" tools:node="replace" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" tools:node="replace" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" tools:targetApi="s" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" tools:targetApi="s" tools:node="replace" />
     <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
     <!-- HTTPS only: cleartext is refused by the platform stack (see
          res/xml/network_security_config.xml; the debug variant allows

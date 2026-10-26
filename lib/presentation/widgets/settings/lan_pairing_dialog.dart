@@ -11,6 +11,7 @@ import '../../../services/permission_enforcer.dart';
 import '../../../services/api/lan_pairing_service.dart';
 import '../../../services/network_service.dart';
 import 'lan_pairing_kind_dialog.dart';
+import 'legacy_token_section.dart';
 import 'lan_transport_section.dart';
 
 /// Server-side pairing code dialog. QR rendering is intentionally omitted:
@@ -118,6 +119,8 @@ class LanPairingDialog extends StatelessWidget {
                   }
                 },
               ),
+              const SizedBox(height: 8),
+              LegacyTokenSection(service: service!, actorUserId: actorUserId),
               const SizedBox(height: 8),
               // SEC-006: the shared key may only be closed once NO device uses it.
               FutureBuilder<LegacyUsage>(

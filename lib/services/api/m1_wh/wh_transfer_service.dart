@@ -214,6 +214,8 @@ class WhTransferService {
   }) async {
     if (doc.toWarehouseId == null || !ctx.scope.allows(doc.toWarehouseId!)) throw WhError('warehouse_forbidden', 403);
     if (doc.state != 'in_transit') throw WhError('invalid_transition', 409, {'state': doc.state, 'action': 'receive'});
+    // WH-030: the one who sent the goods does not confirm their arrival.
+    requireDistinct(ctx.userId, [doc.data['dispatchedBy'] as int?]);
     final to = doc.toWarehouseId!;
     final bins = await db.getSettingValue('warehouse_bins_enabled') == 'true';
     final lines = await store.lines(doc.id);

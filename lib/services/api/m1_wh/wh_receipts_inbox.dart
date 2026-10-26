@@ -80,6 +80,7 @@ class WhReceiptsInbox {
       }
       out.add({
         'globalId': d.gid,
+        'version': d.rowVersion,
         'orderNumber': po?.orderNumber ?? '#${d.refId}',
         'supplier': supplier?.name,
         'warehouse': warehouse?.name,
@@ -95,13 +96,13 @@ class WhReceiptsInbox {
   /// Converts [gid] into the purchase invoice as [userId]. [audit] false when
   /// the caller already writes the activity-log line (the HTTP path does it in
   /// `WhDocStore.command`).
-  Future<Map<String, Object?>> convert(String gid, int userId, {bool audit = true}) async {
+  Future<Map<String, Object?>> convert(String gid, int userId, {bool audit = true, int? expectedVersion}) async {
     await _require(userId);
     final doc = await store.mustGet(gid);
     if (doc.kind != 'po_receipt' || !await _allowed(await _scope(userId), doc.warehouseId)) {
       throw WhError('doc_not_found', 404);
     }
-    final result = await db.transaction(() => WhReceiptPosting(db, store).convert(doc, userId));
+    final result = await db.transaction(() => WhReceiptPosting(db, store).convert(doc, userId, expectedVersion: expectedVersion));
     if (audit) {
       final u = await (db.select(db.users)..where((x) => x.id.equals(userId))).getSingleOrNull();
       await ActivityLogger(db).log(

@@ -32,7 +32,8 @@ const Map<String, Map<String, Map<String, String>>> kWhTransitions = {
   },
   'count_submission': {
     'draft': {'submit': 'submitted'},
-    'submitted': {'post': 'posted'},
+    // WH-014: `recount` retires a submitted pass (the manager asked for another).
+    'submitted': {'post': 'posted', 'recount': 'superseded'},
   },
 };
 
@@ -222,6 +223,14 @@ class WhDocStore {
     return [for (final r in rows) WhDoc(r)];
   }
 
+  /// WH-019: `409 stale` (+ the current version) when the caller decided on an
+  /// old read of [doc]. No [expectedVersion] = not checked here.
+  void requireVersion(WhDoc doc, int? expectedVersion) {
+    if (expectedVersion != null && expectedVersion != doc.rowVersion) {
+      throw WhError('stale', 409, {'currentVersion': doc.rowVersion});
+    }
+  }
+
   /// Applies [action] to [doc] under the state machine. `stale` when
   /// [expectedVersion] no longer matches; the UPDATE itself is guarded by the
   /// row version so two racing commands cannot both win.
@@ -234,9 +243,7 @@ class WhDocStore {
     String? postedRefId,
     Map<String, Object?>? data,
   }) async {
-    if (expectedVersion != null && expectedVersion != doc.rowVersion) {
-      throw WhError('stale', 409, {'currentVersion': doc.rowVersion});
-    }
+    requireVersion(doc, expectedVersion);
     final next = nextWhState(doc.kind, doc.state, action);
     if (next == null) throw WhError('invalid_transition', 409, {'state': doc.state, 'action': action});
     final now = DateTime.now().millisecondsSinceEpoch;

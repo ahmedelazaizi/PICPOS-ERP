@@ -4,6 +4,7 @@ library;
 export 'src/api_error.dart';
 export 'src/canonical_json.dart';
 export 'src/contracts.dart';
+export 'src/device_lan_client.dart';
 export 'src/headers.dart';
 export 'src/lan_pinning.dart';
 export 'src/manage_client.dart';

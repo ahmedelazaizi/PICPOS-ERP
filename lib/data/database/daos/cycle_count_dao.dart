@@ -442,6 +442,11 @@ extension CycleCountDao on AppDatabase {
               '${delta.abs().toStringAsFixed(AppConstants.decimalPlaces)}',
           postAdjustmentJournal: false,
         );
+        // WH-020: a shortage leaves the lots too (same issue order as a sale);
+        // a surplus invents no lot - it has no number or expiry to record.
+        if (delta < 0) {
+          await shrinkBatchesForLoss(productId: item.productId, warehouseId: planWarehouseId, quantity: delta.abs());
+        }
       }
     });
 

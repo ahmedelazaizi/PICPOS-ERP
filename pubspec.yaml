@@ -38,6 +38,9 @@ dependencies:
   rxdart: ^0.28.0  # Spec 115 — debounceTime على parties streams (مُرقَّى من transitive إلى direct)
   sqlcipher_flutter_libs: ^0.6.8
   path_provider: ^2.1.5
+  # Direct only for lib/core/config/data_dir_plugins.dart (PICPOS_DATA_DIR lab redirect).
+  shared_preferences_platform_interface: ^2.4.1
+  flutter_secure_storage_platform_interface: ^1.1.2
   flutter_riverpod: ^3.1.0
   go_router: ^17.0.1
   google_fonts: ^8.1.0

@@ -11,6 +11,7 @@ import 'package:drift/drift.dart';
 
 import '../../../core/permissions/warehouse_permission_codes.dart';
 import '../../../data/database/database.dart';
+import 'wh_count_overlap.dart';
 import 'wh_doc_store.dart';
 import 'wh_http.dart';
 import 'wh_locations.dart';
@@ -19,10 +20,13 @@ import 'wh_stock_guard.dart';
 const _openStatuses = ['pending', 'in_progress'];
 
 class WhCountTaskState {
-  WhCountTaskState(this.task, this.warehouseId, this.submitted);
+  WhCountTaskState(this.task, this.warehouseId, this.submitted, [this.retired = const []]);
   final CycleCountTaskData task;
   final int warehouseId;
   final List<WhDoc> submitted;
+
+  /// Passes the manager sent back (WH-014 `recount`): never posted.
+  final List<WhDoc> retired;
 
   String get ref => task.globalId ?? '${task.id}';
   bool get open => _openStatuses.contains(task.status);
@@ -36,6 +40,8 @@ class WhCountTaskState {
     // WH-007: the assignment names who takes the FIRST pass only; the recount
     // belongs to whichever other counter the system offers it to, otherwise an
     // assigned task with a difference could never be recounted or approved.
+    // WH-014: whoever's pass was sent back does not count it again.
+    if (retired.any((d) => d.createdBy == userId)) return false;
     if (submitted.isEmpty) return task.assignedTo == null || task.assignedTo == userId;
     return recountNeeded && !counters.contains(userId);
   }
@@ -60,7 +66,9 @@ class WhCountService {
     final plan = await (db.select(db.cycleCountPlans)..where((p) => p.id.equals(task.planId))).getSingle();
     final docs = await store.list(
         kind: 'count_submission', states: ['submitted'], refType: 'cycle_count_task', refId: '${task.id}');
-    return WhCountTaskState(task, plan.warehouseId, docs.reversed.toList());
+    final retired = await store.list(
+        kind: 'count_submission', states: ['superseded'], refType: 'cycle_count_task', refId: '${task.id}');
+    return WhCountTaskState(task, plan.warehouseId, docs.reversed.toList(), retired);
   }
 
   Future<List<WhCountTaskState>> tasksIn(Set<int> warehouseIds) async {
@@ -243,11 +251,26 @@ class WhCountService {
     await approve(await state('$taskId'), approver);
   }
 
+  /// WH-014: the manager sends the submitted pass(es) back for another count.
+  /// They are retired (state `superseded`, never posted); the task stays open
+  /// and offers itself to counters who did not count it. Same independence as
+  /// the approval: not a counter, not the assignee.
+  Future<int> recount(WhCountTaskState s, int manager, {String? reason}) async {
+    if (s.task.status == 'completed') throw WhError('already_finalized', 409);
+    if (s.submitted.isEmpty) throw WhError('count_not_submitted', 409);
+    requireDistinct(manager, [...s.counters, ...s.retired.map((d) => d.createdBy), s.task.assignedTo]);
+    for (final d in s.submitted) {
+      await store.transition(d, 'recount', data: {...d.data, 'recountBy': manager, if (reason != null && reason.isNotEmpty) 'recountReason': reason});
+    }
+    return s.submitted.length;
+  }
+
   Future<void> approve(WhCountTaskState s, int approver) async {
     if (s.task.status == 'completed') throw WhError('already_finalized', 409);
     if (s.submitted.isEmpty) throw WhError('count_not_submitted', 409);
     if (s.recountNeeded) throw WhError('recount_required', 409);
     requireDistinct(approver, [...s.counters, ...s.submitted.map((d) => d.createdBy), s.task.assignedTo]);
+    await requireNoCountOverlap(db, store, s);
     await db.finalizeCycleCountTask(s.task.id);
     for (final d in s.submitted) {
       await store.transition(d, 'post', approvedBy: approver, postedRefType: 'cycle_count_task', postedRefId: '${s.task.id}');

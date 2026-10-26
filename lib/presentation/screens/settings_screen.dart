@@ -5,7 +5,7 @@ import 'dart:io' show File;
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
-import 'package:path_provider/path_provider.dart' show getApplicationDocumentsDirectory;
+import '../../core/config/data_dir.dart';
 import 'package:picpos_erp/core/widgets/app_toast.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -1236,7 +1236,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         trailing: const Icon(PhosphorIconsBold.copy),
         onTap: () async {
           try {
-            final dir = await getApplicationDocumentsDirectory();
+            final dir = await DataDir.documents();
             final candidates = <String>{
               // Spec 136 ISS-5 — the active mode-labelled login log first,
               // then the legacy unlabelled name for older sessions.

@@ -782,7 +782,10 @@ class NetworkService {
       // تعمل (markReady). ولا استدعاءَ هنا لأيّ دالةٍ تخصّ مفتاحَ القاعدة.
       ApiAuthMiddleware.clearToken();
       final legacySeed = await LegacyDeviceSeed.derive();
-      if (legacySeed != null && await pairing.legacyAllowed()) {
+      // The token is always derived so the middleware can RECOGNISE the shared
+      // bearer; whether it is accepted is decided per request (SEC-006:
+      // legacyTokenEnabled + the transition window), and refusals are counted.
+      if (legacySeed != null) {
         ApiAuthMiddleware.generateToken(legacySeed);
       }
       // ق-3 (أ): رموزُ الطاولات المطبوعةُ بالمفتاح المشتقّ القديم تُقبل للتحقّق

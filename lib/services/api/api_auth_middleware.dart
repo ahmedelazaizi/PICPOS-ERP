@@ -322,7 +322,20 @@ class ApiAuthMiddleware {
           }
         } else if (_tokenMatches(token)) {
           if (pairing != null) {
+            void note(bool refused) => pairing.noteLegacyAttempt(
+                  deviceId: deviceId,
+                  name: deviceName,
+                  ip: ip,
+                  userAgent: request.headers['user-agent'] ?? '',
+                  refused: refused,
+                );
+            // SEC-006: the owner switched the shared bearer off.
+            if (!await pairing.legacyTokenEnabled()) {
+              note(true);
+              return _legacyDisabled();
+            }
             if (!await pairing.legacyAllowed()) {
+              note(true);
               return _json(403, 'انتهت فترة المفتاح القديم. يجب إقران هذا الجهاز أولاً.');
             }
             await pairing.recordLegacyDevice(
@@ -330,6 +343,7 @@ class ApiAuthMiddleware {
               name: deviceName,
               ip: ip,
             );
+            note(false);
           }
         } else {
           if (pairing != null &&
@@ -358,6 +372,17 @@ class ApiAuthMiddleware {
       };
     };
   }
+
+  /// 401 with a stable machine code: the shared bearer is switched off.
+  static Response _legacyDisabled() => Response(
+        401,
+        body: jsonEncode({
+          'error': 'legacy_token_disabled',
+          'message': 'The shared LAN key is disabled on this server; pair '
+              'this device with a pairing code.',
+        }),
+        headers: {'content-type': 'application/json'},
+      );
 
   static Response _json(int status, String error) => Response(
         status,

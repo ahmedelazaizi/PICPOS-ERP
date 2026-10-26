@@ -87,7 +87,12 @@ class LanHost {
     ApiAuthMiddleware.setPairingService(pairing);
     LanPairingApiHandler.setService(pairing);
     ApiAuthMiddleware.clearToken();
-    if (legacyToken) ApiAuthMiddleware.setToken('legacy-shared-token');
+    if (legacyToken) {
+      // A new host starts with the shared bearer OFF (SEC-006); tests that
+      // exercise it switch it on exactly as the owner would.
+      await pairing.setLegacyTokenEnabled(true, actorUserId: 1);
+      ApiAuthMiddleware.setToken('legacy-shared-token');
+    }
     ApiAuthMiddleware.markReady();
     var pipeline = const shelf.Pipeline()
         .addMiddleware(ApiRateLimiter.createMiddleware());

@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+﻿import 'package:flutter/widgets.dart';
 import 'package:picpos_ui/picpos_ui.dart';
 
 /// Arabic (default) + English strings of PicPos كاشير.
@@ -36,18 +36,59 @@ abstract final class S {
     'version': ('الإصدار {v}', 'Version {v}'),
     'pairTitle': ('ربط جهاز الكاشير', 'Pair this cashier tablet'),
     'pairSub': ('بجهاز المكتب الرئيسي عبر شبكة المحل', 'With the main desktop over the shop network'),
-    'pairStep1': ('على جهاز المكتب: «ربط جهاز كاشير» واختر الفرع.', 'On the desktop: “Pair cashier device” and choose the branch.'),
-    'pairStep2': ('امسح رمز QR الظاهر على الشاشة.', 'Scan the QR code shown on the screen.'),
-    'pairStep3': ('أكّد الفرع ورقم الجهاز ثم اضبط الطابعة.', 'Confirm the branch and terminal, then set up the printer.'),
+    'pairStep1': ('على جهاز المكتب: «ربط جهاز» ← نوع الجهاز «نقطة بيع (كاشير / مندوب)» ← اختر الفرع.', 'On the desktop: "Pair device" → device kind "Point of sale (cashier / rep)" → choose the branch.'),
+    'pairStep2': ('امسح رمز QR الظاهر على الشاشة، أو أدخل البيانات يدوياً أدناه.', 'Scan the QR code shown on screen, or enter the details below.'),
+    'pairStep3': ('بعد الربط سجّل دخول الكاشير؛ الفرع ثابت بالرمز.', 'After pairing, sign the cashier in; the branch is fixed by the code.'),
     'scanQr': ('مسح رمز QR', 'Scan QR code'),
     'manualEntry': ('أو أدخل الرمز يدوياً', 'Or enter the code manually'),
     'serverAddress': ('عنوان جهاز المكتب', 'Desktop address'),
     'pairingCode': ('رمز الربط', 'Pairing code'),
     'pair': ('ربط', 'Pair'),
-    'previewOnly': ('معاينة فقط — الربط غير متاح حالياً', 'Preview only — pairing is not available yet'),
     'previewStatus': ('معاينة فقط', 'Preview only'),
     'previewApp': ('معاينة التطبيق', 'Preview the app'),
+    'pairFingerprint': ('بصمة شهادة جهاز المكتب (SHA-256)', 'Desktop certificate fingerprint (SHA-256)'),
+    'pairBusy': ('جارٍ الربط…', 'Pairing…'),
+    'cameraUnavailable': ('الكاميرا غير متاحة. أدخل بيانات الربط يدوياً.', 'The camera is not available. Enter the pairing details manually.'),
+    'cancel': ('إلغاء', 'Cancel'),
+    'unpairedNotice': ('أُلغي ربط هذا الجهاز من المكتب ومُسحت بياناته. اربطه من جديد.', 'The office unpaired this tablet and its data was wiped. Pair it again.'),
+    'signInTitle': ('تسجيل دخول الكاشير', 'Cashier sign-in'),
+    'signInSub': ('الفرع {branch} · الجهاز {terminal}', 'Branch {branch} · Terminal {terminal}'),
+    'username': ('اسم المستخدم', 'Username'),
+    'password': ('كلمة المرور', 'Password'),
+    'signIn': ('دخول', 'Sign in'),
+    'signingIn': ('جارٍ الدخول…', 'Signing in…'),
+    'unpairDevice': ('إلغاء ربط هذا الجهاز', 'Unpair this tablet'),
+    'err_incomplete': ('البيانات ناقصة: العنوان والرمز والبصمة كلها مطلوبة.', 'Details are incomplete: address, code and fingerprint are all required.'),
+    'err_no_fingerprint': ('بصمة الشهادة مطلوبة؛ الربط بلا بصمة غير آمن.', 'The certificate fingerprint is required; pairing without it is not safe.'),
+    'err_not_json': ('النص ليس رمز ربط صالحاً.', 'The text is not a valid pairing code.'),
+    'err_not_object': ('النص ليس رمز ربط صالحاً.', 'The text is not a valid pairing code.'),
+    'err_not_https': ('عنوان الجهاز يجب أن يكون https.', 'The desktop address must be https.'),
+    'err_bad_kind': ('نوع الربط غير معروف.', 'Unknown pairing kind.'),
+    'err_wrong_kind': ('هذا الرمز لنوع جهاز آخر. اطلب رمز «نقطة بيع» من المكتب.', 'This code is for another device kind. Ask the office for a "Point of sale" code.'),
+    'err_expired': ('انتهت صلاحية الرمز. اطلب رمزاً جديداً من المكتب.', 'The code expired. Ask the office for a new one.'),
+    'err_no_tls': ('جهاز المكتب لا يستعمل اتصالاً مشفّراً؛ رُفض الربط.', 'The desktop is not using an encrypted connection; pairing refused.'),
+    'err_invalid_code': ('الرمز غير صحيح أو مستعمل أو منتهٍ، أو لنوع جهاز آخر.', 'The code is wrong, already used, expired or for another device kind.'),
+    'err_network': ('تعذّر الوصول إلى جهاز المكتب. تحقّق من الشبكة والعنوان والبصمة.', 'Cannot reach the desktop. Check the network, the address and the fingerprint.'),
+    'err_unauthorized': ('بيانات الدخول غير صحيحة.', 'The sign-in details are wrong.'),
+    'err_invalid_credentials': ('اسم المستخدم أو كلمة المرور غير صحيحة.', 'The username or password is wrong.'),
+    'err_locked_out': ('الحساب مقفل مؤقتاً بعد محاولات خاطئة. حاول لاحقاً.', 'The account is temporarily locked after wrong attempts. Try again later.'),
+    'err_password_change_required': ('يجب تغيير كلمة المرور على جهاز المكتب أولاً.', 'The password must be changed on the desktop first.'),
+    'err_pos_access_denied': ('هذا المستخدم لا يملك صلاحية نقطة البيع على جهاز الكاشير.', 'This user has no point-of-sale access on a cashier tablet.'),
+    'err_branch_access_denied': ('هذا المستخدم ليس من فرع هذا الجهاز.', 'This user is not assigned to this tablet\'s branch.'),
+    'err_device_revoked': ('أُلغي ربط هذا الجهاز من المكتب.', 'The office unpaired this tablet.'),
+    'err_device_scope': ('هذا الجهاز لا يملك صلاحية هذا الإجراء.', 'This tablet is not allowed to do that.'),
+    'err_permission_denied': ('ليست لديك صلاحية لهذا الإجراء.', 'You do not have permission for that.'),
+    'err_rate_limited': ('محاولات كثيرة. انتظر قليلاً ثم أعد المحاولة.', 'Too many attempts. Wait a moment and try again.'),
+    'err_unavailable': ('جهاز المكتب غير متاح الآن.', 'The desktop is not available right now.'),
+    'err_rejected': ('رفض جهاز المكتب الطلب.', 'The desktop rejected the request.'),
+    'err_unknown': ('حدث خطأ غير متوقع.', 'Something went wrong.'),
   });
 
   static Tr of(BuildContext context) => Tr.of(context, table);
+
+  /// Message of a stable error code (`err_<code>`); `err_unknown` if none.
+  static String errorText(BuildContext context, String code) {
+    final key = 'err_$code';
+    return of(context)(table.entries.containsKey(key) ? key : 'err_unknown');
+  }
 }

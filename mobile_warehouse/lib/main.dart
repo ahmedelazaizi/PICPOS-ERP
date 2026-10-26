@@ -17,7 +17,7 @@ Future<void> main() async {
   // user chooses a printer in Settings (until then the app says "no printer").
   final printService = PrintService(
     store: store.store,
-    transports: [BluetoothThermalTransport(), NetworkPrinterTransport()],
+    transports: [BluetoothThermalTransport(permissions: MethodChannelBluetoothPermissionGate()), NetworkPrinterTransport()],
   );
   await printService.init();
   runApp(PicPosWarehouseApp(

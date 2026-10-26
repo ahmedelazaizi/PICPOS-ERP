@@ -8,6 +8,8 @@ import 'dart:io';
 
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 
+import 'bluetooth_permission.dart';
+
 enum PrinterKind { bluetooth, network }
 
 class PrinterDevice {
@@ -22,7 +24,7 @@ class PrinterDevice {
 class PrinterException implements Exception {
   PrinterException(this.code, [this.cause]);
 
-  /// `noPrinter` | `bluetoothOff` | `permission` | `badAddress` |
+  /// `noPrinter` | `bluetoothOff` | `permission` | `permissionBlocked` | `badAddress` |
   /// `connectFailed` | `writeFailed` | `timeout`.
   final String code;
   final Object? cause;
@@ -39,18 +41,30 @@ abstract class PrinterTransport {
 }
 
 class BluetoothThermalTransport implements PrinterTransport {
+  /// [permissions] (WH-015): asks for the Android 12+ runtime permission and
+  /// waits for the answer. Without it the plugin's own check is used.
+  BluetoothThermalTransport({this.permissions});
+  final BluetoothPermissionGate? permissions;
+
   @override
   PrinterKind get kind => PrinterKind.bluetooth;
 
+  Future<void> _ensurePermission() async {
+    final gate = permissions;
+    if (gate != null) return ensureBluetoothAccess(gate);
+    if (!await PrintBluetoothThermal.isPermissionBluetoothGranted) throw PrinterException('permission');
+  }
+
   @override
   Future<List<PrinterDevice>> pairedDevices() async {
-    if (!await PrintBluetoothThermal.isPermissionBluetoothGranted) throw PrinterException('permission');
+    await _ensurePermission();
     if (!await PrintBluetoothThermal.bluetoothEnabled) throw PrinterException('bluetoothOff');
     return [for (final d in await PrintBluetoothThermal.pairedBluetooths) PrinterDevice(d.name, d.macAdress)];
   }
 
   @override
   Future<void> send(String address, List<int> bytes) async {
+    if (permissions != null) await _ensurePermission();
     if (!await PrintBluetoothThermal.bluetoothEnabled) throw PrinterException('bluetoothOff');
     if (!await PrintBluetoothThermal.connectionStatus) {
       if (!await PrintBluetoothThermal.connect(macPrinterAddress: address)) throw PrinterException('connectFailed');

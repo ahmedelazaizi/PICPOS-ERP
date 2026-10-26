@@ -24,29 +24,76 @@ class LegacyUsage {
   bool get inUse => devices.isNotEmpty;
 }
 
-/// In-process counters, fed by [LanPairingService.recordLegacyDevice].
+/// Server setting (`settings` table): the legacy shared bearer on/off.
+/// Absent = ON (a server provisioned before this key existed); written as
+/// `false` by [LanPairingService.initializeLegacyTransition] on a NEW server.
+const String legacyTokenEnabledKey = 'lan_legacy_token_enabled';
+
+/// One device/address that presented the shared bearer (accepted or refused).
+class LegacyAttempt {
+  LegacyAttempt(this.deviceId);
+  final String deviceId;
+  String name = '';
+  String ip = '';
+  String userAgent = '';
+  DateTime? lastSeen;
+  int accepted = 0;
+  int refused = 0;
+}
+
+/// In-process counters, fed by the auth middleware (accepted AND refused).
 class LegacyTokenTelemetry {
   LegacyTokenTelemetry._();
   static final LegacyTokenTelemetry instance = LegacyTokenTelemetry._();
+  static const int _maxTracked = 200;
 
   int _requests = 0;
+  int _refused = 0;
   final Map<String, int> _byDevice = {};
+  final Map<String, LegacyAttempt> _attempts = {};
 
   int get requests => _requests;
+  int get refusedRequests => _refused;
   Map<String, int> get requestsByDevice => Map.unmodifiable(_byDevice);
+
+  /// Most recent first.
+  List<LegacyAttempt> get attempts => _attempts.values.toList()
+    ..sort((a, b) => (b.lastSeen ?? DateTime(0)).compareTo(a.lastSeen ?? DateTime(0)));
 
   void record(String deviceId) {
     _requests++;
     _byDevice[deviceId] = (_byDevice[deviceId] ?? 0) + 1;
   }
 
+  /// Counts one use of the shared bearer. [refused] = the server turned it away.
+  void note({
+    required String deviceId,
+    String name = '',
+    String ip = '',
+    String userAgent = '',
+    required bool refused,
+    required DateTime at,
+  }) {
+    final key = deviceId.isEmpty ? 'legacy@$ip' : deviceId;
+    // Accepted uses are counted by [record] (LanPairingService.recordLegacyDevice).
+    if (refused) _refused++;
+    if (!_attempts.containsKey(key) && _attempts.length >= _maxTracked) return;
+    final a = _attempts.putIfAbsent(key, () => LegacyAttempt(key));
+    a.name = name;
+    a.ip = ip;
+    a.userAgent = userAgent;
+    a.lastSeen = at;
+    refused ? a.refused++ : a.accepted++;
+  }
+
   @visibleForTesting
   void reset() {
     _requests = 0;
+    _refused = 0;
     _byDevice.clear();
+    _attempts.clear();
   }
 }
-
 extension LanPairingLegacy on LanPairingService {
   Future<LegacyUsage> legacyUsage({
     Duration window = const Duration(days: 30),
@@ -72,4 +119,48 @@ extension LanPairingLegacy on LanPairingService {
     await endLegacyTransition();
     return true;
   }
+
+  /// Is the shared bearer switched on? Missing key = ON (existing servers).
+  Future<bool> legacyTokenEnabled() async {
+    if (_db == null) return true;
+    return (await _db.getSettingValue(legacyTokenEnabledKey)) != 'false';
+  }
+
+  /// Switches the shared bearer on/off. Needs `devices_pair_manage` and is
+  /// audited. Turning it ON also restarts the transition window so a window
+  /// that already elapsed does not silently keep the switch ineffective.
+  Future<void> setLegacyTokenEnabled(
+    bool enabled, {
+    required int? actorUserId,
+  }) async {
+    await _authz.require(
+      actorUserId,
+      action: enabled ? 'legacy_token_on' : 'legacy_token_off',
+    );
+    if (_db == null) return;
+    await _db.setSetting(legacyTokenEnabledKey, enabled ? 'true' : 'false');
+    if (enabled) {
+      await _db.setSetting(LanPairingService.transitionEndedKey, 'false');
+      await _db.setSetting(
+        LanPairingService.transitionStartedKey,
+        '${_now().millisecondsSinceEpoch}',
+      );
+    }
+  }
+
+  /// Telemetry hook for the middleware: one shared-bearer use.
+  void noteLegacyAttempt({
+    required String deviceId,
+    required String name,
+    required String ip,
+    required String userAgent,
+    required bool refused,
+  }) => LegacyTokenTelemetry.instance.note(
+    deviceId: deviceId,
+    name: name,
+    ip: ip,
+    userAgent: userAgent,
+    refused: refused,
+    at: _now(),
+  );
 }

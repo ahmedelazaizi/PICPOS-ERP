@@ -62,8 +62,42 @@ void main() {
     expect(t.sent.single.$1, 'AA:BB');
     expect(t.sent.single.$2.toList(), [9, 9]);
   });
+  test('WH-015: permission denied / blocked / printer not found are told apart, never "printed"', () async {
+    Future<LabelPrintResult> printWith(String code) async {
+      final svc = PrintService(store: MemoryLocalStore(), transports: [_CodeTransport(code)]);
+      await svc.saveSettings(const PrinterSettings(address: 'AA:BB', name: 'P1'));
+      final port = ServiceLabelPrinter(svc, rasterizer: (r, w) async => Uint8List.fromList([1]));
+      final r = await port.printLabel(_item);
+      expect(svc.queue, hasLength(1), reason: '$code: the label is kept for retry');
+      return r;
+    }
+
+    expect((await printWith('permission')).status, LabelPrintStatus.permissionDenied);
+    final blocked = await printWith('permissionBlocked');
+    expect(blocked.status, LabelPrintStatus.permissionDenied);
+    expect(blocked.error, 'permissionBlocked');
+    expect((await printWith('connectFailed')).status, LabelPrintStatus.printerNotFound);
+    expect((await printWith('bluetoothOff')).status, LabelPrintStatus.queued);
+  });
+
+  test('WH-015: a network printer that cannot be reached is not reported as a missing Bluetooth printer', () async {
+    final svc = PrintService(store: MemoryLocalStore(), transports: [_CodeTransport('connectFailed', kind: PrinterKind.network)]);
+    await svc.saveSettings(const PrinterSettings(kind: PrinterKind.network, address: '10.0.0.5', name: 'N'));
+    final port = ServiceLabelPrinter(svc, rasterizer: (r, w) async => Uint8List.fromList([1]));
+    expect((await port.printLabel(_item)).status, LabelPrintStatus.queued);
+  });
 }
 
+class _CodeTransport implements PrinterTransport {
+  _CodeTransport(this.code, {this.kind = PrinterKind.bluetooth});
+  final String code;
+  @override
+  final PrinterKind kind;
+  @override
+  Future<List<PrinterDevice>> pairedDevices() async => const [];
+  @override
+  Future<void> send(String address, List<int> bytes) async => throw PrinterException(code);
+}
 class _FailingTransport implements PrinterTransport {
   @override
   PrinterKind get kind => PrinterKind.bluetooth;

@@ -30,6 +30,7 @@ extension ApiHandlerWarehouseRoutes on ApiHandler {
     router.post('/api/m1/wh/counts/<ref>/entries', cn.entries);
     router.post('/api/m1/wh/counts/<ref>/submit', cn.submit);
     router.get('/api/m1/wh/counts/<ref>/review', cn.review);
+    router.post('/api/m1/wh/counts/<ref>/recount', cn.recount);
     router.post('/api/m1/wh/counts/<ref>/approve', cn.approve);
     final sd = WhStockDocApi(_db);
     router.post('/api/m1/wh/transfers', sd.transferCreate);

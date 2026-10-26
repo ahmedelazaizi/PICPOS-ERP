@@ -78,7 +78,7 @@ void main() {
     // The source cost changes after dispatch; the receive must use the frozen one.
     await h.db.adjustStock(productId: rice, warehouseId: h.a1, quantity: 5, type: 'purchase', unitCost: 50);
 
-    final r = await act(h.keeper, 'receive', body: rcv(10));
+    final r = await act(h.supervisor2, 'receive', body: rcv(10));
     expect(r.status, 200, reason: r.text);
     expect((r.json['doc'] as Map)['state'], 'received');
     expect(await h.stock(rice, h.a2), 10);
@@ -141,7 +141,7 @@ void main() {
     test('short stays in transit until a different user returns it to the source', () async {
       await approved();
       await act(h.keeper, 'dispatch');
-      final r = await act(h.keeper, 'receive', body: rcv(8));
+      final r = await act(h.supervisor2, 'receive', body: rcv(8));
       expect((r.json['doc'] as Map)['state'], 'received_short');
       expect(await h.stock(rice, h.a2), 8);
       expect(await git(), closeTo(20, 1e-6));
@@ -165,7 +165,7 @@ void main() {
     test('write-off clears goods_in_transit into shrinkage without touching stock', () async {
       await approved();
       await act(h.keeper, 'dispatch');
-      await act(h.keeper, 'receive', body: rcv(8));
+      await act(h.supervisor2, 'receive', body: rcv(8));
       final before = await h.stock(rice, h.a1);
       final r = await act(h.supervisor, 'resolve', body: {'resolution': 'write_off_loss'});
       expect(r.status, 200, reason: r.text);
@@ -177,7 +177,7 @@ void main() {
     test('damaged goods are received then queued as a pending damage voucher', () async {
       await approved();
       await act(h.keeper, 'dispatch');
-      await act(h.keeper, 'receive', body: rcv(8, damaged: 2));
+      await act(h.supervisor2, 'receive', body: rcv(8, damaged: 2));
       expect(await h.stock(rice, h.a2), 10);
       final v = await h.call('GET', '/api/m1/wh/vouchers?state=pending', user: h.supervisor);
       final docs = (v.json['docs'] as List).cast<Map>();
@@ -189,7 +189,7 @@ void main() {
     test('more than was dispatched is refused', () async {
       await approved();
       await act(h.keeper, 'dispatch');
-      final r = await act(h.keeper, 'receive', body: rcv(11));
+      final r = await act(h.supervisor2, 'receive', body: rcv(11));
       expect(r.error, 'over_receipt');
       expect(await h.stock(rice, h.a2), 0);
     });
@@ -210,7 +210,7 @@ void main() {
       await act(h.keeper, 'dispatch');
       final src = await h.db.select(h.db.productBatches).get();
       expect(src.single.quantity, 6);
-      await act(h.keeper, 'receive', body: rcv(4));
+      await act(h.supervisor2, 'receive', body: rcv(4));
       final all = await h.db.select(h.db.productBatches).get();
       expect(all.firstWhere((b) => b.warehouseId == h.a2).quantity, 4);
       expect(all.firstWhere((b) => b.warehouseId == h.a2).batchNumber, 'L1');
@@ -236,7 +236,7 @@ void main() {
     await request(h.keeper, to: h.b1);
     await act(h.supervisor, 'approve');
     await act(h.keeper, 'dispatch');
-    final wrongPhone = await act(h.keeper, 'receive', body: rcv(10));
+    final wrongPhone = await act(h.supervisor2, 'receive', body: rcv(10));
     expect(wrongPhone.status, 403, reason: 'branch-A phone cannot receive into a branch-B warehouse');
     final ok = await act(recv, 'receive', body: rcv(10), device: 'wh-B');
     expect(ok.status, 200, reason: ok.text);

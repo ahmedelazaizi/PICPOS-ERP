@@ -66,8 +66,9 @@ extension WarehouseDocOps on WarehouseLanClient {
   Future<List<WhDoc>> vouchers({String? state}) => _docs(WhDocPaths.vouchers, state);
 
   /// action: approve | reject
-  Future<WhCommandResult> voucherAction(String gid, String action, {required String commandId, String? approvalProof}) =>
-      command('${WhDocPaths.vouchers}/$gid/$action', const {}, commandId: commandId, approvalProof: approvalProof);
+  Future<WhCommandResult> voucherAction(String gid, String action,
+          {required String commandId, String? approvalProof, int? expectedVersion}) =>
+      command('${WhDocPaths.vouchers}/$gid/$action', {'expectedVersion': ?expectedVersion}, commandId: commandId, approvalProof: approvalProof);
 
   Future<List<WhDoc>> _docs(String path, String? state) async {
     final m = await _get(path, {if (state != null) 'state': state});

@@ -44,7 +44,7 @@ class _TransfersPageState extends State<TransfersPage> {
 
   Future<void> _queue(WhDoc d, String action, [Map<String, Object?> body = const {}]) async {
     final t = S.of(context);
-    final id = await widget.ops.outbox.enqueue('transfer_$action', '${WhDocPaths.transfers}/${d.globalId}/$action', body);
+    final id = await widget.ops.outbox.enqueue('transfer_$action', '${WhDocPaths.transfers}/${d.globalId}/$action', {...body, 'expectedVersion': d.version});
     final r = await widget.ops.outbox.drainFor([id]);
     if (!mounted) return;
     showOutcome(context, r, sent: t('sentNow'), saved: t('savedForLater'));
@@ -53,7 +53,7 @@ class _TransfersPageState extends State<TransfersPage> {
 
   Future<void> _direct(WhDoc d, String action, [Map<String, Object?> body = const {}, String? approvalProof]) async {
     try {
-      await widget.ops.online((c) => c.transferAction(d.globalId, action, body: body, commandId: newId('cmd'), approvalProof: approvalProof));
+      await widget.ops.online((c) => c.transferAction(d.globalId, action, body: {...body, 'expectedVersion': d.version}, commandId: newId('cmd'), approvalProof: approvalProof));
       if (mounted) showDone(context, S.of(context)('sentNow'));
     } on Object catch (e) {
       if (mounted) showFailure(context, e);

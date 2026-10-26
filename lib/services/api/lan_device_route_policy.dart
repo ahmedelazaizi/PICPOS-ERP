@@ -9,13 +9,24 @@
 //   surface (reads, sync, admin writes under the signed-in user's identity) but
 //   has NO point-of-sale: terminal registration, held sales and the warehouse
 //   phone API are `403 device_scope`.
-// * Other kinds keep today's behaviour (the open `pos` scoping problem is
-//   reported separately, plan E-9).
+// * `pos` (the PicPos Cashier tablet) is a deny-list too: no warehouse phone
+//   API and no branch-manager console, so a stolen cashier token cannot reach
+//   them (`403 device_scope`). Its sales surface stays open and is gated per
+//   request by the signed-in user (`pos_access` is required at sign-in).
+//   Residual: other desktop routes are not narrowed for `pos` (plan E-9).
+// * Other kinds keep today's behaviour.
 class LanDeviceRoutePolicy {
   LanDeviceRoutePolicy._();
 
   static const String warehouseKind = 'warehouse';
   static const String mirrorKind = 'mirror';
+  static const String posKind = 'pos';
+
+  /// Exact paths or `<prefix>/...` a Cashier tablet may NOT call.
+  static const List<String> posDeniedPaths = ['/api/m1/wh', '/api/mirror'];
+
+  /// Carve-outs inside [posDeniedPaths]: the desktop receipts desk.
+  static const List<String> posAllowedPaths = ['/api/m1/wh/desk'];
 
   /// Exact paths or `<prefix>/...` a warehouse device may call.
   static const List<String> warehousePaths = [
@@ -58,6 +69,12 @@ class LanDeviceRoutePolicy {
       }
       if (_matches(path, mirrorAllowedPaths)) return true;
       return !_matches(path, mirrorDeniedPaths);
+    }
+    if (kind == posKind) {
+      // The accountant's receipts desk is a DESKTOP surface (a desktop session
+      // is paired as `pos`): it stays open, the phone API around it does not.
+      if (_matches(path, posAllowedPaths)) return true;
+      return !_matches(path, posDeniedPaths);
     }
     if (kind != warehouseKind) return true;
     return _matches(path, warehousePaths);

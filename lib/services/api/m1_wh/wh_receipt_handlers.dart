@@ -233,8 +233,9 @@ class WhReceiptApi {
   Future<Response> deskConvert(Request request, String gid) =>
       _http.runDesk(request, 'purchases_create', (userId, deviceId, mirror) async {
         final ctx = WhCtx(userId: userId, branchId: 0, deviceId: deviceId, scope: const WhScope(branchId: 0, warehouses: []), request: request);
-        final out = await store.command(ctx, action: 'receipt_convert', body: {'gid': gid}, effect: () async {
-          final r = await WhReceiptsInbox(db, mirror: mirror).convert(gid, userId, audit: false);
+        final ev = (await WhHttp.body(request))['expectedVersion'] as num?; // WH-019
+        final out = await store.command(ctx, action: 'receipt_convert', body: {'gid': gid, 'expectedVersion': ?ev}, effect: () async {
+          final r = await WhReceiptsInbox(db, mirror: mirror).convert(gid, userId, audit: false, expectedVersion: ev?.toInt());
           return (docId: (await store.mustGet(gid)).id, result: r);
         });
         return WhHttp.json(out);
@@ -242,10 +243,11 @@ class WhReceiptApi {
 
   Future<Response> convert(Request request, String gid) =>
       _http.run(request, [WarehousePermissionCodes.warehouseMobileAccess, 'purchases_create'], (ctx) async {
-        final out = await store.command(ctx, action: 'receipt_convert', body: {'gid': gid}, effect: () async {
+        final ev = (await WhHttp.body(request))['expectedVersion'] as num?; // WH-019
+        final out = await store.command(ctx, action: 'receipt_convert', body: {'gid': gid, 'expectedVersion': ?ev}, effect: () async {
           final doc = await store.mustGet(gid);
           if (doc.kind != 'po_receipt' || !ctx.scope.allows(doc.warehouseId)) throw WhError('doc_not_found', 404);
-          final r = await WhReceiptPosting(db, store).convert(doc, ctx.userId);
+          final r = await WhReceiptPosting(db, store).convert(doc, ctx.userId, expectedVersion: ev?.toInt());
           return (docId: doc.id, result: r);
         });
         return WhHttp.json(out);

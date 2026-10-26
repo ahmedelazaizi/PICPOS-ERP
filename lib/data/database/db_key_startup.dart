@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+import '../../core/config/data_dir.dart';
 
 import '../../services/db_backup_sidecars.dart';
 import '../../services/db_key_blocked_actions.dart';
@@ -40,7 +40,7 @@ Future<Object?> checkDatabaseKeyGateImpl(String dbPath) async {
   return res is DbKeyUnavailable ? DbKeyBlockedException(res, dbPath) : null;
 }
 
-Future<Directory> _docs() => getApplicationDocumentsDirectory();
+Future<Directory> _docs() => DataDir.documents();
 
 /// تنفيذ شاشة الحجب الإنتاجيّ.
 class ProductionDbKeyBlockedActions implements DbKeyBlockedActions {

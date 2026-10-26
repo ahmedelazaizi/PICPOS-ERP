@@ -80,3 +80,10 @@ its own LAN - the legacy HTTP switch. A separate HTTP-only listener for public p
   wiring (`startServer`) was reviewed and compiled, and the building blocks are tested separately.
 * A host that is itself behind a tunnel (ngrok etc.) keeps using the tunnel's public certificate.
 * The cloud server (`server/`) is separate: see SEC-014 (TLS terminates at a reverse proxy).
+
+
+## Legacy shared bearer and Cashier pairing (2026-10-26)
+
+* **SEC-006 / G-3.** The shared LAN bearer is the server setting `lan_legacy_token_enabled`. A server provisioned by this version starts with it OFF; a server that already had a transition record keeps it ON (missing key = ON). When OFF the middleware answers `401 legacy_token_disabled` and still counts the attempt (device, user-agent, last seen, accepted/refused) in `LegacyTokenTelemetry`; a paired device's own token is never affected. The switch lives in the pairing dialog (`LegacyTokenSection`), needs `devices_pair_manage` and is audited. Turn it OFF once the telemetry shows zero devices on the shared key. Details: `docs/audits/2026-10-24-mirror-and-admin-login/PAIRING-AND-TOKEN-GATES.md`.
+* **Cashier (`pos`) device.** Paired with a branch-bound one-time code over the pinned TLS channel (QR v2 `kind=pos`, `fp`, `branchId`), per-device token. Route scope: `/api/m1/wh/*` and `/api/mirror/*` are `403 device_scope`; sign-in on the device needs `pos_access` (`403 pos_access_denied`) and the device's branch (`branch_access_denied`). Residual: other routes are not narrowed for `pos` (plan E-9).
+* **APK gate (G-2).** `tool/ci/scan_apk.ps1` / `tool/ci/apk_scan.dart` scan built APKs for brand strings, `com.picpos.*`, `debuggable` and the debug certificate.

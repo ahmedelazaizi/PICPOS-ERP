@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
+import '../core/config/data_dir.dart';
 import 'package:intl/intl.dart';
 
 import '../core/config/brand.dart';
@@ -24,7 +24,7 @@ class LogWriter {
 
   Future<String?> getLogPath() async {
     try {
-      final dir = await getApplicationDocumentsDirectory();
+      final dir = await DataDir.documents();
       final date = DateFormat('yyyy-MM-dd').format(DateTime.now());
       final logDir = Directory('${dir.path}/logs');
       if (!await logDir.exists()) {

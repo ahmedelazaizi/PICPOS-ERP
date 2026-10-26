@@ -238,6 +238,50 @@ void main() {
     expect(office.posts.last.path, '/api/m1/wh/counts/T1/approve');
   });
 
+  testWidgets('WH-019: commands carry the version of the document the user read; a stale one is refused and shown', (tester) async {
+    final office = FakeOffice()..permissions = kSupervisor;
+    office.transfers['transfer-0001'] = {
+      'state': 'approved',
+      'version': 7,
+      'lines': [
+        {'lineGlobalId': 'tline-0001-a', 'productId': 5, 'quantity': '4', 'condition': 'ok'},
+      ],
+    };
+    await openApp(tester, office);
+    await tester.tap(find.byKey(const Key('doc.transfers')));
+    await tester.pumpAndSettle();
+
+    // the office changes the document after this screen read it
+    office.transfers['transfer-0001']!['version'] = 8;
+    await tester.tap(find.byKey(const Key('transfer-0001.dispatch')));
+    await tester.pumpAndSettle();
+    expect(office.posts, isEmpty, reason: 'stale: nothing was applied');
+    expect(office.transfers['transfer-0001']!['state'], 'approved');
+    expect(find.textContaining('changed since you read'), findsWidgets);
+
+    await tester.tap(find.byTooltip('Refresh'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('transfer-0001.dispatch')));
+    await tester.pumpAndSettle();
+    expect(office.posts.single.body['expectedVersion'], 8);
+    expect(office.transfers['transfer-0001']!['state'], 'in_transit');
+  });
+
+  testWidgets('WH-019: an approval decision carries the version listed in the inbox', (tester) async {
+    final office = FakeOffice()
+      ..permissions = kSupervisor
+      ..approvals = [
+        {'type': 'voucher', 'ref': 'voucher-0001', 'warehouseId': 1, 'ageMinutes': 1, 'reason': 'damaged', 'version': 4},
+      ];
+    await openApp(tester, office);
+    await tester.tap(find.byKey(const Key('doc.approvals')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('approval.voucher-0001')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Approve').last);
+    await tester.pumpAndSettle();
+    expect(office.posts.single.body['expectedVersion'], 4);
+  });
   testWidgets('a refusal from the office (four-eyes) is shown in words, not codes', (tester) async {
     final office = FakeOffice()
       ..permissions = kSupervisor

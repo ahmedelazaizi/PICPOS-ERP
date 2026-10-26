@@ -79,7 +79,7 @@ class FakeOffice extends FakeDesktop {
   Map<String, Object?> _transferDoc(String gid) {
     final t = transfers[gid]!;
     return {
-      'globalId': gid, 'kind': 'transfer', 'state': t['state'], 'version': 1, 'warehouseId': 1, 'toWarehouseId': 2,
+      'globalId': gid, 'kind': 'transfer', 'state': t['state'], 'version': t['version'] ?? 1, 'warehouseId': 1, 'toWarehouseId': 2,
       'lines': t['lines'],
     };
   }
@@ -148,6 +148,11 @@ class FakeOffice extends FakeDesktop {
     if (periodClosed && postsStock) return _json({'error': 'period_closed'}, 409);
 
     final body = (r.body as Map?)?.cast<String, Object?>() ?? {};
+    // WH-019: a transfer command built on an old version is refused like the office does.
+    if (p.startsWith('/api/m1/wh/transfers/') && body['expectedVersion'] != null) {
+      final cur = transfers[p.split('/')[p.split('/').length - 2]]?['version'] ?? 1;
+      if (body['expectedVersion'] != cur) return _json({'error': 'stale', 'currentVersion': cur}, 409);
+    }
     // PO receipts: a line id belongs to ONE receipt; submit refuses an excess.
     if (p.startsWith('/api/m1/wh/po/') && p.endsWith('/receipts')) {
       final gid = body['globalId']! as String;

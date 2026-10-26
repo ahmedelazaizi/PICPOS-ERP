@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+import '../config/data_dir.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/brand.dart';
@@ -24,7 +24,7 @@ class BackupService {
       }
 
       // 1. Get backup directory (Documents/UralCash_Backups)
-      final docDir = await getApplicationDocumentsDirectory();
+      final docDir = await DataDir.documents();
       final backupDir = Directory(p.join(docDir.path, _backupDirName));
 
       if (!await backupDir.exists()) {

@@ -4,6 +4,7 @@
 //   POST /api/m1/wh/counts/<ref>/entries     append entries to a draft          stock_count_submit
 //   POST /api/m1/wh/counts/<ref>/submit      draft -> submitted                 stock_count_submit
 //   GET  /api/m1/wh/counts/<ref>/review      expected/counted/variance          stock_adjust_approve
+//   POST /api/m1/wh/counts/<ref>/recount     send the submitted passes back     stock_adjust_approve
 //   POST /api/m1/wh/counts/<ref>/approve     finalizeCycleCountTask, once       stock_adjust_approve
 //
 // <ref> is the task's globalId, or its numeric id. The counter-facing
@@ -82,6 +83,19 @@ class WhCountApi {
         // its system quantities, whatever his role.
         if (await counts.countedBy(ctx.userId, s)) throw WhError('self_approval', 403);
         return WhHttp.json(await counts.managerReview(s));
+      });
+
+  /// WH-014: the manager sends the submitted count(s) back for another pass.
+  Future<Response> recount(Request request, String ref) => _http.run(request, [_access, _approve], (ctx) async {
+        final body = await WhHttp.body(request);
+        final reason = (body['reason'] as String?)?.trim();
+        final out = await store.command(ctx, action: 'count_recount', body: {'ref': ref, 'reason': reason}, effect: () async {
+          final s = await _scoped(ctx, ref);
+          if (await counts.countedBy(ctx.userId, s)) throw WhError('self_approval', 403);
+          final n = await counts.recount(s, ctx.userId, reason: reason);
+          return (docId: null, result: {'ref': s.ref, 'status': s.task.status, 'retired': n});
+        });
+        return WhHttp.json(out);
       });
 
   Future<Response> approve(Request request, String ref) => _http.run(request, [_access, _approve], (ctx) async {

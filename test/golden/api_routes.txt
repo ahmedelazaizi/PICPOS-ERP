@@ -192,6 +192,7 @@ GET /api/m1/wh/counts/tasks
 POST /api/m1/wh/counts/<ref>/entries
 POST /api/m1/wh/counts/<ref>/submit
 GET /api/m1/wh/counts/<ref>/review
+POST /api/m1/wh/counts/<ref>/recount
 POST /api/m1/wh/counts/<ref>/approve
 POST /api/m1/wh/transfers
 GET /api/m1/wh/transfers

@@ -1,6 +1,6 @@
-// E2E تطبيق الكاشير (PicPos كاشير): ما هو منفَّذ فعلًا اليوم هو «هيكل M-0» —
-// شاشة اقتران بلا شبكة + قشرة (البيع/المعلّقة/الوردية/المرتجعات/الإعدادات) كلها
-// واجهة فقط (ARCHITECTURE-M §3.2؛ الاقتران في M-5). لذا:
+﻿// E2E تطبيق الكاشير (PicPos كاشير): المنفَّذ فعلًا اليوم: الاقتران وتسجيل الدخول
+// مع خادم LAN (kind=pos، بصمة الشهادة، رمز لكل جهاز؛ test/pairing_test.dart) + قشرة
+// (البيع/المعلّقة/الوردية/المرتجعات/الإعدادات) هي واجهة معاينة فقط. لذا:
 //  • تدفق المستخدم الفعلي مغطّى كاملًا هنا (يعمل)؛
 //  • كل تدفق لم يُنفَّذ بعد مكتوب كاختبار skip بسبب صريح، بدل اختراع سلوك.
 //
@@ -14,22 +14,24 @@ import 'package:picpos_ui/picpos_ui.dart';
 
 import '../support.dart';
 
-const _m5 = 'غير منفَّذ بعد في التطبيق (M-5: اقتران الكاشير مع خادم LAN للمكتب عبر /api/pair '
-    'و/api/m1/pos/*، docs/mobile/ARCHITECTURE-M.md §3.2). لا يوجد في mobile_pos عميل شبكة ولا مخزن محلي بعد.';
+const _m5 = 'غير منفَّذ بعد في التطبيق (M-5: بيانات البيع عبر /api/m1/pos/*، '
+    'docs/mobile/ARCHITECTURE-M.md §3.2). الاقتران والدخول منفَّذان؛ لا يوجد مخزن محلي ولا بيع حقيقي بعد.';
 
 void main() {
   setUpAll(loadTestFonts);
 
-  testWidgets('رحلة المستخدم: اقتران (معطّل في M-0) ← معاينة ← البيع الفارغ ← التبويبات ← الإعدادات ← العودة للاقتران',
+  testWidgets('رحلة المستخدم: اقتران (فعّال) ← معاينة ← البيع الفارغ ← التبويبات ← الإعدادات ← العودة للاقتران',
       (tester) async {
     setSurface(tester, kTablet);
     await tester.pumpWidget(PicPosPosApp(settings: PicPosAppSettings()));
     await tester.pumpAndSettle();
 
-    // شاشة الاقتران: الحقول وزر «ربط» معطّلة (الاقتران الحقيقي في M-5).
+    // شاشة الاقتران: الحقول وزر «ربط» وزر المسح فعّالة (الاقتران حقيقي؛ تغطيته
+    // الكاملة في test/pairing_test.dart).
     expect(find.byType(OnboardingScreen), findsOneWidget);
-    expect(tester.widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'ربط')).onPressed, isNull);
-    expect(tester.widgetList<TextField>(find.byType(TextField)).every((f) => f.enabled == false), isTrue);
+    expect(tester.widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'ربط')).onPressed, isNotNull);
+    expect(tester.widget<FilledButton>(find.byKey(const Key('onboarding.scan'))).onPressed, isNotNull);
+    expect(tester.widgetList<TextField>(find.byType(TextField)).every((f) => f.enabled != false), isTrue);
 
     // معاينة التطبيق ← صفحة البيع: سلة فارغة، الإجمالي 0.000، زر الدفع معطّل.
     await tester.tap(find.byKey(const Key('onboarding.preview')));
@@ -60,11 +62,9 @@ void main() {
   });
 
   group('تدفقات لم تُنفَّذ بعد (skip مبرَّر)', () {
-    test('اقتران بالـ QR/العنوان+الرمز مع المكتب ← جلسة كاشير', () {}, skip: _m5);
     test('جلب المنتجات والأسعار (/api/m1/pos/bootstrap, pull) إلى مخزن محلي', () {}, skip: _m5);
     test('فتح وردية ← بيع نقدي ← طباعة/إيصال ← إغلاق وردية بتسوية', () {}, skip: _m5);
     test('بيع بلا اتصال ثم مزامنة عند العودة (idempotency)', () {}, skip: _m5);
     test('مرتجع على فاتورة سابقة + تجاوز سعر (override) بموافقة', () {}, skip: _m5);
-    test('إلغاء الاقتران من المكتب ← مسح البيانات المحلية', () {}, skip: _m5);
   });
 }

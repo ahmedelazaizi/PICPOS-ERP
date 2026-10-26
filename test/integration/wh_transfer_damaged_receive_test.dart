@@ -36,7 +36,7 @@ void main() {
     expect(disp.status, 200, reason: disp.text);
     expect(await h.stock(rice, h.a1), 5, reason: '5 left the source');
 
-    final rcv = await post('/api/m1/wh/transfers/transfer-dmg-1/receive', h.keeper, {
+    final rcv = await post('/api/m1/wh/transfers/transfer-dmg-1/receive', h.supervisor2, {
       'lines': [
         {'lineGlobalId': 'tline-dmg-1', 'received': '3', 'damaged': '1'},
       ],
@@ -74,7 +74,7 @@ void main() {
     });
     await post('/api/m1/wh/transfers/transfer-dmg-2/approve', h.supervisor);
     await post('/api/m1/wh/transfers/transfer-dmg-2/dispatch', h.keeper);
-    final rcv = await post('/api/m1/wh/transfers/transfer-dmg-2/receive', h.keeper, {
+    final rcv = await post('/api/m1/wh/transfers/transfer-dmg-2/receive', h.supervisor2, {
       'lines': [
         {'lineGlobalId': 'tline-dmg-2', 'received': '4', 'damaged': '2'},
       ],

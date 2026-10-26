@@ -274,7 +274,7 @@ extension ApiDataSystemRoutes on ApiDataHandler {
           .split('.')
           .first;
       final backupDir =
-          '${Platform.environment['APPDATA'] ?? '.'}/${Brand.backupFolderName}/clients';
+          '${DataDir.roamingAppData()}/${Brand.backupFolderName}/clients';
       final dir = Directory(backupDir);
       if (!await dir.exists()) await dir.create(recursive: true);
 

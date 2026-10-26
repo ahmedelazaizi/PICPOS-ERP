@@ -21,7 +21,8 @@ class WhReceiptPosting {
   final AppDatabase db;
   final WhDocStore store;
 
-  Future<Map<String, Object?>> convert(WhDoc doc, int userId) async {
+  Future<Map<String, Object?>> convert(WhDoc doc, int userId, {int? expectedVersion}) async {
+    store.requireVersion(doc, expectedVersion); // WH-019
     if (doc.state != 'submitted') {
       throw WhError('invalid_transition', 409, {'state': doc.state, 'action': 'convert'});
     }

@@ -189,6 +189,27 @@ extension InventoryBatchDao on AppDatabase {
     return deductions;
   }
 
+  /// WH-020: takes a physical SHORTAGE (count settlement) out of the lots in
+  /// issue order. Unlike [consumeBatchesForIssue] it applies no expiry / bin
+  /// validity rule - a loss is a fact, not an issue that may be refused - and it
+  /// stops at the lots that exist (stock without a lot stays without one).
+  Future<void> shrinkBatchesForLoss({
+    required int productId,
+    required int warehouseId,
+    required double quantity,
+  }) async {
+    var remaining = quantity;
+    for (final batch in await getBatchesForIssue(productId, warehouseId: warehouseId)) {
+      if (remaining <= 0.000001) break;
+      final take = remaining > batch.quantity ? batch.quantity : remaining;
+      final left = batch.quantity - take;
+      await (update(productBatches)..where((b) => b.id.equals(batch.id))).write(
+        ProductBatchesCompanion(quantity: Value(left), status: Value(left <= 0 ? 'depleted' : 'active')),
+      );
+      remaining -= take;
+    }
+  }
+
   /// Restore batch quantity on sales return.
   ///
   /// Strategy: add stock back to the most recently depleted/active batch

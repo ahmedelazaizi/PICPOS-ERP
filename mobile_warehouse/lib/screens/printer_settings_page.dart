@@ -40,7 +40,7 @@ class _PrinterSettingsPageState extends State<PrinterSettingsPage> {
       if (mounted) {
         setState(() {
           _devices = d;
-          _problem = null;
+          _problem = d.isEmpty ? 'noneFound' : null;
         });
       }
     } on PrinterException catch (e) {
@@ -79,7 +79,7 @@ class _PrinterSettingsPageState extends State<PrinterSettingsPage> {
             icon: const Icon(Icons.bluetooth_searching),
             label: Text(t('findBluetooth')),
           ),
-          if (_problem != null) Padding(padding: const EdgeInsets.only(top: PicPosSpacing.sm), child: Text(t('printer_$_problem'), key: const Key('printer.problem'))),
+          if (_problem != null) Padding(padding: const EdgeInsets.only(top: PicPosSpacing.sm), child: Text(t(_problem == 'noneFound' ? 'printerNoneFound' : 'printer_$_problem'), key: const Key('printer.problem'))),
           for (final d in _devices ?? const <PrinterDevice>[])
             ListTile(
               title: Text(d.name),

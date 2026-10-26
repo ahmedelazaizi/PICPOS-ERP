@@ -895,7 +895,7 @@ extension DatabaseStartup on AppDatabase {
         //   2. <exe dir>\${Brand.dbPrefix}_startup_log.txt  (fallback — always writable)
         final logBody = '${logLines.join('\n')}\n\n';
         try {
-          final logDir = await getApplicationDocumentsDirectory();
+          final logDir = await DataDir.documents();
           final logFile = File('${logDir.path}/${Brand.dbPrefix}_startup_log.txt');
           await logFile.writeAsString(logBody, mode: FileMode.append);
         } catch (e) { debugPrint('[Startup] Documents log write failed: $e'); }

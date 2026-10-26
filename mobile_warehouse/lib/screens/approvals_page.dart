@@ -54,18 +54,18 @@ class _ApprovalsPageState extends State<ApprovalsPage> {
     switch (a.type) {
       case 'transfer_request':
         return _choice(a, [
-          (t('approve'), () => _run((c) => c.transferAction(a.ref, 'approve', commandId: key))),
-          (t('reject'), () => _run((c) => c.transferAction(a.ref, 'reject', commandId: key))),
+          (t('approve'), () => _run((c) => c.transferAction(a.ref, 'approve', body: {'expectedVersion': ?a.version}, commandId: key))),
+          (t('reject'), () => _run((c) => c.transferAction(a.ref, 'reject', body: {'expectedVersion': ?a.version}, commandId: key))),
         ]);
       case 'voucher':
         return _choice(a, [
-          (t('approve'), () => _run((c) => c.voucherAction(a.ref, 'approve', commandId: key))),
-          (t('reject'), () => _run((c) => c.voucherAction(a.ref, 'reject', commandId: key))),
+          (t('approve'), () => _run((c) => c.voucherAction(a.ref, 'approve', commandId: key, expectedVersion: a.version))),
+          (t('reject'), () => _run((c) => c.voucherAction(a.ref, 'reject', commandId: key, expectedVersion: a.version))),
         ]);
       case 'transfer_shortage':
         return _choice(a, [
-          (t('returnToSource'), () => _run((c) => c.transferAction(a.ref, 'resolve', body: {'resolution': 'return_to_source'}, commandId: key))),
-          (t('writeOff'), () => _run((c) => c.transferAction(a.ref, 'resolve', body: {'resolution': 'write_off_loss'}, commandId: key))),
+          (t('returnToSource'), () => _run((c) => c.transferAction(a.ref, 'resolve', body: {'resolution': 'return_to_source', 'expectedVersion': ?a.version}, commandId: key))),
+          (t('writeOff'), () => _run((c) => c.transferAction(a.ref, 'resolve', body: {'resolution': 'write_off_loss', 'expectedVersion': ?a.version}, commandId: key))),
         ]);
       case 'count':
         try {

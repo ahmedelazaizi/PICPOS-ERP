@@ -103,6 +103,8 @@ class _LabelsPageState extends State<LabelsPage> {
                 switch (r.status) {
                   LabelPrintStatus.printed => t('printed'),
                   LabelPrintStatus.noPrinter => t('noPrinterConnected'),
+                  LabelPrintStatus.permissionDenied => t(r.error == 'permissionBlocked' ? 'printer_permissionBlocked' : 'printer_permission'),
+                  LabelPrintStatus.printerNotFound => t('printerNotFound'),
                   LabelPrintStatus.queued => t('printQueued', {'why': ltr(r.error ?? '')}),
                 },
                 key: const Key('label.result'),

@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart' hide TextDirection;
-import 'package:path_provider/path_provider.dart';
+import '../../core/config/data_dir.dart';
 import '../../core/theme/app_colors.dart';
 import '../picpos_shell/picpos_surface.dart';
 import '../../data/providers/providers.dart';
@@ -356,7 +356,7 @@ class _StockMovementsScreenState extends ConsumerState<StockMovementsScreen> {
           '${df.format(m.createdAt)},${tf.format(m.createdAt)},$typeLabel,$productName,$warehouseName,${m.quantity},${m.unitCost},${m.balanceAfter},$ref,$notes',
         );
       }
-      final dir = await getApplicationDocumentsDirectory();
+      final dir = await DataDir.documents();
       final file = File(
         '${dir.path}/stock_movements_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.csv',
       );

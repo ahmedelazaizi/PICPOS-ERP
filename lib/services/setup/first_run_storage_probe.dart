@@ -10,7 +10,7 @@ library;
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+import '../../core/config/data_dir.dart';
 
 import '../../data/database/connection.dart' show getDatabaseFileName;
 
@@ -33,7 +33,7 @@ class FirstRunStorageProbe {
   FirstRunStorageProbe({
     Future<Directory> Function()? documentsDir,
     Future<int> Function()? countInvoices,
-  })  : _documentsDir = documentsDir ?? getApplicationDocumentsDirectory,
+  })  : _documentsDir = documentsDir ?? DataDir.documents,
         _countInvoices = countInvoices;
 
   final Future<Directory> Function() _documentsDir;

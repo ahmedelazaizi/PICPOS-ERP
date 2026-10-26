@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:path_provider/path_provider.dart';
+import '../../core/config/data_dir.dart';
 import 'package:path/path.dart' as p;
 import '../../core/config/app_config.dart';
 import '../../core/config/brand.dart';
@@ -37,7 +37,7 @@ String databaseFileNameFor(AppFlavor flavor) =>
 
 QueryExecutor openConnection() {
   return LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
+    final dbFolder = await DataDir.documents();
     final file = File(p.join(dbFolder.path, getDatabaseFileName()));
 
     // E-01 (المرحلة ب): مسارُ الإقلاع الموحَّد في `resolveDatabaseKey` —
@@ -186,7 +186,7 @@ class _PgCompatInterceptor extends QueryInterceptor {
       return;
     }
     try {
-      final dir = await getApplicationDocumentsDirectory();
+      final dir = await DataDir.documents();
       final path = p.join(dir.path, 'server_errors.log');
       final buf = StringBuffer()
         ..writeln('─── PG FAIL ───────────────────────────────────────────────')
@@ -343,7 +343,7 @@ QueryExecutor openTestConnection() {
 
 /// Get the current database file path
 Future<String> getDatabasePath() async {
-  final dbFolder = await getApplicationDocumentsDirectory();
+  final dbFolder = await DataDir.documents();
   return p.join(dbFolder.path, getDatabaseFileName());
 }
 
@@ -389,7 +389,7 @@ Future<String?> createDatabaseBackup({
       }
     }
 
-    final dbFolder = await getApplicationDocumentsDirectory();
+    final dbFolder = await DataDir.documents();
     final backupFolder = Directory(p.join(dbFolder.path, 'backups'));
 
     if (!await backupFolder.exists()) {
@@ -514,7 +514,7 @@ Future<bool> hasPendingRestore() async {
 
 // ═══════════════════════════════════════════════════════════════════════════
 // مجلد `Documents/backups` **مشترك بين كل المنتجات على نفس الجهاز**، لأن
-// `getApplicationDocumentsDirectory()` بيرجع نفس المسار للاتنين. اللي بيفرّق
+// `DataDir.documents()` بيرجع نفس المسار للاتنين. اللي بيفرّق
 // بينهم هو اسم الملف بس: `uralcash_unified.db_backup_…` مقابل
 // `picpos_unified.db_backup_…`.
 //
@@ -546,7 +546,7 @@ bool _isOwnBackup(String path) {
 /// List available backup files (this database's only)
 Future<List<FileSystemEntity>> listBackups() async {
   try {
-    final dbFolder = await getApplicationDocumentsDirectory();
+    final dbFolder = await DataDir.documents();
     final backupFolder = Directory(p.join(dbFolder.path, 'backups'));
 
     if (!await backupFolder.exists()) return [];

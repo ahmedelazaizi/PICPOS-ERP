@@ -8,7 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:excel/excel.dart' as xl;
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
+import '../core/config/data_dir.dart';
 import 'package:intl/intl.dart';
 import '../core/constants/app_constants.dart';
 import '../core/theme/app_colors.dart';
@@ -89,7 +89,7 @@ class ExcelExportHelper {
       }
 
       // Save file
-      final dir = await getApplicationDocumentsDirectory();
+      final dir = await DataDir.documents();
       final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
       final fileName = '${title.replaceAll(' ', '_')}_$timestamp.xlsx';
       final filePath = '${dir.path}/$fileName';

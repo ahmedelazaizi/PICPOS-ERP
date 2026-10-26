@@ -1,6 +1,7 @@
 /// PicPos on-device foundations (ARCHITECTURE-M ADR-M1/M5).
 library;
 
+export 'src/printing/bluetooth_permission.dart';
 export 'src/printing/escpos.dart';
 export 'src/printing/print_service.dart';
 export 'src/printing/printer_transport.dart';

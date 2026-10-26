@@ -584,6 +584,11 @@ class LanPairingService {
     if (_db == null) return;
     final started = await _db.getSettingValue(transitionStartedKey);
     if (started == null || int.tryParse(started) == null) {
+      // A server with no transition record is NEW: the shared bearer starts
+      // OFF (SEC-006). Servers that already have one keep the missing key = ON.
+      if (await _db.getSettingValue(legacyTokenEnabledKey) == null) {
+        await _db.setSetting(legacyTokenEnabledKey, 'false');
+      }
       await _db.setSetting(
         transitionStartedKey,
         '${_now().millisecondsSinceEpoch}',
@@ -596,6 +601,7 @@ class LanPairingService {
 
   Future<bool> legacyAllowed() async {
     if (_db == null) return true;
+    if (!await legacyTokenEnabled()) return false;
     if ((await _db.getSettingValue(transitionEndedKey)) == 'true') return false;
     final started = int.tryParse(
       (await _db.getSettingValue(transitionStartedKey)) ?? '',

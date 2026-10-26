@@ -249,7 +249,7 @@ extension _SettingsPicposAbout on _SettingsPicposScreenState {
         trailing: const Icon(PhosphorIconsBold.copy),
         onTap: () async {
           try {
-            final dir = await getApplicationDocumentsDirectory();
+            final dir = await DataDir.documents();
             final candidates = <String>{
               // Spec 136 ISS-5 — the active mode-labelled login log first,
               // then the legacy unlabelled name for older sessions.

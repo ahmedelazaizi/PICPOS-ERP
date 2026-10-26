@@ -2,14 +2,14 @@
 // api_purchase_handler.dart, which is size-ratcheted).
 import 'dart:io' show File, FileMode;
 
-import 'package:path_provider/path_provider.dart';
+import '../../core/config/data_dir.dart';
 
 /// Persist an error + stacktrace to `Documents/server_errors.log` — same
 /// location pattern as `DiagnosticLogger` (uralcash_login_log.txt) so the
 /// file is easy for operators to find and ship back.
 Future<void> writeServerErrorLog(String op, Object e, StackTrace st) async {
   try {
-    final dir = await getApplicationDocumentsDirectory();
+    final dir = await DataDir.documents();
     final path = '${dir.path}/server_errors.log';
     final buf = StringBuffer()
       ..writeln('═══════════════════════════════════════════════════════════')

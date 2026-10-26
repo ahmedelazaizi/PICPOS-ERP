@@ -11619,5 +11619,13 @@
   "الرجوع إلى المراقبة": "Back to monitoring",
   "انتهت مدة الدخول دون اتصال. اتصل بالنظام الرئيسي لتجديدها.": "Offline sign-in has expired. Connect to the main system to renew it.",
   "آخر يوم للدخول دون اتصال. اتصل بالنظام الرئيسي لتجديد التحقق.": "Last day for offline sign-in. Connect to the main system to renew verification.",
-  "بقي يومان للدخول دون اتصال. اتصل بالنظام الرئيسي لتجديد التحقق.": "2 days left for offline sign-in. Connect to the main system to renew verification."
+  "بقي يومان للدخول دون اتصال. اتصل بالنظام الرئيسي لتجديد التحقق.": "2 days left for offline sign-in. Connect to the main system to renew verification.",
+  "تم تحديث إعداد المفتاح القديم": "Legacy key setting updated",
+  "المفتاح المشترك القديم للشبكة": "Legacy shared LAN key",
+  "مفعّل: الأجهزة غير المقترنة تعمل به": "On: unpaired devices can use it",
+  "مُعطَّل: يُرفض بخطأ 401": "Off: refused with a 401 error",
+  "تحذير: {p0} جهاز ما زال يعمل بالمفتاح القديم وسينقطع عند الإيقاف": "Warning: {p0} device(s) still use the legacy key and will be cut off if you switch it off",
+  "لا توجد محاولات بالمفتاح القديم منذ تشغيل السيرفر": "No legacy-key attempts since the server started",
+  "آخر ظهور": "Last seen",
+  "مقبول {p0} · مرفوض {p1}": "Accepted {p0} · refused {p1}"
 }

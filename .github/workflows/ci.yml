@@ -869,6 +869,17 @@ jobs:
             exit 1
           fi
 
+      # G-2: brand / identity / signer gate on the BUILT apk (tool/ci/apk_scan.dart;
+      # forbidden brand strings, com.picpos.* id, not debuggable, not debug-signed).
+      - name: Scan the APK (brand, identity, signer)
+        if: steps.sign.outputs.have == 'true'
+        run: |
+          apk="$PWD/build/app/outputs/flutter-apk/app-release.apk"
+          apksigner=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          cd "$GITHUB_WORKSPACE"
+          flutter pub get
+          APKSIGNER="$apksigner" PICPOS_REQUIRE_APK=1 dart run tool/ci/apk_scan.dart "$apk"
+
       - name: Upload APK
         if: steps.sign.outputs.have == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

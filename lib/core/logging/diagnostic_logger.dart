@@ -11,7 +11,7 @@
 //   await DiagnosticLogger.log('LOGIN', 'attempt user=ahmed client=true');
 
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
+import '../config/data_dir.dart';
 import 'package:flutter/foundation.dart';
 import '../config/brand.dart';
 
@@ -135,7 +135,7 @@ class DiagnosticLogger {
     }
     _writeChain = _writeChain.then((_) async {
       try {
-        final dir = await getApplicationDocumentsDirectory();
+        final dir = await DataDir.documents();
         final file = File('${dir.path}/$_fileName');
         await file.writeAsString('$line\n', mode: FileMode.append);
       } catch (e) {
