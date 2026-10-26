@@ -8,6 +8,7 @@ import '../sync/wh_ops.dart';
 import '../sync/wh_outbox.dart';
 import '../widgets/wh_widgets.dart';
 import 'line_picker.dart';
+import 'supervisor_proof.dart';
 
 /// W3: staged transfers (request -> approve -> dispatch -> receive).
 /// Requests, dispatches and receipts go through the outbox (idempotent);
@@ -50,9 +51,9 @@ class _TransfersPageState extends State<TransfersPage> {
     await _load();
   }
 
-  Future<void> _direct(WhDoc d, String action, [Map<String, Object?> body = const {}]) async {
+  Future<void> _direct(WhDoc d, String action, [Map<String, Object?> body = const {}, String? approvalProof]) async {
     try {
-      await widget.ops.online((c) => c.transferAction(d.globalId, action, body: body, commandId: newId('cmd')));
+      await widget.ops.online((c) => c.transferAction(d.globalId, action, body: body, commandId: newId('cmd'), approvalProof: approvalProof));
       if (mounted) showDone(context, S.of(context)('sentNow'));
     } on Object catch (e) {
       if (mounted) showFailure(context, e);
@@ -93,6 +94,12 @@ class _TransfersPageState extends State<TransfersPage> {
         b('approve', t('approve'), () => _direct(d, 'approve')),
         b('reject', t('reject'), () => _direct(d, 'reject')),
       ],
+      // WH-010: a keeper without the approval right asks a supervisor to approve HERE.
+      if (d.state == 'requested' && !canApprove && canTransfer)
+        b('askApproval', t('askApproval'), () async {
+          final p = await askSupervisorProof(context, widget.ops, kind: 'transfer', ref: d.globalId, action: 'approve');
+          if (p != null && mounted) await _direct(d, 'approve', const {}, p.proof);
+        }),
       if (d.state == 'approved' && canTransfer) b('dispatch', t('dispatch'), () => _queue(d, 'dispatch')),
       if (d.state == 'in_transit' && canTransfer) b('receive', t('receive'), () => _receive(d)),
       if (d.state == 'received_short' && canApprove) ...[

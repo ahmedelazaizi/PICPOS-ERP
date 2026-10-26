@@ -226,15 +226,15 @@ class WhReceiptApi {
       });
 
   // ── desktop side (WH-002): the accountant's inbox, not a phone route ──
-  Future<Response> deskList(Request request) => _http.runDesk(request, 'purchases_create', (userId, _) async {
-        return WhHttp.json({'receipts': await WhReceiptsInbox(db).list(userId)});
+  Future<Response> deskList(Request request) => _http.runDesk(request, 'purchases_create', (userId, _, mirror) async {
+        return WhHttp.json({'receipts': await WhReceiptsInbox(db, mirror: mirror).list(userId)});
       });
 
   Future<Response> deskConvert(Request request, String gid) =>
-      _http.runDesk(request, 'purchases_create', (userId, deviceId) async {
+      _http.runDesk(request, 'purchases_create', (userId, deviceId, mirror) async {
         final ctx = WhCtx(userId: userId, branchId: 0, deviceId: deviceId, scope: const WhScope(branchId: 0, warehouses: []), request: request);
         final out = await store.command(ctx, action: 'receipt_convert', body: {'gid': gid}, effect: () async {
-          final r = await WhReceiptsInbox(db).convert(gid, userId, audit: false);
+          final r = await WhReceiptsInbox(db, mirror: mirror).convert(gid, userId, audit: false);
           return (docId: (await store.mustGet(gid)).id, result: r);
         });
         return WhHttp.json(out);

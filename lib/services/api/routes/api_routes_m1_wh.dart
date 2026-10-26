@@ -23,6 +23,7 @@ extension ApiHandlerWarehouseRoutes on ApiHandler {
     router.post('/api/m1/wh/desk/receipts/<gid>/convert', rc.deskConvert);
     final ap = WhApprovalApi(_db);
     router.get('/api/m1/wh/approvals', ap.inbox);
+    router.post('/api/m1/wh/approvals/proof', ap.proof);
     router.get('/api/m1/wh/labels', ap.label);
     final cn = WhCountApi(_db);
     router.get('/api/m1/wh/counts/tasks', cn.tasks);

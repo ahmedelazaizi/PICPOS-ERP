@@ -17,6 +17,7 @@ import 'package:shelf/shelf.dart';
 
 import '../../../core/permissions/warehouse_permission_codes.dart';
 import '../../../data/database/database.dart';
+import 'wh_doc_approval.dart';
 import 'wh_doc_store.dart';
 import 'wh_http.dart';
 import 'wh_transfer_service.dart';
@@ -37,6 +38,10 @@ class WhStockDocApi {
   final WhDocStore store;
   late final WhTransferService transfers;
   late final WhVoucherService vouchers;
+
+  /// WH-010: the document, operation and version an approval proof must name.
+  WhApprovalTarget _target(WhDoc d, String action) =>
+      WhApprovalTarget(ref: d.gid, op: '${d.kind}:$action', version: d.rowVersion, warehouseId: d.warehouseId);
 
   bool _visible(WhCtx ctx, WhDoc d) =>
       ctx.scope.allows(d.warehouseId) || (d.toWarehouseId != null && ctx.scope.allows(d.toWarehouseId!));
@@ -95,12 +100,12 @@ class WhStockDocApi {
 
   Future<Response> transferApprove(Request r, String gid) => _act(r, gid, 'transfer', 'approve', [_approve], (ctx, doc, body) async {
         if (!ctx.scope.allows(doc.warehouseId)) throw WhError('warehouse_forbidden', 403);
-        return transfers.approve(doc, await _http.approverOf(ctx, _approve), expectedVersion: (body['expectedVersion'] as num?)?.toInt());
+        return transfers.approve(doc, await _http.approverOf(ctx, _approve, _target(doc, 'approve')), expectedVersion: (body['expectedVersion'] as num?)?.toInt());
       });
 
   Future<Response> transferReject(Request r, String gid) => _act(r, gid, 'transfer', 'reject', [_approve], (ctx, doc, body) async {
         if (!ctx.scope.allows(doc.warehouseId)) throw WhError('warehouse_forbidden', 403);
-        return transfers.reject(doc, await _http.approverOf(ctx, _approve), expectedVersion: (body['expectedVersion'] as num?)?.toInt());
+        return transfers.reject(doc, await _http.approverOf(ctx, _approve, _target(doc, 'reject')), expectedVersion: (body['expectedVersion'] as num?)?.toInt());
       });
 
   Future<Response> transferDispatch(Request r, String gid) =>
@@ -125,7 +130,7 @@ class WhStockDocApi {
 
   Future<Response> transferResolve(Request r, String gid) => _act(r, gid, 'transfer', 'resolve', [_approve], (ctx, doc, body) async {
         if (!ctx.scope.allows(doc.warehouseId)) throw WhError('warehouse_forbidden', 403);
-        return transfers.resolve(doc, await _http.approverOf(ctx, _approve), '${body['resolution'] ?? ''}',
+        return transfers.resolve(doc, await _http.approverOf(ctx, _approve, _target(doc, 'resolve')), '${body['resolution'] ?? ''}',
             expectedVersion: (body['expectedVersion'] as num?)?.toInt());
       });
 
@@ -135,13 +140,13 @@ class WhStockDocApi {
 
   Future<Response> voucherApprove(Request r, String gid) => _act(r, gid, 'voucher', 'approve', [_approve], (ctx, doc, body) async {
         if (!ctx.scope.allows(doc.warehouseId)) throw WhError('warehouse_forbidden', 403);
-        return vouchers.approve(doc, await _http.approverOf(ctx, _approve),
+        return vouchers.approve(doc, await _http.approverOf(ctx, _approve, _target(doc, 'approve')),
             viewerId: ctx.userId,
             expectedVersion: (body['expectedVersion'] as num?)?.toInt());
       });
 
   Future<Response> voucherReject(Request r, String gid) => _act(r, gid, 'voucher', 'reject', [_approve], (ctx, doc, body) async {
         if (!ctx.scope.allows(doc.warehouseId)) throw WhError('warehouse_forbidden', 403);
-        return vouchers.reject(doc, await _http.approverOf(ctx, _approve), expectedVersion: (body['expectedVersion'] as num?)?.toInt());
+        return vouchers.reject(doc, await _http.approverOf(ctx, _approve, _target(doc, 'reject')), expectedVersion: (body['expectedVersion'] as num?)?.toInt());
       });
 }

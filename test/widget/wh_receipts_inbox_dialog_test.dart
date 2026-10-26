@@ -1,4 +1,4 @@
-﻿// WH-002: the accountant's receipts dialog (AR/EN, light/dark). It reads from the
+// WH-002: the accountant's receipts dialog (AR/EN, light/dark). It reads from the
 // SOURCE the provider gives it (on a client: the main), shows each waiting
 // receipt with its lines, converts once, and speaks the refusal in the user's
 // words. No database here: the source is a fake with the real contract.
@@ -32,15 +32,17 @@ class _SignedIn extends AuthNotifier {
 }
 
 class _Source implements WhReceiptsSource {
-  _Source(this.waiting, {this.convertError});
+  _Source(this.waiting, {this.convertError, this.listError});
   final List<Map<String, Object?>> waiting;
   final WhError? convertError;
+  final WhError? listError;
   final converted = <String>[];
   int? listedFor;
 
   @override
   Future<List<Map<String, Object?>>> list(int userId) async {
     listedFor = userId;
+    if (listError != null) throw listError!;
     return List.of(waiting);
   }
 
@@ -114,6 +116,13 @@ void main() {
       expect(find.byKey(const Key('whInbox.rcpt-1')), findsNothing, reason: 'the list refreshed');
       expect(find.text(emptyText), findsOneWidget);
       await tester.pump(const Duration(seconds: 4)); // the success toast
+    });
+
+    testWidgets('${locale.languageCode}/${mode.name}: an offline mirror says the main is unreachable (no empty list, no spinner)', (tester) async {
+      await pump(tester, _Source(const [], listError: WhError('host_unreachable', 503)));
+      expect(find.textContaining(locale.languageCode == 'en' ? 'main device is unreachable' : 'تعذّر الوصول إلى الجهاز الرئيسي'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.text(emptyText), findsNothing, reason: 'an offline answer is not «nothing waiting»');
     });
 
     testWidgets('${locale.languageCode}/${mode.name}: a refusal from the main is shown and nothing is marked converted', (tester) async {

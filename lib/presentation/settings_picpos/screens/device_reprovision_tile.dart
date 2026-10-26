@@ -17,6 +17,7 @@ import '../../../services/network_service.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../../screens/first_run/provisioning_providers.dart';
 import '../../screens/first_run/reprovision_confirm_dialog.dart';
+import 'offline_login_mode_tile.dart';
 
 String deviceModeLabel(NetworkMode m) => switch (m) {
       NetworkMode.standalone => tr('مستقل'),
@@ -33,12 +34,18 @@ class DeviceReprovisionSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(syncRepositoryProvider).mode;
     final networked = mode == NetworkMode.client || mode == NetworkMode.mirror;
-    return DeviceReprovisionTile(
+    final tile = DeviceReprovisionTile(
       mode: mode,
       allowed:
           ref.watch(hasPermissionProvider(PermissionCodes.settingsEdit)).value ??
               false,
       offlineBlocked: networked && !ref.watch(serverConnectionLiveProvider),
+    );
+    // Offline login (shadow/enforce) only exists on branch devices.
+    if (!networked) return tile;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [tile, const SizedBox(height: 12), const OfflineLoginModeSection()],
     );
   }
 }

@@ -13,14 +13,26 @@
 import '../../../core/permissions/permission_codes.dart';
 import '../../../data/database/database.dart';
 import '../../activity_logger.dart';
+import '../mirror_console_guard.dart';
 import 'wh_doc_store.dart';
 import 'wh_http.dart';
 import 'wh_receipt_posting.dart';
 
+class _Scope {
+  const _Scope(this.warehouses, this.branches);
+  final Set<int>? warehouses;
+  final List<int>? branches;
+}
+
 class WhReceiptsInbox {
-  WhReceiptsInbox(this.db) : store = WhDocStore(db);
+  /// [mirror]: the caller is a branch-manager console - the user's BRANCH scope
+  /// applies too (a warehouse of a branch outside it is neither listed nor
+  /// convertible), and a user with no explicit warehouse rows is limited by
+  /// branch alone (a branch manager is assigned branches, not warehouses).
+  WhReceiptsInbox(this.db, {this.mirror = false}) : store = WhDocStore(db);
   final AppDatabase db;
   final WhDocStore store;
+  final bool mirror;
 
   static const _permission = PermissionCodes.purchasesCreate;
 
@@ -28,9 +40,20 @@ class WhReceiptsInbox {
     if (!await db.userHasPermission(userId, _permission)) throw WhError('permission_denied', 403);
   }
 
-  Future<Set<int>?> _scope(int userId) => db.getWarehouseScopeForUser(userId).then((s) => s?.toSet());
+  Future<_Scope> _scope(int userId) async {
+    final w = (await db.getWarehouseScopeForUser(userId))?.toSet();
+    final branches = mirror ? await MirrorConsole.scopeOf(db, userId) : null;
+    final warehouses = mirror && w != null && w.isEmpty ? null : w;
+    return _Scope(warehouses, branches);
+  }
 
-  bool _allowed(Set<int>? scope, int warehouseId) => scope == null || scope.contains(warehouseId);
+  Future<bool> _allowed(_Scope scope, int warehouseId) async {
+    if (scope.warehouses != null && !scope.warehouses!.contains(warehouseId)) return false;
+    final branches = scope.branches;
+    if (branches == null) return true;
+    final wh = await db.getWarehouseById(warehouseId);
+    return wh?.branchId != null && branches.contains(wh!.branchId);
+  }
 
   /// Submitted receipts waiting for the accountant, oldest first.
   Future<List<Map<String, Object?>>> list(int userId) async {
@@ -39,7 +62,7 @@ class WhReceiptsInbox {
     final docs = await store.list(kind: 'po_receipt', states: ['submitted']);
     final out = <Map<String, Object?>>[];
     for (final d in docs.reversed) {
-      if (!_allowed(scope, d.warehouseId)) continue;
+      if (!await _allowed(scope, d.warehouseId)) continue;
       final po = d.refId == null ? null : await db.getPurchaseOrderById(int.parse(d.refId!));
       final supplier = po == null ? null : await db.getPartyById(po.supplierId);
       final warehouse = await db.getWarehouseById(d.warehouseId);
@@ -75,7 +98,7 @@ class WhReceiptsInbox {
   Future<Map<String, Object?>> convert(String gid, int userId, {bool audit = true}) async {
     await _require(userId);
     final doc = await store.mustGet(gid);
-    if (doc.kind != 'po_receipt' || !_allowed(await _scope(userId), doc.warehouseId)) {
+    if (doc.kind != 'po_receipt' || !await _allowed(await _scope(userId), doc.warehouseId)) {
       throw WhError('doc_not_found', 404);
     }
     final result = await db.transaction(() => WhReceiptPosting(db, store).convert(doc, userId));

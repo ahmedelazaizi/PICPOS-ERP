@@ -77,4 +77,18 @@ void main() {
     expect(await isCountingItem(db, 9, product, warehouse), isTrue);
     expect(await isCountingItem(db, 5, product, warehouse), isFalse);
   });
+
+  // WH-009 proof (FIXES-3): the row below passes EVERY filter of the blind-count
+  // SQL (kind, ref_type, state, creator) and only its ref_id is not an integer.
+  // With a plain `CAST(d.ref_id AS INTEGER) = t.id` PostgreSQL has to cast it and
+  // fails with 22P02 «invalid input syntax for type integer»; the text comparison
+  // `d.ref_id = CAST(t.id AS TEXT)` simply does not match it.
+  test('WH-009 (proof): a count document of the SAME kind/ref_type whose ref_id is NOT an integer never breaks the blind-count SQL', () async {
+    final db = fx.db;
+    await WhDocStore(db).create(
+        kind: 'count_submission', state: 'draft', warehouseId: warehouse, createdBy: 31, deviceId: 'd',
+        refType: 'cycle_count_task', refId: 'legacy-not-a-number');
+    expect(await isCountingItem(db, 31, product, warehouse), isFalse);
+    expect(await isCountingItem(db, 9, product, warehouse), isTrue, reason: 'the real counter is still found');
+  });
 }

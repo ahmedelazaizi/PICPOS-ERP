@@ -18,8 +18,11 @@ import 'widgets/first_run_callout.dart';
 String selfCheckLabel(SelfCheckId id) => switch (id) {
       SelfCheckId.record => tr('سجل الجهاز'),
       SelfCheckId.mode => tr('نمط التشغيل'),
+      SelfCheckId.database => tr('قاعدة بيانات السيرفر الرئيسي جاهزة'),
       SelfCheckId.pairing => tr('إقران الجهاز بالسيرفر الرئيسي'),
       SelfCheckId.server => tr('الاتصال بالسيرفر الرئيسي'),
+      SelfCheckId.deltaPull => tr('سحب التغييرات من الرئيسي خلال 60 ثانية'),
+      SelfCheckId.mainMatch => tr('الشركة والعملة والباقة مطابقة للرئيسي'),
       SelfCheckId.firstSync => tr('المزامنة الأولى (الفروع والمخازن)'),
       SelfCheckId.users => tr('بيانات دخول مستخدمي الفرع'),
       SelfCheckId.noDefaultAdmin => tr('لا حساب افتراضي admin/admin'),

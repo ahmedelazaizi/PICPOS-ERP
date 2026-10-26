@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart';
 import 'package:picpos_erp/data/database/database.dart';
 import 'package:picpos_erp/data/database/sync_interceptor.dart';
+import 'package:picpos_erp/services/auth/admin_duplicate_repair.dart';
 import 'package:picpos_erp/services/auth/credential_stamp_store.dart';
 import 'package:picpos_erp/services/sync/user_credential_merge.dart';
 import 'package:picpos_erp/services/sync/sync_strategy.dart';
@@ -34,6 +35,22 @@ class UserSyncStrategy extends SyncStrategy {
       // Read existing user by server ID to preserve local passwords
       var rowId = id;
       var existingUser = await (db.select(db.users)..where((t) => t.id.equals(id))).getSingleOrNull();
+
+      // The host admin always maps onto the local bootstrap row (id 1), even
+      // when a row with the host id already exists (a duplicate an old sync
+      // created, retired by repairDuplicateAdmins): it must never be revived.
+      if (username == 'admin' && id != 1) {
+        final boot = await (db.select(db.users)
+              ..where((t) => t.id.equals(1) & t.username.equals('admin')))
+            .getSingleOrNull();
+        if (boot != null) {
+          existingUser = boot;
+          rowId = boot.id;
+          try {
+            await db.storeFkMapping(tableName: 'users', localId: rowId, remoteId: id);
+          } catch (_) {}
+        }
+      }
 
       // Clean up stale duplicate: a local user with the same username but a
       // different ID (created offline before the server assigned its ID) is
@@ -144,6 +161,11 @@ class UserSyncStrategy extends SyncStrategy {
     if (stampDevice && deliveredCredentials) {
       final local = await db.select(db.users).get();
       await stamps.reconcileSnapshot(deliveredIds, [for (final r in local) r.id]);
+    }
+    // A device that already carries a renumbered duplicate admin is repaired
+    // right after the sync (idempotent; never deletes rows).
+    if (users.any((u) => u is Map && u['username'] == 'admin')) {
+      await repairDuplicateAdmins(db);
     }
     // Force UI refresh after sync
     if (users.isNotEmpty) {

@@ -26,6 +26,14 @@ class PurchaseOrdersRepositoryImpl implements PurchaseOrdersRepository {
       _db.getPurchaseOrderItems(orderId);
 
   @override
+  Future<Set<int>> orderIdsWithReceipts() async {
+    final rows = await _db
+        .customSelect('SELECT DISTINCT order_id FROM purchase_order_items WHERE received_quantity > 0')
+        .get();
+    return {for (final r in rows) r.read<int>('order_id')};
+  }
+
+  @override
   Stream<List<PurchaseOrderItem>> watchPurchaseOrderItems(int orderId) =>
       _db.watchPurchaseOrderItems(orderId);
 

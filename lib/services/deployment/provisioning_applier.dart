@@ -18,6 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/logging/diagnostic_logger.dart';
 import '../../data/database/database.dart';
+import '../auth/admin_duplicate_repair.dart';
 import '../mirror_state.dart';
 import '../network_service.dart';
 import '../server_proxy.dart';
@@ -104,6 +105,8 @@ abstract final class ProvisioningApplier {
 
     var rePair = false;
     if (record.isNetworked) {
+      // Paired devices only: a duplicate admin row comes from an old sync.
+      await repairDuplicateAdmins(db);
       await ServerProxy.instance.restoreToken();
       final token = ServerProxy.instance.apiToken;
       rePair = token == null || token.isEmpty;

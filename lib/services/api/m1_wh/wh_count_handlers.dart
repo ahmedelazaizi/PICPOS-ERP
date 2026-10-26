@@ -14,6 +14,7 @@ import 'package:shelf/shelf.dart';
 import '../../../core/permissions/warehouse_permission_codes.dart';
 import '../../../data/database/database.dart';
 import 'wh_count_service.dart';
+import 'wh_doc_approval.dart';
 import 'wh_doc_store.dart';
 import 'wh_http.dart';
 
@@ -86,7 +87,7 @@ class WhCountApi {
   Future<Response> approve(Request request, String ref) => _http.run(request, [_access, _approve], (ctx) async {
         final out = await store.command(ctx, action: 'count_approve', body: {'ref': ref}, effect: () async {
           final s = await _scoped(ctx, ref);
-          await counts.approve(s, await _http.approverOf(ctx, _approve));
+          await counts.approve(s, await _http.approverOf(ctx, _approve, WhApprovalTarget(ref: s.ref, op: 'count:approve', warehouseId: s.warehouseId)));
           return (docId: null, result: {'ref': s.ref, 'status': 'completed'});
         });
         return WhHttp.json(out);

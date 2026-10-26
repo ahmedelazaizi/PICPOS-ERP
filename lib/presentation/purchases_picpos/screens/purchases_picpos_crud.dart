@@ -321,10 +321,7 @@ mixin _PurchasesPicposCrud on ConsumerState<PurchasesPicposScreen> {
           // سحبُ البنود عند الاختيار وحدَه — الأمرُ الواحدُ قد يحمل عشرات،
           // والقائمةُ تُحمَّل لتُعرَض.
           //
-          // ⚠️ **والكمّيّةُ كمّيّةُ الأمر لا المتبقّي منه**: `receivedQuantity`
-          // يتحرّك باستلامٍ جزئيٍّ لا يوجد له مسارٌ اليوم، والأمرُ يُستهلَك
-          // كاملاً بهذه الفاتورة — فسحبُ «المتبقّي» كان سيعِد باستلامٍ
-          // جزئيٍّ لا يقع.
+          // الكمّيّةُ كمّيّةُ الأمر: ما فيه استلامٌ لا يُعرَض هنا (WH-021).
           onPullPurchaseOrder: (orderId) async {
             final poRepo = ref.read(purchaseOrdersRepositoryProvider);
             final items = await poRepo.getPurchaseOrderItems(orderId);

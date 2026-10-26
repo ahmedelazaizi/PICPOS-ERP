@@ -34,6 +34,13 @@ class LanDeviceRoutePolicy {
     '/api/m1/wh',
   ];
 
+  /// Owner decision 2026-10-26: the accountant's receipts desk
+  /// (`/api/m1/wh/desk/*`) is a DESKTOP console route, so a mirror manager
+  /// reaches it although the phone API below is denied. `MirrorConsole.guard`
+  /// still demands `mirror_console` + the branch scope, and `runDesk` the
+  /// receipts permission.
+  static const List<String> mirrorAllowedPaths = ['/api/m1/wh/desk'];
+
   static bool _matches(String path, List<String> prefixes) =>
       prefixes.any((p) => path == p || path.startsWith('$p/'));
 
@@ -49,6 +56,7 @@ class LanDeviceRoutePolicy {
       if (method.toUpperCase() == 'GET' && mirrorReadablePaths.contains(path)) {
         return true;
       }
+      if (_matches(path, mirrorAllowedPaths)) return true;
       return !_matches(path, mirrorDeniedPaths);
     }
     if (kind != warehouseKind) return true;

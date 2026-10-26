@@ -46,6 +46,11 @@ class _WhReceiptsInboxDialogState extends ConsumerState<WhReceiptsInboxDialog> {
     if (code.contains('period_closed')) return tr('الفترة المحاسبية مغلقة؛ لم يُسجَّل شيء.');
     if (code.contains('accounts_not_mapped')) return tr('حسابات المخزون غير مربوطة؛ لم يُسجَّل شيء.');
     if (code.contains('device_scope')) return tr('هذا الجهاز لا يحوّل استلامات المخازن؛ افتحها من الجهاز الرئيسي أو من جهاز فرع.');
+    if (code.contains('host_unreachable')) {
+      return tr('تعذّر الوصول إلى الجهاز الرئيسي؛ الاستلامات محفوظة هناك. حدّث القائمة بعد عودة الاتصال قبل أي محاولة أخرى.');
+    }
+    if (code.contains('mirror_console_denied')) return tr('هذا الحساب غير مخوّل باستخدام لوحة مدير الفروع.');
+    if (code.contains('branch_access_denied')) return tr('هذا الفرع خارج نطاق صلاحياتك.');
     if (code.contains('po_not_receivable')) return tr('أمر الشراء لم يعد مفتوحاً لهذا الاستلام.');
     return tr('تعذّر التحويل؛ لم يُسجَّل شيء.');
   }

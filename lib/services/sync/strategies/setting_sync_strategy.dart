@@ -171,6 +171,7 @@ const kDeviceLocalSettingKeys = <String>[
       'offline_cred_stamps_bootstrapped_v1',
       'offline_login_max_seen_v1',
       'offline_login_mode', // shadow | enforce
+      'offline_login_shadow_log_v1', // bounded summary of shadow-allowed sign-ins
       'device_revoked_v1',
       // M2: the branch a travelling manager is working in on THIS console.
       'mirror_current_branch_id',

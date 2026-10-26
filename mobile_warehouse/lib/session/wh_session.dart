@@ -19,7 +19,8 @@ const kDomainCodes = <String>{
   'warehouse_not_found', 'product_not_found', 'reason_required', 'count_not_open', 'incomplete_count',
   'recount_required', 'already_finalized', 'count_not_submitted', 'task_not_found', 'nothing_to_post',
   'accounts_not_mapped', 'no_barcode', 'item_not_found', 'period_closed', 'duplicate_document', 'busy',
-  'dead_letter', 'dependency_rejected',
+  'dead_letter', 'dependency_rejected', 'approval_mismatch', 'approval_stale', 'approval_expired', 'approval_already_used',
+  'approval_not_document_bound', 'approver_not_authorised', 'invalid_credentials',
 };
 
 /// Stable code of an error, for `S.errorText`.

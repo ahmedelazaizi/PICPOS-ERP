@@ -611,7 +611,7 @@
 - **التطبيق:** `lib/printing/label_builder.dart` يبني `Receipt` مستقلًا عن النقل (Code128؛ وQR للموقع)؛ `LabelPrinter` منفذ طباعة: `NoPrinter` (الافتراضي: «لا توجد طابعة متصلة» ولا يدّعي الطباعة) و`ServiceLabelPrinter` فوق `PrintService` (Bluetooth SPP أو شبكة 9100، 58/80 مم) بطابور إعادة؛ فشل الطباعة لا يمسّ المخزون. شاشة اختيار الطابعة. أذونات Bluetooth أُضيفت للـmanifest الآن (`BLUETOOTH_CONNECT`، و`BLUETOOTH_SCAN` بـ`neverForLocation`، والقديمان حتى SDK 30).
 - **outbox:** `WhOutbox` فوق `SqlCipherLocalStore` المشفَّر؛ معرّف الإدخال = `x-idempotency-key`؛ إرسال بالترتيب. قواعد التعارض: 2xx مقبول (`replayed` ⇒ مكرر)، لا اتصال/429/5xx يبقى معلّقًا، 401 يبقى معلّقًا ويطلب دخولًا، **أي 4xx آخر (stale، stock_changed، self_approval، over_receipt…) مرفوض نهائي لا يُعاد إرساله بهوية جديدة** ويظهر بسببه مع زر «إخفاء». شريط عدم اتصال/عمليات معلّقة فوق كل التبويبات.
 - **الشاشات:** المستندات (استلام، جرد، تحويلات، سند، اعتمادات، ملصقات حسب صلاحيات الجلسة)، الـoutbox، الإعدادات (الطابعة).
-- **غير منفَّذ (يقول ذلك ولا يزيّف):** `ScanIntentPlugin` وملفات Zebra/Honeywell/Urovo (تحتاج عتادًا — E-11؛ المدعوم الكاميرا وماسح لوحة المفاتيح)، `docs/mobile/warehouse-hardware-checklist.md`، طلب إذن Bluetooth وقت التشغيل (الواجهة تعرض رسالة «امنح الإذن من الإعدادات»)، تخزين قائمة أوامر الشراء للعمل بلا اتصال (الشاشة تقول إنها تحتاج المكتب)، إرسال بصمة الموافقة P5 من واجهة التطبيق (العميل `command(..., approvalProof:)` يدعمها والخادم يقبلها ومُختبَر).
+- **غير منفَّذ (يقول ذلك ولا يزيّف):** `ScanIntentPlugin` وملفات Zebra/Honeywell/Urovo (تحتاج عتادًا — E-11؛ المدعوم الكاميرا وماسح لوحة المفاتيح)، `docs/mobile/warehouse-hardware-checklist.md`، طلب إذن Bluetooth وقت التشغيل (الواجهة تعرض رسالة «امنح الإذن من الإعدادات»)، تخزين قائمة أوامر الشراء للعمل بلا اتصال (الشاشة تقول إنها تحتاج المكتب). (إرسال بصمة الموافقة من الهاتف نُفِّذ لاحقًا مربوطًا بمستند: انظر «WH-010» في جولة FIXES-3 أدناه.)
 
 ### مصفوفة الصلاحيات المنفَّذة (محدَّثة)
 | الدور | الأكواد |
@@ -623,3 +623,28 @@
 | مدير النظام | + `devices_pair_manage` |
 - الأكواد الثلاثة الجديدة معرَّفة في `lib/core/permissions/warehouse_permission_codes.dart` ومسجَّلة في `masterList` عبر السطر القائم (بلا نمو في `permission_codes.dart`).
 - نقاط الإنفاذ: `goods_receipt_mobile` ← `wh_receipt_handlers.dart`، `stock_count_submit` ← `wh_count_handlers.dart` وحجب الجرد، `stock_adjust_approve` ← `wh_stock_doc_handlers.dart` و`wh_count_handlers.dart` و`wh_approval_handlers.dart`.
+## العقد المنفَّذ — جولة FIXES-3 (2026-10-26)
+
+### قرار المالك: شاشة استلامات المخازن متاحة على **المرآة**
+- `LanDeviceRoutePolicy.mirrorAllowedPaths = ['/api/m1/wh/desk']` تُفحص قبل `mirrorDeniedPaths`؛ بقية `/api/m1/wh/*` (واجهة الهاتف) تبقى `403 device_scope` للمرآة.
+- `WhHttp.runDesk` يرفض جهاز `warehouse` فقط. المرآة تمرّ بـ`MirrorConsole.guard` (يتطلب `mirror_console` ونطاق فروع المستخدم و`actorUserId` = المستخدم المسجَّل لا مدير الإقران) ثم `purchases_create`، ويُعاد فحص `mirror_console` داخل `runDesk`.
+- `WhReceiptsInbox(db, mirror: true)`: يُطبَّق نطاق **فروع** المستخدم (مخزن فرع خارج نطاقه لا يُسرد ولا يُحوَّل: `404 doc_not_found`)؛ ومن لا صفوف مخازن له يُحصر بالفرع وحده. التحويل idempotent (`desk-convert-<gid>`).
+- `WhRemoteReceipts`: أي فشل شبكة ⇒ `host_unreachable` (503) والحوار يقول إن الرئيسي غير متاح؛ لا فاتورة محلية ولا outbox على المرآة. الكود الثابت يُقرأ من `code` ثم `error` (يشمل `mirror_console_denied`، `branch_access_denied`).
+- الاختبارات: `test/e2e_fleet/wh_desk_receipts_client_test.dart` (مجموعة `mirror console`)، `test/unit/api/mirror_device_pairing_test.dart`، `test/widget/wh_receipts_inbox_dialog_test.dart`.
+
+### WH-010 — بصمة الاعتماد مربوطة بمستند (مُنفَّذ)
+- **المطالبات الموقَّعة:** `ApprovalProof` يحمل الآن `doc` (معرّف المستند/المهمة)، `dop` (`kind:action`)، `dv` (`row_version` وقت الإصدار؛ غائب لمهمة الجرد) إضافة إلى `op` (الصلاحية) و`req` و`apr` و`dev` و`exp`. بصمة بلا `doc` (P5 العامة) **لا تُقبل** على مسارات المخازن: `403 approval_not_document_bound`.
+- **الإصدار من الهاتف:** `POST /api/m1/wh/approvals/proof` (صلاحية `warehouse_mobile_access` للطالب) بجسم `{kind: transfer|voucher|count, ref, action: approve|reject|resolve, username+password | cardCode}`. المشرف الواقف عند الهاتف يُثبت **بياناته هو**؛ الخادم يتحقق (تحديد معدل `ServerLoginThrottle`)، ويرفض: المعتمِد = الطالب أو من أنشأ/أرسل/استلم/عدّ المستند (`self_approval`)، ومن لا يملك `stock_adjust_approve` (`approver_not_authorised`)، ومن لا يغطي نطاقُه مخزنَ المستند (`warehouse_forbidden`)، وحالة لا تسمح بالإجراء (`invalid_transition`)، وبيانات خاطئة (`403 invalid_credentials` لا 401 كي لا يُظنّ انتهاء جلسة الطالب). يعيد `{proof, ref, op, version, approverId, approverName, expiresAt}`.
+- **الاستعمال:** الهاتف يرسل `x-approval-proof` مع approve/reject/resolve. `ApprovalGate` (التوقيع، الطالب، الجهاز، الصلاحية، الانتهاء 5 دقائق، استعمال واحد لكل عملية، صلاحية المعتمِد) ثم `WhApproval.approverOf` يطابق المستند والعملية: `403 approval_mismatch`، ونسخة قديمة (تغيّر المستند بعد الإصدار) `409 approval_stale`. المعتمِد المسجَّل (`approved_by`) هو صاحب البصمة لا الحامل.
+- **التطبيق:** `picpos_api_client` `WarehouseLanClient.approvalProof(...)` و`WhApprovalProof`؛ `mobile_warehouse/lib/screens/supervisor_proof.dart` ومفتاح «اطلب اعتماد مشرف» في صفحة التحويلات (حالة `requested` لمن لا يملك الاعتماد) يطلب البصمة ثم يرسل `approve` معها. سندات الجرد/السندات: العقد يعمل على الخادم والعميل، **واجهة الهاتف موصولة للتحويلات فقط**.
+- **اختبارات:** `test/integration/wh_doc_bound_approval_test.dart` (مزوَّرة، منتهية، مستند آخر، عملية أخرى، نسخة قديمة، إعادة استعمال، جهاز آخر، بصمة عامة، المنشئ = المعتمِد، بيانات/صلاحية/نطاق المعتمِد)، `packages/picpos_api_client/test/wh_doc_client_test.dart`، `mobile_warehouse/test/docs_flow_test.dart`.
+- **حدود:** الاعتماد على الجرد مربوط بالمهمة والعملية بلا نسخة؛ البصمة تُحرَق عند أول استعمال حتى لو رُفض (الأصح أمنيًا).
+
+### WH-021 — استلامات أوامر الشراء تصل إلى العملاء (مُنفَّذ بلا تغيير مخطط)
+- السبب: `addReceivedQuantity` تكتب `received_quantity` بـSQL خام بلا ختم `last_modified_at`/`row_version`، فسحب الدلتا (`last_modified_at > since`) لا يلتقط الصف لعميل يملك الأمر. الآن يُختم السطر **والأمر** بقيمة أكبر قطعًا من السابقة (`CASE` محمول على SQLite وPG). لا جدول جديد.
+- مستندات الهاتف نفسها تبقى على الرئيسي (WH-001/WH-002)؛ العميل يقرأها عبر `desk/receipts`.
+- «سحب أمر شراء» على العميل: `PurchaseOrdersRepository.orderIdsWithReceipts()` يستبعد الأوامر التي لها استلام (تُفوتَر من شاشة الاستلامات فقط، والخادم يرفض غير ذلك `po_has_receipts`).
+- اختبار: `test/e2e_fleet/wh_po_received_sync_test.dart`.
+
+### حالة البوابات (تحديث WH-017 بعد FIXES-3)
+- **G-2 ما زالت مفتوحة** (لا فحص علامة على APK في CI؛ لم يُبنَ APK). **G-3/SEC-006 ما زالت مفتوحة** عمدًا: إغلاق bearer المشترك على الخوادم الجديدة لم يُنفَّذ في هذه الدفعة. لا يُعدّ W0/W1 منجزًا.

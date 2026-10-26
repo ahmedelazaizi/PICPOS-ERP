@@ -9,6 +9,8 @@ import 'core/utils/platform_init.dart';
 import 'core/services/backup_service.dart';
 import 'services/scale_service_io.dart';
 import 'services/network_service.dart';
+import 'services/deployment/commit_result.dart';
+import 'services/deployment/mode_activator.dart';
 import 'services/mirror_state.dart';
 import 'services/mirror_heartbeat_service.dart';
 import 'services/delta_pull_service.dart';
@@ -95,7 +97,12 @@ Future<void> autoStartNetworkServer(AppDatabase db) async {
         final pgHost = pgConfig.host.trim();
         if (pgHost == 'localhost' || pgHost == '127.0.0.1') {
           debugPrint('[NetworkService] ⚙️ PostgreSQL on localhost detected — auto-setting server mode');
-          await ns.setMode(NetworkMode.server, db: db);
+          // A1: the single mode entry (writes the device record too).
+          final r = await ModeActivator(db: db).commit(ActivationPlan(
+              mode: NetworkMode.server, port: ns.serverPort));
+          if (r is CommitFailed) {
+            debugPrint('[NetworkService] auto server mode not committed: ${r.reasonCode}');
+          }
           await ns.saveSettings();
         }
       }

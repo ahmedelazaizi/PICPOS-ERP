@@ -80,4 +80,20 @@ void main() {
     expect(s.blind, isTrue);
     expect(s.quantity, isEmpty);
   });
-}
+
+  test('WH-010: approvalProof posts the supervisor credential for ONE document + action and parses the signed proof', () async {
+    transport = FakeTransport(TransportKind.lan,
+        handler: (r) => const ApiResponse(200,
+            '{"proof":"P.SIG","ref":"V1","op":"voucher:approve","version":3,"approverId":9,"approverName":"Sup","expiresAt":1700000000000}'));
+    client = WarehouseLanClient(
+      transport: transport,
+      headers: const ApiHeaderBuilder(appVersion: 't'),
+      credentials: const ApiCredentials(deviceId: 'd1', deviceToken: 'TKN', sessionToken: 'SESS'),
+    );
+    final p = await client.approvalProof(kind: 'voucher', ref: 'V1', action: 'approve', username: 'sup', password: 'pw');
+    final sent = transport.requests.last;
+    expect(sent.method, 'POST');
+    expect(sent.path, '/api/m1/wh/approvals/proof');
+    expect(sent.body, {'kind': 'voucher', 'ref': 'V1', 'action': 'approve', 'username': 'sup', 'password': 'pw'});
+    expect([p.proof, p.ref, p.op, p.version, p.approverName], ['P.SIG', 'V1', 'voucher:approve', 3, 'Sup']);
+  });}

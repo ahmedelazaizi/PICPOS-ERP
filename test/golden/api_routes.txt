@@ -186,6 +186,7 @@ GET /api/m1/wh/locations/by-barcode/<code>
 GET /api/m1/wh/desk/receipts
 POST /api/m1/wh/desk/receipts/<gid>/convert
 GET /api/m1/wh/approvals
+POST /api/m1/wh/approvals/proof
 GET /api/m1/wh/labels
 GET /api/m1/wh/counts/tasks
 POST /api/m1/wh/counts/<ref>/entries

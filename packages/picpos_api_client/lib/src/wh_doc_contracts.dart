@@ -11,6 +11,7 @@ abstract final class WhDocPaths {
   static const vouchers = '/api/m1/wh/vouchers';
   static const counts = '/api/m1/wh/counts';
   static const approvals = '/api/m1/wh/approvals';
+  static const approvalProof = '/api/m1/wh/approvals/proof';
   static const labels = '/api/m1/wh/labels';
   static const locationByBarcode = '/api/m1/wh/locations/by-barcode';
 }
@@ -293,4 +294,24 @@ class WhCommandResult {
     final d = body['doc'] ?? body['receipt'];
     return d is Map ? WhDoc.fromJson(_m(d)) : null;
   }
+}
+
+/// WH-010: a proof signed by the host for ONE document + operation + version; the
+/// phone sends it as x-approval-proof on the approve / reject / resolve call.
+class WhApprovalProof {
+  const WhApprovalProof({required this.proof, required this.ref, required this.op, required this.approverName, required this.expiresAtMs, this.version});
+  factory WhApprovalProof.fromJson(Map<String, Object?> j) => WhApprovalProof(
+        proof: '${j['proof']}',
+        ref: '${j['ref']}',
+        op: '${j['op']}',
+        version: (j['version'] as num?)?.toInt(),
+        approverName: '${j['approverName'] ?? ''}',
+        expiresAtMs: (j['expiresAt'] as num?)?.toInt() ?? 0,
+      );
+  final String proof;
+  final String ref;
+  final String op;
+  final int? version;
+  final String approverName;
+  final int expiresAtMs;
 }

@@ -15,6 +15,12 @@ class FakeOffice extends FakeDesktop {
   int serverErrors = 0;
   int busyReplies = 0;
 
+  /// WH-010: the supervisor's password, the proof requests the phone made and
+  /// the x-approval-proof headers it attached.
+  String supervisorPassword = 'sup-pw';
+  final proofRequests = <Map<String, Object?>>[];
+  final proofsUsed = <({String path, String proof})>[];
+
   /// The accounting period is closed: stock-posting commands answer 409
   /// `period_closed`, as the real host does.
   bool periodClosed = false;
@@ -116,6 +122,15 @@ class FakeOffice extends FakeDesktop {
       return _json({'error': 'nf'}, 404);
     }
 
+    if (p == '/api/m1/wh/approvals/proof') {
+      final b = (r.body as Map).cast<String, Object?>();
+      proofRequests.add(b);
+      if (b['password'] != supervisorPassword) return _json({'error': 'invalid_credentials'}, 403);
+      return _json({
+        'proof': 'PROOF-${b['ref']}-${b['action']}', 'ref': b['ref'], 'op': '${b['kind']}:${b['action']}', 'version': 1,
+        'approverId': 9, 'approverName': 'Sup', 'expiresAt': 1,
+      });
+    }
     final key = r.headers['x-idempotency-key'] ?? '';
     if (key.length < 8) return _json({'error': 'idempotency_key_required'}, 400);
     final seen = _log[key];
@@ -156,6 +171,7 @@ class FakeOffice extends FakeDesktop {
       }
     }
     final token = r.headers['x-session-token'] ?? '';
+    if (r.headers['x-approval-proof'] != null) proofsUsed.add((path: p, proof: r.headers['x-approval-proof']!));
     posts.add((path: p, key: key, body: body, user: token.startsWith('SESS-') ? token.substring(5) : null));
     applied++;
     Map<String, Object?> out = {'ok': true};

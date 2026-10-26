@@ -146,6 +146,12 @@ void main() {
           LanDeviceRoutePolicy.allows('mirror', '/api/pos-terminals/register',
               method: 'GET'),
           isFalse);
+      for (final p in ['/api/m1/wh/desk/receipts', '/api/m1/wh/desk/receipts/x/convert']) {
+        expect(ok('mirror', p), isTrue, reason: 'owner decision 2026-10-26: the receipts desk is open to a mirror: $p');
+        expect(ok('warehouse', p), isTrue, reason: 'the phone prefix still reaches the route; runDesk refuses it: $p');
+      }
+      expect(ok('mirror', '/api/m1/wh/desks'), isFalse, reason: 'a prefix match, not a substring');
+      expect(ok('mirror', '/api/m1/wh/po'), isFalse, reason: 'the phone API stays closed to a mirror');
       expect(ok('mirror', '/api/sales'), isTrue, reason: 'a prefix match, not a substring');
       expect(ok('pos', '/api/sales/held'), isTrue, reason: 'other kinds unchanged');
       expect(ok('client', '/api/pos-terminals/register'), isTrue);

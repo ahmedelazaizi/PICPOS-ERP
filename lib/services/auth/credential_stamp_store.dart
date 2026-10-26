@@ -211,6 +211,26 @@ class CredentialStampStore {
         if (m.remove(userId) != null) await _save(m);
       });
 
+  /// Moves a verification to another user row that now carries [passwordHash]
+  /// (duplicate-admin repair). The ORIGINAL time/source are kept - the main
+  /// vouched for this hash then, the move must not grant a fresh grace. A stamp
+  /// that does not belong to [passwordHash] (or a rejection) is dropped, and so
+  /// is the target's old stamp: it described a hash the row no longer holds.
+  Future<void> moveStamp(int fromUserId, int toUserId, String passwordHash,
+          {CredentialStamp? stamp}) =>
+      _locked(() async {
+        final m = await _load();
+        final s = stamp ?? m[fromUserId];
+        m.remove(fromUserId);
+        m.remove(toUserId);
+        if (s != null &&
+            s.src != StampSource.rejected &&
+            s.fp == credentialFingerprint(passwordHash)) {
+          m[toUserId] = s;
+        }
+        await _save(m);
+      });
+
   /// لقطةٌ كاملةٌ سلّمت الاعتماد: كلُّ مستخدمٍ محليٍّ غائبٌ عنها يفقد طابعه
   /// (يُحذف الطابع لا الصفّ: FK الفواتير).
   Future<int> reconcileSnapshot(Set<int> deliveredIds, Iterable<int> localIds) =>

@@ -68,11 +68,31 @@ Future<void> requireValidBatchCoverage(
 /// Atomically adds [qty] to a PO line's received_quantity iff the result stays
 /// within [allowed] (WH-006). False = refused (excess or lost the race).
 Future<bool> addReceivedQuantity(AppDatabase db, int poItemId, double qty, double allowed) async {
+  // WH-021: the raw UPDATE must also STAMP the row and its order (last_modified_at,
+  // row_version) - the clients' delta pull selects changed rows by that stamp, so
+  // without it a client that already holds the order never learns the receipt.
+  // The stamp must be STRICTLY greater than the previous one: the delta pull asks
+  // `last_modified_at > since`, and a receipt in the same second as the previous
+  // change would otherwise be skipped for ever.
+  final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+  const stamp = 'last_modified_at = CASE WHEN last_modified_at IS NULL OR last_modified_at < ? '
+      'THEN ? ELSE last_modified_at + 1 END, row_version = row_version + 1';
   final n = await db.customUpdate(
-    'UPDATE purchase_order_items SET received_quantity = received_quantity + ? '
+    'UPDATE purchase_order_items SET received_quantity = received_quantity + ?, $stamp '
     'WHERE id = ? AND received_quantity + ? <= ?',
-    variables: [Variable<double>(qty), Variable<int>(poItemId), Variable<double>(qty), Variable<double>(allowed + 1e-9)],
+    variables: [
+      Variable<double>(qty), Variable<int>(now), Variable<int>(now),
+      Variable<int>(poItemId), Variable<double>(qty), Variable<double>(allowed + 1e-9),
+    ],
     updates: {db.purchaseOrderItems},
   );
+  if (n == 1) {
+    await db.customUpdate(
+      'UPDATE purchase_orders SET $stamp '
+      'WHERE id = (SELECT order_id FROM purchase_order_items WHERE id = ?)',
+      variables: [Variable<int>(now), Variable<int>(now), Variable<int>(poItemId)],
+      updates: {db.purchaseOrders},
+    );
+  }
   return n == 1;
 }

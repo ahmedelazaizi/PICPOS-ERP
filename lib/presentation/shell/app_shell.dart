@@ -44,7 +44,7 @@ import '../widgets/sync_management_dialog.dart';
 import '../widgets/sync_status_badge.dart';
 import '../widgets/mirror_badge.dart';
 import '../widgets/mirror_status_strip.dart';
-import '../widgets/legacy_db_key_banner.dart';
+import '../widgets/shell_banners.dart';
 import '../../services/mirror_state.dart';
 
 part 'nav_widgets.dart';
@@ -923,7 +923,7 @@ class _AppShellState extends ConsumerState<AppShell> {
         body: Column(children: [
           // MM.D/M2 console strip: link state + branch (collapses off a mirror).
           const MirrorStatusStrip(),
-          const LegacyDbKeyBanner(), // SEC-005 (admin-only, self-collapsing)
+          const ShellBanners(), // SEC-005 + offline grace
           Expanded(child: Row(
           children: [
             // Sidebar - fully hidden when _isHidden is true

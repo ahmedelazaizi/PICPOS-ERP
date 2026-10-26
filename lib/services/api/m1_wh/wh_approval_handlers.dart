@@ -12,6 +12,7 @@ import 'package:shelf/shelf.dart';
 import '../../../core/permissions/warehouse_permission_codes.dart';
 import '../../../data/database/database.dart';
 import 'wh_count_service.dart';
+import 'wh_doc_approval.dart';
 import 'wh_doc_store.dart';
 import 'wh_http.dart';
 import 'wh_locations.dart';
@@ -59,6 +60,9 @@ class WhApprovalApi {
         }
         return WhHttp.json({'approvals': items, 'count': items.length});
       });
+
+  /// WH-010: POST /api/m1/wh/approvals/proof - see wh_doc_approval.dart.
+  Future<Response> proof(Request request) => WhApprovalProofIssuer(db, store, counts).issue(request);
 
   Future<Response> label(Request request) => _http.run(request, [_access, 'inventory_view'], (ctx) async {
         final q = request.requestedUri.queryParameters;

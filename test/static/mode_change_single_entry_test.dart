@@ -46,8 +46,8 @@ void main() {
       // pre-commit first sync: IN-MEMORY only (no db: argument)
       'lib/services/setup/client_link_service.dart',
       // ── legacy debt (not part of the first-run flow; do NOT add to this list)
-      'lib/main_desktop.dart', // boot: PostgreSQL on localhost => server
-      'lib/presentation/widgets/settings/database_settings_widget.dart',
+      // (main_desktop.dart and database_settings_widget.dart now go through
+      //  ModeActivator - they were removed from this list, do not re-add them)
       'lib/data/repositories/sync_repository_impl.dart', // no UI caller left
       'lib/core/config/business_profile_provider.dart', // changeMode: no caller
     };

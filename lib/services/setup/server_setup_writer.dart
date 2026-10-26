@@ -14,10 +14,13 @@ library;
 
 import 'package:drift/drift.dart' show Value, Variable;
 
+import '../../core/config/app_config.dart';
 import '../../core/utils/uuid_v7.dart';
 import '../../data/database/database_barrel.dart';
 import '../../data/database/connection.dart' show openPostgresConnection;
 import '../../data/database/pg_config.dart';
+import '../deployment/provisioning_record.dart';
+import '../network_service.dart' show NetworkMode;
 import '../security_service.dart';
 
 /// مستخدمٌ من جدول المقرّ — كلمةُ مروره الأوليّة (يُجبَر على تغييرها).
@@ -82,6 +85,7 @@ class ServerSetupInput {
     this.deliveryEnabled,
     this.tableSection,
     this.tableNames = const [],
+    this.serverPort = 8080,
   });
 
   final String companyName;
@@ -115,6 +119,9 @@ class ServerSetupInput {
   final bool? deliveryEnabled;
   final String? tableSection;
   final List<String> tableNames;
+
+  /// The HTTP port this main serves on (recorded in the device record).
+  final int serverPort;
 }
 
 class ServerSetupReport {
@@ -178,6 +185,7 @@ class ServerSetupWriter {
       // (قاعدةُ PostgreSQL المزروعة حديثاً، لا قاعدةُ هذا الجهاز) — فلا يمرّ
       // بمالك النمط المحلي (DeploymentModeCommitter).
       await _putRaw(db, 'network_mode', 'server');
+      await _writeDeviceRecord(db, i.serverPort);
       await db.setSetting('setup_completed', 'true');
     });
     return ServerSetupReport(
@@ -185,6 +193,30 @@ class ServerSetupWriter {
       createdUsers: counts.$1,
       updatedUsers: counts.$2,
     );
+  }
+
+  /// A1 adoption contract for the main server: the SAME record and derived keys
+  /// the committer writes for the other modes, but INTO this (PostgreSQL)
+  /// database - the one the app reads after the restart. Without it the first
+  /// boot got an ADOPT-BACKFILL and no self-check. `setup_completed` is
+  /// written after it by [apply]; a re-run keeps the first completion stamp.
+  Future<void> _writeDeviceRecord(AppDatabase db, int port) async {
+    final previous = await ProvisioningStore.read(db);
+    final now = DateTime.now().toUtc();
+    final record = ProvisioningRecord(
+      mode: NetworkMode.server.name,
+      deviceKind: NetworkMode.server.name,
+      serverPort: port,
+      appVersion: AppConfig.version,
+      setupCompletedAt: previous?.setupCompletedAt ?? now,
+      selfCheckPending: true,
+      pgConfigured: true,
+    );
+    await ProvisioningStore.write(db, record);
+    for (final e in record.derivedSettings.entries) {
+      if (e.key == 'setup_completed') continue; // the very last write
+      await _putRaw(db, e.key, e.value);
+    }
   }
 
   Future<void> _settings(AppDatabase db, ServerSetupInput i, String? devHash) async {

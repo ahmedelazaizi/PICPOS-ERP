@@ -20,6 +20,11 @@ abstract class PurchaseOrdersRepository {
   /// Get items for a purchase order.
   Future<List<PurchaseOrderItem>> getPurchaseOrderItems(int orderId);
 
+  /// WH-021: ids of the orders that already carry warehouse (phone) receipts -
+  /// some line has `received_quantity` > 0. On a client this reads the copy the
+  /// delta pull brought from the host (the host stays authoritative).
+  Future<Set<int>> orderIdsWithReceipts();
+
   /// Watch items for a purchase order.
   Stream<List<PurchaseOrderItem>> watchPurchaseOrderItems(int orderId);
 

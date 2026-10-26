@@ -290,8 +290,12 @@ extension PurchaseOrdersDao on AppDatabase {
           unitCost: item.unitCost,
           total: item.total,
           discount: Value(item.discount),
+          // NEW-04: tax and cost centre travel like the receipt conversion does.
+          taxRate: Value(item.taxRate),
+          taxAmount: Value(item.taxAmount),
         );
       }).toList();
+      final lineDiscounts = items.fold<double>(0, (s, i) => s + i.discount);
 
       // CREATION VIA HARDENED DAO (PurchaseDao)
       // This ensures accounting (Autopost), Inventory (Stock adjust + WAC), and Treasury are handled.
@@ -303,6 +307,9 @@ extension PurchaseOrdersDao on AppDatabase {
         paymentMethod: 'credit',
         notes: 'تم التحويل من أمر شراء ${po.orderNumber}',
         items: invoiceItems,
+        costCenterId: po.costCenterId,
+        // The document discount is the TOTAL (header + the lines' own).
+        discount: FinancialUtils.round(po.discount + lineDiscounts),
       );
 
       await _markPurchaseOrderConverted(orderId, invoiceId);

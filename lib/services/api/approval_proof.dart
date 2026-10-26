@@ -59,7 +59,18 @@ class ApprovalClaims {
     required this.nonce,
     this.deviceId,
     this.scope,
+    this.docId,
+    this.docOp,
+    this.docVersion,
   });
+
+  /// WH-010: a document-bound proof names the document (`docId`), the
+  /// operation (`docOp`, `kind:action`) and the document's `row_version` at
+  /// issue time (`docVersion`, null = the document has no version, e.g. a count
+  /// task). A proof without `docId` is a plain P5 proof.
+  final String? docId;
+  final String? docOp;
+  final int? docVersion;
 
   final String permission;
   final int requesterId;
@@ -93,6 +104,9 @@ class ApprovalProof {
     required int approverId,
     String? deviceId,
     String? scope,
+    String? docId,
+    String? docOp,
+    int? docVersion,
     int? nowMs,
     String? nonce,
   }) {
@@ -107,6 +121,9 @@ class ApprovalProof {
       'nid': nonce ?? newNonce(),
       'dev': ?deviceId,
       'sc': ?scope,
+      'doc': ?docId,
+      'dop': ?docOp,
+      'dv': ?docVersion,
     })));
     final sig = ApiSessionToken.signDomain(domain, payload);
     return sig == null ? null : '$payload.$sig';
@@ -138,6 +155,9 @@ class ApprovalProof {
         nonce: nid,
         deviceId: m['dev'] as String?,
         scope: m['sc'] as String?,
+        docId: m['doc'] as String?,
+        docOp: m['dop'] as String?,
+        docVersion: m['dv'] as int?,
       );
     } catch (_) {
       return null;

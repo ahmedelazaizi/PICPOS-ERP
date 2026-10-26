@@ -12,9 +12,9 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:shelf/shelf.dart';
 
+import '../../../core/permissions/mirror_permission_codes.dart';
 import '../../../data/database/database.dart';
 import '../api_user_context.dart';
-import '../approval_proof.dart';
 import 'wh_error_classifier.dart';
 import 'wh_scope.dart';
 
@@ -119,35 +119,33 @@ class WhHttp {
 
 extension WhDeskRoutes on WhHttp {
   /// Gate of the DESKTOP-side routes (`/api/m1/wh/desk/*`, WH-002): a signed-in
-  /// desktop session holding [permission]. A paired phone (`warehouse`) or a
-  /// mirror console is refused: the accountant's step is not a phone action.
+  /// desktop session holding [permission]. A paired phone (`warehouse`) is
+  /// refused: the accountant's step is not a phone action. A MIRROR console is
+  /// allowed (owner decision 2026-10-26) as the SIGNED-IN mirror user (never the
+  /// pairing admin), who must hold `mirror_console` and [permission]; the
+  /// handler receives `mirror: true` to apply the user's branch scope.
   Future<Response> runDesk(
     Request request,
     String permission,
-    Future<Response> Function(int userId, String deviceId) handler,
+    Future<Response> Function(int userId, String deviceId, bool mirror) handler,
   ) async {
     try {
       final kind = request.context['lanDeviceKind'];
-      if (kind == 'warehouse' || kind == 'mirror') return WhHttp.errorResponse(WhError('device_scope', 403));
+      if (kind == 'warehouse') return WhHttp.errorResponse(WhError('device_scope', 403));
       final denied = await ApiUserCtx.requirePermission(request, db, permission);
       if (denied != null) return denied;
+      final userId = ApiUserCtx.userIdOf(request)!;
+      final mirror = kind == 'mirror';
+      if (mirror && !await db.userHasPermission(userId, MirrorPermissionCodes.mirrorConsole)) {
+        return WhHttp.errorResponse(WhError('mirror_console_denied', 403));
+      }
       final deviceId = request.context['lanDeviceId'];
-      return await handler(ApiUserCtx.userIdOf(request)!, deviceId is String ? deviceId : 'desktop');
+      return await handler(userId, deviceId is String ? deviceId : 'desktop', mirror);
     } on WhError catch (e) {
       return WhHttp.errorResponse(e);
     } catch (e) {
       return WhHttp.errorResponse(classifyWhFailure(e));
     }
-  }
-}
-
-extension WhApproval on WhHttp {
-  /// Who really approves: the signed-in user when he holds [code], otherwise
-  /// the manager whose P5 approval proof (`x-approval-proof`) let this call
-  /// through `ApiUserCtx.requirePermission` (the proof is bound to [code]).
-  Future<int> approverOf(WhCtx ctx, String code) async {
-    if (await db.userHasPermission(ctx.userId, code)) return ctx.userId;
-    return ApprovalProof.parse(ctx.request.headers['x-approval-proof'])?.approverId ?? ctx.userId;
   }
 }
 

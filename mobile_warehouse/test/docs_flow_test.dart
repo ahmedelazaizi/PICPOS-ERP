@@ -383,6 +383,41 @@ void main() {
     expect(double.parse('${line['damaged']}'), 1);
   });
 
+  testWidgets('WH-010: a keeper without the approval right obtains a supervisor proof on the phone and attaches it', (tester) async {
+    final office = FakeOffice()..permissions = [...kClerk, 'inventory_transfer'];
+    office.transfers['transfer-0001'] = {
+      'state': 'requested',
+      'lines': [
+        {'lineGlobalId': 'tline-0001-a', 'productId': 5, 'quantity': '4', 'condition': 'ok'},
+      ],
+    };
+    await openApp(tester, office);
+    await tester.tap(find.byKey(const Key('doc.transfers')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('transfer-0001.approve')), findsNothing, reason: 'no direct approve without the right');
+
+    // wrong supervisor password: refused, nothing sent, still requested
+    await tester.tap(find.byKey(const Key('transfer-0001.askApproval')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('proof.user')), 'sup');
+    await tester.enterText(find.byKey(const Key('proof.password')), 'wrong');
+    await tester.tap(find.byKey(const Key('proof.ok')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('credentials are wrong'), findsOneWidget);
+    expect(office.proofsUsed, isEmpty);
+    expect(office.transfers['transfer-0001']!['state'], 'requested');
+
+    await tester.pump(const Duration(seconds: 5));
+    await tester.tap(find.byKey(const Key('transfer-0001.askApproval')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('proof.user')), 'sup');
+    await tester.enterText(find.byKey(const Key('proof.password')), office.supervisorPassword);
+    await tester.tap(find.byKey(const Key('proof.ok')));
+    await tester.pumpAndSettle();
+    expect(office.proofRequests.last, {'kind': 'transfer', 'ref': 'transfer-0001', 'action': 'approve', 'username': 'sup', 'password': 'sup-pw'});
+    expect(office.proofsUsed.single, (path: '/api/m1/wh/transfers/transfer-0001/approve', proof: 'PROOF-transfer-0001-approve'));
+    expect(office.transfers['transfer-0001']!['state'], 'approved');
+  });
   testWidgets('transfers switched off: the request button is disabled and the page explains why', (tester) async {
     final office = FakeOffice()
       ..permissions = kSupervisor

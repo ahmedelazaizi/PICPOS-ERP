@@ -101,6 +101,20 @@ extension WarehouseDocOps on WarehouseLanClient {
     return [for (final a in (m['approvals'] as List? ?? const [])) WhApprovalItem.fromJson((a as Map).cast<String, Object?>())];
   }
 
+  /// WH-010: the supervisor next to the phone proves HIS credential; the host signs a proof
+  /// for this document + [action] + version. [kind]: transfer | voucher | count.
+  Future<WhApprovalProof> approvalProof({
+    required String kind,
+    required String ref,
+    required String action,
+    String? username,
+    String? password,
+    String? cardCode,
+  }) async =>
+      WhApprovalProof.fromJson(_object(await transport.send(ApiRequest('POST', WhDocPaths.approvalProof,
+          headers: headers.build(credentials),
+          body: {'kind': kind, 'ref': ref, 'action': action, 'username': ?username, 'password': ?password, 'cardCode': ?cardCode}))));
+
   Future<WhLabelData> label(String kind, String ref) async =>
       WhLabelData.fromJson(await _get(WhDocPaths.labels, {'kind': kind, 'ref': ref}));
 }

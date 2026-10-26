@@ -29,6 +29,7 @@ void main() {
   late Fleet fleet;
   late int po, productId, supplierId, whId;
   late String receiptGid;
+  late String b2Receipt;
 
   setUp(() async {
     fleet = await Fleet.startMain();
@@ -122,11 +123,123 @@ void main() {
     expect(await db.select(db.purchaseInvoices).get(), isEmpty);
   });
 
-  test('a mirror console is refused 403 device_scope on the desk routes (route policy unchanged)', () async {
-    final mirror = await fleet.peer(fleet.mirror);
-    expect((await mirror.login('manager', kManagerFleetPw)).status, 200);
-    final r = await mirror.get('/api/m1/wh/desk/receipts');
-    expect(r.status, 403, reason: '$r');
-    expect(r.code ?? r.json['error'], 'device_scope');
+  // ── OWNER DECISION 2026-10-26: the accountant's desk is open to a MIRROR ──
+  group('mirror console', () {
+    late int managerId;
+    setUp(() async {
+      managerId = fleet.userIds['manager']!;
+      // the owner lets the branch-manager role convert receipts
+      await Fleet.grantPermissions(fleet.main.db, 'مدير فروع (fleet)', ['purchases_create']);
+    });
+
+    Future<int> receiptInBranch2() async {
+      await fleet.useMain(); // writes on the main's own database, not through the mirror's interceptor
+      final db = fleet.main.db;
+      final wh2 = await db.into(db.warehouses).insert(WarehousesCompanion.insert(name: 'مخزن الفرع الثاني', branchId: Value(fleet.branch2)));
+      final po2 = await db.createPurchaseOrder(
+        supplierId: supplierId, warehouseId: wh2, orderDate: DateTime(2026, 9, 2),
+        items: [PurchaseOrderItemsCompanion.insert(orderId: 0, productId: productId, quantity: 5, unitCost: 40, total: 200)],
+      );
+      await db.updatePurchaseOrderStatus(po2, 'confirmed');
+      final store = WhDocStore(db);
+      final item = (await db.getPurchaseOrderItems(po2)).single;
+      final doc = await store.create(
+          kind: 'po_receipt', state: 'submitted', warehouseId: wh2, createdBy: fleet.userIds['cashier']!,
+          deviceId: 'phone-2', refType: 'purchase_order', refId: '$po2');
+      await store.addLine(doc, lineGid: 'line-b2', productId: productId, qty: 5, poItemId: item.id);
+      b2Receipt = doc.gid;
+      return wh2;
+    }
+
+    test('the signed-in mirror manager lists and converts through the real host as HIMSELF; exact stock / AP; '
+        'a repeat is an idempotent replay', () async {
+      expect(await fleet.login(fleet.mirror, 'manager', kManagerFleetPw), isNotNull);
+      final source = ProviderContainer(overrides: [databaseProvider.overrideWithValue(fleet.mirror.db)])
+          .read(whReceiptsInboxProvider);
+      expect(source, isA<WhRemoteReceipts>());
+      final waiting = await source.list(managerId);
+      expect(waiting.map((r) => r['globalId']), [receiptGid]);
+
+      final out = await source.convert(receiptGid, managerId);
+      expect(out['invoiceId'], isNotNull);
+      final db = fleet.main.db;
+      expect(await db.select(db.purchaseInvoices).get(), hasLength(1));
+      final bal = await (db.select(db.inventoryBalances)
+            ..where((x) => x.productId.equals(productId) & x.warehouseId.equals(whId)))
+          .getSingle();
+      expect(bal.quantity, 6);
+      expect((await (db.select(db.parties)..where((p) => p.id.equals(supplierId))).getSingle()).balance, 240);
+      final doc = await WhDocStore(db).mustGet(receiptGid);
+      expect(doc.state, 'posted');
+      expect(doc.approvedBy, managerId, reason: 'the acting user is the signed-in mirror user, not the pairing admin');
+      final logUsers = await db.customSelect("SELECT DISTINCT user_id FROM activity_logs WHERE entity_type='wh_mobile_doc'").get();
+      expect(logUsers.map((r) => r.read<int>('user_id')), [managerId]);
+
+      final again = await source.convert(receiptGid, managerId);
+      expect(again['replayed'], isTrue);
+      expect(await db.select(db.purchaseInvoices).get(), hasLength(1), reason: 'converted once');
+      expect(await source.list(managerId), isEmpty);
+    });
+
+    test('a mirror manager without purchases_create, or without mirror_console, is refused and nothing is posted', () async {
+      expect(await fleet.login(fleet.mirror, 'manager', kManagerFleetPw), isNotNull);
+      final db = fleet.main.db;
+      final role = (await db.getAllRoles()).firstWhere((r) => r.name == 'مدير فروع (fleet)');
+      final all = await db.getAllPermissions();
+      int id(String c) => all.firstWhere((p) => p.code == c).id;
+      // 1. no purchases_create
+      await db.setRolePermissions(role.id, [id('mirror_console')]);
+      await expectLater(WhRemoteReceipts().list(managerId),
+          throwsA(isA<WhError>().having((e) => e.code, 'code', 'permission_denied').having((e) => e.status, 'status', 403)));
+      await expectLater(WhRemoteReceipts().convert(receiptGid, managerId), throwsA(isA<WhError>().having((e) => e.status, 'status', 403)));
+      // 2. purchases_create but the console grant revoked
+      await db.setRolePermissions(role.id, [id('purchases_create')]);
+      await expectLater(WhRemoteReceipts().list(managerId),
+          throwsA(isA<WhError>().having((e) => e.code, 'code', 'mirror_console_denied').having((e) => e.status, 'status', 403)));
+      expect(await db.select(db.purchaseInvoices).get(), isEmpty);
+      expect((await WhDocStore(db).mustGet(receiptGid)).state, 'submitted');
+    });
+
+    test('a user with purchases_create but no mirror_console cannot even sign in on the mirror', () async {
+      final mirror = await fleet.peer(fleet.mirror);
+      final r = await mirror.login('accountant', kAcctPw);
+      expect(r.status, 403, reason: '$r');
+      expect(r.code, 'mirror_console_denied');
+    });
+
+    test('branch scope: ALL-branch manager sees both branches; narrowed to B1 he sees and converts only B1', () async {
+      await receiptInBranch2();
+      expect(await fleet.login(fleet.mirror, 'manager', kManagerFleetPw), isNotNull);
+      final db = fleet.main.db;
+      final all = await WhRemoteReceipts().list(managerId);
+      expect(all.map((r) => r['globalId']).toSet(), {receiptGid, b2Receipt});
+
+      // the owner narrows him to branch 1 only
+      await db.customStatement(
+          'DELETE FROM user_branch_access WHERE user_id = ? AND branch_id = ?', [managerId, fleet.branch2]);
+      final only1 = await WhRemoteReceipts().list(managerId);
+      expect(only1.map((r) => r['globalId']), [receiptGid], reason: 'the B2 receipt is outside his scope');
+      await expectLater(WhRemoteReceipts().convert(b2Receipt, managerId),
+          throwsA(isA<WhError>().having((e) => e.code, 'code', 'doc_not_found').having((e) => e.status, 'status', 404)));
+      expect(await db.select(db.purchaseInvoices).get(), isEmpty, reason: 'nothing converted outside the scope');
+      expect((await WhDocStore(db).mustGet(b2Receipt)).state, 'submitted');
+      expect((await WhRemoteReceipts().convert(receiptGid, managerId))['invoiceId'], isNotNull);
+    });
+
+    test('offline: the mirror refuses honestly (host_unreachable), posts nothing locally, and works again after reconnect', () async {
+      expect(await fleet.login(fleet.mirror, 'manager', kManagerFleetPw), isNotNull);
+      await fleet.mainDown();
+      for (final call in [() => WhRemoteReceipts().list(managerId), () => WhRemoteReceipts().convert(receiptGid, managerId)]) {
+        await expectLater(call(), throwsA(isA<WhError>().having((e) => e.code, 'code', 'host_unreachable').having((e) => e.status, 'status', 503)));
+      }
+      final mdb = fleet.mirror.db;
+      expect(await mdb.select(mdb.purchaseInvoices).get(), isEmpty, reason: 'a mirror never invents a local invoice');
+      expect(await mdb.select(mdb.syncOutbox).get(), isEmpty, reason: 'a mirror has no outbox');
+      await fleet.mainUp();
+      expect(await fleet.login(fleet.mirror, 'manager', kManagerFleetPw), isNotNull);
+      expect((await WhRemoteReceipts().convert(receiptGid, managerId))['invoiceId'], isNotNull);
+      final db = fleet.main.db;
+      expect(await db.select(db.purchaseInvoices).get(), hasLength(1));
+    });
   });
 }

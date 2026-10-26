@@ -40,6 +40,7 @@ class ProvisioningRecord {
     this.mirrorAdminUserId,
     this.selfCheckPending = false,
     this.credentialsDeliveredAt,
+    this.pgConfigured = false,
   });
 
   static const currentVersion = 1;
@@ -70,6 +71,11 @@ class ProvisioningRecord {
 
   /// When the first user's verification delivered the branch credentials.
   final DateTime? credentialsDeliveredAt;
+
+  /// Main server (HQ) only: the PostgreSQL database this record lives in was
+  /// provisioned and armed by the first-run setup (the record is written INTO
+  /// that database, so it survives the restart into PG mode).
+  final bool pgConfigured;
 
   NetworkMode get networkMode => NetworkMode.values.firstWhere(
         (m) => m.name == mode,
@@ -107,6 +113,7 @@ class ProvisioningRecord {
         selfCheckPending: selfCheckPending ?? this.selfCheckPending,
         credentialsDeliveredAt:
             credentialsDeliveredAt ?? this.credentialsDeliveredAt,
+        pgConfigured: pgConfigured,
       );
 
   Map<String, dynamic> toJson() => {
@@ -127,6 +134,7 @@ class ProvisioningRecord {
         'selfCheckPending': selfCheckPending,
         'credentialsDeliveredAt':
             credentialsDeliveredAt?.toUtc().toIso8601String(),
+        'pgConfigured': pgConfigured,
       };
 
   /// `null` for anything that is not a valid record (never throws).
@@ -159,6 +167,7 @@ class ProvisioningRecord {
         mirrorAdminUserId: (j['mirrorAdminUserId'] as num?)?.toInt(),
         selfCheckPending: j['selfCheckPending'] == true,
         credentialsDeliveredAt: t('credentialsDeliveredAt'),
+        pgConfigured: j['pgConfigured'] == true,
       );
     } catch (_) {
       return null;

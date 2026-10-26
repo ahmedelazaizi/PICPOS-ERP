@@ -19,6 +19,7 @@ import '../../core/i18n/tr.dart';
 import '../../core/logging/diagnostic_logger.dart';
 import '../../services/auth/credential_stamp_store.dart';
 import '../../services/auth/offline_login_policy.dart';
+import '../../services/auth/shadow_login_log.dart';
 import '../../services/server_proxy.dart';
 import '../../services/sync/strategies/user_branch_access_sync_strategy.dart';
 import '../../services/sync/strategies/user_sync_strategy.dart';
@@ -270,6 +271,7 @@ class AuthSessionGate {
     if (!verdict.allowed) {
       unawaited(DiagnosticLogger.log('AUTH',
           'SHADOW: offline login would be rejected: ${verdict.decision.name} user=${user.id}'));
+      await ShadowLoginLog(db).record(verdict.decision, user.id);
       onShadowWouldReject?.call(verdict, user.id);
     }
   }

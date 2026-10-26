@@ -63,22 +63,15 @@ void main() {
     expect((await approve(h.keeper)).status, 403);
   });
 
-  test('a manager approval proof (P5) lets a keeper-phone carry the approval; self-use is still blocked', () async {
+  test('WH-010: a plain (document-unbound) P5 proof no longer carries a warehouse approval', () async {
     await create(h.keeper, 'out', '2');
     final proof = ApprovalProof.mint(
         permission: 'stock_adjust_approve', requesterId: h.keeper, approverId: h.manager, deviceId: 'wh-A');
-    final ok = await approve(h.keeper, headers: {'x-approval-proof': proof!});
-    expect(ok.status, 200, reason: ok.text);
-    expect(await h.stock(rice, h.a1), 8);
-
-    await create(h.supervisor, 'out', '2', gid: 'voucher-0002');
-    final own = ApprovalProof.mint(
-        permission: 'stock_adjust_approve', requesterId: h.keeper, approverId: h.supervisor, deviceId: 'wh-A');
-    // The proof's approver IS the voucher's author: refused whoever carries it.
-    final self = await h.call('POST', '/api/m1/wh/vouchers/voucher-0002/approve',
-        user: h.keeper, headers: {'x-approval-proof': own!});
-    expect(self.error, 'self_approval');
-    expect(await h.stock(rice, h.a1), 8);
+    final refused = await approve(h.keeper, headers: {'x-approval-proof': proof!});
+    expect(refused.status, 403, reason: refused.text);
+    expect(refused.error, 'approval_not_document_bound');
+    expect(await h.stock(rice, h.a1), 10, reason: 'nothing moved');
+    // the document-bound flow is proven in wh_doc_bound_approval_test.dart
   });
 
   test('stock never goes negative from a voucher, even with negative sales enabled', () async {

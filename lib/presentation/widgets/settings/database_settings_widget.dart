@@ -7,6 +7,8 @@ import '../../../core/widgets/app_toast.dart';
 import '../../../data/database/pg_config.dart';
 import '../../../data/database/connection.dart' show testPostgresConnection;
 import '../../../data/providers/providers.dart';
+import '../../../services/deployment/commit_result.dart';
+import '../../../services/deployment/mode_activator.dart';
 import '../../../services/network_service.dart';
 import '../../../core/config/brand.dart';
 
@@ -105,25 +107,24 @@ class _DatabaseSettingsDialogState
       //   (starts HTTP API on port 8080 for clients to connect)
       // - remote host → this machine is a client → NetworkMode.client
       //   (syncs data via HTTP from the remote server)
+      // A1: the mode is committed ONLY by ModeActivator (it also writes the
+      // device record). A local PostgreSQL makes this machine the main server;
+      // a REMOTE PostgreSQL host never silently turns the device into a client
+      // (that needs pairing + a first sync): use "re-provision this device".
       final ns = NetworkService.instance;
-      final db = ref.read(databaseProvider);
       final pgHost = config.host.trim();
       if (pgHost == 'localhost' || pgHost == '127.0.0.1') {
-        // Spec 089: thread DB into setMode so prefs + canonical DB store
-        // are updated together.
-        await ns.setMode(NetworkMode.server, db: db);
+        final r = await ModeActivator(db: ref.read(databaseProvider))
+            .commit(ActivationPlan(mode: NetworkMode.server, port: ns.serverPort));
         await ns.saveSettings();
-        debugPrint('[DB Settings] Auto-configured SERVER mode: HTTP API will start on port 8080');
-      } else {
-        // FIX: Only set address — preserve the server port from Setup Wizard.
-        // The user configures the WAN port in the Setup Wizard (e.g. 9090),
-        // which may differ from the internal LAN port (8080).
-        // Previously this hardcoded port: 8080, overwriting the WAN port.
-        final existingPort = ns.serverPort;
-        ns.setServerAddress(pgHost, port: existingPort != 8080 ? existingPort : null);
-        await ns.setMode(NetworkMode.client, db: db);
-        await ns.saveSettings();
-        debugPrint('[DB Settings] Auto-configured CLIENT mode: HTTP sync to $pgHost:${ns.serverPort}');
+        if (r is CommitFailed && mounted) {
+          AppToast.show(context, r.reasonAr, type: ToastType.error);
+        }
+      } else if (mounted) {
+        AppToast.show(
+            context,
+            tr('لن يتغيّر نمط هذا الجهاز تلقائيًا. للاتصال بخادم بعيد استخدم «إعادة توفير هذا الجهاز» من إعدادات الشبكة.'),
+            type: ToastType.warning);
       }
     }
 
@@ -132,10 +133,8 @@ class _DatabaseSettingsDialogState
     if (_mode == DatabaseMode.sqlite) {
       final currentNetMode = NetworkService.instance.mode;
       if (currentNetMode != NetworkMode.client && currentNetMode != NetworkMode.mirror) {
-        await NetworkService.instance.setMode(
-          NetworkMode.standalone,
-          db: ref.read(databaseProvider),
-        );
+        await ModeActivator(db: ref.read(databaseProvider))
+            .commit(const ActivationPlan(mode: NetworkMode.standalone));
       }
     }
 
