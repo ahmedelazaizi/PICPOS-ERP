@@ -13,6 +13,7 @@ import '../../core/logging/diagnostic_logger.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../../core/utils/uuid_v7.dart';
 import '../../data/database/database.dart';
+import 'm1_wh/wh_error_classifier.dart' show isUniqueViolation;
 import '../../domain/models/attachment_policy.dart';
 import '../../domain/models/floor_plan_layout.dart';
 import '../cheque_receipt_jes.dart';

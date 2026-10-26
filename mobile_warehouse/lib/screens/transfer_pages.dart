@@ -64,11 +64,11 @@ class _TransfersPageState extends State<TransfersPage> {
     final t = S.of(context);
     final got = <String, (String, String)>{};
     for (final l in d.lines) {
-      final q = await askQuantity(context, title: t('receivedOf', {'q': l.quantity}), initial: l.quantity);
+      final q = await askQuantity(context, title: t('receivedOf', {'q': ltr(l.quantity)}), initial: l.quantity);
       if (q == null || !mounted) return;
       // WH-012: the damaged part is entered here, otherwise it is booked as a
       // shortage (or as good stock when the user folds it into the received).
-      final dmg = await askQuantity(context, title: t('damagedOf', {'q': l.quantity}), initial: '0');
+      final dmg = await askQuantity(context, title: t('damagedOf', {'q': ltr(l.quantity)}), initial: '0');
       if (dmg == null || !mounted) return;
       final total = (double.tryParse(q) ?? 0) + (double.tryParse(dmg) ?? 0);
       if (total > (double.tryParse(l.quantity) ?? 0) + 1e-9) {
@@ -137,7 +137,7 @@ class _TransfersPageState extends State<TransfersPage> {
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                             StatusPill(label: t('state_${d.state}'), tone: PicPosTone.brand),
                             const SizedBox(height: PicPosSpacing.sm),
-                            Text(t('transferLines', {'n': '${d.lines.length}'})),
+                            Text(t('transferLines', {'n': ltr(d.lines.length)})),
                             const SizedBox(height: PicPosSpacing.sm),
                             Wrap(spacing: PicPosSpacing.sm, runSpacing: PicPosSpacing.sm, children: _actions(d)),
                           ]),

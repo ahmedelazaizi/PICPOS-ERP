@@ -96,9 +96,7 @@ extension PurchaseDao on AppDatabase {
       await accountingDao.validateFinancialPeriod(effectiveInvoiceDate,
           operation: 'فاتورة مشتريات');
 
-      // أهليّةُ الأمر تُفحَص **قبل** أن يتحرّك شيء: الرفضُ بعد إدخال
-      // البضاعة يعتمد على تراجع المعاملة وحدَه، والرسالةُ تصل المستخدمَ
-      // بعد أن رأى نجاحاً.
+      // Order eligibility is checked BEFORE anything moves.
       if (sourceOrderId != null) {
         await _requireConsumablePurchaseOrder(sourceOrderId);
       }

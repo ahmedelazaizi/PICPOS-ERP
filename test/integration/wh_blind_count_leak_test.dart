@@ -109,6 +109,7 @@ void main() {
 
   test('a task in another warehouse is invisible', () async {
     final r = await h.call('GET', '/api/m1/wh/counts/$taskId/review', user: h.supervisor, device: 'wh-B');
-    expect(r.status, anyOf(403, 404));
+    expect(r.status, 404, reason: r.text);
+    expect(r.text, isNot(contains('quantity')), reason: 'nothing of the task leaks');
   });
 }

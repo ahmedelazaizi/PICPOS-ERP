@@ -140,7 +140,7 @@ class WhOutbox {
     bool owned(OutboxEntry e) => session.info == null || _mine(e);
     sync.queue(
       pending: all.where((e) => e.status == OutboxStatus.pending && owned(e)).length,
-      rejected: all.where((e) => e.status == OutboxStatus.rejected && owned(e)).length,
+      rejected: all.where((e) => e.status == OutboxStatus.rejected && e.error != 'dismissed' && owned(e)).length,
       foreign: all.where((e) => e.status == OutboxStatus.pending && !owned(e)).length,
     );
   }
@@ -170,6 +170,16 @@ class WhOutbox {
     } on ApiError catch (err) {
       if (err.kind == ApiErrorKind.unauthorized || err.kind == ApiErrorKind.deviceRevoked) rethrow;
       if (err.kind == ApiErrorKind.unavailable && (err.status ?? 0) >= 500) {
+        // NEW-03: "busy" (503: a locked database, a deadlock) is TRANSIENT and
+        // says nothing about the entry. It has its own counter and never uses
+        // the permanent-failure budget, so a rightful operation is not parked
+        // as dead_letter by a few busy minutes at the office.
+        if (err.status == 503 || err.code == 'busy') {
+          final busy = ((e.payload['busyCount'] as num?)?.toInt() ?? 0) + 1;
+          e.payload['busyCount'] = busy;
+          e.payload['retryAt'] = _now().add(Backoff.lan.delay(busy)).millisecondsSinceEpoch;
+          rethrow;
+        }
         // The office answered and failed. Retry a bounded number of times with
         // backoff; then park it so the entries behind it are not held hostage.
         final failures = ((e.payload['serverFailures'] as num?)?.toInt() ?? 0) + 1;
@@ -244,11 +254,27 @@ class WhOutbox {
     return SendOutcome(accepted: rejected == null && !waiting, rejectedCode: rejected, waiting: waiting, rejectedIndex: at);
   }
 
+  /// Puts a dead-lettered entry (parked after repeated office failures) back in
+  /// the queue under the SAME id: the office answers from its command log if it
+  /// had in fact applied it, so retrying cannot apply it twice.
+  Future<void> retry(OutboxEntry e) async {
+    if (e.status != OutboxStatus.rejected || e.error != 'dead_letter') return;
+    e
+      ..status = OutboxStatus.pending
+      ..error = null;
+    e.payload
+      ..remove('serverFailures')
+      ..remove('busyCount')
+      ..remove('retryAt');
+    await store.store.updateOutbox(e);
+    await _count();
+  }
+
   /// Puts a rejected entry's reason in front of the user and lets him drop it.
   /// Dropping is the only way out: a rejected operation is never re-sent.
   Future<void> dismiss(OutboxEntry e) async {
     e
-      ..status = OutboxStatus.accepted
+      ..status = OutboxStatus.rejected // history stays honest: it was NEVER accepted by the office
       ..error = 'dismissed';
     await store.store.updateOutbox(e);
     await _count();

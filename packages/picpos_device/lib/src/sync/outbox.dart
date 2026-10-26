@@ -54,7 +54,8 @@ class Outbox {
       [for (final e in await store.outbox()) if (e.status == OutboxStatus.rejected) e];
 
   /// Close-shift gate: nothing pending and nothing unresolved.
-  Future<bool> isDrained() async => (await store.outbox()).every((e) => e.status == OutboxStatus.accepted);
+  Future<bool> isDrained() async => (await store.outbox())
+      .every((e) => e.status == OutboxStatus.accepted || (e.status == OutboxStatus.rejected && e.error == 'dismissed'));
 
   /// Pushes pending entries in order. Concurrent calls are ignored (the
   /// second returns an empty report) so one entry is never in flight twice.

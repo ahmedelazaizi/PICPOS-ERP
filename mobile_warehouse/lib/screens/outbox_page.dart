@@ -4,6 +4,7 @@ import 'package:picpos_ui/picpos_ui.dart';
 
 import '../l10n/strings.dart';
 import '../sync/wh_ops.dart';
+import '../widgets/wh_widgets.dart';
 
 /// Pending / accepted / rejected operations of this phone (W5 offline queue).
 /// Pending ones are re-sent in order with the same ids; a rejected one is final
@@ -57,7 +58,7 @@ class _OutboxPageState extends State<OutboxPage> {
               if (entries.isEmpty) return EmptyState(icon: Icons.outbox_outlined, title: t('outboxEmpty'), message: t('outboxNote'));
               return ListView(padding: const EdgeInsets.all(PicPosSpacing.lg), children: [
                 Text(t('outboxNote')),
-                Text(t('queueCounts', {'p': '${widget.ops.sync.pending}', 'r': '${widget.ops.sync.rejected}'}), key: const Key('outbox.counts')),
+                Text(t('queueCounts', {'p': ltr(widget.ops.sync.pending), 'r': ltr(widget.ops.sync.rejected)}), key: const Key('outbox.counts')),
                 for (final e in entries)
                   ListTile(
                     key: Key('outbox.${e.globalId}'),
@@ -69,21 +70,48 @@ class _OutboxPageState extends State<OutboxPage> {
                               ? t('forUser', {'u': '${e.payload['userName'] ?? ''}'})
                           : e.error == 'transport'
                               ? t('waitingNetwork')
-                              : t('attempts', {'n': '${e.attempts}'}),
+                              : t('attempts', {'n': ltr(e.attempts)}),
                     ),
                     trailing: e.status == OutboxStatus.rejected
                         ? Row(mainAxisSize: MainAxisSize.min, children: [
                             StatusPill(label: t('status_rejected'), tone: PicPosTone.error),
+                            if (e.error == 'dead_letter')
+                              IconButton(
+                                key: Key('outbox.retry.${e.globalId}'),
+                                tooltip: t('retryOp'),
+                                onPressed: () async {
+                                  await widget.ops.outbox.retry(e);
+                                  if (mounted) {
+                                    setState(() {
+                                      _entries = _load();
+                                    });
+                                  }
+                                },
+                                icon: const Icon(Icons.replay),
+                              ),
                             IconButton(
                               key: Key('outbox.dismiss.${e.globalId}'),
                               tooltip: t('dismiss'),
                               onPressed: () async {
+                                final sure = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    key: const Key('outbox.discardDialog'),
+                                    title: Text(t('discardTitle')),
+                                    content: Text(t('discardBody')),
+                                    actions: [
+                                      TextButton(key: const Key('outbox.discard.no'), onPressed: () => Navigator.pop(ctx, false), child: Text(t('cancel'))),
+                                      TextButton(key: const Key('outbox.discard.yes'), onPressed: () => Navigator.pop(ctx, true), child: Text(t('discard'))),
+                                    ],
+                                  ),
+                                );
+                                if (sure != true) return;
                                 await widget.ops.outbox.dismiss(e);
                                 if (mounted) {
-      setState(() {
-        _entries = _load();
-      });
-    }
+                                    setState(() {
+                                      _entries = _load();
+                                    });
+                                  }
                               },
                               icon: const Icon(Icons.close),
                             ),

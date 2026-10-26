@@ -230,7 +230,7 @@ class WhCountService {
 
   /// Does the task have phone count documents still waiting for the approval?
   Future<bool> hasPhonePasses(int taskId) async =>
-      (await store.list(kind: 'count_submission', states: ['submitted'], refType: 'cycle_count_task', refId: '$taskId', limit: 1))
+      (await store.list(kind: 'count_submission', states: ['draft', 'submitted'], refType: 'cycle_count_task', refId: '$taskId', limit: 1))
           .isNotEmpty;
 
   /// The desktop «إكمال» of a task that has phone passes (WH-008): the same

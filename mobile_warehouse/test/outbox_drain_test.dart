@@ -97,6 +97,9 @@ void main() {
     expect(office.posts, isEmpty, reason: 'a rejected operation is not retried under any identity');
     await outbox.dismiss(e);
     expect(sync.rejected, 0);
+    final kept = (await entries()).single;
+    expect((kept.status, kept.error), (OutboxStatus.rejected, 'dismissed'), reason: 'a dropped operation is NOT recorded as accepted');
+    expect(await store.outbox.isDrained(), isTrue, reason: 'a dismissed entry does not hold back unpairing');
   });
 
   test('an expired session keeps the queue and asks for sign-in; a rejected entry does not block the next', () async {
@@ -205,6 +208,54 @@ void main() {
       expect(es.first.error, 'dead_letter');
       expect(office.serverErrors, 0, reason: 'exactly five attempts were made');
       expect(es.last.status, OutboxStatus.accepted, reason: 'the queue is no longer blocked: the entry behind it went out');
+    });
+
+    test('NEW-03: a run of 503 busy answers never consumes the dead_letter budget and the entry is still sent when the office recovers', () async {
+      office.busyReplies = 12; // more than twice maxServerFailures
+      await outbox.enqueue('voucher_create', '/api/m1/wh/vouchers', {'globalId': 'v1'});
+      for (var i = 0; i < 12; i++) {
+        clock = clock.add(const Duration(hours: 1));
+        await outbox.drain();
+      }
+      expect(office.busyReplies, 0, reason: 'twelve attempts were made');
+      var e = (await entries()).single;
+      expect(e.status, OutboxStatus.pending, reason: 'busy is not a permanent failure');
+      expect(e.payload['serverFailures'], isNull);
+      expect(e.payload['busyCount'], 12);
+      clock = clock.add(const Duration(hours: 1));
+      await outbox.drain();
+      e = (await entries()).single;
+      expect(e.status, OutboxStatus.accepted);
+      expect(office.applied, 1);
+    });
+
+    test('NEW-03: retry puts a dead_letter entry back in the queue under the SAME id; discarding is the other exit', () async {
+      office.serverErrors = 5;
+      final id = await outbox.enqueue('voucher_create', '/api/m1/wh/vouchers', {'globalId': 'v1'});
+      for (var i = 0; i < 5; i++) {
+        clock = clock.add(const Duration(hours: 1));
+        await outbox.drain();
+      }
+      var e = (await entries()).single;
+      expect((e.status, e.error), (OutboxStatus.rejected, 'dead_letter'));
+      expect(sync.rejected, 1);
+
+      await outbox.retry(e);
+      e = (await entries()).single;
+      expect((e.status, e.globalId), (OutboxStatus.pending, id));
+      expect(e.payload['serverFailures'], isNull);
+      expect(sync.rejected, 0);
+      await outbox.drain();
+      expect((await entries()).single.status, OutboxStatus.accepted);
+      expect(office.posts.last.key, id);
+
+      // an ordinary refusal is NOT retryable
+      office.rejectWith = 'stock_changed';
+      await outbox.enqueue('transfer_dispatch', '/api/m1/wh/transfers/t1/dispatch', const {});
+      await outbox.drain();
+      final refused = (await entries()).last;
+      await outbox.retry(refused);
+      expect((await entries()).last.status, OutboxStatus.rejected);
     });
 
     test('an operation that depends on a rejected one is not sent', () async {

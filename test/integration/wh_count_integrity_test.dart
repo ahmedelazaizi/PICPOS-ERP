@@ -73,10 +73,11 @@ void main() {
   group('WH-008 the desktop «إكمال» follows the same rule', () {
     late CycleCountRepositoryImpl repo;
     setUp(() => repo = CycleCountRepositoryImpl(h.db));
+    Matcher refusedWith(String code) => isA<CycleCountRefused>().having((e) => e.code, 'code', code);
 
     test('phone pass with a variance: desktop finalize is refused until the recount, stock untouched', () async {
       await count(h.clerk, 'doc-count-0001', {rice: '8', milk: '5'});
-      await expectLater(repo.finalizeCycleCountTask(taskId, approverUserId: h.supervisor), throwsA(anything));
+      await expectLater(repo.finalizeCycleCountTask(taskId, approverUserId: h.supervisor), throwsA(refusedWith('recount_required')));
       expect(await h.stock(rice, h.a1), 10);
       final t = await (h.db.select(h.db.cycleCountTasks)..where((x) => x.id.equals(taskId))).getSingle();
       expect(t.status, isNot('completed'));
@@ -84,7 +85,16 @@ void main() {
 
     test('the counter himself cannot finalize from the desktop (four-eyes)', () async {
       await count(h.supervisor, 'doc-count-0001', {rice: '10', milk: '5'});
-      await expectLater(repo.finalizeCycleCountTask(taskId, approverUserId: h.supervisor), throwsA(anything));
+      await expectLater(repo.finalizeCycleCountTask(taskId, approverUserId: h.supervisor), throwsA(refusedWith('self_approval')));
+      final t = await (h.db.select(h.db.cycleCountTasks)..where((x) => x.id.equals(taskId))).getSingle();
+      expect(t.status, isNot('completed'));
+    });
+
+    test('WH-008: a pass still in DRAFT blocks the desktop completion (count_not_submitted), stock untouched', () async {
+      expect((await entries(h.clerk, 'doc-count-0001', {rice: '8', milk: '5'})).status, 200); // never submitted
+      await expectLater(repo.finalizeCycleCountTask(taskId, approverUserId: h.supervisor), throwsA(refusedWith('count_not_submitted')));
+      await expectLater(repo.finalizeCycleCountTask(taskId), throwsA(refusedWith('approver_required')));
+      expect(await h.stock(rice, h.a1), 10);
       final t = await (h.db.select(h.db.cycleCountTasks)..where((x) => x.id.equals(taskId))).getSingle();
       expect(t.status, isNot('completed'));
     });

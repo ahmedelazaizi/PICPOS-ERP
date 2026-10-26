@@ -1,5 +1,6 @@
 // WH-006 on PostgreSQL: the stock pre-check and the PO `received_quantity`
 // write are race-free (row lock before the read; one conditional UPDATE).
+// The two-connection proof of the row lock lives in wh_two_connection_pg_test.dart.
 // Also runs the blind-count SQL (CAST of ref_id) on real PostgreSQL.
 @Tags(['pg'])
 library;
@@ -9,7 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:picpos_erp/data/database/database.dart';
 import 'package:picpos_erp/data/database/wh_mobile_docs_schema.dart';
 import 'package:picpos_erp/services/api/m1_wh/wh_blind.dart';
-import 'package:picpos_erp/services/api/m1_wh/wh_http.dart';
+import 'package:picpos_erp/services/api/m1_wh/wh_doc_store.dart';
 import 'package:picpos_erp/services/api/m1_wh/wh_stock_guard.dart';
 
 import '_support/pg_fixture.dart';
@@ -56,33 +57,24 @@ void main() {
     expect((await fx.db.getPurchaseOrderItems(poId)).single.receivedQuantity, 12);
   });
 
-  test('two concurrent withdrawals of 8 from 10 with negative sales enabled: one wins, stock never negative', () async {
-    final db = fx.db;
-    await db.setSetting('enable_negative_sales', 'true');
-    await db.adjustStock(productId: product, warehouseId: warehouse, quantity: 10, type: 'purchase', unitCost: 10);
-    Future<bool> withdraw() async {
-      try {
-        await db.transaction(() async {
-          await requireCoveredStock(db, productId: product, warehouseId: warehouse, qty: 8, viewerId: 1);
-          await db.adjustStock(
-              productId: product, warehouseId: warehouse, quantity: -8, type: 'transfer_out', unitCost: 10);
-        });
-        return true;
-      } on WhError {
-        return false;
-      }
-    }
-
-    final r = await Future.wait([withdraw(), withdraw()]);
-    expect(r.where((x) => x).length, 1, reason: 'exactly one withdrawal is covered: $r');
-    final bal = await (db.select(db.inventoryBalances)
-          ..where((b) => b.productId.equals(product) & b.warehouseId.equals(warehouse)))
-        .getSingle();
-    expect(bal.quantity, greaterThanOrEqualTo(0));
-    expect(bal.quantity, 2);
-  });
-
   test('the blind-count SQL (isCountingItem) runs on PostgreSQL', () async {
     expect(await isCountingItem(fx.db, 1, product, warehouse), isFalse);
+  });
+
+  test('WH-009: with NON-NUMERIC ref_id rows in the table (transfer gids, PO ids) the blind-count SQL still runs and finds the counter', () async {
+    final db = fx.db;
+    final store = WhDocStore(db);
+    await db.adjustStock(productId: product, warehouseId: warehouse, quantity: 3, type: 'purchase', unitCost: 10);
+    final plan = await db.into(db.cycleCountPlans).insert(CycleCountPlansCompanion.insert(name: 'W', warehouseId: warehouse));
+    final task = await db.generateCycleCountTask(planId: plan, warehouseId: warehouse, productsPerTask: 20);
+    // rows whose ref_id is not an integer: a transfer gid, a free text, a PO id
+    for (final ref in ['0191-abcd-not-a-number', 'PO/2026/x', '77']) {
+      await store.create(kind: 'transfer', state: 'requested', warehouseId: warehouse, createdBy: 5, deviceId: 'd', refType: 'purchase_order', refId: ref);
+    }
+    await store.create(
+        kind: 'count_submission', state: 'draft', warehouseId: warehouse, createdBy: 9, deviceId: 'd',
+        refType: 'cycle_count_task', refId: '$task');
+    expect(await isCountingItem(db, 9, product, warehouse), isTrue);
+    expect(await isCountingItem(db, 5, product, warehouse), isFalse);
   });
 }

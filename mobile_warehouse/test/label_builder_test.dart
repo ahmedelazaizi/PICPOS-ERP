@@ -31,6 +31,8 @@ void main() {
     // Digits and BIN- codes are plain ASCII; a quick structural check that nothing is dropped.
     for (final l in [_item, _bin]) {
       expect(l.barcode.codeUnits.every((c) => c >= 32 && c < 127), isTrue);
+      // ...and the builder emits exactly that string (nothing dropped or altered)
+      expect(buildLabelReceipt(l).blocks.whereType<ReceiptBarcode>().single.data, l.barcode);
     }
   });
 

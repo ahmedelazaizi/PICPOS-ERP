@@ -13,6 +13,7 @@ class FakeOffice extends FakeDesktop {
   /// The next N new commands fail with a bare `500 internal` (an unclassified
   /// exception at the office).
   int serverErrors = 0;
+  int busyReplies = 0;
 
   /// The accounting period is closed: stock-posting commands answer 409
   /// `period_closed`, as the real host does.
@@ -120,6 +121,10 @@ class FakeOffice extends FakeDesktop {
     final seen = _log[key];
     if (seen != null) return _json({...seen, 'replayed': true});
     if (rejectWith != null) return _json({'error': rejectWith!}, 409);
+    if (busyReplies > 0) {
+      busyReplies--;
+      return _json({'error': 'busy'}, 503);
+    }
     if (serverErrors > 0) {
       serverErrors--;
       return _json({'error': 'internal'}, 500);

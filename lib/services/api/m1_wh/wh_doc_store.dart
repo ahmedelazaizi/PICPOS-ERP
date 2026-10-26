@@ -12,6 +12,7 @@ import '../../../core/utils/uuid_v7.dart';
 import '../../../data/database/database.dart';
 import '../../../data/database/wh_mobile_docs_schema.dart';
 import '../../activity_logger.dart';
+import 'wh_error_classifier.dart';
 import 'wh_http.dart';
 
 /// kind -> state -> action -> next state. Anything else is `invalid_transition`.
@@ -282,13 +283,38 @@ class WhDocStore {
     await db.ensureWhMobileDocsSchema();
     final id = ctx.commandId;
     final hash = payloadHash({'action': action, 'body': body});
+    Map<String, Object?> replayOf(Map<String, Object?> seen) {
+      if (seen['payload_hash'] != hash) throw WhError('idempotency_conflict', 409);
+      final stored = jsonDecode((seen['result_json'] as String?) ?? '{}') as Map;
+      return {...stored.cast<String, Object?>(), 'replayed': true};
+    }
+
+    try {
+      return await _commandOnce(ctx, id, action, hash, effect, replayOf);
+    } catch (e) {
+      // NEW-02: two requests with the SAME key raced (a phone retry while the
+      // first still ran). The loser hits the UNIQUE key of the winner's rows.
+      // The winner has committed (or will not): read its stored result and
+      // answer it as a replay - never a 409 - so the phone does not mark an
+      // operation that DID succeed as rejected.
+      if (!isUniqueViolation(e)) rethrow;
+      final seen = await _event(id);
+      if (seen == null) rethrow;
+      return replayOf(seen);
+    }
+  }
+
+  Future<Map<String, Object?>> _commandOnce(
+    WhCtx ctx,
+    String id,
+    String action,
+    String hash,
+    Future<({int? docId, Map<String, Object?> result})> Function() effect,
+    Map<String, Object?> Function(Map<String, Object?>) replayOf,
+  ) {
     return db.transaction(() async {
       final seen = await _event(id);
-      if (seen != null) {
-        if (seen['payload_hash'] != hash) throw WhError('idempotency_conflict', 409);
-        final stored = jsonDecode((seen['result_json'] as String?) ?? '{}') as Map;
-        return {...stored.cast<String, Object?>(), 'replayed': true};
-      }
+      if (seen != null) return replayOf(seen);
       final out = await effect();
       await db.customStatement(
         'INSERT INTO wh_mobile_doc_events (command_id, doc_id, action, actor_user_id, device_id, '
@@ -305,6 +331,24 @@ class WhDocStore {
 
   Future<void> _audit(WhCtx ctx, String action, int? docId) async {
     final u = await (db.select(db.users)..where((x) => x.id.equals(ctx.userId))).getSingleOrNull();
+    // WH-018: on PostgreSQL a failed INSERT poisons the WHOLE transaction (the
+    // logger swallows the error, but every later statement and the commit
+    // fail). The log line goes under a savepoint that is rolled back on failure,
+    // so a broken log can never undo the command it records.
+    final pg = db.isPostgres;
+    if (pg) await db.customStatement('SAVEPOINT wh_audit');
+    await _writeAudit(ctx, action, docId, u);
+    if (pg) {
+      try {
+        await db.customStatement('RELEASE SAVEPOINT wh_audit');
+      } catch (_) {
+        await db.customStatement('ROLLBACK TO SAVEPOINT wh_audit');
+        await db.customStatement('RELEASE SAVEPOINT wh_audit');
+      }
+    }
+  }
+
+  Future<void> _writeAudit(WhCtx ctx, String action, int? docId, User? u) async {
     await ActivityLogger(db).log(
       userId: u?.id, // null when the row is gone: the FK must never abort the command
       userName: u?.username ?? '#${ctx.userId}',

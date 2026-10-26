@@ -273,22 +273,29 @@ extension ApiDataInventoryRoutes on ApiDataHandler {
           json.decode(await request.readAsString()) as Map<String, dynamic>;
       final fromWarehouseId = await _resolveWarehouseId(parseInt(data['fromWarehouseId']));
       final toWarehouseId = await _resolveWarehouseId(parseInt(data['toWarehouseId']));
-      final userId = await _resolveUserIdNullable(parseIntNullable(data['userId']),
-          fallbackUsername: data['createdByUsername'] as String?);
+      // WH-028: the actor is the AUTHENTICATED session user, never a body field
+      // (a client could stamp the bond and the journal with anyone).
+      final userId = ApiUserCtx.userIdOf(request);
+      // ...and the source warehouse must be inside that user's warehouse scope
+      // (null scope = unrestricted).
+      final userScope = userId == null ? null : await db.getWarehouseScopeForUser(userId);
+      if (userScope != null && !userScope.contains(fromWarehouseId)) {
+        return Response(403,
+            body: json.encode({'error': 'warehouse_scope'}),
+            headers: {'Content-Type': 'application/json'});
+      }
       final notes = data['notes'] as String? ?? 'تحويل مخزني من عميل';
       // Spec 129 F4 — caller-minted globalId stamped on the inventory_bonds
       // row created below. Dedup against it before doing the stock moves so a
       // retried request can't double-deduct from the source warehouse.
       final incomingGlobalId = (data['globalId'] as String?)?.trim();
-      if (incomingGlobalId != null && incomingGlobalId.isNotEmpty) {
-        final existing = await (db.select(db.inventoryBonds)
-              ..where((b) => b.globalId.equals(incomingGlobalId))
-              ..limit(1))
-            .getSingleOrNull();
-        if (existing != null) {
-          debugPrint('[API] postStockTransfer: duplicate globalId=$incomingGlobalId — skipping (serverBondId=${existing.id})');
-          return jsonResponse({'success': true, 'dedup': true});
-        }
+      Future<bool> alreadyDone() async {
+        if (incomingGlobalId == null || incomingGlobalId.isEmpty) return false;
+        return (await (db.select(db.inventoryBonds)
+                  ..where((b) => b.globalId.equals(incomingGlobalId))
+                  ..limit(1))
+                .getSingleOrNull()) !=
+            null;
       }
 
       // WH-028: the transfer goes through the SAME pipeline as the desktop
@@ -320,15 +327,26 @@ extension ApiDataInventoryRoutes on ApiDataHandler {
       }
       if (lines.isEmpty) return errorResponse('Transfer has no items', statusCode: 400);
       try {
-        await db.transferStock(
-          fromWarehouseId: fromWarehouseId,
-          toWarehouseId: toWarehouseId,
-          items: lines,
-          notes: notes,
-          userId: userId,
-          globalId: incomingGlobalId,
-        );
+        // The duplicate check runs INSIDE the transaction that moves the stock
+        // (a retry racing the first request cannot deduct twice).
+        final dup = await db.transaction(() async {
+          if (await alreadyDone()) return true;
+          await db.transferStock(
+            fromWarehouseId: fromWarehouseId,
+            toWarehouseId: toWarehouseId,
+            items: lines,
+            notes: notes,
+            userId: userId,
+            globalId: incomingGlobalId,
+          );
+          return false;
+        });
+        if (dup) return jsonResponse({'success': true, 'dedup': true});
       } on Exception catch (e) {
+        // The loser of a race hits the UNIQUE global id of the winner's bond.
+        if (isUniqueViolation(e) && await alreadyDone()) {
+          return jsonResponse({'success': true, 'dedup': true});
+        }
         // transferStock refuses a shortfall in Arabic ("... أقل من المطلوب").
         if ('$e'.contains('أقل من المطلوب')) {
           return errorResponse('insufficient_stock', statusCode: 409);

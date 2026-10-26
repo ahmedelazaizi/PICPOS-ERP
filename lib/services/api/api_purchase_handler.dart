@@ -9,11 +9,10 @@ import '../../domain/models/purchase_return_settlement.dart';
 import '../../domain/models/import_purchase_plan.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io' show File, FileMode;
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:shelf/shelf.dart';
 import 'api_errors.dart';
+import 'api_server_error_log.dart';
 import 'package:drift/drift.dart';
 import '../../core/logging/diagnostic_logger.dart';
 import '../../core/permissions/permission_codes.dart';
@@ -98,22 +97,7 @@ class ApiPurchaseHandler extends ApiHandlerBase {
     return _resolveUserId(clientUserId, fallbackUsername: fallbackUsername);
   }
 
-  /// Persist an error + stacktrace to `Documents/server_errors.log` — same
-  /// location pattern as `DiagnosticLogger` (uralcash_login_log.txt) so the
-  /// file is easy for operators to find and ship back.
-  Future<void> _writeErrorLog(String op, Object e, StackTrace st) async {
-    try {
-      final dir = await getApplicationDocumentsDirectory();
-      final path = '${dir.path}/server_errors.log';
-      final buf = StringBuffer()
-        ..writeln('═══════════════════════════════════════════════════════════')
-        ..writeln('[${DateTime.now().toIso8601String()}] op=$op')
-        ..writeln('error: $e')
-        ..writeln('stacktrace:')
-        ..writeln(st.toString());
-      await File(path).writeAsString(buf.toString(), mode: FileMode.append, flush: true);
-    } catch (_) {/* swallow intentionally — this is a diagnostic path */}
-  }
+  Future<void> _writeErrorLog(String op, Object e, StackTrace st) => writeServerErrorLog(op, e, st);
 
   // ═══════════════════════════════════════════════════════════════
   // Purchases
@@ -260,6 +244,17 @@ class ApiPurchaseHandler extends ApiHandlerBase {
         );
       }
 
+      // WH-001: the order is named by GLOBAL id and consumed in this transaction.
+      int? sourceOrderId;
+      final sourceGid = (data['sourceOrderGlobalId'] as String?)?.trim();
+      if (sourceGid != null && sourceGid.isNotEmpty) {
+        final po = await db.getPurchaseOrderByGlobalId(sourceGid);
+        if (po == null) {
+          throw PurchaseOrderNotConsumable('po_not_found', 'أمر الشراء المصدر غير موجود على الخادم');
+        }
+        sourceOrderId = po.id;
+      }
+
       final serverId = await db.createPurchaseInvoice(
         supplierId: resolvedSupplierId,
         warehouseId: resolvedWhId,
@@ -279,8 +274,10 @@ class ApiPurchaseHandler extends ApiHandlerBase {
         // J1b (v188): the client's chosen «حساب المشتريات»; absent ⇒ NULL ⇒
         // mapped default (older clients unchanged).
         purchaseAccountId: parseIntNullable(data['purchaseAccountId']),
+        sourceOrderId: sourceOrderId,
       );
       broadcast('purchases');
+      if (sourceOrderId != null) broadcast('purchase_orders');
       broadcast('products');
       // Spec 136 (field 2026-06-14): a cash purchase also creates a PAYMENT
       // safe_transaction (party_id=supplier), the purchase JEs, adjusts the
@@ -303,6 +300,10 @@ class ApiPurchaseHandler extends ApiHandlerBase {
         await storeIdempotency(idempotencyKey, responseBody, actionType: 'postPurchase');
       }
       return jsonResponse(responseBody);
+    } on PurchaseOrderNotConsumable catch (e) {
+      return Response(409, // WH-001: final for an outbox replay
+          body: json.encode({'error': e.code, 'message': e.message}),
+          headers: {'Content-Type': 'application/json'});
     } on StateError catch (e, st) {
       // البند 5 (2026-07-25): a duplicate supplier-invoice-number is a BUSINESS
       // conflict, not a server fault. Returning 500 made the outbox retry it

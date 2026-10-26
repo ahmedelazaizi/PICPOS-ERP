@@ -20,6 +20,7 @@ import 'approval/approval_proof_carrier.dart';
 import 'mirror_branch_context.dart';
 
 part 'server_proxy/server_proxy_console.dart';
+part 'server_proxy/server_proxy_wh_desk.dart';
 part 'server_proxy/server_proxy_trading.dart';
 part 'server_proxy/server_proxy_cash.dart';
 part 'server_proxy/server_proxy_master_data.dart';

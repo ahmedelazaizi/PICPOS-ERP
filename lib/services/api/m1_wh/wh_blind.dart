@@ -35,7 +35,7 @@ Future<bool> isCountingItem(AppDatabase db, int userId, int productId, int wareh
   await db.ensureWhMobileDocsSchema();
   final r = await db.customSelect(
     'SELECT 1 AS x FROM wh_mobile_docs d '
-    'JOIN cycle_count_tasks t ON CAST(d.ref_id AS INTEGER) = t.id '
+    'JOIN cycle_count_tasks t ON d.ref_id = CAST(t.id AS TEXT) '
     'JOIN cycle_count_items i ON i.task_id = t.id '
     'JOIN cycle_count_plans p ON p.id = t.plan_id '
     "WHERE d.kind = 'count_submission' AND d.ref_type = 'cycle_count_task' AND d.created_by = ? "

@@ -28,16 +28,19 @@ const _accountsNotMapped = [
   'غير مربوطة',
 ];
 
+/// SQLite UNIQUE constraint failed, PostgreSQL SQLSTATE 23505.
+bool isUniqueViolation(Object error) {
+  final lower = '$error'.toLowerCase();
+  return lower.contains('unique constraint failed') || lower.contains('23505') || lower.contains('duplicate key value');
+}
+
 WhError classifyWhFailure(Object error) {
   if (error is WhError) return error;
   final text = '$error';
   if (_periodClosed.any(text.contains)) return WhError('period_closed', 409);
   if (_accountsNotMapped.any(text.contains)) return WhError('accounts_not_mapped', 409);
   final lower = text.toLowerCase();
-  // SQLite: "UNIQUE constraint failed"; PostgreSQL: SQLSTATE 23505.
-  if (lower.contains('unique constraint failed') || lower.contains('23505') || lower.contains('duplicate key value')) {
-    return WhError('duplicate_document', 409);
-  }
+  if (isUniqueViolation(error)) return WhError('duplicate_document', 409);
   if (lower.contains('database is locked') || lower.contains('sqlite_busy') || lower.contains('40001') ||
       lower.contains('40p01') || lower.contains('deadlock')) {
     return WhError('busy', 503);

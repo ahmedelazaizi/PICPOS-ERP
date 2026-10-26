@@ -45,6 +45,7 @@ class _WhReceiptsInboxDialogState extends ConsumerState<WhReceiptsInboxDialog> {
     if (code.contains('invalid_transition')) return tr('حُوِّل هذا الاستلام من قبل. حدّث القائمة.');
     if (code.contains('period_closed')) return tr('الفترة المحاسبية مغلقة؛ لم يُسجَّل شيء.');
     if (code.contains('accounts_not_mapped')) return tr('حسابات المخزون غير مربوطة؛ لم يُسجَّل شيء.');
+    if (code.contains('device_scope')) return tr('هذا الجهاز لا يحوّل استلامات المخازن؛ افتحها من الجهاز الرئيسي أو من جهاز فرع.');
     if (code.contains('po_not_receivable')) return tr('أمر الشراء لم يعد مفتوحاً لهذا الاستلام.');
     return tr('تعذّر التحويل؛ لم يُسجَّل شيء.');
   }

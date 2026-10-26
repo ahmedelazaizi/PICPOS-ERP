@@ -1,4 +1,4 @@
-// WH-028: `POST /api/inventory/transfer` (LAN desktops / mirrors / replays) used
+﻿// WH-028: `POST /api/inventory/transfer` (LAN desktops / mirrors / replays) used
 // to call adjustStock twice: a negative quantity reversed the direction and an
 // empty source went negative. It now runs the desktop pipeline (`transferStock`).
 import 'dart:convert';
@@ -74,6 +74,31 @@ void main() {
   test('the same warehouse on both sides is refused', () async {
     final r = await transfer(h.admin, {...body(1), 'toWarehouseId': h.a1});
     expect(r.status, 400);
+  });
+
+  test('WH-028: a user whose warehouse scope excludes the SOURCE is refused 403 warehouse_scope, stock untouched', () async {
+    // the stock manager may transfer but is limited to warehouse A2 only
+    await h.db.customStatement('DELETE FROM user_warehouse_access WHERE user_id = ${h.manager}');
+    await h.db.into(h.db.userWarehouseAccess).insert(UserWarehouseAccessCompanion.insert(userId: h.manager, warehouseId: h.a2));
+    final r = await transfer(h.manager, body(4));
+    expect(r.status, 403, reason: r.text);
+    expect(r.error, 'warehouse_scope');
+    expect(await h.stock(rice, h.a1), 10);
+    expect(await h.stock(rice, h.a2), 0);
+  });
+
+  test('WH-028: the bond and the journal carry the SESSION user, not the userId of the body', () async {
+    final ok = await transfer(h.admin, {...body(4, gid: 'trf-gid-0002'), 'userId': h.clerk});
+    expect(ok.status, 200, reason: ok.text);
+    final bond = await (h.db.select(h.db.inventoryBonds)..where((b) => b.globalId.equals('trf-gid-0002'))).getSingle();
+    expect(bond.createdBy, h.admin);
+  });
+
+  test('WH-028: two requests with the same globalId at once move the stock once', () async {
+    final r = await Future.wait([transfer(h.admin, body(4, gid: 'trf-gid-0003')), transfer(h.admin, body(4, gid: 'trf-gid-0003'))]);
+    expect(r.map((x) => x.status), [200, 200], reason: r.map((x) => x.text).join(' | '));
+    expect(await h.stock(rice, h.a1), 6);
+    expect(await h.stock(rice, h.a2), 4);
   });
 
   test('without inventory_transfer the call is refused; a warehouse phone never reaches the route', () async {

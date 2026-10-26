@@ -127,6 +127,8 @@ class _CwiTradingPurchases {
     double? exchangeRate,
     ImportDocumentFields? importDetails,
     int? purchaseAccountId,
+    // WH-001: the pulled purchase order, by GLOBAL id; the HOST consumes it.
+    String? sourceOrderGlobalId,
   }) async {
     if (!SyncInterceptor.isClientMode) return false;
     debugPrint('[ClientInterceptor] Routing purchase to server');
@@ -160,6 +162,7 @@ class _CwiTradingPurchases {
       'exchangeRate': ?exchangeRate,
       // J1b (v188): the server's JE must debit the invoice's chosen account.
       'purchaseAccountId': ?purchaseAccountId,
+      'sourceOrderGlobalId': ?sourceOrderGlobalId,
     };
     if (importDetails != null) {
       // ⚠️ **ورقمُ وكيلِ التخليص لا يسافر — معرِّفُه العالميُّ يسافر.**

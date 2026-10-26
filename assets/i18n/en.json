@@ -11594,6 +11594,7 @@
   "حسابات المخزون غير مربوطة؛ لم يُسجَّل شيء.": "Inventory accounts are not mapped; nothing was recorded.",
   "حُوِّل الاستلام إلى فاتورة مشتريات.": "The receipt was converted into a purchase invoice.",
   "حُوِّل هذا الاستلام من قبل. حدّث القائمة.": "This receipt was already converted. Refresh the list.",
+  "هذا الجهاز لا يحوّل استلامات المخازن؛ افتحها من الجهاز الرئيسي أو من جهاز فرع.": "This device cannot convert warehouse receipts; open them on the main device or a branch device.",
   "لا توجد استلامات بانتظار التحويل.": "No receipts are waiting to be converted.",
   "ليست لديك صلاحية تحويل الاستلامات إلى فواتير.": "You do not have permission to convert receipts into invoices."
 }

@@ -81,16 +81,14 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
           'expiryDate': it.expiryDate?.toIso8601String(),
           'unitName': it.unitName,
           'quantityInBase': it.quantityInBase,
-          // 🔴 **والخصمُ يسافر مع السطر.** الخادمُ هو من يوزّعه على التكلفة
-          // (`createPurchaseInvoice` عنده)، فإسقاطُه هنا كان يُنتج تكلفةً
-          // على الخادم أعلى من تكلفة نسخة العميل لنفس الفاتورة — ومتوسّطَ
-          // تكلفةٍ مختلفاً على الجهازَين.
+          // The line discount travels with the line: the host apportions it into the cost.
           'discount': it.appliedDiscount,
           // Feature 043 — line-level identity, shared with the local insert below.
           'globalId': itemGlobalIds[i],
         });
       }
 
+      final sourceOrderGid = await _db.purchaseOrderGlobalIdOf(params.sourceOrderId); // WH-001
       // Client: fire-and-forget (the outbox catches a failed submit).
       // Mirror: awaited — a MirrorOfflineException propagates from here and
       // the local cache insert below never runs. Mirror has no outbox, so a
@@ -120,6 +118,7 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
           importDetails: params.importDetails,
           // J1b: the server posts the authoritative JE — same debit account.
           purchaseAccountId: params.purchaseAccountId,
+          sourceOrderGlobalId: sourceOrderGid,
         ),
         tag: 'PURCHASE-SYNC',
       );

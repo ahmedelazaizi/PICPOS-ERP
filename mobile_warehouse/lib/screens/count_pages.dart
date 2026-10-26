@@ -56,7 +56,7 @@ class _CountTasksPageState extends State<CountTasksPage> {
                             key: Key('task.${task.ref}'),
                             minVerticalPadding: PicPosSpacing.md,
                             title: Text(task.warehouse ?? '${task.warehouseId}'),
-                            subtitle: Text(t('countItems', {'n': '${task.items.length}'})),
+                            subtitle: Text(t('countItems', {'n': ltr(task.items.length)})),
                             trailing: const Icon(Icons.chevron_right),
                             onTap: () async {
                               await Navigator.push(context, MaterialPageRoute<void>(builder: (_) => CountPage(ops: widget.ops, task: task)));

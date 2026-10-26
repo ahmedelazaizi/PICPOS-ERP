@@ -101,6 +101,13 @@ Future<void> _resetPublicSchema(PostgresConfig config) async {
   }
 }
 
+/// A SECOND, independent connection to the schema [bootPgTestSchema] created
+/// (no schema reset): lets a test run two real concurrent transactions.
+AppDatabase openExtraPgConnection() => AppDatabase.withExecutor(
+      openPostgresConnection(_readDsnFromEnv()),
+      isPostgres: true,
+    );
+
 /// Open an [AppDatabase] connected to the test Postgres. Drift's migration
 /// runs on the first `db.<table>` access — for explicit warm-up the caller
 /// can `await db.customSelect('SELECT 1').get();`.
