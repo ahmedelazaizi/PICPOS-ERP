@@ -6,6 +6,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/errors/app_exceptions.dart' show ShiftRequiredException;
 import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';

@@ -407,15 +407,29 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
           userId: user?.id,
           userName: user?.displayName,
           postInvoice: () async {
-            final success = await checkoutCtrl.processPayment(
-              method: result.method,
-              total: total,
-              cashAmount: result.cashAmount,
-              bankAmount: result.bankAmount,
-              bankSafeId: ref.read(cartControllerProvider).bankSafeId,
-              customerId: result.customerId,
-            );
-            if (!success) return null;
+            final bool success;
+            try {
+              success = await checkoutCtrl.processPayment(
+                method: result.method,
+                total: total,
+                cashAmount: result.cashAmount,
+                bankAmount: result.bankAmount,
+                bankSafeId: ref.read(cartControllerProvider).bankSafeId,
+                customerId: result.customerId,
+              );
+            } on ShiftRequiredException catch (e) {
+              // نقدٌ بلا ورديّةٍ على الدرج: السببُ الحقيقيُّ لا «فشلَ الترحيل: Instance of…».
+              throw StateError(e.message);
+            }
+            if (!success) {
+              // السببُ الذي كتبه المسارُ المشترك (نطاقٌ فارغ، صندوقٌ غيرُ مربوط،
+              // رفضُ حارسٍ…) — كان يضيع فيُقال «أُلغيت طريقةُ الدفع».
+              final reason = ref.read(checkoutControllerProvider).error;
+              if (reason != null && reason.isNotEmpty) {
+                throw StateError(reason);
+              }
+              return null;
+            }
 
             final id = ref.read(checkoutControllerProvider).lastInvoiceId;
             if (id != null) {

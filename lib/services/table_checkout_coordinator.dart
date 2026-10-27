@@ -99,9 +99,11 @@ class TableCheckoutCoordinator {
     try {
       invoiceId = await postInvoice();
     } catch (e) {
-      await _releaseQuietly(reservationId, 'فشلَ الترحيل: $e', userId, userName);
+      // StateError.toString() يضيف «Bad state:» أمام سببٍ كُتب للكاشير.
+      final why = e is StateError ? e.message : e;
+      await _releaseQuietly(reservationId, 'فشلَ الترحيل: $why', userId, userName);
       return TableSettleOutcome(
-          status: TableSettleStatus.aborted, message: 'فشلَ الترحيل: $e');
+          status: TableSettleStatus.aborted, message: 'فشلَ الترحيل: $why');
     }
 
     if (invoiceId == null) {
