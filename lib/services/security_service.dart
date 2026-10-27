@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:cryptography/cryptography.dart' as argon_lib;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../core/logging/diagnostic_logger.dart';
 import 'db_key_names.dart';
 import 'legacy_device_seed.dart';
 import 'storage_key_migration.dart';
@@ -231,7 +232,8 @@ class SecurityService {
       final computedHash = await secretKey.extractBytes();
 
       return _secureCompareBytes(computedHash, storedHash);
-    } catch (_) {
+    } catch (e) {
+      unawaited(DiagnosticLogger.logError('AUTH', 'verifyArgon2', e));
       return false;
     }
   }

@@ -477,7 +477,19 @@ extension UserDao on AppDatabase {
       leftOuterJoin(roles, roles.id.equalsExp(users.roleId)),
     ])..where(users.isActive.equals(true) & users.isLocked.equals(false));
 
-    for (final row in await query.get()) {
+    final candidates = await query.get();
+    if (rehashOnMatch) {
+      // Field diagnostics (no secrets): which DB answered and what it holds.
+      unawaited(DiagnosticLogger.log(
+          'AUTH',
+          'password-only login: pg=$isPostgres activeUsers=${candidates.length} '
+              '[${candidates.map((r) {
+            final u = r.readTable(users);
+            return '${u.username}#${u.id} argon2=${SecurityService.isArgon2Hash(u.passwordHash)} '
+                'hashLen=${u.passwordHash.length} saltLen=${u.passwordSalt.length}';
+          }).join('; ')}]'));
+    }
+    for (final row in candidates) {
       final user = row.readTable(users);
       if (excludeUserId != null && user.id == excludeUserId) continue;
       // Week-8: support both Argon2id (new) and PBKDF2-SHA256 (legacy) hashes.
@@ -486,6 +498,10 @@ extension UserDao on AppDatabase {
         user.passwordSalt,
         user.passwordHash,
       );
+      if (rehashOnMatch) {
+        unawaited(DiagnosticLogger.log('AUTH',
+            'verify ${user.username}#${user.id} => ${authResult.verified}'));
+      }
       if (authResult.verified) {
         if (rehashOnMatch && authResult.needsRehash) {
           unawaited(_rehashToArgon2(user.id, input));
