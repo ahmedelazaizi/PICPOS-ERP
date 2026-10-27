@@ -6,10 +6,10 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/constants/app_constants.dart';
-import '../../../core/errors/app_exceptions.dart' show ShiftRequiredException;
 import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';
+import '../../shared_widgets/open_shift_prompt.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/entities/product_entity.dart';
 import '../../../domain/entities/cart_item_entity.dart';

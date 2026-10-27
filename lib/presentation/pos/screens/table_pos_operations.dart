@@ -407,19 +407,28 @@ mixin _TablePosOperationsMixin on ConsumerState<TablePosScreen> {
           userId: user?.id,
           userName: user?.displayName,
           postInvoice: () async {
-            final bool success;
-            try {
-              success = await checkoutCtrl.processPayment(
+            // نقدٌ بلا ورديّةٍ على الدرج ⇒ نعرض فتحَها ونعيد المحاولةَ مرّةً
+            // (كنقطة البيع). والآجلُ والبنكُ وكليك لا درجَ لها فتمرّ مباشرة.
+            var success = false;
+            final shiftOutcome = await runWithOpenShiftPrompt(
+              context: context,
+              ref: ref,
+              subtitleBuilder: (amount) => tr('التحصيل يُدخل {p0} نقداً إلى الدرج.',
+                  {'p0': amount.toStringAsFixed(2)}),
+              attempt: () async => success = await checkoutCtrl.processPayment(
                 method: result.method,
                 total: total,
                 cashAmount: result.cashAmount,
                 bankAmount: result.bankAmount,
                 bankSafeId: ref.read(cartControllerProvider).bankSafeId,
                 customerId: result.customerId,
-              );
-            } on ShiftRequiredException catch (e) {
-              // نقدٌ بلا ورديّةٍ على الدرج: السببُ الحقيقيُّ لا «فشلَ الترحيل: Instance of…».
-              throw StateError(e.message);
+              ),
+            );
+            if (shiftOutcome == ShiftPromptOutcome.cancelledByUser) {
+              throw StateError(tr('أُلغي التحصيل — لم تُفتَح وردية'));
+            }
+            if (shiftOutcome == ShiftPromptOutcome.shiftOpenFailed) {
+              throw StateError(tr('تعذّر فتح الوردية، فلم تُصدَر الفاتورة'));
             }
             if (!success) {
               // السببُ الذي كتبه المسارُ المشترك (نطاقٌ فارغ، صندوقٌ غيرُ مربوط،

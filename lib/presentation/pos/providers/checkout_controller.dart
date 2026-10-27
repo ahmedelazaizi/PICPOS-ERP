@@ -120,6 +120,12 @@ class CheckoutController extends Notifier<CheckoutState> {
         bankSafeId: bankSafeId,
         customerId: customerId,
       );
+    } on ShiftRequiredException {
+      // طلبُ إجراءٍ لا عطل: `processCheckout` يعيد رميَه عمداً ليعرض المستدعي
+      // فتحَ الورديّة (`runWithOpenShiftPrompt`). ابتلاعُه هنا في `error` كان
+      // يُسقط الطلبَ فلا يُعرض فتحُ ورديّةٍ أبداً ويظهر الفشلُ نصّاً مبهماً.
+      state = state.copyWith(isProcessing: false);
+      rethrow;
     } catch (e) {
       state = state.copyWith(isProcessing: false, error: e.toString());
       return false;
