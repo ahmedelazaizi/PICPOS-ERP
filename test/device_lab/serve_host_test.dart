@@ -42,7 +42,9 @@ import 'package:picpos_erp/core/logging/diagnostic_logger.dart';
 import 'package:picpos_erp/core/permissions/role_grant_matrix.dart';
 import 'package:picpos_erp/data/database/database.dart';
 import 'package:picpos_erp/data/database/wh_mobile_docs_schema.dart';
+import 'package:picpos_erp/services/api/api_auth_middleware.dart';
 import 'package:picpos_erp/services/api/api_session_token.dart';
+import 'package:picpos_erp/services/api/lan_pairing_service.dart';
 import 'package:picpos_erp/services/api/m1_wh/wh_doc_store.dart';
 import 'package:picpos_erp/services/api/m1_wh/wh_receipt_posting.dart';
 import 'package:picpos_erp/services/network_service.dart';
@@ -220,6 +222,10 @@ void main() {
     final acctId = users['acct1']!;
     log('seeded branches B1=$b1 B2=$b2 warehouses B1=$wh1 B1b=$wh1b B2=$wh2 users=$users');
 
+    // C5 (SEC-006): the freshly provisioned DB has NO lan_legacy_token_enabled row;
+    // the real startServer (initializeLegacyTransition) must turn the shared bearer OFF.
+    final legacySettingBeforeStart = await db.getSettingValue('lan_legacy_token_enabled');
+    log('legacy setting before startServer = $legacySettingBeforeStart');
     // ── the REAL production server start (TLS on, 0.0.0.0) ──
     NetworkService.instance.debugSetModeForTests(NetworkMode.server);
     final started = await NetworkService.instance.startServer(db, port: port);
@@ -307,6 +313,59 @@ void main() {
       return {'user': user, 'method': method, 'path': path, 'status': r.status, 'body': parsed};
     }
 
+    // ── lab probe CASHIER tablet (kind=pos, branch B1): host-side evidence for the
+    //    device-scope policy (C5). Spared by revoke-all like the warehouse probe. ──
+    final posProbeId = 'lab-pos-probe-${Random().nextInt(1 << 30).toRadixString(16)}';
+    String? posProbeToken;
+    final posSessions = <String, String>{};
+
+    Future<void> ensurePosProbe() async {
+      if (posProbeToken != null) return;
+      final offer = await NetworkService.instance.issueLanPairingCode(
+          actorUserId: adminId, deviceKind: 'pos', branchId: b1);
+      final r = await rawHttp('POST', '/api/pair',
+          body: jsonEncode({
+            'pairingCode': offer!.code,
+            'deviceId': posProbeId,
+            'deviceName': 'Lab pos probe',
+            'deviceKind': 'pos'
+          }));
+      expect(r.status, 200, reason: 'pos probe pairing: ${r.body}');
+      posProbeToken = (jsonDecode(r.body) as Map)['token'] as String;
+      log('pos probe tablet paired as $posProbeId');
+    }
+
+    Object? parseBody(String b) {
+      try {
+        return jsonDecode(b);
+      } catch (_) {
+        return b;
+      }
+    }
+
+    /// user '-' = device token only (no signed-in user).
+    Future<Map<String, Object?>> posCall(String user, String method, String path,
+        {String? body, String? key}) async {
+      await ensurePosProbe();
+      String? session;
+      if (user != '-') {
+        final l = await rawHttp('POST', '/api/auth/session',
+            headers: {'authorization': 'Bearer $posProbeToken', 'x-device-id': posProbeId},
+            body: jsonEncode({'username': user, 'password': passwords[user]}));
+        if (l.status != 200) {
+          return {'user': user, 'stage': 'login', 'method': 'POST', 'path': '/api/auth/session', 'status': l.status, 'body': parseBody(l.body)};
+        }
+        session = posSessions[user] = (jsonDecode(l.body) as Map)['token'] as String;
+      }
+      final r = await rawHttp(method, path, headers: {
+        'authorization': 'Bearer $posProbeToken',
+        'x-device-id': posProbeId,
+        'x-session-token': ?session,
+        if (method != 'GET') 'x-idempotency-key': key ?? 'pp-${DateTime.now().microsecondsSinceEpoch}',
+      }, body: body);
+      return {'user': user, 'stage': 'call', 'method': method, 'path': path, 'status': r.status, 'body': parseBody(r.body)};
+    }
+
     // ── fixtures + facts ──
     final fixtures = <String, Map<String, Object?>>{'products': {}, 'pos': {}, 'counts': {}};
     void writeFixtures() =>
@@ -389,22 +448,23 @@ void main() {
 
     final codes = <Map<String, dynamic>>[];
     late void Function() writeJson;
-    Future<void> issue(String branch) async {
+    Future<void> issue(String branch, [String kind = 'warehouse']) async {
       final id = branch == 'B2' ? b2 : b1;
       final offer = await NetworkService.instance.issueLanPairingCode(
-          actorUserId: adminId, deviceKind: 'warehouse', branchId: id);
+          actorUserId: adminId, deviceKind: kind, branchId: id);
       if (offer == null) {
         log('ISSUE FAILED: issueLanPairingCode returned null');
         return;
       }
       codes.add({
         'branch': branch,
+        'kind': kind,
         'branchId': id,
         'code': offer.code,
         'expiresAt': offer.expiresAt.toIso8601String(),
         'qrPayload': offer.qrPayload,
       });
-      log('issued warehouse code ${offer.code} for $branch');
+      log('issued $kind code ${offer.code} for $branch');
       writeJson();
     }
 
@@ -433,6 +493,7 @@ void main() {
           '6229876543210': {'name': 'Lab Juice', 'B1': 7, 'B2': 55},
         },
         'codes': codes,
+        'legacySettingBeforeStart': legacySettingBeforeStart ?? 'null',
         'ready': true,
       }));
     };
@@ -440,6 +501,7 @@ void main() {
     // NOTE: LanPairingService keeps ONE pending offer; each issue supersedes
     // the previous code. The driver issues a fresh code before each pairing.
     await ensureProbe();
+    await ensurePosProbe();
     await issue('B1');
 
     // ── command interpreter ──
@@ -530,6 +592,50 @@ void main() {
             File('${labDir.path}\\api-convert.json').writeAsStringSync(jsonEncode(res, toEncodable: _enc));
             return 'convert ${parts[1]} -> ${jsonEncode(res, toEncodable: _enc)}';
           }
+        case 'posapi':
+          {
+            // posapi|label|user(or -)|METHOD|path|jsonBody|idempotencyKey  (device token of the pos probe tablet)
+            final res = await posCall(parts[2], parts[3], parts[4],
+                body: parts.length > 5 && parts[5].isNotEmpty ? parts[5] : null,
+                key: parts.length > 6 && parts[6].isNotEmpty ? parts[6] : null);
+            File('${labDir.path}\\api-${parts[1]}.json')
+                .writeAsStringSync(const JsonEncoder.withIndent('  ').convert(jsonDecode(jsonEncode(res, toEncodable: _enc))));
+            return 'posapi ${parts[1]} -> ${res['status']}';
+          }
+        case 'legacy':
+          {
+            // legacy|label|METHOD|path|deviceId : an OLD-style phone using the shared LAN bearer.
+            var tok = ApiAuthMiddleware.activeToken;
+            if (tok == null) {
+              tok = 'lab-legacy-shared-bearer-0123456789abcdef';
+              ApiAuthMiddleware.setToken(tok); // test hook: this machine derived no legacy seed
+              log('legacy: no derived bearer on this machine; set a lab bearer');
+            }
+            final r = await rawHttp(parts[2], parts[3],
+                headers: {'authorization': 'Bearer $tok', 'x-device-id': parts[4], 'x-device-name': 'Lab old phone'});
+            final res = {'method': parts[2], 'path': parts[3], 'status': r.status, 'body': parseBody(r.body)};
+            File('${labDir.path}\\api-${parts[1]}.json')
+                .writeAsStringSync(const JsonEncoder.withIndent('  ').convert(jsonDecode(jsonEncode(res, toEncodable: _enc))));
+            return 'legacy ${parts[1]} -> ${r.status}';
+          }
+        case 'legacyfacts':
+          {
+            final t = LegacyTokenTelemetry.instance;
+            final f = {
+              'name': parts[1],
+              'settingLanLegacyTokenEnabled': await db.getSettingValue('lan_legacy_token_enabled'),
+              'settingBeforeStart': legacySettingBeforeStart,
+              'requestsAccepted': t.requests,
+              'refusedRequests': t.refusedRequests,
+              'attempts': [
+                for (final a in t.attempts)
+                  {'deviceId': a.deviceId, 'name': a.name, 'ip': a.ip, 'accepted': a.accepted, 'refused': a.refused}
+              ],
+            };
+            File('${labDir.path}\\facts-${parts[1]}.json')
+                .writeAsStringSync(const JsonEncoder.withIndent('  ').convert(jsonDecode(jsonEncode(f, toEncodable: _enc))));
+            return 'legacyfacts ${parts[1]}';
+          }
         case 'api':
           {
             // api|label|user|METHOD|path|body|key
@@ -563,12 +669,14 @@ void main() {
         log('CMD $cmd');
         try {
           if (cmd.startsWith('issue')) {
-            await issue(cmd.split(' ').length > 1 ? cmd.split(' ')[1] : 'B1');
+            // issue [B1|B2] [pos]  (second word = branch, third = device kind; default warehouse)
+            final w = cmd.split(' ');
+            await issue(w.length > 1 ? w[1] : 'B1', w.length > 2 ? w[2] : 'warehouse');
           } else if (cmd == 'revoke-all' || cmd == 'list') {
             const sel = 'SELECT device_id, name, device_kind, branch_id, revoked, last_seen_at FROM lan_paired_devices';
             if (cmd == 'revoke-all') {
               for (final r in await db.customSelect(sel).get()) {
-                if (r.data['device_id'] == probeDeviceId) continue; // the lab's own API probe stays paired
+                if (r.data['device_id'] == probeDeviceId || r.data['device_id'] == posProbeId) continue; // the lab's own API probes stay paired
                 await NetworkService.instance.revokeLanDevice(r.data['device_id'] as String, actorUserId: adminId);
                 log('revoked ${r.data['device_id']}');
               }

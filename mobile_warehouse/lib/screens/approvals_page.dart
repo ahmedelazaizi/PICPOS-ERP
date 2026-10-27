@@ -143,6 +143,10 @@ class _ReviewDialog extends StatelessWidget {
       title: Text(t('countReview')),
       content: SingleChildScrollView(
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // The inbox lists only counts that are `readyForApproval` (never one
+          // that needs a recount), so this notice shows only when the count
+          // changed between listing and tapping (e.g. it was sent back); the
+          // approve button is disabled then. Kept deliberately, not dead code.
           if (review.recountNeeded) Text(t('recountNeeded'), key: const Key('review.recount')),
           for (final r in review.rows)
             Padding(

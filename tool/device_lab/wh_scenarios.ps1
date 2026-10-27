@@ -141,8 +141,15 @@ function Run-WarehouseScenarios {
   $w23recv = PoItemReceived $f $po23.id
   $okRefused = ($w23docs.Count -le 1) -and (@($w23docs | Where-Object { $_.state -ne 'draft' }).Count -eq 0) -and (($w23recv | Measure-Object -Sum).Sum -eq 0)
   Record 'W2.3a over-receipt (11 of 10) is refused by the host, nothing counted as received' (Pass $okRefused) "docs for PO: $($w23docs.Count) states=$(@($w23docs | % { $_.state }) -join ',') ; PO received=$($w23recv -join ',') ; outbox: $(Tail $ob 300) ; $sO"
-  $shownRejected = ($ob -match 'مرفوضة: 1') -and ($ob -match 'الكمية تتجاوز')
-  Record 'W2.3b the user is told the quantity was refused (outbox rejected + reason)' (Pass $shownRejected) "outbox text has 'مرفوضة: 1' and the over-receipt reason: $shownRejected"
+  # The counter line is 'queueCounts' = "بانتظار الإرسال: {p} · مرفوضة: {r}" with each number wrapped by ltr() = U+2066 n U+2069
+  # (mobile_warehouse/lib/widgets/wh_widgets.dart:12, screens/outbox_page.dart:61), so a literal 'مرفوضة: 1' never matches the dump.
+  $null = Save-Dump 'w23-outbox'
+  $bidi = '[\s\u2066\u2067\u2068\u2069\u200e\u200f]*'
+  $cntRej = ($ob -match "مرفوضة:${bidi}1(\D|$)")
+  $cntPend = ($ob -match "بانتظار الإرسال:${bidi}0${bidi}·")
+  $reasonShown = ($ob -match 'الكمية تتجاوز المطلوب أو المرسل') -and ($ob -match 'مرفوضة')
+  $shownRejected = $cntRej -and $cntPend -and $reasonShown -and ($w23docs.Count -le 1) -and (@($w23docs | Where-Object { $_.state -ne 'draft' }).Count -eq 0)
+  Record 'W2.3b the user is told the quantity was refused (outbox rejected + reason)' (Pass $shownRejected) "host: docs for PO=$($w23docs.Count) non-draft=$(@($w23docs | ? { $_.state -ne 'draft' }).Count), PO received=$($w23recv -join ','); outbox UI (bidi-tolerant): counter rejected=1 -> $cntRej, pending=0 -> $cntPend, rejected chip + err_over_receipt reason -> $reasonShown; $(Tail $ob 300); $sO"
   $misleading = ($r.Quick -match 'أُرسل الاستلام إلى المكتب')
   Record 'W2.3c receive screen does not claim success for a refused receipt' (Pass (-not $misleading)) "screen/snackbar right after send: '$(Tail $r.Quick 200)' ; success text shown=$misleading (suspect mobile_warehouse/lib/screens/receive_pages.dart:141 shows receiptSent whenever the drain completes, even when the server rejected the op) ; $($r.Shot)"
 
@@ -236,6 +243,9 @@ function Run-WarehouseScenarios {
     }
     $f = Get-Facts 'w32-approved'
     $tr = @(Doc-Of $f 'transfer')
+    # The UI queues dispatch with body {"expectedVersion": <doc row_version when queued>}; the host hashes {action, gid, body}
+    # (lib/services/api/m1_wh/wh_doc_store.dart:292, wh_stock_doc_handlers.dart:59), so a faithful replay must repeat that exact body.
+    $verAtDispatch = @{}; foreach ($t in $tr) { $verAtDispatch[$t.global_id] = [int]$t.row_version }
     Record 'W3.2c supervisor (different user) approves both transfer requests from the inbox' (Pass (@($tr | ? { $_.state -eq 'approved' }).Count -eq 2)) "states=$(@($tr | % { "$($_.created_by_name)->$($_.approved_by_name):$($_.state)" }) -join ' ; ')"
     # dispatch + receive via Transfers screen
     Go-Shell | Out-Null; Open-Docs-Tile 'التحويلات'
@@ -252,6 +262,8 @@ function Run-WarehouseScenarios {
     $okDisp = ($g1.state -eq 'in_transit') -and ($s1a -eq 6) -and (($null -eq $s1b) -or ($s1b -eq 0)) -and ($git -eq 40)
     Record 'W3.2d dispatch reduces source stock and books the in-transit entry' (Pass $okDisp) "Flour: B1 main=$s1a (10-4), second=$s1b, goods_in_transit balance=$git (4 x cost 10 = 40), doc state=$($g1.state); journal rows=$(@($f.journal | ? { $_.reference_type -eq 'wh_transfer_out' }).Count); $sD"
     Record 'W3.3 transfer larger than available (8 of 3) is refused at dispatch, no negative stock' (Pass (($g2.state -eq 'approved') -and ($s2a -eq 3))) "Salt doc state=$($g2.state) (stays approved), B1 main stock=$s2a (unchanged 3); outbox: $(Tail (Outbox-Text) 260)"
+    # WH-030 (self-receive ban): super1 dispatched, so a SECOND user (mgr1) receives; super1 signs back in for the count approval below.
+    $recvUser = Switch-User 'mgr1' 'WhMgr#2026'; Log "W3.2e receiver mgr1 signed in=$recvUser"
     Go-Shell | Out-Null; Open-Docs-Tile 'التحويلات'
     # The receive action opens TWO keypad sheets per line (mobile_warehouse/lib/screens/transfer_pages.dart:67 received qty,
     # :71 damaged qty); each is pre-filled (dispatched 4 / 0) and needs its own "تأكيد". Wait for each title (sheet animation).
@@ -268,13 +280,22 @@ function Run-WarehouseScenarios {
     $s1a = Qty $f $bcT1 $wh1; $s1b = Qty $f $bcT1 $wh1b; $git = [double]$f.goodsInTransitBalance
     Record 'W3.2e receive at destination completes it: stock conserved, in-transit cleared' (Pass (($g1.state -eq 'received') -and ($s1a -eq 6) -and ($s1b -eq 4) -and ($git -eq 0))) "state=$($g1.state); Flour main=$s1a second=$s1b (sum $($s1a + $s1b) of 10); goods_in_transit=$git; keypad sheets confirmed=$recvSheets (2 expected); $sR"
     # never double: replay dispatch/receive command ids and fresh ids
-    $dEv = (Ev $f 'transfer:dispatch')[0]; $rEv = (Ev $f 'transfer:receive')[0]
-    $rp1 = Api-Call 'w32-replay-dispatch' 'super1' 'POST' "/api/m1/wh/transfers/$($g1.global_id)/dispatch" '{}' $dEv.command_id
+    # the REAL dispatch event of THIS document (wh_mobile_doc_events: doc_id = the transfer's numeric id), not just "the first dispatch"
+    $dEv = @(Ev $f 'transfer:dispatch' | Where-Object { $_.doc_id -eq $g1.id })[0]
+    $dBody = (@{ expectedVersion = $verAtDispatch[$g1.global_id] } | ConvertTo-Json -Compress)
+    $dPath = "/api/m1/wh/transfers/$($g1.global_id)/dispatch"
+    $rp1 = Api-Call 'w32-replay-dispatch' 'super1' 'POST' $dPath $dBody $dEv.command_id
+    $rp1b = Api-Call 'w32-replay-dispatch-otherbody' 'super1' 'POST' $dPath (@{ expectedVersion = ($verAtDispatch[$g1.global_id] + 1) } | ConvertTo-Json -Compress) $dEv.command_id
     $rp2 = Api-Call 'w32-newkey-dispatch' 'super1' 'POST' "/api/m1/wh/transfers/$($g1.global_id)/dispatch" '{}' ''
     $rp3 = Api-Call 'w32-newkey-receive' 'super1' 'POST' "/api/m1/wh/transfers/$($g1.global_id)/receive" (@{ lines = @(@{ lineGlobalId = (@($g1.lines)[0].line_global_id); received = '4' }) } | ConvertTo-Json -Depth 5 -Compress) ''
     $f = Get-Facts 'w32-doubles'
-    Record 'W3.2f never double: replayed command ids answer from the log, fresh dispatch/receive refused, stock unchanged' (Pass (($rp1.body.replayed -eq $true) -and ($rp2.status -eq 409) -and ($rp3.status -eq 409) -and ((Qty $f $bcT1 $wh1) -eq 6) -and ((Qty $f $bcT1 $wh1b) -eq 4) -and ([double]$f.goodsInTransitBalance -eq 0))) "replay dispatch => $($rp1.status) replayed=$($rp1.body.replayed); new-key dispatch => $($rp2.status) $($rp2.body.error); new-key receive => $($rp3.status) $($rp3.body.error); stock $((Qty $f $bcT1 $wh1))/$((Qty $f $bcT1 $wh1b)); GIT=$($f.goodsInTransitBalance)"
+    $stockOk = ((Qty $f $bcT1 $wh1) -eq 6) -and ((Qty $f $bcT1 $wh1b) -eq 4) -and ([double]$f.goodsInTransitBalance -eq 0)
+    $dispN = @(Ev $f 'transfer:dispatch' | Where-Object { $_.doc_id -eq $g1.id }).Count
+    $replayOk = (($rp1.body.replayed -eq $true) -or ($rp1.status -eq 200)) -and ($rp1.body.error -ne 'idempotency_conflict')
+    Record 'W3.2f never double: replay of the REAL dispatch command id (same body) answers from the log, fresh dispatch/receive refused, stock unchanged' (Pass ($replayOk -and ($rp2.status -eq 409) -and ($rp3.status -eq 409) -and $stockOk -and ($dispN -eq 1))) "dispatch command_id=$($dEv.command_id) doc_id=$($dEv.doc_id) body=$dBody; replay => $($rp1.status) replayed=$($rp1.body.replayed) err=$($rp1.body.error); new-key dispatch => $($rp2.status) $($rp2.body.error); new-key receive => $($rp3.status) $($rp3.body.error); stock $((Qty $f $bcT1 $wh1))/$((Qty $f $bcT1 $wh1b)) (6/4 expected); GIT=$($f.goodsInTransitBalance) (0 expected); dispatch events for the doc=$dispN (1 expected)"
+    Record 'W3.2g same command id with a DIFFERENT body is refused (409 idempotency_conflict), no effect' (Pass (($rp1b.status -eq 409) -and ($rp1b.body.error -eq 'idempotency_conflict') -and $stockOk)) "same id, body {expectedVersion+1} => $($rp1b.status) $($rp1b.body.error); stock unchanged=$stockOk"
 
+    $null = Switch-User 'super1' 'WhSuper#2026'
     # ---- W4.2 supervisor approves the count (different user from both counters) ----
     Go-Shell | Out-Null; Open-Docs-Tile 'الاعتمادات'
     $okRow = Tap-Node '^\|جرد جاهز للاعتماد' 8; Start-Sleep 3

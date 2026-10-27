@@ -62,6 +62,42 @@ with `-SkipHostStart -KeepEmulator` and dot-source `lab_lib.ps1` in an interacti
 `Host-Do`, `Get-Facts`) to replay a single step against the booted emulator. Use `-RunId x` to keep evidence apart. Run the lab
 as a background job and poll in bounded loops: a full run takes ~35 min.
 
+### Addendum-4 scenarios and rerunning a subset
+
+Phases run in this order: S1-S5 (legacy) -> W2-W5 (`wh_scenarios.ps1`) -> **C1-C5 cashier** (`pos_scenarios.ps1`) -> **W15 / W14 / W30**
+(`wh_android_scenarios.ps1`). Switches (all combinable): `-SkipLegacy`, `-SkipWarehouse`, `-SkipCashier`, `-SkipNew` (W15+W14+W30),
+`-SkipW15`, `-SkipW14`, `-SkipW30`. Examples (Windows PowerShell 5.1, run as a background job, poll with bounded loops):
+
+```powershell
+$lab = 'powershell -NoProfile -ExecutionPolicy Bypass -File tool\device_lab\run_lab.ps1'
+# only the cashier app (C1-C5, ~13 min)
+& powershell -NoProfile -ExecutionPolicy Bypass -File tool\device_lab\run_lab.ps1 -SkipLegacy -SkipWarehouse -SkipNew
+# only Android 14 Bluetooth (W15, ~10 min)
+& powershell -NoProfile -ExecutionPolicy Bypass -File tool\device_lab\run_lab.ps1 -SkipLegacy -SkipWarehouse -SkipCashier -SkipW14 -SkipW30
+# only count overlap + self-receive
+& powershell -NoProfile -ExecutionPolicy Bypass -File tool\device_lab\run_lab.ps1 -SkipLegacy -SkipWarehouse -SkipCashier -SkipW15
+```
+
+APKs: build the four release APKs first (`flutter build apk --release` in `mobile_warehouse`, `mobile_pos`, `mobile_admin`, `mobile`, sequentially);
+`run_lab.ps1` copies each `mobile_*/build/app/outputs/flutter-apk/app-release.apk` fresh to `D:\qa\device-lab\apks\` and logs size + SHA-256
+(`ENV-APK-*`). Verify signer/identity with `apksigner verify --print-certs` and `powershell -File tool\ci\scan_apk.ps1 <apk...>`.
+
+| Id | What it proves |
+|---|---|
+| C1.* | cashier pairing over 10.0.2.2 with a branch-bound `pos` code + typed fingerprint; wrong fingerprint and plain-HTTP decoy refused; used code refused; host lists kind=pos/branch |
+| C2.* | wrong password refused; user without `pos_access` refused (`pos_access_denied`); cashier of the branch accepted |
+| C3.* | host revokes the tablet -> wipe to pairing + notice at next start (signed in) / at the sign-in call |
+| C4.* | restart/resume keeps pairing; `pm clear` unpairs |
+| C5.1-C5.3 | pos device token: `/api/m1/wh/*` and `/api/mirror/*` = 403 `device_scope`; ordinary sales routes work |
+| C5.4-C5.7 | legacy shared bearer: OFF on a fresh host (setting absent -> false) = 401 `legacy_token_disabled` + telemetry; ON (`setting|lan_legacy_token_enabled|true`) works; OFF again refused |
+| W15.0-W15.3 | aapt2 + `dumpsys package` (no location, BLUETOOTH/ADMIN max SDK 30), no-printer honesty, BLUETOOTH_CONNECT requested only when scanning for printers, deny/grant/revoke via the system dialog and `pm grant/revoke` |
+| W14.* | count overlap (`overlapping_count_task`, `stale_overlap_count`), recount, retired counter excluded (host-side via the `api` channel + one UI check) |
+| W30.* | the dispatcher cannot receive his own transfer (403 `self_approval`, UI refusal), a second user can |
+
+New host commands (`serve_host_test.dart`): `issue B1|B2 [pos]` (third word = device kind), `posapi|label|user-or--|METHOD|path|json|key` (REAL HTTPS call
+from a lab *cashier probe tablet*, kind=pos, branch B1; `-` = device token only), `legacy|label|METHOD|path|deviceId` (old-style shared bearer),
+`legacyfacts|name` (`facts-<name>.json`: setting value, accepted/refused counters, attempts). `revoke-all` spares both probes. `host.json` carries
+`legacySettingBeforeStart`. The cashier app has no PIN; its screens are matched by Arabic text.
 ### Lab rules learned the hard way
 
 - **One pending pairing offer.** The host keeps a single pending offer (`LanPairingService._pendingOffer`): every `issue` supersedes

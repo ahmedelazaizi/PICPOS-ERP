@@ -8,6 +8,9 @@ param(
   [switch]$KeepEmulator,
   [switch]$SkipLegacy,      # skip S1-S5 (pairing/lookup/revoke/other apps) and run only the W2-W5 warehouse scenarios
   [switch]$SkipWarehouse,   # skip the W2-W5 scenarios
+  [switch]$SkipCashier,     # skip the C1-C5 cashier (mobile_pos) scenarios
+  [switch]$SkipNew,         # skip W15/W14/W30 (Addendum 4 warehouse scenarios)
+  [switch]$SkipW15, [switch]$SkipW14, [switch]$SkipW30,
   [int]$HostMinutes = 45,
   [string]$RunId = (Get-Date -Format 'yyyyMMdd-HHmmss')
 )
@@ -20,17 +23,20 @@ Log "run $RunId repo=$Repo"
 $Apk = @{ wh = "$($env:LAB_DIR)\apks\warehouse.apk"; pos = "$($env:LAB_DIR)\apks\pos.apk"
           admin = "$($env:LAB_DIR)\apks\admin.apk"; van = "$($env:LAB_DIR)\apks\van.apk" }
 $Pkg = @{ wh = 'com.picpos.warehouse'; pos = 'com.picpos.pos'; admin = 'com.picpos.admin'; van = 'com.picpos.picpos_van' }
-# Always copy the LATEST signed warehouse APK fresh (an older copy in apks\ was once used by mistake).
-$srcWh = Join-Path $Repo 'mobile_warehouse\build\app\outputs\flutter-apk\app-release.apk'
-if (Test-Path $srcWh) {
-  New-Item -ItemType Directory -Force (Split-Path $Apk.wh) | Out-Null
-  Copy-Item $srcWh $Apk.wh -Force
-}
-if (Test-Path $Apk.wh) {
-  $whItem = Get-Item $Apk.wh; $whSha = (Get-FileHash $Apk.wh -Algorithm SHA256).Hash
-  $built = (Get-Item $srcWh -ErrorAction SilentlyContinue).LastWriteTime
-  Log "warehouse APK source=$srcWh built=$built copied=$($whItem.FullName) size=$($whItem.Length) sha256=$whSha"
-  Record 'ENV-APK-wh identity' 'PASS' "warehouse.apk size=$($whItem.Length) sha256=$whSha (copied fresh from $srcWh, built $built)"
+# Always copy the LATEST signed APKs fresh (an older copy in apks\ was once used by mistake) and log size + SHA-256 of each.
+$srcApk = @{ wh = 'mobile_warehouse'; pos = 'mobile_pos'; admin = 'mobile_admin'; van = 'mobile' }
+foreach ($k in 'wh', 'pos', 'admin', 'van') {
+  $src = Join-Path $Repo "$($srcApk[$k])\build\app\outputs\flutter-apk\app-release.apk"
+  if (Test-Path $src) {
+    New-Item -ItemType Directory -Force (Split-Path $Apk[$k]) | Out-Null
+    Copy-Item $src $Apk[$k] -Force
+  }
+  if (Test-Path $Apk[$k]) {
+    $it = Get-Item $Apk[$k]; $sha = (Get-FileHash $Apk[$k] -Algorithm SHA256).Hash
+    $built = (Get-Item $src -ErrorAction SilentlyContinue).LastWriteTime
+    Log "$k APK source=$src built=$built copied=$($it.FullName) size=$($it.Length) sha256=$sha"
+    Record "ENV-APK-$k identity" 'PASS' "$($it.Name) size=$($it.Length) sha256=$sha (copied fresh from $src, built $built)"
+  }
 }
 foreach ($k in $Apk.Keys) { if (-not (Test-Path $Apk[$k])) { Record "ENV-APK-$k" 'BLOCKED' "missing $($Apk[$k]) (copy the release APK there first)" } }
 $PIN = '123456'
@@ -260,15 +266,23 @@ foreach ($k in 'pos', 'admin', 'van') {
 A shell pm clear $Pkg.pos | Out-Null; Launch $Pkg.pos; Start-Sleep 5
 $dd = Get-Dump; $dis = @(All-Nodes $dd | Where-Object { $_.class -match 'Button' -and $_.enabled -eq 'false' })
 $ed = @(All-Nodes $dd | Where-Object { $_.class -eq 'android.widget.EditText' -and $_.enabled -eq 'false' })
-Record 'S2a.2 cashier LAN pairing' 'NOT_APPLICABLE' "mobile_pos/lib/screens/onboarding_screen.dart:53-55 onPressed:null; dump shows disabled buttons=$($dis.Count) disabled fields=$($ed.Count); known gap P7/M-5; shot $(Shot 's2a-pos-disabled')"
+Record 'S2a.2 cashier LAN pairing' 'NOT_APPLICABLE' "SUPERSEDED by C1-C5 (Addendum 4): the cashier app now pairs (mobile_pos/lib/session/pos_session.dart pair()); dump of the fresh screen shows disabled buttons=$($dis.Count) disabled fields=$($ed.Count); shot $(Shot 's2a-pos-disabled')"
 Record 'S2b.2 admin pairing against the lab host' 'NOT_APPLICABLE' 'mobile_admin pairs with the CLOUD (/manage/pair, Ed25519 key confirm: admin_session.dart:109, manage_client.dart:226); the LAN host serves no /manage/pair and the app has no LAN /api/pair leg'
 
 }   # end of legacy S1-S5 / S2 / S3
 
 # ───────────────────────── W2-W5 warehouse phases ─────────────────────────
+. "$PSScriptRoot\wh_scenarios.ps1"   # helpers (Pass, Tail, Scan ...) are shared by the later phases
 if (-not $SkipWarehouse) {
-  . "$PSScriptRoot\wh_scenarios.ps1"
   Run-WarehouseScenarios
+}
+if (-not $SkipCashier) {
+  . "$PSScriptRoot\pos_scenarios.ps1"
+  Run-CashierScenarios
+}
+if (-not $SkipNew) {
+  . "$PSScriptRoot\wh_android_scenarios.ps1"
+  Run-NewWarehouseScenarios
 }
 
 # ───────────────────────── 3. logcat + wrap up ─────────────────────────

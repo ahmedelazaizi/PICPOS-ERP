@@ -28,8 +28,11 @@ void main() {
 
   void clean(WhReply r, String what) {
     expect(leaks.hasMatch(r.text), isFalse, reason: '$what leaked: ${r.text}');
-    expect(r.text.contains('137'), isFalse, reason: '$what carries the rice quantity');
-    expect(r.text.contains('"29"') || r.text.contains(':29'), isFalse, reason: '$what carries the milk quantity');
+    // Match the quantity as a JSON NUMBER VALUE, never as loose text: a bare
+    // ':29' also matches the minute of an ISO timestamp (`T02:29:18`) and made
+    // this test fail during minute 29 of every hour (and '137' any id/time).
+    final asValue = RegExp(r'":\s*"?(137|29)(\.0+)?"?\s*[,}\]]');
+    expect(asValue.hasMatch(r.text), isFalse, reason: '$what carries a system quantity');
   }
 
   test('the task list a counter receives has items but no quantity of any kind', () async {

@@ -21,6 +21,10 @@ const kDomainCodes = <String>{
   'accounts_not_mapped', 'no_barcode', 'item_not_found', 'period_closed', 'duplicate_document', 'busy',
   'dead_letter', 'dependency_rejected', 'approval_mismatch', 'approval_stale', 'approval_expired', 'approval_already_used',
   'approval_not_document_bound', 'approver_not_authorised', 'invalid_credentials',
+  // WH-014 overlapping counts, and the host's request-level refusals.
+  'overlapping_count_task', 'stale_overlap_count', 'idempotency_key_required', 'bad_request', 'internal',
+  'not_ready', 'locked_out', 'password_change_required', 'query_too_short', 'host_unreachable',
+  'mirror_console_denied', 'warehouse_scope', 'branch_access_denied',
 };
 
 /// Stable code of an error, for `S.errorText`.

@@ -197,3 +197,124 @@ During the rerun one more lab bug of mine was caught and fixed before the final 
 | LOGCAT crashes | PASS | `steps.log` |
 
 Product defects found in this run: **none**. The earlier defects recorded above for W2.3c / W5.4b did not reproduce on this APK (W2.3c and W5.4b PASS: the screen no longer claims success for a refused receipt; the unpaired message is shown). Not covered: camera/QR, Arabic typing, printer hardware (see `docs/testing/DEVICE-LAB.md` Limits). Emulator and host were stopped at the end of the run.
+
+# Addendum 4: fresh APKs of all four apps, cashier (C1-C5), Android 14 Bluetooth (W15), count overlap (W14), self-receive (W30)
+
+Run `addendum4-full` (2026-10-26 23:05 - 2026-10-27 00:09), tree = commit `b3882ade` (tracked tree clean), emulator `PicPos_Van` API 34, host =
+real `NetworkService.startServer` (TLS, fingerprint pin). Evidence: `D:\qa\device-lab\addendum4-full\` (`steps.log`, `summary.md`, numbered
+screenshots, `facts-*.json`, `api-*.json`, `logcat.txt`, `w15-aapt2-permissions.txt`, `w15-dumpsys-package.txt`); APK scan log
+`D:\qa\device-lab\scan_apk_addendum4.txt`. Short iteration run `iter2` (same scenarios, before two lab fixes) is kept next to it.
+
+## APKs (`flutter build apk --release` in each folder, all exit 0; copied fresh by `run_lab.ps1` to `D:\qa\device-lab\apks\`)
+
+| App | Package | Size (bytes) | SHA-256 | Signer cert SHA-256 (apksigner verify OK, CN=PicPos) | `tool\ci\scan_apk.ps1` |
+|---|---|---|---|---|---|
+| mobile_warehouse | com.picpos.warehouse | 85059412 | C52168AF487D339F2DEDC8E116B0A5232AC491B93C223D4F4FA2968EE6EED4EF | 6d9bbe64ebe480fc98a9a0469ee402133f0c95fa996b2aa16739a1b87c6c7e07 | CLEAN |
+| mobile_pos | com.picpos.pos | 82469632 | 5B6F022BBC670E6792B042EE6C8D29286F1435FD36C82FB8C6F962253A7C13F5 | 116866999ff055ef1084bfa56f4078f0d9cc7f5d6368daaf4bcc30285010e2b5 | CLEAN |
+| mobile_admin | com.picpos.admin | 66731683 | C200A92504326EB77A20AE8FBB82C5D82DF79BCF84F939B65A1E4EB2B21A87F6 | 02fd445548ef0db4582a00d7725097871254fe1031de2391d8d7040361351fce | CLEAN |
+| mobile (Van) | com.picpos.picpos_van | 86072637 | E4F68590B870067BC153A4CC4F7BB8D4276278F787680C7DB9563BCCBCC4F639 | 26d479aac98dc0a85dbf80c626cca6b55dac40adc36953f629a2720a12da770d | CLEAN |
+
+All four are `debuggable=false`. Each app has its own signing key. The lab logs size + SHA-256 of each copy in `steps.log` (`ENV-APK-*`), identical to the table.
+
+## Result counts (113 recorded rows): PASS 107, FAIL 4, NOT_APPLICABLE 2, BLOCKED 0
+
+New scenarios (all rows of this addendum):
+
+| Id | Status | Evidence |
+|---|---|---|
+| C1.0 launch, unpaired, manual entry enabled | PASS | `57-c1-launch.png` |
+| C1.1 plain-HTTP decoy refused | PASS | `58-c1-plain-http.png` (error text: cannot reach desktop) |
+| C1.2 WRONG fingerprint refused (pin) | PASS | `59-c1-wrong-fp.png` |
+| C1.3 pair over 10.0.2.2 with branch-bound pos code + typed fingerprint (same code still valid after the 2 refusals) | PASS | `60-c1-paired.png` |
+| C1.4 host lists kind=pos, branch B1 | PASS | `devices.json` line in `steps.log` |
+| C1.5 used code refused | PASS | screenshot `61`-series |
+| C2.1 wrong password refused | PASS | app shows "بيانات الدخول غير صحيحة" (generic `unauthorized`, not `invalid_credentials`, see observations) |
+| C2.2 user without pos_access refused | PASS | app: "لا يملك صلاحية نقطة البيع"; host sign-in clerk1 on the pos tablet => 403 `pos_access_denied` (`api-c2-host-noaccess.json`) |
+| C2.3 cashier1 (branch B1) accepted | PASS | shell with 5 tabs |
+| C3.1 revoke while signed in -> next app start wipes to pairing + notice "أُلغي ربط هذا الجهاز" | PASS | `67-c3-in-session-after-revoke.png`, `68`... |
+| C3.2 revoke at the sign-in screen -> the sign-in call wipes + notice | PASS | screenshot `69`-series |
+| C4.1 force-stop/restart keeps pairing + sign-in; C4.2 background/resume | PASS | `66-c4-resume.png` |
+| C4.3 `pm clear` -> unpaired | PASS | `70-c4-after-pm-clear.png` |
+| C5.1 pos token -> `/api/m1/wh/*` 403 `device_scope` | PASS | `api-c5-wh-approvals.json`, `api-c5-wh-info-user.json` |
+| C5.2 pos token -> `/api/mirror/*` 403 `device_scope` | PASS | `api-c5-mirror*.json` |
+| C5.3 pos token + cashier works on `/api/branches`, `/api/products`, `/api/sales` (200) | PASS | `api-c5-sales-*.json` |
+| C5.4 fresh host: `lan_legacy_token_enabled` absent before `startServer`, `false` after; old bearer => 401 `legacy_token_disabled` | PASS | `facts-c5-legacy-0.json`, `api-c5-legacy-fresh.json` |
+| C5.5 refused attempt in the telemetry (`refusedRequests=1`, device `lab-old-phone` refused=1) | PASS | `facts-c5-legacy-1.json` |
+| C5.6 legacy bearer ENABLED (setting `true`) => 200, accepted counted | PASS | `api-c5-legacy-enabled.json`, `facts-c5-legacy-2.json` |
+| C5.7 switched OFF again => 401 at once | PASS | `api-c5-legacy-off-again.json` |
+| C-CRASH cashier app no crash | PASS | |
+| W15.0a aapt2: BLUETOOTH + BLUETOOTH_ADMIN `maxSdkVersion=30`, BLUETOOTH_CONNECT, no location | PASS | `w15-aapt2-permissions.txt` |
+| W15.0b API 34 `dumpsys package`: no location, legacy BT not requested, BLUETOOTH_CONNECT `granted=false` and no dialog at launch/sign-in | PASS | `w15-dumpsys-package.txt` |
+| W15.1 print with no printer: "لا توجد طابعة متصلة", no crash, no prompt, permission still not requested | PASS | `71-w15-1-print-no-printer.png` |
+| W15.2a BLUETOOTH_CONNECT requested only when "find Bluetooth printers" is tapped | PASS | dialog screenshot `73`-series |
+| W15.2b deny -> "امنح التطبيق إذن البلوتوث..." (not "no printer") | PASS | |
+| W15.2c `pm grant` -> no prompt, "لا توجد طابعات بلوتوث مقترنة" | PASS | |
+| W15.2d `pm revoke` -> app asks again; denial reported as permission | FAIL | `76-w15-2-after-revoke.png`: dialog still on screen after 3 taps on "Don't allow" (see FAIL analysis) |
+| W15.3 no crash through the permission flow | PASS | |
+| W14.0-W14.3 two overlapping tasks: newer approve => 409 `overlapping_count_task`; older settles; newer => 409 `stale_overlap_count` | PASS | `api-w14-*.json` |
+| W14.4 UI shows WHY the approval was refused (not a generic error) | FAIL (lab) | phone was on the Android home screen (`77-w14-ui-stale-refusal.png`) - not assessable |
+| W14.5 recount: retired counter gets 409 `count_not_open`, other counter offered the task | PASS | `api-w14-recount-b.json`, `api-w14-tasks-clerk*.json` |
+| W14.6 recount by clerk3 then approve OK; docs `superseded,posted`; stock unchanged | PASS | `facts-w14-done.json` |
+| W30.1 dispatcher's own receive => 403 `self_approval`, still `in_transit`, stock untouched | PASS | `api-w30-a-self-receive.json` |
+| W30.2 second user (mgr1) receives => 200, stock 2 | PASS | |
+| W30.3 UI: dispatcher confirms both keypads on the phone -> transfer stays `in_transit`, a refusal is visible | PASS | `78-w30-ui-self-receive.png`, `79-w30-ui-outbox.png` |
+| W30.4 second user then receives | PASS | |
+| LOGCAT crashes (whole run) | PASS | no FATAL/ANR in `logcat.txt` |
+
+Legacy S1-S5 and W2-W5 were rerun unchanged except: W3.2e now receives as `mgr1` (the dispatcher `super1` may no longer receive - WH-030) and
+`super1` signs back in afterwards; S2a.2 now reports itself as superseded by C1-C5 (the cashier app pairs now). 49 of the 53 legacy rows PASS.
+The legacy FAILs: **W2.3b** and **W3.2f** (below).
+
+## FAIL analysis (4)
+
+| Id | Class | Analysis |
+|---|---|---|
+| W2.3b | lab (pattern) / not re-examined | The phone does show the refusal on the receive screen (`W2.3c` evidence: "رفض المكتب الاستلام: الكمية تتج..."); the outbox-text regex (`مرفوضة: 1` + reason) did not match this time (it matched in Addendum 3). Outbox screenshot `28-w23-outbox.png` was not read in this addendum. Not blamed on the product. |
+| W3.2f | UNRESOLVED (lab change vs product) | `replay dispatch => 409 replayed=` (expected 200 `replayed=true`); new-key dispatch/receive correctly 409; stock 6/4, in-transit 0 (no double effect). It passed in Addendum 3. What changed in this run: W3.2e's receiver is now `mgr1` (WH-030) and the commit moved on. The idempotent replay of the dispatch command is not answered from the log once the transfer has been received - candidate product behaviour change (`wh_doc_store.dart` `command()`), unverified. Needs a focused look. |
+| W15.2d | lab (probably) | After `pm revoke` + relaunch the system dialog was up and `Deny-Dialog` tapped "Don't allow" three times with the dialog still visible in the last screenshot. W15.2b (first denial) passed with one tap. Either the tap misses on the second dialog or the app re-requests at once; not determined. Re-run `-SkipLegacy -SkipWarehouse -SkipCashier -SkipW14 -SkipW30` after reading the dump. |
+| W14.4 | lab bug | `Ensure-App` did not bring the app back after W15 (screenshot = launcher). Static observation only (NOT verified at runtime): `mobile_warehouse/lib/l10n/strings.dart` has no `err_overlapping_count_task` / `err_stale_overlap_count` entry (grep), so the supervisor would see the generic "حدث خطأ غير متوقع" for WH-014 refusals - candidate product defect, to confirm by re-running W14 alone. |
+
+## Product defects / observations
+
+- No confirmed product defect in this addendum. Candidates: (1) missing UI strings for `overlapping_count_task` / `stale_overlap_count` (static grep, `mobile_warehouse/lib/l10n/strings.dart`; unverified at runtime); (2) W3.2f replay behaviour (above).
+- `mobile_warehouse/lib/screens/approvals_page.dart:146`: `review.recountNeeded` can never be true inside the review dialog, because the inbox (`wh_approval_handlers.dart`) only lists counts with `readyForApproval`, which excludes `recountNeeded` - the "recount needed" message in the dialog is unreachable (dead branch; the one-line recount UI check requested for W14 therefore cannot be done there).
+- Cashier app (`mobile_pos/lib/session/pos_session.dart`): the only authenticated calls are at app start (`verifyStillPaired`) and sign-in. A revoked tablet that stays open in its shell is not wiped until the next start/sign-in (C3.1 documents this); the Cashier shell is still preview-only (Sale/Held/Shift/Returns are placeholders).
+- A wrong cashier password shows "بيانات الدخول غير صحيحة" (code `unauthorized`), not the specific `err_invalid_credentials` text: the host answers 401 without the `invalid_credentials` code for a bad password on a device session, or the client does not map it. Cosmetic.
+- ANR seen once in the short iteration run `iter2` (`com.picpos.pos`, "Input dispatching timed out (no focused window)" at 22:50, right after C4.3's `pm clear` relaunch left the app on its splash while the lab moved on to the warehouse app). It did NOT recur in the full run (`LOGCAT crashes` PASS). Likely a lab artifact; not proven. C4.3's wait was lengthened afterwards.
+
+## Lab limits (this addendum)
+
+- No Bluetooth printer on the emulator: BLUETOOTH_CONNECT is exercised through the "find paired printers" scan, not through a print to a paired Bluetooth printer.
+- Camera/QR never used; fingerprints typed. The Cashier "legacy bearer" checks are host-side (a lab-owned HTTPS call), since the apps no longer use the shared key. This machine derives its own legacy seed or the lab sets a fixed bearer (`serve_host_test.dart`, `legacy` command).
+- The lab took ~64 min (not 45). `-SkipCashier` / `-SkipNew` etc. shorten reruns (see DEVICE-LAB.md).
+
+## Files changed (lab only)
+
+`tool/device_lab/run_lab.ps1`, `tool/device_lab/wh_scenarios.ps1` (W3.2e receiver = mgr1), new `tool/device_lab/pos_scenarios.ps1`, new `tool/device_lab/wh_android_scenarios.ps1`,
+`test/device_lab/serve_host_test.dart` (pos pairing kind, pos probe tablet, `posapi`, `legacy`, `legacyfacts`), `docs/testing/DEVICE-LAB.md`, this file.
+# Addendum 5: the four Addendum-4 FAILs fixed in the lab and rerun (runs `addendum5` + `addendum5b`, 2026-10-27)
+
+Runs: `D:\qa\device-lab\addendum5` (`-SkipLegacy -SkipCashier -SkipW30`: W2-W5 + W15 + W14) and `D:\qa\device-lab\addendum5b` (`-SkipLegacy -SkipWarehouse -SkipCashier -SkipW30 -SkipW15`: W14 only, after a lab-script slip of mine dropped the recount call in the first run; W14.5/W14.6 of `addendum5` are therefore void and superseded by `addendum5b`). Windows PowerShell 5.1, APKs not rebuilt (copied from the existing builds). Emulator and host stopped afterwards.
+
+| Scenario | Result | Classification | Evidence |
+|---|---|---|---|
+| W3.2f replay of the REAL dispatch command id, same body | PASS (200 `replayed=true`; stock 6/4, in-transit 0; one dispatch event) | LAB BUG | `addendum5\steps.log`, `facts-w32-doubles.json`, `api-w32-replay-dispatch.json` |
+| W3.2g (new) same command id, DIFFERENT body | PASS (409 `idempotency_conflict`, stock unchanged) | n/a (new assertion) | `api-w32-replay-dispatch-otherbody.json` |
+| W2.3b outbox shows the refusal + reason | PASS | LAB BUG | `addendum5\07-w23-outbox.png`, `w23-outbox.xml`, `steps.log` |
+| W15.2d after `pm revoke` the app asks again, denial reported honestly | PASS (dialog gone after 1 tap; UI: "إذن البلوتوث مرفوض نهائياً؛ فعّل «الأجهزة القريبة»…") | LAB BUG | `addendum5\41-w15-2-after-revoke.png`, `w15-deny-dialog-*.xml` |
+| W14.4a refusal visible, count not posted, no crash | PASS | LAB BUG (phone had been left off the app shell) | `addendum5b\*-w14-ui-stale-refusal.png`, `w14-ui-stale-refusal.xml`, `facts-w14-ui.json` |
+| W14.4b supervisor told WHY (overlap/stale) | FAIL (generic "حدث خطأ غير متوقع.") | PRODUCT OBSERVATION (kept as an honest FAIL) | same |
+| W14.5 / W14.6 | PASS in `addendum5b` | n/a | `addendum5b\summary.md` |
+
+Root causes
+- W3.2f: the premise "command id belongs to a count command" did not hold. `op-mvpptxy8-…` WAS the dispatch of that transfer (`wh_mobile_doc_events` doc_id 5, `transfer:dispatch`). The 409 came from the body: the phone queues dispatch with `{"expectedVersion":1}` (`mobile_warehouse/lib/screens/transfer_pages.dart:47`) and the host hashes `{action, {gid, ...body}}` (`lib/services/api/m1_wh/wh_doc_store.dart:292`, `wh_stock_doc_handlers.dart:59`); the lab replayed `{}`. Verified offline: SHA-256 of the canonical JSON with `expectedVersion:1` equals the stored `payload_hash` (`b614d6ce…`). The lab now looks up the dispatch event of that document and replays it with `{"expectedVersion": <row_version before dispatch>}`.
+- W2.3b: the counter text is `queueCounts` with `ltr()` bidi isolates (U+2066/U+2069 around each number; `mobile_warehouse/lib/widgets/wh_widgets.dart:12`, `screens/outbox_page.dart:61`), so the literal `مرفوضة: 1` never matched. The lab regex is now bidi-tolerant and also checks pending=0, the reason text and the host-side facts (no non-draft doc, PO received 0).
+- W15.2d: the second (repeated) request shows `permission_deny_and_dont_ask_again_button` (first time `permission_deny_button`), so the old id never matched. The lab matches `permission_deny\w*button` or the label `Don.t allow` (typographic apostrophe) and also asserts the dialog is gone and BLUETOOTH_CONNECT stays denied.
+- W14.4: `Ensure-App` now relaunches, signs in as `super1` when needed (re-pairs if on onboarding), and the check polls for the snackbar. Result: the supervisor DOES get a refusal, but a generic one.
+
+Product observations (not changed)
+- Neither `overlapping_count_task` nor `stale_overlap_count` has a warehouse string. `mobile_warehouse/lib/session/wh_session.dart:14-24` (`kDomainCodes`) omits them; `wh_session.dart:31-42` maps the 409 (`ApiErrorKind.conflict`, `packages/picpos_api_client/lib/src/api_error.dart:119`) to `unknown`; `mobile_warehouse/lib/l10n/strings.dart:342-346` falls back to `err_unknown` ("حدث خطأ غير متوقع." / "Something went wrong."); `mobile_warehouse/lib/screens/approvals_page.dart:75-76` shows it via `showFailure` (`widgets/wh_widgets.dart:221-227`) as a snackbar. So the supervisor sees a GENERIC message, not the reason. (`recount_required` has `err_recount_required`; the overlap pair does not.)
+
+Other checks: LOGCAT crash/ANR grep of `addendum5` and `addendum5b` logcat: no FATAL EXCEPTION / ANR for `com.picpos.*` (PASS). Limit: these runs did not exercise `com.picpos.pos` (cashier phase skipped), so the earlier one-off `com.picpos.pos` ANR is "not seen again" rather than disproven for that app.
+
+Files changed (lab only): `tool/device_lab/wh_scenarios.ps1` (W3.2f/W3.2g, W2.3b), `tool/device_lab/wh_android_scenarios.ps1` (permission-dialog patterns, `Ensure-App`, W14.4a/b, W15.2d), this file.

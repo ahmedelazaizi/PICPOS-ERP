@@ -1,9 +1,12 @@
 import 'package:flutter/widgets.dart';
 import 'package:picpos_ui/picpos_ui.dart';
 
+import 'strings_errors.dart';
+
 /// Arabic (default) + English strings of PicPos مخازن.
 abstract final class S {
   static const table = L10nTable({
+    ...kHostErrorStrings,
     'appTitle': ('PicPos مخازن', 'PicPos Warehouse'),
     'navHome': ('الرئيسية', 'Home'),
     'navLookup': ('بحث صنف', 'Item lookup'),
