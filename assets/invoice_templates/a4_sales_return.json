@@ -1,7 +1,7 @@
 {
   "name": "مرتجع مبيعات — A4",
   "type": "a4",
-  "templateCategory": "invoice",
+  "templateCategory": "sales_return",
   "paperSize": "A4",
   "paperWidth": 210,
   "paperHeight": 297,

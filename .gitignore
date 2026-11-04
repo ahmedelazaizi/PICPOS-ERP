@@ -230,3 +230,9 @@ flutter_*.log
 # flutter golden mismatch artifacts (never commit)
 mobile_warehouse/test/failures/
 **/test/failures/
+
+# Local PostgreSQL backups (contain data; keep the folder only)
+backups/postgres/*.dump
+backups/postgres/*.dump.sha256
+backups/postgres/*.partial
+backups/postgres/backup.log

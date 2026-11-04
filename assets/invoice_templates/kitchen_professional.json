@@ -13,7 +13,7 @@
             "fontSize": 22,
             "isBold": true,
             "textAlign": "center",
-            "content": "🍳 طلب مطبخ 🍳"
+            "content": "طلب مطبخ"
         },
         {
             "type": "divider",
@@ -49,7 +49,7 @@
             "fontSize": 20,
             "isBold": true,
             "textAlign": "center",
-            "labelAr": "🪑 طاولة"
+            "labelAr": "طاولة"
         },
         {
             "type": "divider",
@@ -77,7 +77,7 @@
             "fontSize": 14,
             "isBold": true,
             "textAlign": "left",
-            "labelAr": "⏰"
+            "labelAr": "الوقت"
         },
         {
             "type": "divider",
@@ -95,7 +95,7 @@
             "fontSize": 14,
             "isBold": true,
             "textAlign": "center",
-            "content": "📋 الأصناف المطلوبة"
+            "content": "الأصناف المطلوبة"
         },
         {
             "type": "divider",
@@ -113,7 +113,7 @@
             "fontSize": 14,
             "isBold": true,
             "textAlign": "center",
-            "labelAr": "📝 ملاحظات خاصة"
+            "labelAr": "ملاحظات خاصة"
         }
     ],
     "tableSettings": {
@@ -123,7 +123,7 @@
         "fontSize": 14,
         "headerFontSize": 13,
         "rowHeight": 28,
-        "showIndex": true,
+        "showIndex": false,
         "showProductCode": false,
         "showProductName": true,
         "showQuantity": true,
@@ -131,5 +131,6 @@
         "showDiscount": false,
         "showTax": false,
         "showTotal": false
-    }
+    },
+    "layoutVersion": 2
 }

@@ -1,0 +1,142 @@
+{
+  "name": "طلب مطبخ حراري — 58mm",
+  "type": "kitchen",
+  "paperSize": "58mm",
+  "paperWidth": 58,
+  "elements": [
+    {
+      "type": "text",
+      "x": 6.0,
+      "y": 10,
+      "width": 140.0,
+      "height": 35,
+      "fontSize": 22,
+      "isBold": true,
+      "textAlign": "center",
+      "content": "طلب مطبخ"
+    },
+    {
+      "type": "divider",
+      "x": 6.0,
+      "y": 50,
+      "width": 140.0,
+      "height": 4
+    },
+    {
+      "type": "order_number",
+      "x": 6.0,
+      "y": 60,
+      "width": 140.0,
+      "height": 45,
+      "fontSize": 14,
+      "isBold": true,
+      "textAlign": "center",
+      "labelAr": "طلب #",
+      "content": "order_number"
+    },
+    {
+      "type": "divider",
+      "x": 6.0,
+      "y": 110,
+      "width": 140.0,
+      "height": 4
+    },
+    {
+      "type": "table_number",
+      "x": 6.0,
+      "y": 120,
+      "width": 140.0,
+      "height": 35,
+      "fontSize": 20,
+      "isBold": true,
+      "textAlign": "center",
+      "labelAr": "الطاولة",
+      "content": "table_number"
+    },
+    {
+      "type": "divider",
+      "x": 6.0,
+      "y": 160,
+      "width": 140.0,
+      "height": 2
+    },
+    {
+      "type": "date",
+      "x": 6.0,
+      "y": 170,
+      "width": 70.0,
+      "height": 22,
+      "fontSize": 12,
+      "textAlign": "right",
+      "labelAr": "التاريخ",
+      "content": "date"
+    },
+    {
+      "type": "time",
+      "x": 76.0,
+      "y": 170,
+      "width": 70.0,
+      "height": 22,
+      "fontSize": 14,
+      "isBold": true,
+      "textAlign": "left",
+      "labelAr": "الوقت",
+      "content": "time"
+    },
+    {
+      "type": "divider",
+      "x": 6.0,
+      "y": 197,
+      "width": 140.0,
+      "height": 4
+    },
+    {
+      "type": "text",
+      "x": 6.0,
+      "y": 207,
+      "width": 140.0,
+      "height": 25,
+      "fontSize": 14,
+      "isBold": true,
+      "textAlign": "center",
+      "content": "الأصناف المطلوبة"
+    },
+    {
+      "type": "divider",
+      "x": 6.0,
+      "y": 370,
+      "width": 140.0,
+      "height": 4
+    },
+    {
+      "type": "notes",
+      "x": 6.0,
+      "y": 380,
+      "width": 140.0,
+      "height": 60,
+      "fontSize": 8,
+      "isBold": true,
+      "textAlign": "center",
+      "labelAr": "ملاحظات خاصة",
+      "content": "notes"
+    }
+  ],
+  "tableSettings": {
+    "x": 6,
+    "y": 237,
+    "width": 140,
+    "fontSize": 8,
+    "headerFontSize": 8,
+    "rowHeight": 14,
+    "showIndex": true,
+    "showProductCode": false,
+    "showProductName": true,
+    "showQuantity": true,
+    "showUnitPrice": false,
+    "showDiscount": false,
+    "showTax": false,
+    "showTotal": false
+  },
+  "templateCategory": "kitchen",
+  "layoutVersion": 2
+}

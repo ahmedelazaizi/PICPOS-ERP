@@ -207,13 +207,15 @@
     "fontSize": 11,
     "headerFontSize": 12,
     "rowHeight": 22,
-    "showIndex": true,
+    "showIndex": false,
     "showProductCode": false,
     "showProductName": true,
     "showQuantity": true,
     "showUnitPrice": true,
     "showDiscount": false,
     "showTax": false,
-    "showTotal": true
-  }
+    "showTotal": true,
+    "columnsJson": "[{\"key\":\"name\",\"labelAr\":\"الصنف\",\"labelEn\":\"Item\",\"flex\":1.5,\"wrap\":true},{\"key\":\"quantity\",\"labelAr\":\"الكمية\",\"labelEn\":\"Qty\",\"flex\":1.2},{\"key\":\"price\",\"labelAr\":\"السعر\",\"labelEn\":\"Price\",\"flex\":1.2},{\"key\":\"total\",\"labelAr\":\"الإجمالي\",\"labelEn\":\"Total\",\"flex\":1.3}]"
+  },
+  "layoutVersion": 2
 }

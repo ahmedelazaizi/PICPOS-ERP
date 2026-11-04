@@ -1,7 +1,7 @@
 {
   "name": "مرتجع مبيعات حراري — 80mm",
   "type": "thermal",
-  "templateCategory": "receipt",
+  "templateCategory": "sales_return",
   "paperSize": "80mm",
   "paperWidth": 80,
   "elements": [
@@ -39,17 +39,6 @@
       "labelEn": ""
     },
     {
-      "sortOrder": 2,
-      "isVisible": true,
-      "type": "line",
-      "section": "header",
-      "flexWidth": 100,
-      "x": 20,
-      "y": 0,
-      "width": 200,
-      "height": 1
-    },
-    {
       "sortOrder": 3,
       "isVisible": true,
       "type": "text",
@@ -64,17 +53,6 @@
       "fontSize": 10,
       "isBold": true,
       "fontColor": "#B42318"
-    },
-    {
-      "sortOrder": 4,
-      "isVisible": true,
-      "type": "line",
-      "section": "header",
-      "flexWidth": 100,
-      "x": 20,
-      "y": 0,
-      "width": 200,
-      "height": 1
     },
     {
       "sortOrder": 5,
@@ -204,17 +182,6 @@
       "labelEn": "Bank"
     },
     {
-      "sortOrder": 13,
-      "isVisible": true,
-      "type": "line",
-      "section": "footer",
-      "flexWidth": 100,
-      "x": 20,
-      "y": 0,
-      "width": 200,
-      "height": 1
-    },
-    {
       "sortOrder": 14,
       "isVisible": true,
       "type": "variable",
@@ -270,7 +237,7 @@
     "showProductCode": false,
     "showProductName": true,
     "showQuantity": true,
-    "showUnitPrice": true,
+    "showUnitPrice": false,
     "showDiscount": false,
     "showTax": false,
     "showTotal": true,
@@ -280,6 +247,8 @@
     "headerBgColor": "#FFFFFF",
     "headerTextColor": "#0B1220",
     "altRowBgColor": null,
-    "columnWidths": "{\"_decimalPlaces\":2}"
-  }
+    "columnWidths": "{\"_decimalPlaces\":2}",
+    "columnsJson": "[{\"key\":\"name\",\"labelAr\":\"الصنف\",\"labelEn\":\"Item\",\"flex\":1.5,\"wrap\":true},{\"key\":\"quantity\",\"labelAr\":\"الكمية\",\"labelEn\":\"Qty\",\"flex\":1.5},{\"key\":\"total\",\"labelAr\":\"قيمة المرتجع\",\"labelEn\":\"Refund\",\"flex\":1.5}]"
+  },
+  "layoutVersion": 2
 }

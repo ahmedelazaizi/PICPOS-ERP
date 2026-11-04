@@ -143,12 +143,12 @@ function Run-Wh14 {
   }
   $quick = if ($snack) { $snack } else { Screen-Text }; $sU = Shot 'w14-ui-stale-refusal'; $null = Save-Dump 'w14-ui-stale-refusal'
   $generic = $quick -match 'حدث خطأ غير متوقع|Something went wrong'
-  $told = ($quick -match 'تداخل|قديم|متقادم|عدّ ثانٍ|أعد العدّ|overlap|stale|recount') -and -not $generic
+  $told = ($quick -match 'تغيّر رصيد صنف في هذا الجرد منذ عدّه: اعتُمد جرد آخر لنفس المخزن والصنف بعد إرسال هذا العدّ\. يلزم إعادة العدّ|تداخل|قديم|متقادم|عدّ ثانٍ|أعد العدّ|overlap|stale|recount') -and -not $generic
   $fH = Get-Facts 'w14-ui'
   $bTask = @(Doc-Of $fH 'count_submission' | ? { $_.ref_id -eq "$($fx.counts.w14b.taskId)" })
   $notPosted = (@($bTask | ? { $_.state -eq 'posted' }).Count -eq 0) -and ((Qty $fH $bc $wh1) -eq 10)
   Record 'W14.4a UI: approving the stale overlapping count is refused visibly (a refusal message, count NOT posted, stock unchanged, no crash)' (Pass ($appOk -and $row -and $tapped -and [bool]$snack -and $notPosted -and (Crash-Check $script:WhPkgName).Alive)) "app shell ok=$appOk; inbox row tapped=$row; approve tapped=$tapped; refusal text shown=$([bool]$snack): $(Tail $quick 260); host: task B docs=$(@($bTask | % { $_.state }) -join ','), stock=$(Qty $fH $bc $wh1); $sU"
-  Record 'W14.4b UI: the supervisor is told WHY (overlap/stale/recount) rather than the generic error' (Pass $told) "told specific reason=$told; generic 'Something went wrong / حدث خطأ غير متوقع' shown=$generic. PRODUCT OBSERVATION when FAIL: wh_session.dart:14-24 kDomainCodes has no overlapping_count_task / stale_overlap_count, wh_session.dart:33-42 maps the 409 (ApiErrorKind.conflict) to 'unknown', strings.dart:342-346 falls back to err_unknown, approvals_page.dart:75-76 shows it through showFailure (wh_widgets.dart:221-227); $sU"  $rc = Api-Call 'w14-recount-b' 'super1' 'POST' "/api/m1/wh/counts/$refB/recount" '{"reason":"lab: overlap"}' ''
+  Record 'W14.4b UI: the supervisor is told WHY (overlap/stale/recount) rather than the generic error' (Pass $told) "told specific reason=$told; generic 'Something went wrong / حدث خطأ غير متوقع' shown=$generic; captured refusal text: $(Tail $quick 260); $sU"  $rc = Api-Call 'w14-recount-b' 'super1' 'POST' "/api/m1/wh/counts/$refB/recount" '{"reason":"lab: overlap"}' ''
   $rc = Api-Call 'w14-recount-b' 'super1' 'POST' "/api/m1/wh/counts/$refB/recount" '{"reason":"lab: overlap"}' ''
   $same = Api-Call 'w14-retired-counter-again' 'clerk1' 'POST' "/api/m1/wh/counts/$refB/entries" (@{ globalId = 'lab-w14-doc-b-0002'; entries = @(@{ lineGlobalId = 'lab-w14-doc-b-0002-line'; productId = $prodId; quantity = '10' }) } | ConvertTo-Json -Depth 5 -Compress) ''
   $tk1 = Api-Call 'w14-tasks-clerk1' 'clerk1' 'GET' '/api/m1/wh/counts/tasks'

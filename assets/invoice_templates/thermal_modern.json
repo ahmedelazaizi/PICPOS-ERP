@@ -64,7 +64,7 @@
       "height": 22,
       "fontSize": 12,
       "textAlign": "right",
-      "labelAr": "🛒 العميل"
+      "labelAr": "العميل"
     },
     {
       "type": "divider",
@@ -130,7 +130,7 @@
       "fontSize": 20,
       "isBold": true,
       "textAlign": "center",
-      "labelAr": "💰"
+      "labelAr": "الإجمالي"
     },
     {
       "type": "divider",
@@ -164,7 +164,7 @@
       "height": 20,
       "fontSize": 11,
       "textAlign": "center",
-      "content": "✨ شكراً لتسوقكم معنا ✨"
+      "content": "شكراً لتسوقكم معنا"
     },
     {
       "type": "company_phone",
@@ -190,6 +190,8 @@
     "showUnitPrice": true,
     "showDiscount": false,
     "showTax": false,
-    "showTotal": true
-  }
+    "showTotal": true,
+    "columnsJson": "[{\"key\":\"name\",\"labelAr\":\"الصنف\",\"labelEn\":\"Item\",\"flex\":1.5,\"wrap\":true},{\"key\":\"quantity\",\"labelAr\":\"الكمية\",\"labelEn\":\"Qty\",\"flex\":1.2},{\"key\":\"price\",\"labelAr\":\"السعر\",\"labelEn\":\"Price\",\"flex\":1.2},{\"key\":\"total\",\"labelAr\":\"الإجمالي\",\"labelEn\":\"Total\",\"flex\":1.3}]"
+  },
+  "layoutVersion": 2
 }
