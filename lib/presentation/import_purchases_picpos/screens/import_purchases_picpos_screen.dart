@@ -385,7 +385,7 @@ class _ImportDocumentPanelState extends State<ImportDocumentPanel> {
             Text(
               tr('الأسعارُ في الجدول بـ{p0}. يُحوَّل الإجماليُّ إلى {p1} بسعرِ يومِه عند الحفظ، وتُحفظ لقطة السعر لفروق التسوية وإعادة التقييم.', {'p0': picked.code, 'p1': AppConstants.currencySymbolEn}),
               key: const Key('import_rate_hint'),
-              style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 11.5, color: context.picposSecondary),
             ),
           ],
           if (block != null) ...[
@@ -446,10 +446,10 @@ class _ImportDocumentPanelState extends State<ImportDocumentPanel> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(label,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textSecondary)),
+                    color: context.picposSecondary)),
             const SizedBox(height: 4),
             Container(
               height: 38,

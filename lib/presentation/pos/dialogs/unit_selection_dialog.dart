@@ -5,6 +5,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/database/database.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// Dialog for selecting product packaging unit (UOM) in POS
 /// Only shown for products that have multiple units defined (e.g. carton, box, piece)
@@ -64,7 +65,7 @@ class UnitSelectionDialog extends StatelessWidget {
               productName,
               style: GoogleFonts.cairo(
                 fontSize: 13,
-                color: AppColors.textMuted,
+                color: context.picposMuted,
               ),
             ),
             const SizedBox(height: 12),
@@ -97,7 +98,7 @@ class _UnitCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
         side: BorderSide(
-          color: isBase ? AppColors.border : AppColors.primary.withValues(alpha: 0.3),
+          color: isBase ? context.picposHairline : AppColors.primary.withValues(alpha: 0.3),
           width: isBase ? 1 : 1.5,
         ),
       ),
@@ -110,7 +111,7 @@ class _UnitCard extends StatelessWidget {
             children: [
               Icon(
                 isBase ? PhosphorIconsBold.cube : PhosphorIconsBold.package,
-                color: isBase ? AppColors.textMuted : AppColors.primary,
+                color: isBase ? context.picposMuted : AppColors.primary,
                 size: 22,
               ),
               const SizedBox(width: 12),
@@ -130,7 +131,7 @@ class _UnitCard extends StatelessWidget {
                         tr('{p0} قطعة', {'p0': unit.quantityInBase.toStringAsFixed(0)}),
                         style: GoogleFonts.cairo(
                           fontSize: 11,
-                          color: AppColors.textMuted,
+                          color: context.picposMuted,
                         ),
                       ),
                   ],

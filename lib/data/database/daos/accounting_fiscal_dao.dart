@@ -14,56 +14,100 @@ extension AccountingFiscalDao on AppDatabase {
 
   /// Get the current (active) fiscal year
   Future<FiscalYearData?> getCurrentFiscalYear() async {
-    return (select(
-      fiscalYears,
-    )..where((f) => f.isCurrent.equals(true))
-     ..limit(1)).getSingleOrNull();
+    return (select(fiscalYears)
+          ..where((f) => f.isCurrent.equals(true) & f.deletedAt.isNull())
+          ..limit(1))
+        .getSingleOrNull();
   }
 
-  /// Watch all fiscal years
+  /// Watch visible fiscal years only; soft-disabled years are excluded.
   Stream<List<FiscalYearData>> watchFiscalYears() {
-    return (select(
-      fiscalYears,
-    )..orderBy([(f) => OrderingTerm.desc(f.startDate)])).watch();
+    return (select(fiscalYears)
+          ..where((f) => f.deletedAt.isNull())
+          ..orderBy([(f) => OrderingTerm.desc(f.startDate)]))
+        .watch();
   }
 
-  /// Create a new fiscal year
-  Future<int> createFiscalYear({
+  DateTime _fiscalDayStart(DateTime date) => DateTime(date.year, date.month, date.day);
+
+  DateTime _fiscalDayEnd(DateTime date) =>
+      DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
+
+  Future<FiscalYearData?> _findEnabledOverlap(
+    DateTime startDate,
+    DateTime endDate,
+  ) {
+    final startDay = _fiscalDayStart(startDate);
+    final endDay = _fiscalDayStart(endDate);
+    return (select(fiscalYears)
+          ..where((f) =>
+              f.deletedAt.isNull() &
+              f.isClosed.equals(false) &
+              f.startDate.isSmallerOrEqual(Variable(_fiscalDayEnd(endDay))) &
+              f.endDate.isBiggerOrEqual(Variable(startDay)))
+          ..orderBy([(f) => OrderingTerm.desc(f.isCurrent)])
+          ..limit(1))
+        .getSingleOrNull();
+  }
+
+  /// Return a matching existing year for automatic setup/startup, else create it.
+  Future<int> ensureFiscalYear({
     required String name,
     required DateTime startDate,
     required DateTime endDate,
   }) async {
     return transaction(() async {
-      // Deactivate all other fiscal years
-      await (update(
-        fiscalYears,
-      )).write(const FiscalYearsCompanion(isCurrent: Value(false)));
-
-      return into(fiscalYears).insert(
-        FiscalYearsCompanion.insert(
-          name: name,
-          startDate: startDate,
-          endDate: endDate,
-          isCurrent: const Value(true),
-          // Spec 136 ISS-2 — deterministic gid from the natural key so the
-          // server and client converge on the sync Tier-1 globalId match
-          // (was UuidV7.generate(), which diverged per install → NULL/name
-          // fallback in the field).
-          globalId: Value(UuidV7.deriveFiscalYearGlobalId(
-              name: name, startDate: startDate, endDate: endDate)),
-        ),
-      );
+      final overlap = await _findEnabledOverlap(startDate, endDate);
+      if (overlap != null) return overlap.id;
+      return _insertFiscalYear(name, startDate, endDate);
     });
   }
 
-  /// Get fiscal year covering a specific date
+  /// Create a new fiscal year; manual overlapping creation is rejected.
+  Future<int> createFiscalYear({
+    required String name,
+    required DateTime startDate,
+    required DateTime endDate,
+    String? globalId,
+  }) async {
+    return transaction(() async {
+      final overlap = await _findEnabledOverlap(startDate, endDate);
+      if (overlap != null) {
+        throw Exception('لا يمكن إنشاء السنة المالية: تتداخل مع السنة المفعّلة "${overlap.name}"');
+      }
+      return _insertFiscalYear(name, startDate, endDate, globalId: globalId);
+    });
+  }
+
+  Future<int> _insertFiscalYear(
+    String name,
+    DateTime startDate,
+    DateTime endDate, {
+    String? globalId,
+  }) async {
+    final fullDayEnd = _fiscalDayEnd(endDate);
+    await (update(fiscalYears)..where((f) => f.deletedAt.isNull()))
+        .write(const FiscalYearsCompanion(isCurrent: Value(false)));
+    return into(fiscalYears).insert(FiscalYearsCompanion.insert(
+      name: name,
+      startDate: startDate,
+      endDate: fullDayEnd,
+      isCurrent: const Value(true),
+      globalId: Value(globalId ?? UuidV7.deriveFiscalYearGlobalId(
+        name: name, startDate: startDate, endDate: fullDayEnd,
+      )),
+    ));
+  }
+
+  /// Get a visible fiscal year covering any time on the specified date.
   Future<FiscalYearData?> getFiscalYearByDate(DateTime date) {
+    final dayStart = _fiscalDayStart(date);
+    final dayEnd = _fiscalDayEnd(date);
     return (select(fiscalYears)
-          ..where(
-            (f) =>
-                f.startDate.isSmallerOrEqual(Variable(date)) &
-                f.endDate.isBiggerOrEqual(Variable(date)),
-          )
+          ..where((f) => f.deletedAt.isNull() &
+              f.startDate.isSmallerOrEqual(Variable(dayEnd)) &
+              f.endDate.isBiggerOrEqual(Variable(dayStart)))
+          ..orderBy([(f) => OrderingTerm.desc(f.isCurrent)])
           ..limit(1))
         .getSingleOrNull();
   }
@@ -77,12 +121,14 @@ extension AccountingFiscalDao on AppDatabase {
     final fy = await getFiscalYearByDate(date);
     if (fy != null && fy.isClosed) return true;
     final boolTrue = sqlBool(true);
+    final dayStart = DateTime(date.year, date.month, date.day);
+    final dayEnd = DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
     final periodRow = await customSelect(
       '''SELECT 1 FROM accounting_periods
          WHERE start_date <= ? AND end_date >= ?
          AND is_closed = $boolTrue
          LIMIT 1''',
-      variables: [Variable(date), Variable(date)],
+      variables: [Variable(dayEnd), Variable(dayStart)],
       readsFrom: {accountingPeriods},
     ).getSingleOrNull();
     return periodRow != null;
@@ -90,6 +136,9 @@ extension AccountingFiscalDao on AppDatabase {
 
   /// Close a fiscal year (إقفال السنة المالية)
   Future<void> closeFiscalYear(int yearId, int userId) async {
+    if (!await userHasPermission(userId, FiscalPermissionCodes.fiscalYearClose)) {
+      throw Exception('ليس لديك صلاحية إقفال السنة المالية');
+    }
     await transaction(() async {
       final fy = await (select(
         fiscalYears,
@@ -139,8 +188,11 @@ extension AccountingFiscalDao on AppDatabase {
         );
       }
 
-      // 1. Calculate P&L (Profit/Loss) for this fiscal year
-      final pl = await getIncomeStatement(fy.startDate, fy.endDate);
+      // 1. Calculate P&L (Profit/Loss) through the final calendar day.
+      final fiscalEndOfDay = DateTime(
+        fy.endDate.year, fy.endDate.month, fy.endDate.day, 23, 59, 59, 999,
+      );
+      final pl = await getIncomeStatement(fy.startDate, fiscalEndOfDay);
       final netProfit = pl['netProfit'] as double;
 
       // 2. Create closing entry: Close Revenue & Expense accounts → Retained Earnings
@@ -148,17 +200,19 @@ extension AccountingFiscalDao on AppDatabase {
       final closingLines = <JournalLine>[];
       final retainedEarnings = await accountingDao.getAccountByPurpose('retained_earnings');
 
-      if (retainedEarnings == null) return;
+      if (retainedEarnings == null) {
+        throw Exception('لا يمكن إقفال السنة المالية: حساب الأرباح المحتجزة غير مربوط');
+      }
 
       for (var acc in allAccs) {
         if (acc.accountType == 'revenue' || acc.accountType == 'expense' || acc.accountType == 'contra_revenue') {
           // Calculate balance for this fiscal year
           final movement = await customSelect(
-            'SELECT SUM(debit - credit) as net FROM journal_entry_lines l JOIN journal_entries e ON l.entry_id = e.id WHERE l.account_id = ? AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue',
+            "SELECT SUM(l.debit - l.credit) as net FROM journal_entry_lines l JOIN journal_entries e ON l.entry_id = e.id WHERE l.account_id = ? AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue AND e.is_deleted = ${sqlBool(false)} AND COALESCE(e.reference_type, '') <> 'fiscal_close'",
             variables: [
               Variable(acc.id),
               Variable(fy.startDate),
-              Variable(fy.endDate),
+              Variable(fiscalEndOfDay),
             ],
             readsFrom: {journalEntryLines, journalEntries},
           ).getSingle();
@@ -226,10 +280,20 @@ extension AccountingFiscalDao on AppDatabase {
           isCurrent: const Value(false),
         ),
       );
+      final closingUser = await (select(users)..where((u) => u.id.equals(userId)))
+          .getSingleOrNull();
+      await logActivity(
+        userId: userId,
+        userName: closingUser?.username ?? 'user:$userId',
+        action: 'close',
+        entityType: 'fiscal_year',
+        entityId: yearId,
+        description: 'إقفال السنة المالية ${fy.name}',
+      );
 
       // 4. Auto-create next fiscal year + opening balances
-      final nextStart = fy.endDate.add(const Duration(days: 1));
-      final nextEnd = DateTime(nextStart.year, 12, 31);
+      final nextStart = DateTime(fy.endDate.year, fy.endDate.month, fy.endDate.day + 1);
+      final nextEnd = DateTime(nextStart.year, 12, 31, 23, 59, 59, 999);
       // Spec 136 review P1-1 — use the CANONICAL seeder name
       // ("السنة المالية YYYY"), not a bare "YYYY". Otherwise the next FY
       // created by closing a year on the server derives a different
@@ -295,6 +359,9 @@ extension AccountingFiscalDao on AppDatabase {
 
   /// Close an accounting period (lock month)
   Future<void> closeAccountingPeriod(int periodId, int userId) async {
+    if (!await userHasPermission(userId, FiscalPermissionCodes.fiscalPeriodClose)) {
+      throw Exception('ليس لديك صلاحية إقفال الفترة المحاسبية');
+    }
     await transaction(() async {
       final period = await (select(accountingPeriods)..where((p) => p.id.equals(periodId))).getSingle();
       final year = await (select(fiscalYears)..where((f) => f.id.equals(period.fiscalYearId))).getSingle();
@@ -309,11 +376,21 @@ extension AccountingFiscalDao on AppDatabase {
         closedAt: Value(DateTime.now()),
         closedBy: Value(userId),
       ));
+      final closingUser = await (select(users)..where((u) => u.id.equals(userId)))
+          .getSingleOrNull();
+      await logActivity(
+        userId: userId,
+        userName: closingUser?.username ?? 'user:$userId',
+        action: 'close',
+        entityType: 'accounting_period',
+        entityId: periodId,
+        description: 'إقفال الفترة المحاسبية ${period.name}',
+      );
     });
   }
 
   /// Re-open an accounting period
-  Future<void> reopenAccountingPeriod(int periodId) async {
+  Future<void> reopenAccountingPeriod(int periodId, int userId) async {
     await transaction(() async {
       final period = await (select(accountingPeriods)..where((p) => p.id.equals(periodId))).getSingle();
       final year = await (select(fiscalYears)..where((f) => f.id.equals(period.fiscalYearId))).getSingle();
@@ -328,6 +405,16 @@ extension AccountingFiscalDao on AppDatabase {
         closedAt: Value.absent(),
         closedBy: Value.absent(),
       ));
+      final reopeningUser = await (select(users)..where((u) => u.id.equals(userId)))
+          .getSingleOrNull();
+      await logActivity(
+        userId: userId,
+        userName: reopeningUser?.username ?? 'user:$userId',
+        action: 'reopen',
+        entityType: 'accounting_period',
+        entityId: periodId,
+        description: 'إعادة فتح الفترة المحاسبية ${period.name}',
+      );
     });
   }
 
@@ -336,10 +423,13 @@ extension AccountingFiscalDao on AppDatabase {
     final monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
       'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 
+    final fullDayEnd = DateTime(
+      endDate.year, endDate.month, endDate.day, 23, 59, 59, 999,
+    );
     DateTime current = DateTime(startDate.year, startDate.month, 1);
-    while (current.isBefore(endDate) || current.month == endDate.month && current.year == endDate.year) {
-      final monthEnd = DateTime(current.year, current.month + 1, 0, 23, 59, 59);
-      final periodEnd = monthEnd.isAfter(endDate) ? endDate : monthEnd;
+    while (current.isBefore(fullDayEnd) || current.month == fullDayEnd.month && current.year == fullDayEnd.year) {
+      final monthEnd = DateTime(current.year, current.month + 1, 0, 23, 59, 59, 999);
+      final periodEnd = monthEnd.isAfter(fullDayEnd) ? fullDayEnd : monthEnd;
 
       // FIX 2026-04-28: Use insertOrIgnore so re-running setup wizard on an
       // existing database doesn't fail with `accounting_periods_month_year_key`
@@ -372,13 +462,16 @@ extension AccountingFiscalDao on AppDatabase {
     final fy = await (select(fiscalYears)..where((f) => f.id.equals(fiscalYearId))).getSingle();
 
     final boolTrue = sqlBool(true);
+    final fiscalEndOfDay = DateTime(
+      fy.endDate.year, fy.endDate.month, fy.endDate.day, 23, 59, 59, 999,
+    );
     final revenueResult = await customSelect(
       '''SELECT COALESCE(SUM(l.credit - l.debit), 0) as total 
          FROM journal_entry_lines l 
          JOIN journal_entries e ON l.entry_id = e.id 
          JOIN accounts a ON l.account_id = a.id 
          WHERE a.account_type = 'revenue' AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue''',
-      variables: [Variable(fy.startDate), Variable(fy.endDate)],
+      variables: [Variable(fy.startDate), Variable(fiscalEndOfDay)],
       readsFrom: {journalEntryLines, journalEntries, accounts},
     ).getSingle();
 
@@ -388,7 +481,7 @@ extension AccountingFiscalDao on AppDatabase {
          JOIN journal_entries e ON l.entry_id = e.id 
          JOIN accounts a ON l.account_id = a.id 
          WHERE a.account_type = 'expense' AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue''',
-      variables: [Variable(fy.startDate), Variable(fy.endDate)],
+      variables: [Variable(fy.startDate), Variable(fiscalEndOfDay)],
       readsFrom: {journalEntryLines, journalEntries, accounts},
     ).getSingle();
 
@@ -404,6 +497,35 @@ extension AccountingFiscalDao on AppDatabase {
 
   /// Get all fiscal years
   Future<List<FiscalYearData>> getFiscalYears() {
-    return (select(fiscalYears)..orderBy([(f) => OrderingTerm.desc(f.startDate)])).get();
+    return (select(fiscalYears)
+          ..where((f) => f.deletedAt.isNull())
+          ..orderBy([(f) => OrderingTerm.desc(f.startDate)]))
+        .get();
+  }
+
+  Future<double> _sumPriorUnclosedFiscalProfit(
+    DateTime currentStart, {
+    int? costCenterId,
+    int? branchId,
+    List<int>? branchIds,
+    Set<int>? allowedBranchIds,
+  }) async {
+    double total = 0;
+    final years = await getFiscalYears();
+    String rangeKey(FiscalYearData year) =>
+        '${year.startDate.year}-${year.startDate.month}-${year.startDate.day}:'
+        '${year.endDate.year}-${year.endDate.month}-${year.endDate.day}';
+    final closedRanges = years.where((year) => year.isClosed).map(rangeKey).toSet();
+    for (final year in years) {
+      if (year.isClosed || closedRanges.contains(rangeKey(year)) ||
+          !year.startDate.isBefore(currentStart)) continue;
+      final end = DateTime(year.endDate.year, year.endDate.month,
+          year.endDate.day, 23, 59, 59, 999);
+      final result = await getIncomeStatement(year.startDate, end,
+          costCenterId: costCenterId, branchId: branchId, branchIds: branchIds,
+          allowedBranchIds: allowedBranchIds);
+      total += result['netProfit'] as double;
+    }
+    return total;
   }
 }

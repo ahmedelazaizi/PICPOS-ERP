@@ -199,6 +199,48 @@ extension PurchaseVoidDao on AppDatabase {
               );
             }
           }
+
+          // R2: the negative-stock cost adjustment JE (Dr COGS / Cr Inventory
+          // or the reverse) is stamped with its own reference type but the
+          // same referenceId, so the lookup above never sees it. Mirror it.
+          final adjustmentJEs = await (select(journalEntries)
+                ..where((e) =>
+                    e.referenceType
+                        .equals('negative_stock_cost_adjustment') &
+                    e.referenceId.equals(invoice.id) &
+                    e.isAutoPosted.equals(true)))
+              .get();
+          for (final adjJE in adjustmentJEs) {
+            final adjLines = await (select(journalEntryLines)
+                  ..where((l) => l.entryId.equals(adjJE.id)))
+                .get();
+            if (adjLines.isEmpty) continue;
+            final warehouse = await getWarehouseById(invoice.warehouseId);
+            await accountingDao.createJournalEntry(
+              description:
+                  'قيد عكسي — إلغاء تسوية تكلفة مخزون سالب للفاتورة ${invoice.invoiceNumber}${reason != null ? " ($reason)" : ""}',
+              date: DateTime.now(),
+              lines: [
+                for (final line in adjLines)
+                  JournalLine(
+                    accountId: line.accountId,
+                    debit: line.credit,
+                    credit: line.debit,
+                    description: 'عكس: ${line.description ?? ""}',
+                  ),
+              ],
+              referenceType: 'negative_stock_cost_adjustment_void',
+              referenceId: invoiceId,
+              isAutoPosted: true,
+              costCenterId: invoice.costCenterId,
+              branchId: warehouse?.branchId,
+              globalId: JournalEntryGid.compute(
+                sourceType: JournalEntryGid.sourcePurchase,
+                sourceGid: invoice.globalId ?? 'invid$invoiceId',
+                verb: 'negadjvoid${adjJE.id}',
+              ),
+            );
+          }
         } catch (e, st) {
           // B7 (S-FAILLOUD / PUR-4): this used to be non-blocking — the
           // reversal JE's failure was logged and swallowed while the void

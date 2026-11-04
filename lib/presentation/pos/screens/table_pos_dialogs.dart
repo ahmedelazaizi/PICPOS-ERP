@@ -191,7 +191,7 @@ mixin _TablePosDialogsMixin on ConsumerState<TablePosScreen> {
           ),
           child: Text(text,
               style: GoogleFonts.cairo(
-                  fontSize: 10,
+                  fontSize: 11,
                   color: Colors.white.withValues(alpha: 0.5))),
         ),
       ),

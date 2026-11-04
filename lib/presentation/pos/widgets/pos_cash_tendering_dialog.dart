@@ -5,6 +5,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/number_utils.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// Cash tendering dialog — shows the total, lets cashier enter amount paid,
 /// and calculates change to give back.
@@ -206,9 +207,9 @@ class _PosCashTenderingDialogState extends State<PosCashTenderingDialog> {
                       const SizedBox(height: 4),
                       Text(
                         tr('أعط العميل {p0} {p1} فكة', {'p0': _change.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textMuted,
+                          color: context.picposMuted,
                           fontStyle: FontStyle.italic,
                         ),
                       ),

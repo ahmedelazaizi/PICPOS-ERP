@@ -25,8 +25,6 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 // `allUsersProvider`، `allBranchesProvider` (عبر data/providers/providers.dart)،
 // و`ActivityTimeline`/`FieldAuditHistoryWidget`/`EmptyStateWidget` من
 // lib/presentation/widgets/.
-//
-// راجع lib/presentation/screens/activity_log_screen.dart (الأصل).
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -45,6 +43,7 @@ import '../../../domain/models/picpos_activity_view.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
 import '../../picpos_shell/picpos_kpi_row.dart' show picposMuted;
+import '../../picpos_shell/picpos_surface.dart';
 
 // ── Part files (mixin-based extraction, copied & retargeted) ────────────
 part 'activity_log_filters_picpos.dart';

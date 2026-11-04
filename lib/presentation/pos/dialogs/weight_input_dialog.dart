@@ -6,6 +6,7 @@ import '../../../core/utils/number_utils.dart';
 import '../../../data/database/database.dart';
 import '../../../services/scale_service.dart';
 import '../../../../../../core/constants/app_constants.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// Dialog for entering weight for weighted products
 ///
@@ -91,7 +92,7 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
             const Divider(),
              Text(
               tr('أو أدخل الوزن يدوياً:'),
-              style: const TextStyle(color: AppColors.textMuted),
+              style: TextStyle(color: context.picposMuted),
             ),
             const SizedBox(height: 8),
           ],
@@ -147,7 +148,7 @@ class _WeightInputDialogState extends State<WeightInputDialog> {
                     decoration: BoxDecoration(
                       color: snapshot.hasData
                           ? AppColors.success
-                          : AppColors.textMuted,
+                          : context.picposMuted,
                       shape: BoxShape.circle,
                     ),
                   ),

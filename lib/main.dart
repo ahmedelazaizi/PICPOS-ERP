@@ -22,7 +22,7 @@ import 'core/i18n/locale_provider.dart';
 import 'core/i18n/tr.dart';
 import 'core/auth/admin_password_heal.dart';
 import 'core/config/brand.dart';
-import 'core/config/support_env.dart';
+import 'core/cli/admin_flags.dart';
 import 'core/config/business_profile_provider.dart';
 import 'core/config/feature_key.dart';
 import 'core/config/industry_tables_policy.dart';
@@ -30,6 +30,7 @@ import 'core/tax/tax_rate_policy.dart';
 import 'core/theme/app_theme.dart';
 import 'core/config/supabase_config.dart';
 import 'data/providers/providers.dart';
+import 'services/theme_service.dart';
 import 'data/repositories/settings_repository_cached.dart';
 import 'presentation/screens/login_screen.dart';
 import 'presentation/screens/first_run/provisioning_gate.dart';
@@ -662,100 +663,40 @@ void main() async {
       debugPrint('[STARTUP] ⚠️ ensureNegativeSalesDefault failed: $e');
     }
 
-    // 1. CLI / env recovery flag for the developer password.
-    // ISS-SEC-02: disabled in release builds — developer tools must not be
-    // reachable via environment variables in production.
-    if (!kReleaseMode) {
-      final cache = SettingsRepositoryCached(sharedDb);
-      await cache.preload(const [
-        'developer_password_salt',
-        'developer_password_hash',
-      ]);
-      try {
-        final args = Platform.executableArguments;
-        final env = Platform.environment;
-        await DeveloperAuthService.maybeHandleRecoverySignal(
-          args: args,
-          env: env,
-          service: DeveloperAuthService(cache),
-        );
-      } catch (e) {
-        debugPrint('[STARTUP] dev-pwd recovery check failed: $e');
-      }
-    }
-
-    // 1b. CLI / env recovery flag for the *admin* user password.
-    //
-    // Recovery scenarios:
-    //   * Fresh PostgreSQL install whose seed left a broken admin salt/hash.
-    //   * Operator forgot the admin password or someone changed it.
-    //
-    // Recognised signals:
-    //   * CLI arg   `--reset-admin-password`
-    //   * Env var   `<PREFIX>_RESET_ADMIN_PASSWORD=1` (support_env.dart)
-    //
-    // Behaviour: deletes any row where `username='admin'` and inserts a
-    // fresh one with `username=admin`, `password=admin`, role = "مدير
-    // النظام" (or 1 if the role is missing). On next launch the
-    // built-in password-integrity self-heal (database_startup.dart step
-    // 4) confirms verification works.
+    // 1. CLI / env recovery flags (--reset-dev-password, --purge-users,
+    // --reset-admin-password). S-05/S-11: they run only with a fresh local
+    // confirmation file (see core/cli/admin_flags.dart) and each outcome is
+    // audited (buffered by AuditLog until `configure` below).
+    // ISS-SEC-02: the dev-password flag stays disabled in release builds.
     try {
-      final args = Platform.executableArguments;
-      final env = Platform.environment;
-      final fromCli = args.contains('--reset-admin-password');
-      final fromEnv = supportEnvFlag(env, 'RESET_ADMIN_PASSWORD');
-      // `--purge-users` is the nuclear option: wipe EVERY user row so the
-      // next boot's self-heal + seeder run from scratch and create a
-      // pristine admin/admin account. Use when `--reset-admin-password`
-      // alone doesn't recover login (e.g. the users table has a
-      // duplicate/corrupted admin row that the reset helper misses).
-      final purgeUsers = args.contains('--purge-users') ||
-          supportEnvFlag(env, 'PURGE_USERS');
-
-      if (purgeUsers) {
-        // Use print (stdout) so the message is visible in PowerShell on
-        // a release build — debugPrint is a no-op in release mode.
-        debugPrint('[STARTUP] 🔑 --purge-users flag observed — deleting ALL user rows');
-        try {
-          await sharedDb.customStatement('DELETE FROM users');
-          debugPrint('[STARTUP] ✅ all users deleted — next startup will re-seed admin/admin');
-        } catch (e) {
-          debugPrint('[STARTUP] ❌ --purge-users failed: $e');
-        }
-      }
-
-      if (fromCli || fromEnv) {
-        debugPrint('[STARTUP] 🔑 --reset-admin-password flag observed — resetting admin/admin');
-        try {
-          await _resetAdminPasswordToDefault(sharedDb);
-          // Immediate verification: re-read the row and confirm the hash
-          // verifies against "admin" so a silent write failure is caught
-          // and reported instead of leaving the user locked out.
-          final rows = await sharedDb.customSelect(
-            "SELECT password_hash, password_salt FROM users WHERE username = 'admin' LIMIT 1",
-          ).get();
-          if (rows.isEmpty) {
-            debugPrint('[STARTUP] ⚠️ reset ran but no admin row found afterwards!');
-          } else {
-            final hash = rows.first.data['password_hash']?.toString() ?? '';
-            final salt = rows.first.data['password_salt']?.toString() ?? '';
-            final ok = salt.isNotEmpty &&
-                SecurityService.verifyPassword('admin', salt, hash);
-            debugPrint(ok
-                ? '[STARTUP] ✅ admin password reset verified — login with: admin'
-                : '[STARTUP] ❌ admin password reset WRITTEN but verify FAILED '
-                    '(salt.len=${salt.length}, hash.len=${hash.length}). '
-                    // اسم الملف التنفيذي حسب العلامة — دي تعليمة المستخدم
-                    // بينفّذها فعلاً وهو مقدرش يدخل النظام، فاسم ملف مش
-                    // موجود عنده يخلّيها بلا قيمة.
-                    'Try: .\\${Brand.name}.exe --purge-users  then restart.');
-          }
-        } catch (e) {
-          debugPrint('[STARTUP] ❌ admin-reset SQL failed: $e');
-        }
+      final request = AdminFlagRequest.parse(
+        Platform.executableArguments,
+        Platform.environment,
+        allowDevReset: !kReleaseMode,
+      );
+      if (request.any) {
+        final db = sharedDb;
+        final cache = SettingsRepositoryCached(db);
+        await cache.preload(const [
+          'developer_password_salt',
+          'developer_password_hash',
+        ]);
+        await runAdminFlags(
+          request: request,
+          confirm: () async =>
+              consumeRecoveryConfirmation(await DataDir.documents()),
+          resetDevPassword: DeveloperAuthService(cache).clear,
+          purgeUsers: () => db.customStatement('DELETE FROM users'),
+          resetAdminPassword: () => _resetAndVerifyAdminPassword(db),
+          resetSetupWizard: () => db.customStatement(
+            "DELETE FROM settings WHERE \"key\" IN "
+            "('setup_completed', 'setup_in_progress', 'device_provisioning_v1', "
+            "'developer_password_salt', 'developer_password_hash')",
+          ),
+        );
       }
     } catch (e) {
-      debugPrint('[STARTUP] admin-pwd recovery failed: $e');
+      debugPrint('[STARTUP] admin recovery flags failed: $e');
     }
 
     // 1b2. Setup-wizard recovery flag.
@@ -782,23 +723,8 @@ void main() async {
     // will be empty so the wizard runs from scratch, including the dev
     // password step. User data (sales, customers, products) is
     // preserved — only the setup flags are cleared.
-    try {
-      final args = Platform.executableArguments;
-      final env = Platform.environment;
-      final fromCli = args.contains('--reset-setup-wizard');
-      final fromEnv = supportEnvFlag(env, 'RESET_SETUP_WIZARD');
-      if (fromCli || fromEnv) {
-        debugPrint('[STARTUP] 🔑 --reset-setup-wizard observed — clearing setup flags + dev password');
-        await sharedDb.customStatement(
-          "DELETE FROM settings WHERE \"key\" IN "
-          "('setup_completed', 'setup_in_progress', 'device_provisioning_v1', "
-          "'developer_password_salt', 'developer_password_hash')",
-        );
-        debugPrint('[STARTUP] ✅ setup flags cleared — wizard will run on this boot');
-      }
-    } catch (e) {
-      debugPrint('[STARTUP] --reset-setup-wizard failed: $e');
-    }
+    // NOTE: now executed by runAdminFlags above (S-05: confirmation file +
+    // audit on refusal/execution). Not disabled in release (unchanged).
 
     // 1c. UNCONDITIONAL admin-login self-heal (runs on EVERY boot).
     //
@@ -978,8 +904,11 @@ void main() async {
     debugPrint('[STARTUP] ✅ ClientWriteInterceptor + OfflineSyncWorker initialized (mode=${NetworkService.instance.mode})');
   }
 
+  // الوضع المحفوظ يُحمَّل قبل أول إطار فلا وميض فاتح على وضع داكن محفوظ.
+  final savedThemeMode = await ThemeService().getThemeMode();
   runApp(ProviderScope(
     overrides: [
+      initialThemeModeProvider.overrideWithValue(savedThemeMode),
       // Use the shared instance for the provider too — eliminates
       // multi-instance lock contention with the cache + API server.
       if (sharedDb != null) databaseProvider.overrideWithValue(sharedDb),
@@ -1167,6 +1096,28 @@ Future<void> _bootTimeAdminHeal(AppDatabase db) async {
 /// Works on both SQLite and PostgreSQL targets because it uses raw SQL
 /// via [AppDatabase.customStatement]/`customSelect` plus the cross-
 /// dialect [sqlBool] helper for the boolean column.
+/// `--reset-admin-password`: reset, then re-read the row and confirm the hash
+/// verifies against "admin" so a silent write failure is reported.
+Future<void> _resetAndVerifyAdminPassword(AppDatabase db) async {
+  debugPrint('[STARTUP] 🔑 --reset-admin-password confirmed — resetting admin/admin');
+  await _resetAdminPasswordToDefault(db);
+  final rows = await db.customSelect(
+    "SELECT password_hash, password_salt FROM users WHERE username = 'admin' LIMIT 1",
+  ).get();
+  if (rows.isEmpty) {
+    debugPrint('[STARTUP] ⚠️ reset ran but no admin row found afterwards!');
+    return;
+  }
+  final hash = rows.first.data['password_hash']?.toString() ?? '';
+  final salt = rows.first.data['password_salt']?.toString() ?? '';
+  final ok = salt.isNotEmpty && SecurityService.verifyPassword('admin', salt, hash);
+  debugPrint(ok
+      ? '[STARTUP] ✅ admin password reset verified — login with: admin'
+      : '[STARTUP] ❌ admin password reset WRITTEN but verify FAILED '
+          '(salt.len=${salt.length}, hash.len=${hash.length}). '
+          'Try: .\\${Brand.name}.exe --purge-users  then restart.');
+}
+
 Future<void> _resetAdminPasswordToDefault(AppDatabase db) async {
   final salt = SecurityService.generateSalt();
   final hash = await SecurityService.hashPasswordArgon2('admin');

@@ -8,6 +8,7 @@ import '../../../domain/repositories/offers_repository.dart';
 import '../providers/cart_controller.dart';
 import '../providers/pos_notification_provider.dart';
 import '../../../../../../core/constants/app_constants.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// Dialog for viewing and adding active offers to the cart
 class PosOffersDialog extends ConsumerWidget {
@@ -72,12 +73,12 @@ class PosOffersDialog extends ConsumerWidget {
                       Icon(
                         PhosphorIconsBold.tag,
                         size: 64,
-                        color: AppColors.textMuted.withValues(alpha: 0.3),
+                        color: context.picposMuted.withValues(alpha: 0.3),
                       ),
                       const SizedBox(height: 16),
                        Text(
                         tr('لا توجد عروض نشطة حالياً'),
-                        style: const TextStyle(color: AppColors.textMuted),
+                        style: TextStyle(color: context.picposMuted),
                       ),
                     ],
                   ),
@@ -156,9 +157,9 @@ class PosOffersDialog extends ConsumerWidget {
                 final count = snap.data?.length ?? 0;
                 return Text(
                   tr('{count} أصناف', {'count': count}),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
-                    color: AppColors.textMuted,
+                    color: ctx.picposMuted,
                   ),
                 );
               },

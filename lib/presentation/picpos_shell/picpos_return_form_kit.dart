@@ -216,7 +216,7 @@ class _FieldLabel extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 9.5,
+              fontSize: 11,
               fontWeight: FontWeight.w800,
               color: muted,
             ),
@@ -749,7 +749,7 @@ class _PicPosReturnQtyFieldState extends State<PicPosReturnQtyField> {
               err,
               maxLines: 2,
               style: const TextStyle(
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: AppColors.error,
               ),

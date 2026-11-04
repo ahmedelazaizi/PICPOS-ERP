@@ -12,12 +12,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/models/picpos_template_card.dart';
+import '../../domain/printing/label_design.dart';
 import '../../domain/printing/print_values.dart';
+import '../../services/printing/label_paint_plan.dart';
 import '../../services/printing/layout_engine.dart';
 import '../../services/printing/paint_plan.dart';
 import '../../services/printing/template_render_pipeline.dart';
+import '../../services/printing/template_resolver.dart';
 import '../../services/templated_invoice_service.dart';
 import '../database/database.dart';
+import 'providers.dart' show databaseProvider;
 import 'repository_providers.dart';
 
 // ⚠️ `Notifier` لا `StateProvider`: الأخيرةُ ليست ضمن Riverpod 3 المستعملةِ
@@ -79,10 +83,17 @@ final templateCardsProvider =
   final templates = await repo.getAllTemplates();
   final bindings = await repo.getAllBindings();
 
+  final activeIds = await effectiveTemplateIds(ref.watch(databaseProvider));
+
   final cards = <TemplateCard>[];
   for (final t in templates) {
-    // الملصقاتُ مسارُ رسمٍ آخرُ بالكامل — ليست من هذه المكتبة.
-    if (t.templateCategory == 'barcode') continue;
+    // الملصقاتُ مسارُ رسمٍ آخرُ بالكامل: تدخل المكتبةَ بمرشّحها وحدَه،
+    // ومصغَّرتُها من خطّة الملصق لا من محرّك النطاقات (‏`labelCardFor`).
+    if (t.templateCategory == 'barcode') {
+      final design = await repo.getLabelDesign(t.id);
+      if (design != null) cards.add(labelCardFor(t, design));
+      continue;
+    }
 
     final elements = await repo.getTemplateElements(t.id);
     final settings = await repo.getTableSettings(t.id);
@@ -110,11 +121,35 @@ final templateCardsProvider =
             ),
         ],
         thumbnail: buildTemplateThumbnail(t, elements, settings),
+        activeForPrint: activeIds.contains(t.id),
       ),
     );
   }
   return cards;
 });
+
+/// معرِّفاتُ القوالب الفعّالة للطباعة — لكلِّ نوعِ مستندٍ موصولٍ ما يحسمه
+/// المحلّلُ نفسُه الذي تستعمله الطباعةُ (`resolveTemplateFor`) بنفس زوج
+/// `(type, category)` ولغةِ `ar` الافتراضية، فلا تفترق الشارةُ عمّا يُطبع.
+Future<Set<int>> effectiveTemplateIds(AppDatabase db) async {
+  final ids = <int>{};
+  for (final dt in TemplateResolver.wiredDocumentTypes) {
+    final ctx = TemplateResolver.documentContexts[dt];
+    if (ctx == null) continue;
+    try {
+      final r = await db.resolveTemplateFor(
+        documentType: dt,
+        category: ctx.category,
+        locale: 'ar',
+        paperType: ctx.type,
+      );
+      if (r.templateId != null) ids.add(r.templateId!);
+    } catch (_) {
+      // حسمٌ منهارٌ لنوعٍ لا يُسقط المكتبةَ — كالطباعة تماماً.
+    }
+  }
+  return ids;
+}
 
 /// البطاقاتُ بعد الترشيح والبحث.
 final visibleTemplateCardsProvider =
@@ -142,6 +177,29 @@ final selectedTemplateCardProvider =
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+
+/// بطاقةُ ملصق باركود — مقاسُه «50x25» ومصغَّرتُه من [labelPaintOps].
+///
+/// بلا رابطاتٍ ولا «فعّال للطباعة»: الملصقُ لا يمرّ بالمحلّل — الراسمُ
+/// يأخذ قالبه بالمعرِّف أو بالافتراضيِّ لفئة `barcode`.
+TemplateCard labelCardFor(InvoiceTemplate t, LabelDesign design) => TemplateCard(
+      id: t.id,
+      name: t.name,
+      type: t.type,
+      category: t.templateCategory,
+      paperWidthMm: design.widthMm,
+      paperHeightMm: design.heightMm,
+      paperLabel: design.paperSize,
+      elementCount: design.elements.length,
+      columnCount: 0,
+      layoutVersion: t.layoutVersion,
+      isDefault: t.isDefault,
+      thumbnail: TemplateThumbnail(
+        widthMm: design.widthMm,
+        heightMm: design.heightMm,
+        ops: labelPaintOps(design),
+      ),
+    );
 
 /// مصغَّرةُ القالب من محرّك الطباعة نفسِه.
 ///

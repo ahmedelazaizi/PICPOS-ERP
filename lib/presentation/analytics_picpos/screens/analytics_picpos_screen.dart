@@ -480,7 +480,7 @@ class _AnalyticsPicposScreenState
                 Expanded(
                   child: Text(tr('عن {p0}', {'p0': _fmt(prev, m.unit)}),
                       style: TextStyle(
-                          fontSize: 10.5,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: context.picposMuted),
                       overflow: TextOverflow.ellipsis),
@@ -809,7 +809,7 @@ class _TrendChart extends StatelessWidget {
                 for (final t in yTicks)
                   Text(t,
                       style: TextStyle(
-                          fontSize: 10.5,
+                          fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: muted)),
               ],
@@ -882,7 +882,7 @@ class _TrendChart extends StatelessWidget {
         children: [
           Text(_fmt(value, unit),
               style: TextStyle(
-                  fontSize: 9.5,
+                  fontSize: 11,
                   fontWeight: FontWeight.w800,
                   color: forecast ? tint : muted),
               overflow: TextOverflow.ellipsis),
@@ -910,7 +910,7 @@ class _TrendChart extends StatelessWidget {
             height: 16,
             child: Text(label,
                 style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: forecast ? tint : muted),
                 overflow: TextOverflow.ellipsis),

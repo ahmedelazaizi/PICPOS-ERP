@@ -16,6 +16,7 @@ import 'package:picpos_erp/presentation/pos/providers/pos_controller.dart';
 import 'package:picpos_erp/presentation/pos/widgets/cart/cart_totals_panel.dart';
 import 'package:picpos_erp/presentation/pos/widgets/cart/cart_discount_dialog.dart';
 import 'package:picpos_erp/presentation/pos/widgets/cart_item_tile.dart';
+import '../../picpos_shell/picpos_surface.dart';
 // For HeldOrder type
 
 /// Cart view widget
@@ -145,7 +146,7 @@ class CartView extends ConsumerWidget {
               // Cart items - MIDDLE FLEXIBLE AREA
               Expanded(
                 child: cart.isEmpty
-                    ? _buildEmptyCart()
+                    ? _buildEmptyCart(context)
                     : _buildCartList(
                         cart,
                         ref.read(cartControllerProvider.notifier),
@@ -206,7 +207,7 @@ class CartView extends ConsumerWidget {
         color: Theme.of(context).cardColor,
         border: Border(
           bottom: BorderSide(
-            color: AppColors.border.withValues(alpha: 0.8),
+            color: context.picposHairline.withValues(alpha: 0.8),
             width: 1.5,
           ),
         ),
@@ -352,7 +353,7 @@ class CartView extends ConsumerWidget {
   }
 
 
-  Widget _buildEmptyCart() {
+  Widget _buildEmptyCart(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -360,19 +361,19 @@ class CartView extends ConsumerWidget {
           Icon(
             PhosphorIconsBold.shoppingCartSimple,
             size: 64,
-            color: AppColors.textMuted.withValues(alpha: 0.5),
+            color: context.picposMuted.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
            Text(
             tr('السلة فارغة'),
-            style: const TextStyle(fontSize: 16, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 16, color: context.picposMuted),
           ),
           const SizedBox(height: 8),
           Text(
             tr('اختر منتجات من القائمة أو امسح الباركود'),
             style: TextStyle(
               fontSize: 12,
-              color: AppColors.textMuted.withValues(alpha: 0.7),
+              color: context.picposMuted.withValues(alpha: 0.7),
             ),
           ),
         ],

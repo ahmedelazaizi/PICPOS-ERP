@@ -478,7 +478,7 @@ class _ModifierSelectionDialogState extends State<ModifierSelectionDialog> {
             if (subtitle != null)
               Text(
                 subtitle,
-                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 11, color: context.picposMuted),
               ),
           ],
         ),
@@ -525,7 +525,7 @@ class _ModifierSelectionDialogState extends State<ModifierSelectionDialog> {
                   ),
                   child:  Text(
                     tr('مطلوب *'),
-                    style: const TextStyle(fontSize: 10, color: AppColors.error, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 11, color: AppColors.error, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -534,7 +534,7 @@ class _ModifierSelectionDialogState extends State<ModifierSelectionDialog> {
                 isSingle
                     ? tr('اختر واحد')
                     : tr('اختر {p0}-{p1}', {'p0': g.minSelect, 'p1': g.maxSelect > 0 ? g.maxSelect : '∞'}),
-                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 11, color: context.picposMuted),
               ),
             ],
           ),
@@ -592,7 +592,7 @@ class _ModifierSelectionDialogState extends State<ModifierSelectionDialog> {
                               ? PhosphorIconsBold.checkCircle
                               : PhosphorIconsBold.circle,
                           size: 18,
-                          color: isSelected ? chipColor : AppColors.textMuted,
+                          color: isSelected ? chipColor : context.picposMuted,
                         ),
                         const SizedBox(width: 8),
                         Text(

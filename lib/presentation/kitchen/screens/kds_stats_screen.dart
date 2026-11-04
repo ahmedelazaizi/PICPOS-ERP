@@ -278,7 +278,7 @@ class _KdsStatsScreenState extends ConsumerState<KdsStatsScreen> {
                               color: isPeak
                                   ? AppColors.warning
                                   : Colors.white54,
-                              fontSize: 9,
+                              fontSize: 11,
                               fontWeight:
                                   isPeak ? FontWeight.bold : FontWeight.normal)),
                     const SizedBox(height: 2),
@@ -300,7 +300,7 @@ class _KdsStatsScreenState extends ConsumerState<KdsStatsScreen> {
                     const SizedBox(height: 4),
                     Text('${hour % 12 == 0 ? 12 : hour % 12}',
                         style:
-                            const TextStyle(color: Colors.white38, fontSize: 9)),
+                            const TextStyle(color: Colors.white38, fontSize: 11)),
                   ],
                 ),
               );

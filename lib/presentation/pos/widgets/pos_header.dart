@@ -164,7 +164,7 @@ class PosHeader extends ConsumerWidget {
                 tr('وضعية الحجز نشطة'),
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.8),
-                  fontSize: 10,
+                  fontSize: 11,
                   fontWeight: FontWeight.w500,
                 ),
               ),

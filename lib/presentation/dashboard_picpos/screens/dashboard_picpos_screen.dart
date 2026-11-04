@@ -1,61 +1,20 @@
+import '../../picpos_shell/picpos_surface.dart';
+import 'package:picpos_erp/core/theme/readable_colors.dart';
 import 'package:picpos_erp/core/i18n/tr.dart';
-// منطق منسوخ من dashboard_screen.dart (lib/presentation/screens/,
-// ١٠٩٦ سطر) — أي إصلاح منطقي يتصلّح في المصدر أولاً ثم patch (مصيدة النسخ
-// §٥.٨). الشاشة دي الاستثناء الوحيد في دفعة إعادة التصميم اللي عندها
-// تخطيط PicPos مخصّص فعلاً (مش reskin) — لكن كل منطق الأعمال والـ providers
-// نفسها بالظبط:
-//   - `_DashboardFilterBar` (فلتر الفترة/الفرع) منسوخة حرفياً — تقرأ/تكتب
-//     `dashboardFilterProvider` زي الأصل بالظبط.
-//   - `_QuickActionCard` منسوخة حرفياً — نفس الشبكة (٨ إجراءات) بنفس
-//     `onNavigate(index)` لكل واحد.
-//   - كروت الـ KPI (`dashboardKpiProvider`) وكارت رصيد الصناديق
-//     (`dashboardCashBalanceProvider`) بنفس أغلفة `PermissionGuard`
-//     (`treasuryBalanceView` / `dashboardProfit`) — القيم بس بتتعرض بشكل
-//     PicPos بدل `_HoverableStatCard` الأصلية.
-//   - بانر تنبيه المخزون (`lowStockProductsProvider`) و`GettingStartedChecklist`
-//     زي ما هم بالظبط.
-//   - **اتحذف** قسم «آخر المبيعات» (`todaySalesProvider`) بالكامل — مش جزء
-//     من هالة الميزات المطلوبة لهذه النسخة (يُحذف صراحة بالتاسك).
+// منطق منسوخ من dashboard_screen.dart (أي إصلاح منطقي يتصلّح في المصدر أولاً
+// ثم patch — مصيدة النسخ §٥.٨). تخطيط PicPos مخصّص، والمنطق والـ providers
+// نفسها: _DashboardFilterBar و_QuickActionCard منسوختان حرفياً؛ كروت KPI
+// والصناديق بنفس أغلفة PermissionGuard؛ بانر المخزون وGettingStartedChecklist
+// كما هما؛ اتحذف قسم «آخر المبيعات».
 //
-// طبقة PicPos المضافة (جديدة، عرض فقط، ما بتتنقلش لـ UralCash):
-// `PicPosGauge`/`PicPosDonut` (lib/presentation/dashboard_picpos/widgets/) —
-// كل واحد منهم يستقبل رقم جاهز من provider حقيقي ويرسمه، بلا أي حساب أعمال
-// جديد. توثيق مصدر كل مؤشر (إلزامي حسب التاسك):
-//
-// ┌─────────────────────────────┬───────────────────────────────────────────┐
-// │ المؤشر                      │ المصدر / سبب التأجيل                        │
-// ├─────────────────────────────┼───────────────────────────────────────────┤
-// │ قوس «هامش الربح»            │ حقيقي. `dashboardKpiProvider` →            │
-// │ (PicPosGauge)                │ `kpi.netProfit / kpi.revenue`، مع حراسة    │
-// │                              │ `revenue == 0` وقصّ (clamp) للعرض ٠..١.     │
-// │                              │ نفس الحقلين المستخدمين أصلاً في كارت       │
-// │                              │ «صافي الربح» و«صافي الإيراد» بالشاشة الأم.  │
-// ├─────────────────────────────┼───────────────────────────────────────────┤
-// │ دونات «تركيبة الإيراد»       │ حقيقي. نفس `dashboardKpiProvider` —        │
-// │ (PicPosDonut)                │ شريحتين: `kpi.revenue` (صافي الإيراد بدون  │
-// │                              │ ضريبة) و`kpi.outputVatNet` (ضريبة المخرجات │
-// │                              │ الصافية). نفس التفكيك المعروض أصلاً في     │
-// │                              │ tooltip كارت «صافي الإيراد» بالشاشة الأم    │
-// │                              │ (مجموعهما = `kpi.netRevenueInclVat`) —      │
-// │                              │ بلا أي معادلة جديدة.                       │
-// ├─────────────────────────────┼───────────────────────────────────────────┤
-// │ «نسبة التحصيل»               │ **مؤجَّل**. لا يوجد provider يعطي نسبة      │
-// │                              │ تحصيل جاهزة. `arAgingReportProvider`       │
-// │                              │ موجود لكنه يرجّع صفوف تقادم لكل عميل تحتاج  │
-// │                              │ تجميعاً/معادلة جديدة لاشتقاق نسبة واحدة —   │
-// │                              │ ده تحديدًا نوع «الاختراع» الممنوع بالتاسك.  │
-// ├─────────────────────────────┼───────────────────────────────────────────┤
-// │ «توزيع طرق الدفع»            │ **مؤجَّل**. لا `DashboardKpi` ولا           │
-// │                              │ `SalesAnalytics` فيهم تقسيم نقدي/شبكة/آجل — │
-// │                              │ مفيش provider حالي يوفر توزيع طرق الدفع.    │
-// ├─────────────────────────────┼───────────────────────────────────────────┤
-// │ «تحقيق الهدف الشهري»         │ **مؤجَّل**. لا يوجد provider/إعداد لهدف      │
-// │                              │ مبيعات في المشروع حالياً.                   │
-// └─────────────────────────────┴───────────────────────────────────────────┘
-//
-// المؤجّلات معروضة كبطاقة واحدة صريحة «غير متاحة حالياً» بدل اختراع أرقام —
-// ولا يُضاف أي provider/محرك جديد في هذا التاسك (لو احتاج لاحقاً، يكون
-// كوميت محرك منفصل + patch، زي أي إصلاح منطقي آخر).
+// مصدر المؤشرات (عرض فقط، بلا حساب جديد):
+//  - قوس «هامش الربح» (PicPosGauge): dashboardKpiProvider →
+//    netProfit / revenue مع حراسة revenue == 0 وقصّ ٠..١.
+//  - دونات «تركيبة الإيراد» (PicPosDonut): kpi.revenue وkpi.outputVatNet
+//    (مجموعهما netRevenueInclVat، نفس تفكيك tooltip الشاشة الأم).
+//  - **مؤجَّل** (لا provider مناسب، واختراع الأرقام ممنوع): «نسبة التحصيل»
+//    (arAgingReportProvider صفوف لكل عميل)، «توزيع طرق الدفع»، «تحقيق
+//    الهدف الشهري». معروضة كبطاقة «غير متاحة حالياً».
 
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
@@ -72,15 +31,20 @@ import '../../../data/providers/dashboard_filter_provider.dart';
 import '../../widgets/permission_guard.dart';
 import '../../widgets/getting_started_checklist.dart';
 import '../../picpos_shell/picpos_page_header.dart';
+import '../dashboard_profit_margin.dart';
 import '../widgets/picpos_gauge.dart';
 import '../widgets/picpos_donut.dart';
+
+/// muted مقروءٌ على الكرت (أو الصفحة عند [page]).
+Color _muted(BuildContext c, {bool page = false}) =>
+    readableOn(c, c.picposMuted,
+        on: page ? Theme.of(c).scaffoldBackgroundColor : c.picposCard);
 
 /// شاشة لوحة القيادة بهوية PicPos. تُختار بالعلامة في app_main_screen
 /// (`Brand.isPicPos`). تعيد استخدام `dashboardKpiProvider` و
 /// `dashboardCashBalanceProvider` و`lowStockProductsProvider` و
 /// `dashboardFilterProvider` كما هم — فقط طبقة العرض تبدّلت لتخطيط PicPos
-/// مخصّص + قوس/دونات PicPos-only فوق نفس البيانات (راجع رأس الملف للتوثيق
-/// الكامل لمصدر كل مؤشر).
+/// مخصّص + قوس/دونات PicPos-only فوق نفس البيانات (راجع رأس الملف).
 class DashboardPicposScreen extends ConsumerWidget {
   const DashboardPicposScreen({super.key, this.onNavigate});
 
@@ -92,7 +56,7 @@ class DashboardPicposScreen extends ConsumerWidget {
     final dashFilter = ref.watch(dashboardFilterProvider);
     final cashBalance = ref.watch(dashboardCashBalanceProvider);
     final cashCardTitle =
-        dashFilter.branchId == null ? tr('كل الصناديق') : tr('صناديق الفرع');
+        dashFilter.branchId == null ? tr('إجمالي الصناديق والبنوك') : tr('صناديق الفرع');
     final features = ref.watch(featureFlagsProvider);
     final numberFmt = NumberFormat('#,##0.00', 'ar');
 
@@ -109,13 +73,13 @@ class DashboardPicposScreen extends ConsumerWidget {
               padding: const EdgeInsets.only(bottom: 10),
               child: Row(
                 children: [
-                  const Icon(PhosphorIconsBold.calendarBlank,
-                      size: 14, color: AppColors.textMuted),
+                  Icon(PhosphorIconsBold.calendarBlank,
+                      size: 14, color: _muted(context, page: true)),
                   const SizedBox(width: 6),
                   Text(
                     _dashboardPeriodLabel(dashFilter.from, dashFilter.to),
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textMuted),
+                    style: TextStyle(
+                        fontSize: 12, color: _muted(context, page: true)),
                   ),
                 ],
               ),
@@ -374,7 +338,7 @@ String _dashboardPeriodLabel(DateTime from, DateTime to) {
 
 // ═══════════════════════════════════════════════════════════════════════
 // إطار PicPos لهذه الشاشة تحديداً — هيدر + محتوى، بدون Scaffold مزدوج
-// ═══════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 class PicPosScreenScaffoldDashboard extends StatelessWidget {
   final void Function(int)? onNavigate;
   final Widget child;
@@ -429,8 +393,8 @@ class _PicPosKpiGrid extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.card,
-        border: Border.all(color: AppColors.border),
+        color: context.picposCard,
+        border: Border.all(color: context.picposHairline),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
@@ -560,6 +524,11 @@ class _PicPosKpiTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tileBg =
+        Color.alphaBlend(color.withValues(alpha: 0.06), context.picposCard);
+    final iconBg = Color.alphaBlend(color.withValues(alpha: 0.12), tileBg);
+    final ink = readableOn(context, color, on: iconBg);
+    final muted = readableOn(context, context.picposMuted, on: tileBg);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
@@ -575,7 +544,7 @@ class _PicPosKpiTile extends StatelessWidget {
               color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(9),
             ),
-            child: Icon(icon, color: color, size: 17),
+            child: Icon(icon, color: ink, size: 17),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -585,9 +554,9 @@ class _PicPosKpiTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: AppColors.textMuted,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: muted,
                     fontWeight: FontWeight.w600,
                   ),
                   maxLines: 1,
@@ -604,7 +573,7 @@ class _PicPosKpiTile extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
-                          color: color,
+                          color: ink,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -613,9 +582,9 @@ class _PicPosKpiTile extends StatelessWidget {
                     const SizedBox(width: 3),
                     Text(
                       suffix,
-                      style: const TextStyle(
-                        fontSize: 9,
-                        color: AppColors.textMuted,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: muted,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -644,21 +613,25 @@ class _ProfitMarginGaugeCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.card,
-        border: Border.all(color: AppColors.border),
+        color: context.picposCard,
+        border: Border.all(color: context.picposHairline),
         borderRadius: BorderRadius.circular(14),
       ),
       child: kpi.when(
         data: (k) {
-          // حراسة القسمة على صفر — لا إيراد يعني هامش غير معرَّف، نعرض ٠٪.
-          final rawMargin = k.revenue == 0 ? 0.0 : k.netProfit / k.revenue;
-          final clamped = rawMargin < 0 ? 0.0 : (rawMargin > 1 ? 1.0 : rawMargin);
+          final margin = dashboardProfitMargin(
+            revenue: k.revenue,
+            netProfit: k.netProfit,
+          );
           return Center(
             child: PicPosGauge(
-              value: clamped,
-              label: tr('هامش الربح'),
-              valueLabel: '${(rawMargin * 100).toStringAsFixed(1)}%',
-              color: rawMargin < 0 ? AppColors.error : AppColors.success,
+              value: margin.value,
+              label: tr('هامش صافي الربح'),
+              valueLabel: margin.valueLabel,
+              color: readableOn(context,
+                  margin.isDefined && margin.rawMargin < 0
+                      ? AppColors.error
+                      : AppColors.success),
               size: 128,
             ),
           );
@@ -675,7 +648,7 @@ class _ProfitMarginGaugeCard extends StatelessWidget {
             value: 0,
             label: tr('هامش الربح'),
             valueLabel: '—',
-            color: AppColors.textMuted,
+            color: context.picposMuted,
             size: 128,
           ),
         ),
@@ -699,8 +672,8 @@ class _RevenueCompositionDonutCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.card,
-        border: Border.all(color: AppColors.border),
+        color: context.picposCard,
+        border: Border.all(color: context.picposHairline),
         borderRadius: BorderRadius.circular(14),
       ),
       child: kpi.when(
@@ -740,7 +713,7 @@ class _RevenueCompositionDonutCard extends StatelessWidget {
           height: 118,
           child: Center(
             child: Text(tr('تعذّر تحميل تركيبة الإيراد'),
-                style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                style: TextStyle(fontSize: 11, color: _muted(context))),
           ),
         ),
       ),
@@ -771,8 +744,8 @@ class _DonutLegend extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(s.label,
-                      style: const TextStyle(
-                          fontSize: 10, color: AppColors.textMuted)),
+                      style: TextStyle(
+                          fontSize: 11, color: _muted(context))),
                 ],
               ))
           .toList(),
@@ -789,6 +762,9 @@ class _DeferredMetricsNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final muted = readableOn(context, context.picposMuted,
+        on: Color.alphaBlend(
+            context.picposMuted.withValues(alpha: 0.06), context.picposCard));
     final deferred = [
       tr('نسبة التحصيل'),
       tr('توزيع طرق الدفع'),
@@ -797,18 +773,18 @@ class _DeferredMetricsNotice extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.textMuted.withValues(alpha: 0.06),
+        color: context.picposMuted.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: Row(
         children: [
-          const Icon(PhosphorIconsBold.info, size: 16, color: AppColors.textMuted),
+          Icon(PhosphorIconsBold.info, size: 16, color: muted),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               tr('مؤشرات إضافية غير متاحة حالياً ({p0}) — بانتظار مصدر بيانات مخصّص.', {'p0': deferred.join(tr('، '))}),
-              style: const TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 11.5, color: muted),
             ),
           ),
         ],
@@ -946,9 +922,9 @@ class _DashboardFilterBarState extends ConsumerState<_DashboardFilterBar> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: context.picposCard,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: Wrap(
         crossAxisAlignment: WrapCrossAlignment.center,
@@ -962,14 +938,17 @@ class _DashboardFilterBarState extends ConsumerState<_DashboardFilterBar> {
               padding:
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: context.picposHairline),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(PhosphorIconsBold.calendarBlank,
-                      size: 14, color: AppColors.primary),
+                  Icon(PhosphorIconsBold.calendarBlank,
+                      size: 14,
+                      color: context.picposIsDark
+                          ? readableBrand(context)
+                          : AppColors.primary),
                   const SizedBox(width: 6),
                   Text(
                     '${dateFormat.format(_fromDate)} - ${dateFormat.format(_toDate)}',
@@ -999,8 +978,8 @@ class _DashboardFilterBarState extends ConsumerState<_DashboardFilterBar> {
                     value: effectiveBranch,
                     isExpanded: true,
                     hint:  Text(tr('الفرع'), style: const TextStyle(fontSize: 12)),
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textPrimary),
+                    style: TextStyle(
+                        fontSize: 12, color: context.picposText),
                     items: [
                        DropdownMenuItem<int?>(
                           value: null, child: Text(tr('كل الفروع'))),
@@ -1029,17 +1008,17 @@ class _DashboardFilterBarState extends ConsumerState<_DashboardFilterBar> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.surface,
+          color: isSelected ? AppColors.primary : context.picposField,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
+            color: isSelected ? AppColors.primary : context.picposHairline,
             width: isSelected ? 1.5 : 1,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textPrimary,
+            color: isSelected ? Colors.white : context.picposText,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             fontSize: 12,
           ),
@@ -1074,6 +1053,11 @@ class _QuickActionCardState extends State<_QuickActionCard> {
 
   @override
   Widget build(BuildContext context) {
+    final cardBg = Color.alphaBlend(
+        widget.color.withValues(alpha: _isHovered ? 0.06 : 0), context.picposCard);
+    final ink = readableOn(context, widget.color,
+        on: Color.alphaBlend(
+            widget.color.withValues(alpha: _isHovered ? 0.15 : 0.08), cardBg));
     return Expanded(
       child: MouseRegion(
         onEnter: (_) => setState(() => _isHovered = true),
@@ -1087,7 +1071,7 @@ class _QuickActionCardState extends State<_QuickActionCard> {
               borderRadius: BorderRadius.circular(14),
               color: _isHovered
                   ? widget.color.withValues(alpha: 0.06)
-                  : Colors.white,
+                  : context.picposCard,
               border: Border.all(
                 color: _isHovered
                     ? widget.color.withValues(alpha: 0.35)
@@ -1118,7 +1102,7 @@ class _QuickActionCardState extends State<_QuickActionCard> {
                     ),
                     child: Icon(
                       widget.icon,
-                      color: widget.color,
+                      color: ink,
                       size: _isHovered ? 22 : 20,
                     ),
                   ),
@@ -1130,7 +1114,7 @@ class _QuickActionCardState extends State<_QuickActionCard> {
                       fontSize: 11,
                       fontWeight:
                           _isHovered ? FontWeight.w700 : FontWeight.w600,
-                      color: _isHovered ? widget.color : AppColors.textPrimary,
+                      color: _isHovered ? ink : context.picposText,
                       letterSpacing: -0.2,
                     ),
                     maxLines: 1,

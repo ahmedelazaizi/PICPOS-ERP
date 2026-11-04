@@ -17,11 +17,16 @@ import '../../core/logging/diagnostic_logger.dart';
 import '../database/sync_interceptor.dart';
 import '../../domain/entities/accounting_entities.dart' show JournalLine;
 
+part 'purchases_repository_return_cap.dart';
+
 class PurchasesRepositoryImpl implements PurchasesRepository {
+  static final Map<int, Future<void>> _returnLockTails = {};
+
   final AppDatabase _db;
   final AccountingService _accountingService;
 
   PurchasesRepositoryImpl(this._db, this._accountingService);
+
 
   @override
   Future<int> createInvoice(CreatePurchaseInvoiceParams params) async {
@@ -789,23 +794,16 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
 
     // ── Standalone/Server: Full local processing ──
 
-    // Validate return quantities before processing
-    for (final item in returnItems) {
-      if (item.returnQuantity > item.originalQuantity + 0.001) {
-        throw Exception(
-          'كمية الإرجاع (${item.returnQuantity}) تتجاوز الكمية الأصلية (${item.originalQuantity}) للصنف رقم ${item.productId}',
-        );
-      }
-    }
-
-    await _db.transaction(() async {
+    await _withPurchaseReturnLock(invoice.id, () => _db.transaction(() async {
+      await _lockPurchaseInvoiceRow(invoice.id);
+      await _validatePurchaseReturnQuantities(invoice.id, returnItems);
       await _processPurchaseReturnBody(
         invoice: invoice,
         returnItems: returnItems,
         totalReturnAmount: totalReturnAmount,
         reason: reason,
       );
-    });
+    }));
 
     return totalReturnAmount;
   }

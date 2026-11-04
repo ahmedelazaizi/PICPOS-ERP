@@ -193,6 +193,9 @@ extension TreasuryDao on AppDatabase {
       'UPDATE safes SET balance = balance + ? WHERE id = ?',
       [delta, safeId],
     );
+    // المرحلة 7: `customStatement` لا يُخطر تيارات drift، فكان `watchAllSafes`
+    // الحيّ (لوحة القيادة/الخزينة/`getSafesList`) يبقى على رصيدٍ قديم.
+    markTablesUpdated({safes});
     // أثرُ التشغيلة اليدوية — سطرٌ لكلّ حركة. سطران متطابقان لنفس الخزنة =
     // تطبيقٌ مزدوج. `unawaited` كي لا يدخل زمنُ الملفّ في زمن المعاملة.
     unawaited(DiagnosticLogger.log(
@@ -245,6 +248,8 @@ extension TreasuryDao on AppDatabase {
         // transfer, adjustment, memo — use the provided balanceAfter
         await updateSafeBalance(safeId, trans.balanceAfter.value);
       }
+      // المرحلة 7: فروع `customStatement` أعلاه لا تُخطر تيار `safes`.
+      markTablesUpdated({safes});
 
       // Update party balance if this is a party-related transaction
       if (trans.partyId.present && trans.partyId.value != null) {

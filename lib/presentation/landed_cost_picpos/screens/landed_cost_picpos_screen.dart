@@ -710,7 +710,7 @@ class _LandedCostPicposScreenState
                     overflow: TextOverflow.ellipsis),
                 Text(t.label,
                     style: TextStyle(
-                        fontSize: 10.5,
+                        fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: context.picposMuted),
                     overflow: TextOverflow.ellipsis),
@@ -727,7 +727,7 @@ class _LandedCostPicposScreenState
                       fontSize: 13.5, fontWeight: FontWeight.w800)),
               Text(_pct(share),
                   style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: context.picposMuted)),
             ],
@@ -830,14 +830,14 @@ class _LandedCostPicposScreenState
             const SizedBox(height: 6),
             Text(m.sub,
                 style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     height: 1.45,
                     fontWeight: FontWeight.w600,
                     color: context.picposMuted)),
             const SizedBox(height: 7),
             Text(m.formula,
                 style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     fontFamily: AppTypography.mono,
                     color: fg)),
@@ -905,7 +905,7 @@ class _LandedCostPicposScreenState
                       Text(st.label,
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                              fontSize: 10.5,
+                              fontSize: 11,
                               fontWeight: FontWeight.w700,
                               color: context.picposMuted),
                           overflow: TextOverflow.ellipsis),
@@ -1050,7 +1050,7 @@ class _LandedCostPicposScreenState
                             overflow: TextOverflow.ellipsis),
                         Text(j.note,
                             style: TextStyle(
-                                fontSize: 10.5,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: context.picposMuted),
                             overflow: TextOverflow.ellipsis),
@@ -1150,7 +1150,7 @@ class _LandedCostPicposScreenState
                     overflow: TextOverflow.ellipsis),
                 Text(st.sub,
                     style: TextStyle(
-                        fontSize: 10.5,
+                        fontSize: 11,
                         height: 1.4,
                         fontWeight: FontWeight.w600,
                         color: context.picposMuted)),
@@ -1170,7 +1170,7 @@ class _LandedCostPicposScreenState
         ),
         child: Text(text,
             style: TextStyle(
-                fontSize: 10.5, fontWeight: FontWeight.w800, color: tint)),
+                fontSize: 11, fontWeight: FontWeight.w800, color: tint)),
       );
 
   // ═══════════════════════════════════════════════════════════════════════

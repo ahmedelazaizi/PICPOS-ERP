@@ -5,7 +5,8 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import '../../core/config/data_dir.dart';
 import 'package:drift/drift.dart';
-import 'package:rxdart/rxdart.dart' show DebounceExtensions; // Spec 115 L2 — debounceTime
+import 'package:rxdart/rxdart.dart' show DebounceExtensions;
+import 'sale_cost_resolver.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter/foundation.dart';
 import '../../domain/repositories/treasury_repository.dart';
@@ -14,6 +15,7 @@ import '../../domain/models/receipt_qr_decision.dart'
 import 'connection.dart';
 import 'pg_compat_sql.dart';
 import 'wal_checkpoint.dart';
+import 'migrations/invoice_number_unique_index.dart';
 import 'cash_flow_manual_classifier.dart';
 import '../../domain/models/return_original_link.dart';
 import '../../domain/models/invoice_due_date.dart';
@@ -50,13 +52,12 @@ import '../../core/constants/stock_movement_types.dart';
 import '../../core/auth/bootstrap_admin.dart';
 import '../../core/logging/diagnostic_logger.dart';
 import '../../core/permissions/permission_codes.dart';
+import '../../core/permissions/fiscal_permission_codes.dart';
 import '../../core/tax/effective_item_tax_rate.dart';
 import '../../core/tax/einvoice_exempt_codes.dart';
 import '../../core/utils/arabic_utils.dart';
 import '../../core/utils/phone_normalizer.dart';
-// Spec 139 — deterministic JE balancing uses FinancialUtils' minor-unit helpers
-// and the single balance-tolerance source of truth. `show` avoids importing its
-// UnbalancedJournalException (a different type lives in journal_entry_factory).
+// Spec 139 — JE balancing helpers; `show` avoids FinancialUtils' UnbalancedJournalException.
 import '../../core/utils/date_utils.dart' show DateUtils;
 import '../../core/utils/financial_utils.dart' show FinancialUtils;
 import '../../core/utils/sales_payment_calculator.dart';
@@ -71,11 +72,12 @@ import '../../domain/entities/accounting_entities.dart';
 import 'sync_interceptor.dart';
 import '../../services/sync/mirror_settings_keys.dart';
 import 'daos/audit_dashboard_dao.dart';
+import 'ready_template_deployment.dart';
 import 'daos/journal_approval_guard.dart';
 // Feature 004 (US1): Exception types for the auto-account-linkage path.
 import 'daos/account_linkage_exceptions.dart';
 export 'daos/account_linkage_exceptions.dart';
-// Feature 004 (US3): Mutation guard mirror for read-only-on-disconnect.
+// Feature 004 (US3): mutation guard.
 import '../../core/mutation_guard.dart';
 export '../../core/mutation_guard.dart';
 // Feature 009 (Auto-Deplete BOM): exceptions + stock-shortage policy enum
@@ -84,7 +86,8 @@ export '../../core/mutation_guard.dart';
 import 'daos/manufacturing_exceptions.dart';
 export 'daos/manufacturing_exceptions.dart';
 import '../../services/stock_shortage_policy_service.dart';
-export '../../services/stock_shortage_policy_service.dart' show StockShortagePolicy;
+export '../../services/stock_shortage_policy_service.dart'
+    show StockShortagePolicy;
 // Feature 009 (T012h): shift-open populates Shifts.posTerminalId from this
 // service so the per-terminal stock-shortage policy tier (FR-017) can
 // resolve at sale time. Null-tolerant — see treasury_dao.dart openShift.
@@ -111,11 +114,13 @@ part 'daos/product_crud_dao.dart';
 part 'daos/product_barcode_units_dao.dart';
 part 'daos/sales_dao.dart';
 part 'daos/sales_mutations_dao.dart';
+part 'daos/sales_invoice_edit_dao.dart';
 part 'daos/invoice_integrity_dao.dart';
 part 'daos/payment_allocations_dao.dart';
 part 'daos/sales_actions_dao.dart';
 part 'daos/sales_held_orders_dao.dart';
 part 'daos/sales_analytics_dao.dart';
+part 'daos/sales_returns_ledger_dao.dart';
 part 'daos/purchase_dao.dart';
 part 'daos/purchase_models.dart';
 part 'daos/purchase_queries_dao.dart';
@@ -153,6 +158,7 @@ part 'daos/party_dedup_models.dart';
 part 'daos/tables_dao.dart';
 part 'daos/bookings_dao.dart';
 part 'daos/inventory_dao.dart';
+part 'daos/sales_return_cap_dao.dart';
 part 'daos/inventory_batch_dao.dart';
 part 'daos/inventory_transfers_dao.dart';
 part 'daos/offers_dao.dart';
@@ -171,9 +177,13 @@ part 'daos/accounting_autopost_cash_sale_dao.dart';
 part 'daos/accounting_autopost_documents_dao.dart';
 part 'daos/accounting_autopost_sales_return_dao.dart';
 part 'daos/accounting_autopost_purchase_return_dao.dart';
+part 'daos/operational_expense_safe_routing_dao.dart';
+part 'daos/commercial_paper_cash_account_dao.dart';
+part 'daos/fixed_asset_cash_routing_dao.dart';
 part 'daos/accounting_autopost_delivery_repair_dao.dart';
 part 'daos/autopost_repair_dao.dart';
 part 'daos/accounting_reports_dao.dart';
+part 'daos/accounting_reports_adjustments.dart';
 part 'daos/accounting_fiscal_dao.dart';
 part 'daos/accounting_audit_dao.dart';
 part 'daos/commercial_papers_dao.dart';
@@ -220,6 +230,7 @@ part 'daos/activity_logs_dao.dart';
 part 'daos/invoice_template_dao.dart';
 part 'daos/template_binding_dao.dart';
 part 'daos/invoice_template_seeder_dao.dart';
+part 'daos/scale_barcode_template_seeder.dart';
 part 'daos/sync_dao.dart';
 part 'daos/quotations_dao.dart';
 part 'daos/scale_dao.dart';
@@ -249,16 +260,18 @@ part 'daos/operational_expenses_dao.dart';
 part 'daos/fk_resolver_dao.dart';
 part 'daos/work_holidays_dao.dart';
 part 'daos/party_engagement_dao.dart';
-// Seeding & Projections
+part 'daos/category_delete_dao.dart';
 part 'database_seeder.dart';
 part 'database_seeder_permissions.dart';
 part 'database_seeder_accounts.dart';
 part 'database_seeder_postgres.dart';
 part 'database_migrations.dart';
 part 'database_startup.dart';
+part 'failed_autopost_retry.dart';
 part 'database_types.dart';
 part 'database_sql_constants.dart';
 part 'database_pg_create.dart';
+part 'database_pg_source_sql.dart';
 part 'database_pg_sync_infra.dart';
 part 'database_pg_parity.dart';
 part 'database_numbering.dart';
@@ -541,7 +554,7 @@ part 'table_reservation_sync.dart';
 )
 /// ERP core database (Drift). Singleton: `AppDatabase()` returns one instance;
 /// `AppDatabase.forTesting()` is in-memory. Details: `database_design_notes.dart`.
-class AppDatabase extends _$AppDatabase {
+class AppDatabase extends _$AppDatabase with PgSourceSqlTranslation {
   /// Whether this database is backed by PostgreSQL (affects migration behavior)
   final bool _isPostgres;
 
@@ -569,14 +582,14 @@ class AppDatabase extends _$AppDatabase {
   /// Opens the database using a custom [QueryExecutor] (e.g., PostgreSQL).
   /// NOT a singleton — each PostgreSQL config gets its own instance.
   AppDatabase.withExecutor(super.executor, {bool isPostgres = false})
-      : _isPostgres = isPostgres;
+    : _isPostgres = isPostgres;
 
   /// Web client (m3-6): a database over a drift-remote connection to the desktop host
   /// (read-only). Skips migrations and everything that runs on open; not a singleton.
   /// Full rationale: `database_design_notes.dart`.
   AppDatabase.forWebRemote(super.connection, {required bool isPostgres})
-      : _isPostgres = isPostgres,
-        _skipMigrations = true;
+    : _isPostgres = isPostgres,
+      _skipMigrations = true;
 
   /// Opens an in-memory database for widget / integration tests.
   /// NOT a singleton — each test gets its own isolated database.
@@ -587,6 +600,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Whether this database is backed by PostgreSQL (public read-only accessor
   /// used by DAOs that need to generate database-agnostic raw SQL).
+  @override
   bool get isPostgres => _isPostgres;
 
   /// Open-transaction depth. Nested transactions (savepoints) push it further,
@@ -612,32 +626,8 @@ class AppDatabase extends _$AppDatabase {
     }, requireNew: requireNew);
   }
 
-  // Why the PostgreSQL translation is applied here too: see the notes at the top of
-  // `database_pg_create.dart`.
-
-  @override
-  Future<void> customStatement(String statement, [List<dynamic>? args]) {
-    if (!_isPostgres) return super.customStatement(statement, args);
-    return super.customStatement(
-      PgCompatSql.fixSql(statement),
-      args == null ? null : PgCompatSql.fixArgs(args),
-    );
-  }
-
-  @override
-  Selectable<QueryRow> customSelect(
-    String query, {
-    List<Variable> variables = const [],
-    Set<ResultSetImplementation> readsFrom = const {},
-  }) {
-    // المتغيّراتُ تبقى كما هي — الترتيبُ الموضعيُّ نفسُه، و`fixSql` ترقّم
-    // العلاماتِ من اليسار لليمين فتبقى المطابقةُ صحيحة.
-    return super.customSelect(
-      _isPostgres ? PgCompatSql.fixSql(query) : query,
-      variables: variables,
-      readsFrom: readsFrom,
-    );
-  }
+  // PG translation of raw SQL at the source: `PgSourceSqlTranslation`
+  // (`database_pg_source_sql.dart`); why: notes in `database_pg_create.dart`.
 
   /// Lazy accessor for the Audit Dashboard DAO
   late final AuditDashboardDao auditDashboardDao = AuditDashboardDao(this);
@@ -646,14 +636,14 @@ class AppDatabase extends _$AppDatabase {
   /// Used by DAO part-files (sales_actions_dao, purchase_dao, …) to gate
   /// the admin bypass on voidPaidInvoice / modifyLockedInvoice /
   /// overrideCreditLimit. See specs/062-wire-critical-financial-ops.
-  late final PermissionEnforcer permissionEnforcer =
-      PermissionEnforcer(userHasPermission);
+  late final PermissionEnforcer permissionEnforcer = PermissionEnforcer(
+    userHasPermission,
+  );
 
   /// Returns the SQL literal for a boolean value that is compatible with the
   /// current database backend. PostgreSQL uses TRUE/FALSE, SQLite uses 1/0.
-  String sqlBool(bool value) => _isPostgres
-      ? (value ? 'TRUE' : 'FALSE')
-      : (value ? '1' : '0');
+  String sqlBool(bool value) =>
+      _isPostgres ? (value ? 'TRUE' : 'FALSE') : (value ? '1' : '0');
 
   /// Returns a [Variable] for DateTime that works in raw SQL (customSelect).
   ///
@@ -670,8 +660,7 @@ class AppDatabase extends _$AppDatabase {
   /// Current schema version. The per-version history (what each bump changed)
   /// lives in `database_schema_history.dart`; the migrations are in `migrations/`.
   @override
-  int get schemaVersion => 196;
-
+  int get schemaVersion => 197;
 
   /// Canonical list of sync-hardening tables (mirrors the list in
   /// `migrations/epoch_3.dart` v129). Used by the Postgres infrastructure
@@ -680,9 +669,16 @@ class AppDatabase extends _$AppDatabase {
   static const _syncHardenedTables = <String>[
     'party_groups', 'parties', 'purchase_invoices', 'purchase_invoice_items',
     'sales_invoices', 'sales_invoice_items', 'held_orders', 'held_order_items',
-    'purchase_orders', 'purchase_order_items', 'sales_orders', 'sales_order_items',
+    'purchase_orders',
+    'purchase_order_items',
+    'sales_orders',
+    'sales_order_items',
     'payments', 'payment_allocations',
-    'accounts', 'journal_entries', 'cost_centers', 'fiscal_years', 'accounting_periods',
+    'accounts',
+    'journal_entries',
+    'cost_centers',
+    'fiscal_years',
+    'accounting_periods',
     'roles', 'users',
     'commercial_papers', 'cheque_books',
     'currencies', 'price_lists', 'price_list_items',
@@ -699,7 +695,10 @@ class AppDatabase extends _$AppDatabase {
     // v166 / المرحلة ٢ — مستنداتُ الأثر المحاسبيّ (كانت غائبةً هنا).
     'asset_categories', 'op_expense_categories', 'bill_of_materials',
     'fixed_assets', 'manufacturing_orders', 'bom_components',
-     'butchery_templates', 'butchery_template_lines', 'butchery_orders', 'butchery_order_lines',
+    'butchery_templates',
+    'butchery_template_lines',
+    'butchery_orders',
+    'butchery_order_lines',
     'op_expenses', 'asset_depreciations', 'mfg_order_costs',
     'landed_cost_sheets', 'landed_cost_items', 'landed_cost_allocations',
     // v175 / المرحلة ٧ — طلبُ استبعاد أصل.
@@ -767,7 +766,6 @@ class AppDatabase extends _$AppDatabase {
   @visibleForTesting
   static List<String> get syncHardenedTablesForTest => _syncHardenedTables;
 
-
   /// Information schema snapshot for one PG table column.
   /// Private helper structure for the parity pass.
   static const Map<DriftSqlType, List<String>> _driftTypeToPgAcceptable = {
@@ -783,7 +781,6 @@ class AppDatabase extends _$AppDatabase {
     // intentionally leaves loose.
     DriftSqlType.any: [],
   };
-
 
   /// ISS-08: Migration logic delegated to database_migrations.dart
   @override
@@ -849,7 +846,9 @@ class AppDatabase extends _$AppDatabase {
         // Incremental migrations use SQLite-only syntax (AUTOINCREMENT, PRAGMA,
         // INSERT OR IGNORE, typeof(), etc.) that fails on PostgreSQL.
         if (_isPostgres) {
-          debugPrint('[PG] onUpgrade skipped (from=$from to=$to) — PG uses fresh schema');
+          debugPrint(
+            '[PG] onUpgrade skipped (from=$from to=$to) — PG uses fresh schema',
+          );
           return;
         }
         await runOnUpgrade(m, from, to);
@@ -926,14 +925,13 @@ class AppDatabase extends _$AppDatabase {
   /// no two document types accidentally share the same user-configured
   /// prefix.
   static List<String> get canonicalInvoicePrefixes => const [
-        defaultSalesPosPrefix,
-        defaultSalesManualPrefix,
-        defaultSalesReturnPrefix,
-        defaultPurchasePrefix,
-        defaultPurchaseReturnPrefix,
-        defaultReceiptVoucherPrefix,
-        defaultPaymentVoucherPrefix,
-        defaultQuotationPrefix,
-      ];
-
+    defaultSalesPosPrefix,
+    defaultSalesManualPrefix,
+    defaultSalesReturnPrefix,
+    defaultPurchasePrefix,
+    defaultPurchaseReturnPrefix,
+    defaultReceiptVoucherPrefix,
+    defaultPaymentVoucherPrefix,
+    defaultQuotationPrefix,
+  ];
 }

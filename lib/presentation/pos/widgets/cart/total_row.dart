@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../picpos_shell/picpos_surface.dart';
+import '../../../pos_picpos/widgets/picpos_pos_text.dart';
 
 /// Total row widget with auto-scaling fonts
 class TotalRow extends StatelessWidget {
@@ -53,7 +55,7 @@ class TotalRow extends StatelessWidget {
                 style: TextStyle(
                   fontSize: labelSize,
                   fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-                  color: isTotal ? AppColors.textPrimary : AppColors.textMuted,
+                  color: isTotal ? context.picposText : context.picposMuted,
                 ),
               ),
               if (suffix != null)
@@ -63,7 +65,7 @@ class TotalRow extends StatelessWidget {
                     suffix!,
                     style: TextStyle(
                       fontSize: labelSize * 0.9,
-                      color: AppColors.textMuted,
+                      color: context.picposMuted,
                     ),
                   ),
                 ),
@@ -77,12 +79,12 @@ class TotalRow extends StatelessWidget {
             decoration: BoxDecoration(
               color: isTotal
                   ? AppColors.primary.withValues(alpha: 0.1)
-                  : AppColors.surface,
+                  : context.picposField,
               borderRadius: BorderRadius.circular(4 * scaleFactor),
               border: Border.all(
                 color:
                     (valueColor ??
-                            (isTotal ? AppColors.primary : AppColors.border))
+                            (isTotal ? AppColors.primary : context.picposHairline))
                         .withValues(alpha: 0.3),
               ),
             ),
@@ -91,9 +93,18 @@ class TotalRow extends StatelessWidget {
               style: TextStyle(
                 fontSize: valueSize,
                 fontWeight: isTotal ? FontWeight.w900 : FontWeight.bold,
-                color:
-                    valueColor ??
-                    (isTotal ? AppColors.primary : AppColors.textPrimary),
+                color: valueColor ??
+                    (isTotal
+                        ? PicPosText.readableOn(
+                            context,
+                            AppColors.primary,
+                            on: Color.alphaBlend(
+                                AppColors.primary.withValues(alpha: 0.1),
+                                Color.alphaBlend(
+                                    AppColors.primary.withValues(alpha: 0.05),
+                                    context.picposCard)),
+                          )
+                        : context.picposText),
               ),
             ),
           ),

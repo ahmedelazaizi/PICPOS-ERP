@@ -356,7 +356,7 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
                     decoration: InputDecoration(
                       hintText: tr('بحث عن منتج...'),
                       hintStyle: TextStyle(
-                        color: AppColors.textMuted.withValues(alpha: 0.7),
+                        color: context.picposMuted.withValues(alpha: 0.7),
                         fontSize: 13,
                       ),
                       prefixIcon: const Icon(
@@ -665,7 +665,7 @@ class _ProductGridState extends ConsumerState<ProductGrid> {
                                 '${index + 1}',
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 10,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),

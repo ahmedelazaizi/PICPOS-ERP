@@ -99,7 +99,7 @@ class PicPosReportTabs extends StatelessWidget {
                 child: Text(
                   t.badge!,
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: fg,
                   ),

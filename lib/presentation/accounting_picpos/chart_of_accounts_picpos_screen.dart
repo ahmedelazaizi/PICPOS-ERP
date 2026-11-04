@@ -23,10 +23,10 @@ import '../screens/coa/coa_rollup.dart';
 import '../screens/coa/coa_tree_node.dart';
 import '../../data/providers/providers.dart';
 import '../../services/coa_management_service.dart';
+import '../picpos_shell/picpos_surface.dart';
 
 /// Chart of Accounts — Hierarchical tree-structured account management screen
-/// Standards: IFRS (IAS 1), Egyptian Accounting Standards
-/// Supports parent-child relationships for main and sub-accounts
+/// IFRS/EAS; parent-child accounts.
 class ChartOfAccountsPicPosScreen extends ConsumerStatefulWidget {
   const ChartOfAccountsPicPosScreen({super.key});
 
@@ -298,7 +298,7 @@ class _ChartOfAccountsPicPosScreenState
                           label: tr('المعروض بعد الترشيح'),
                           value: '${filtered.length}',
                           icon: PhosphorIconsBold.funnel,
-                          tint: AppColors.textMuted,
+                          tint: context.picposMuted,
                         ),
                       ],
                     ),
@@ -641,7 +641,7 @@ class _ChartOfAccountsPicPosScreenState
                           tr('{p0} حساب', {'p0': accounts.length}),
                           style: GoogleFonts.cairo(
                             fontSize: 11,
-                            color: AppColors.textMuted,
+                            color: context.picposMuted,
                           ),
                         ),
                       ],

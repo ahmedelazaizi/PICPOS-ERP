@@ -291,16 +291,16 @@ mixin _ActivityLogFiltersPicposMixin on ConsumerState<ActivityLogPicposScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.textMuted),
+          border: Border.all(color: context.picposMuted),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               PhosphorIconsBold.calendar,
               size: 16,
-              color: AppColors.textMuted,
+              color: context.picposMuted,
             ),
             const SizedBox(width: 8),
             Text(
@@ -319,7 +319,7 @@ mixin _ActivityLogFiltersPicposMixin on ConsumerState<ActivityLogPicposScreen> {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            border: Border.all(color: AppColors.textMuted),
+            border: Border.all(color: context.picposMuted),
             borderRadius: BorderRadius.circular(8),
           ),
           child: DropdownButtonHideUnderline(
@@ -328,10 +328,10 @@ mixin _ActivityLogFiltersPicposMixin on ConsumerState<ActivityLogPicposScreen> {
               hint:  Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     PhosphorIconsBold.user,
                     size: 16,
-                    color: AppColors.textMuted,
+                    color: context.picposMuted,
                   ),
                   const SizedBox(width: 8),
                   Text(tr('كل المستخدمين')),
@@ -370,7 +370,7 @@ mixin _ActivityLogFiltersPicposMixin on ConsumerState<ActivityLogPicposScreen> {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            border: Border.all(color: AppColors.textMuted),
+            border: Border.all(color: context.picposMuted),
             borderRadius: BorderRadius.circular(8),
           ),
           child: DropdownButtonHideUnderline(
@@ -379,10 +379,10 @@ mixin _ActivityLogFiltersPicposMixin on ConsumerState<ActivityLogPicposScreen> {
               hint:  Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     PhosphorIconsBold.buildings,
                     size: 16,
-                    color: AppColors.textMuted,
+                    color: context.picposMuted,
                   ),
                   const SizedBox(width: 8),
                   Text(tr('كل الفروع')),

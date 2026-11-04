@@ -12,6 +12,8 @@ import '../../providers/checkout_controller.dart';
 import '../../providers/pos_controller.dart';
 import '../customer_selector_v2.dart';
 import 'total_row.dart';
+import '../../../picpos_shell/picpos_surface.dart';
+import '../../../pos_picpos/widgets/picpos_pos_text.dart';
 
 class CartTotalsPanel extends ConsumerWidget {
   final PosState posState;
@@ -87,7 +89,7 @@ class CartTotalsPanel extends ConsumerWidget {
                 offset: const Offset(0, -4),
               ),
             ],
-            border: const Border(top: BorderSide(color: AppColors.border)),
+            border: Border(top: BorderSide(color: context.picposHairline)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,7 +129,7 @@ class CartTotalsPanel extends ConsumerWidget {
 
               // Customer selector
               if (ref.watch(showAddCustomerInPOSProvider).value ?? true)
-                 PermissionGuard(
+                PermissionGuard(
                   permission: PermissionCodes.posCustomerSelect,
                   allowManagerOverride: true,
                   actionName: tr('اختيار عميل'),
@@ -136,7 +138,8 @@ class CartTotalsPanel extends ConsumerWidget {
 
               // Phase 4: Ad-hoc customer info (name/phone text fields)
               if (cartState.selectedCustomerId == null &&
-                  (ref.watch(showAdhocCustomerInPOSProvider).value ?? true)) ...[
+                  (ref.watch(showAdhocCustomerInPOSProvider).value ??
+                      true)) ...[
                 SizedBox(height: spacing * 0.5),
                 Row(
                   children: [
@@ -150,9 +153,18 @@ class CartTotalsPanel extends ConsumerWidget {
                         decoration: InputDecoration(
                           isDense: true,
                           hintText: tr('اسم العميل'),
-                          prefixIcon: const Icon(PhosphorIconsBold.user, size: 14, color: AppColors.textMuted),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                          prefixIcon: Icon(
+                            PhosphorIconsBold.user,
+                            size: 14,
+                            color: context.picposMuted,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 6,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                         style: TextStyle(fontSize: 11 * effectiveScale),
                       ),
@@ -168,9 +180,18 @@ class CartTotalsPanel extends ConsumerWidget {
                         decoration: InputDecoration(
                           isDense: true,
                           hintText: tr('رقم الهاتف'),
-                          prefixIcon: const Icon(PhosphorIconsBold.phone, size: 14, color: AppColors.textMuted),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                          prefixIcon: Icon(
+                            PhosphorIconsBold.phone,
+                            size: 14,
+                            color: context.picposMuted,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 6,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                         style: TextStyle(fontSize: 11 * effectiveScale),
                         keyboardType: TextInputType.phone,
@@ -187,9 +208,18 @@ class CartTotalsPanel extends ConsumerWidget {
                         decoration: InputDecoration(
                           isDense: true,
                           hintText: tr('ملاحظات'),
-                          prefixIcon: const Icon(PhosphorIconsBold.notepad, size: 14, color: AppColors.textMuted),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                          prefixIcon: Icon(
+                            PhosphorIconsBold.notepad,
+                            size: 14,
+                            color: context.picposMuted,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 6,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                         style: TextStyle(fontSize: 11 * effectiveScale),
                       ),
@@ -202,25 +232,32 @@ class CartTotalsPanel extends ConsumerWidget {
               if (ref.watch(showOrderTypeInPOSProvider).value ?? true) ...[
                 SizedBox(height: spacing * 0.5),
                 Row(
-                children: [
-                  Text(tr('نوع الطلب:'), style: TextStyle(fontSize: 11 * effectiveScale, color: AppColors.textMuted, fontWeight: FontWeight.bold)),
-                  SizedBox(width: spacing * 0.5),
-                  _OrderTypeChip(
-                    label: tr('داخلي'),
-                    icon: PhosphorIconsBold.house,
-                    isSelected: cartState.orderType == 'internal',
-                    onTap: () => cartController.setOrderType('internal'),
-                    scaleFactor: effectiveScale,
-                  ),
-                  const SizedBox(width: 6),
-                  _OrderTypeChip(
-                    label: tr('توصيل'),
-                    icon: PhosphorIconsBold.motorcycle,
-                    isSelected: cartState.orderType == 'delivery',
-                    onTap: () => cartController.setOrderType('delivery'),
-                    scaleFactor: effectiveScale,
-                  ),
-                ],
+                  children: [
+                    Text(
+                      tr('نوع الطلب:'),
+                      style: TextStyle(
+                        fontSize: 11 * effectiveScale,
+                        color: context.picposMuted,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: spacing * 0.5),
+                    _OrderTypeChip(
+                      label: tr('داخلي'),
+                      icon: PhosphorIconsBold.house,
+                      isSelected: cartState.orderType == 'internal',
+                      onTap: () => cartController.setOrderType('internal'),
+                      scaleFactor: effectiveScale,
+                    ),
+                    const SizedBox(width: 6),
+                    _OrderTypeChip(
+                      label: tr('توصيل'),
+                      icon: PhosphorIconsBold.motorcycle,
+                      isSelected: cartState.orderType == 'delivery',
+                      onTap: () => cartController.setOrderType('delivery'),
+                      scaleFactor: effectiveScale,
+                    ),
+                  ],
                 ),
               ],
               SizedBox(height: spacing),
@@ -269,7 +306,6 @@ class CartTotalsPanel extends ConsumerWidget {
               SizedBox(height: spacing),
 
               // Payment method moved to dialog (triggered on Save/Save&Print)
-
               SizedBox(height: spacing * 1.5),
 
               // Totals Breakdown
@@ -279,7 +315,7 @@ class CartTotalsPanel extends ConsumerWidget {
                   color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppColors.border.withValues(alpha: 0.5),
+                    color: context.picposHairline.withValues(alpha: 0.5),
                   ),
                 ),
                 child: Column(
@@ -294,7 +330,10 @@ class CartTotalsPanel extends ConsumerWidget {
                       TotalRow(
                         label: tr('الخصم المسموح به'),
                         value: -totals.totalDiscount,
-                        valueColor: AppColors.success,
+                        valueColor: PicPosText.readableOn(
+                          context,
+                          AppColors.success,
+                        ),
                         scaleFactor: effectiveScale,
                         suffix: cartState.discountPercent > 0
                             ? '(${cartState.discountPercent.toStringAsFixed(0)}%)'
@@ -490,36 +529,49 @@ class CartTotalsPanel extends ConsumerWidget {
     double btnHeight = 40,
     double btnFontSize = 13,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          height: btnHeight * scaleFactor,
-          padding: EdgeInsets.symmetric(horizontal: 8 * scaleFactor),
-          decoration: BoxDecoration(
-            border: Border.all(color: color.withValues(alpha: 0.3)),
+    // الحبر يُقاس على الخلفية المصبوغة (١٠٪) فعلاً.
+    return Builder(
+      builder: (context) {
+        final ink = PicPosText.readableOn(
+          context,
+          color,
+          on: Color.alphaBlend(
+            color.withValues(alpha: 0.1),
+            context.picposCard,
+          ),
+        );
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
             borderRadius: BorderRadius.circular(10),
-            color: color.withValues(alpha: 0.1),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: (btnFontSize + 4) * scaleFactor, color: color),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: btnFontSize * scaleFactor,
-                  color: color,
-                ),
+            child: Container(
+              height: btnHeight * scaleFactor,
+              padding: EdgeInsets.symmetric(horizontal: 8 * scaleFactor),
+              decoration: BoxDecoration(
+                border: Border.all(color: color.withValues(alpha: 0.3)),
+                borderRadius: BorderRadius.circular(10),
+                color: color.withValues(alpha: 0.1),
               ),
-            ],
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: (btnFontSize + 4) * scaleFactor, color: ink),
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: btnFontSize * scaleFactor,
+                      color: ink,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -534,56 +586,81 @@ class CartTotalsPanel extends ConsumerWidget {
     double btnHeight = 40,
     double btnFontSize = 13,
   }) {
-    return Material(
-      color: featured ? color : color.withValues(alpha: 0.1),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: isLoading ? null : onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          height: (btnHeight + 10) * scaleFactor,
-          decoration: BoxDecoration(
+    // المميَّز: أبيض على [color] — يُغمَّق الخلفيّةُ بقدرٍ كافٍ لبلوغ ٤٫٥:١ (الأخضر
+    // الأصليّ يقيس ٢٫٣:١). غير المميَّز: حبرٌ مقروءٌ على الصبغة.
+    return Builder(
+      builder: (context) {
+        final solid = featured ? _whiteSafe(color) : color;
+        final ink = featured
+            ? Colors.white
+            : PicPosText.readableOn(
+                context,
+                color,
+                on: Color.alphaBlend(
+                  color.withValues(alpha: 0.1),
+                  context.picposCard,
+                ),
+              );
+        return Material(
+          color: featured ? solid : color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            onTap: isLoading ? null : onTap,
             borderRadius: BorderRadius.circular(12),
-            border: featured
-                ? null
-                : Border.all(color: color.withValues(alpha: 0.3)),
-          ),
-          child: Center(
-            child: isLoading
-                ? SizedBox(
-                    height: 20 * scaleFactor,
-                    width: 20 * scaleFactor,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        featured ? Colors.white : color,
-                      ),
-                    ),
-                  )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        icon,
-                        color: featured ? Colors.white : color,
-                        size: (btnFontSize + 4) * scaleFactor,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        label,
-                        style: TextStyle(
-                          color: featured ? Colors.white : color,
-                          fontWeight: FontWeight.w900,
-                          fontSize: btnFontSize * scaleFactor,
+            child: Container(
+              height: (btnHeight + 10) * scaleFactor,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: featured
+                    ? null
+                    : Border.all(color: color.withValues(alpha: 0.3)),
+              ),
+              child: Center(
+                child: isLoading
+                    ? SizedBox(
+                        height: 20 * scaleFactor,
+                        width: 20 * scaleFactor,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(ink),
                         ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            icon,
+                            color: ink,
+                            size: (btnFontSize + 4) * scaleFactor,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            label,
+                            style: TextStyle(
+                              color: ink,
+                              fontWeight: FontWeight.w900,
+                              fontSize: btnFontSize * scaleFactor,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
+}
+
+/// أقرب لونٍ لـ [c] (بالتغميق فقط) يقرأ عليه الأبيض ٤٫٥:١.
+Color _whiteSafe(Color c) {
+  double ratio(Color b) => 1.05 / (b.computeLuminance() + 0.05);
+  var out = c;
+  for (var i = 0; i < 30 && ratio(out) < 4.5; i++) {
+    out = Color.lerp(out, Colors.black, 0.05)!;
+  }
+  return out;
 }
 
 /// Compact chip for order type selection (داخلي / توصيل)
@@ -604,30 +681,47 @@ class _OrderTypeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final brand = PicPosText.readableOn(
+      context,
+      AppColors.primary,
+      on: Color.alphaBlend(
+        AppColors.primary.withValues(alpha: isSelected ? 0.15 : 0),
+        context.picposCard,
+      ),
+    );
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(horizontal: 10 * scaleFactor, vertical: 5 * scaleFactor),
+        padding: EdgeInsets.symmetric(
+          horizontal: 10 * scaleFactor,
+          vertical: 5 * scaleFactor,
+        ),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withValues(alpha: 0.15) : Colors.transparent,
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.15)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
+            color: isSelected ? AppColors.primary : context.picposHairline,
             width: isSelected ? 1.5 : 1,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14 * scaleFactor, color: isSelected ? AppColors.primary : AppColors.textMuted),
+            Icon(
+              icon,
+              size: 14 * scaleFactor,
+              color: isSelected ? brand : context.picposMuted,
+            ),
             SizedBox(width: 4 * scaleFactor),
             Text(
               label,
               style: TextStyle(
                 fontSize: 11 * scaleFactor,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? AppColors.primary : AppColors.textMuted,
+                color: isSelected ? brand : context.picposMuted,
               ),
             ),
           ],

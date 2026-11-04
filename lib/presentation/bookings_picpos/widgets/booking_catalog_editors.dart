@@ -16,6 +16,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import '../../../core/utils/number_utils.dart';
 import '../../../data/providers/providers.dart';
 import '../../picpos_shell/picpos_dialog.dart';
@@ -172,7 +173,7 @@ class _ServiceEditorState extends ConsumerState<_ServiceEditor> {
         _note(
           PhosphorIconsBold.users,
           tr('الخدمةُ لا تُربَط بموظَّفٍ أو جهاز: الإسنادُ يقع **عند كلّ حجز** على حدة، فيمكن لأيّ موظَّفٍ أداءُ أيّ خدمة.'),
-          AppColors.textMuted,
+          context.picposMuted,
         ),
         if (_blocked != null) ...[
           const SizedBox(height: 10),
@@ -199,7 +200,7 @@ class _ServiceEditorState extends ConsumerState<_ServiceEditor> {
                   color: _hex(c),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: _color == c ? AppColors.textPrimary : Colors.transparent,
+                    color: _color == c ? context.picposText : Colors.transparent,
                     width: 2.5,
                   ),
                 ),
@@ -359,7 +360,7 @@ class _ResourceEditorState extends ConsumerState<_ResourceEditor> {
           _note(
             PhosphorIconsBold.info,
             tr('الربطُ للتعريف فقط: الموظَّفُ يبقى كيانَ الرواتب والحضور، والموردُ تقويمَه القابلَ للحجز. وإنشاءُ موردٍ لا يُنشئ موظَّفاً ولا يدخل مسيّرَ الرواتب.'),
-            AppColors.textMuted,
+            context.picposMuted,
           ),
         ],
         // ⚠️ قرارُ المالك 2026-08-23: لا ربطَ بين موردِ الجهاز والأصول
@@ -371,7 +372,7 @@ class _ResourceEditorState extends ConsumerState<_ResourceEditor> {
           _note(
             PhosphorIconsBold.info,
             tr('الجهازُ هنا موردٌ يُحجَز وقتُه فقط — لا يدخل الأصولَ الثابتة ولا دورةَ الإهلاك. سجِّله في «الأصول الثابتة» على حدة إن كان أصلاً يُهلَك.'),
-            AppColors.textMuted,
+            context.picposMuted,
           ),
         ],
         const SizedBox(height: 12),
@@ -423,8 +424,8 @@ class _ResourceEditorState extends ConsumerState<_ResourceEditor> {
         ),
         child: Row(
           children: [
-            const Icon(PhosphorIconsBold.clock,
-                size: 15, color: AppColors.textMuted),
+            Icon(PhosphorIconsBold.clock,
+                size: 15, color: context.picposMuted),
             const SizedBox(width: 8),
             Text(
               t == null
@@ -453,7 +454,7 @@ class _ResourceEditorState extends ConsumerState<_ResourceEditor> {
                   shape: BoxShape.circle,
                   border: Border.all(
                     color:
-                        _color == c ? AppColors.textPrimary : Colors.transparent,
+                        _color == c ? context.picposText : Colors.transparent,
                     width: 2.5,
                   ),
                 ),
@@ -519,12 +520,13 @@ Widget _labelled(String label, Widget child) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textMuted,
-            )),
+        Builder(
+            builder: (context) => Text(label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: context.picposMuted,
+                ))),
         const SizedBox(height: 4),
         child,
       ],

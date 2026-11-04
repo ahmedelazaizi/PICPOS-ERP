@@ -44,6 +44,7 @@ class CompleteSaleUseCase {
       final totals = _totalsUseCase.execute(
         items: request.items,
         invoiceDiscountPercent: request.discountPercent,
+        invoiceDiscountAmount: request.invoiceDiscountAmount,
         taxPercent: request.taxEnabled ? request.taxPercent : 0,
         taxEnabled: request.taxEnabled,
       );

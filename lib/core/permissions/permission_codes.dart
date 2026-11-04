@@ -1,6 +1,7 @@
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'mirror_permission_codes.dart';
 import 'warehouse_permission_codes.dart';
+import 'fiscal_permission_codes.dart';
 // Permission Codes Registry
 //
 // Contains all permission codes used throughout the application.
@@ -51,6 +52,7 @@ class PermissionCodes {
 
   /// تعديل سعر الصنف
   static const String posPriceEdit = 'pos_price_edit';
+  static const String posReturnPriceEdit = 'pos_return_price_edit';
 
   /// تغيير حالة الضريبة
   static const String posTaxToggle = 'pos_tax_toggle';
@@ -1126,6 +1128,7 @@ class PermissionCodes {
     {'code': posSave, 'name': tr('حفظ البيع'), 'category': 'pos'},
     {'code': posPrint, 'name': tr('طباعة الفاتورة'), 'category': 'pos'},
     {'code': posPriceEdit, 'name': tr('تعديل سعر الصنف'), 'category': 'pos'},
+    {'code': posReturnPriceEdit, 'name': tr('سعر المرتجع بلا فاتورة'), 'category': 'pos'},
     {'code': posTaxToggle, 'name': tr('تغيير حالة الضريبة'), 'category': 'pos'},
     {'code': posExpense, 'name': tr('إضافة مصروف سريع'), 'category': 'pos'},
     {
@@ -1753,6 +1756,7 @@ class PermissionCodes {
     {'code': modifyLockedInvoice, 'name': tr('تعديل فاتورة مقفلة/مرحّلة'), 'category': 'critical_financial'},
     {'code': deleteFiscalYear, 'name': tr('حذف سنة مالية'), 'category': 'critical_financial'},
     {'code': modifyClosedPeriod, 'name': tr('تعديل فترة محاسبية مغلقة'), 'category': 'critical_financial'},
+    ...fiscalClosePermissionEntries,
     {'code': overrideCreditLimit, 'name': tr('تجاوز حد الائتمان للعميل'), 'category': 'critical_financial'},
 
     // ── Bookings (الحجوزات) — مواعيدُ الخدمة ──

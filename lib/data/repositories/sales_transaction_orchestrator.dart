@@ -24,6 +24,7 @@ import '../../core/utils/uuid_v7.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../database/sync_interceptor.dart';
 import '../database/database.dart';
+import '../database/sale_cost_resolver.dart' show CostRequiredException;
 
 /// Orchestrator responsible for creating and completing sales transactions.
 ///
@@ -146,6 +147,7 @@ class SalesTransactionOrchestrator {
     DateTime? invoiceDate,
     RepStamp? repStamp,
     bool cashOutsideDrawer = false,
+    Map<int, double> provisionalCosts = const {},
   }) async {
     // Spec 002 (B1): mint the globalId here so the local insert and the
     // post-commit fire-and-forget push share the same identity. Without
@@ -171,11 +173,8 @@ class SalesTransactionOrchestrator {
     //     مدين نقدية / دائن إيراد فائض، والمبلغُ نفسُه قُيِّد بقيد البيعة —
     //     فالنقديةُ في الأستاذ مرّتين وإيرادٌ لا وجودَ له.
     //
-    // ولا يُحجَب المديرُ عن البيع: `resolveOpenShiftForDrawer` يقبل ورديّةَ
-    // الكاشير على فرعه، فبيعتُه تمضي بلا سؤالٍ متى كان على الدرج ورديّةٌ
-    // (وهي الحالةُ التي عالجها فصلُ `txs` عن `drawerTxs` أصلاً). ولا يُسأل
-    // إلا حين لا ورديّةَ إطلاقاً — وحينها لا شيءَ يلتحق به، ففتحُها هو
-    // الصوابُ الوحيد لا استثناءٌ من Spec 135 NOTE 2.
+    // لا يُحجَب المديرُ: `resolveOpenShiftForDrawer` يقبل ورديّةَ الكاشير على
+    // فرعه، ولا يُسأل إلا حين لا ورديّةَ إطلاقاً (ففتحُها الصوابُ الوحيد).
     //
     // وموضعُه هنا لا في `sales_mutations_dao.createSalesInvoice` **عن قصد**:
     // الخادمُ ينادي الـDAO مباشرةً (`api_sales_handler`)، ولا ورديّةَ للخادم،
@@ -219,11 +218,15 @@ class SalesTransactionOrchestrator {
         final item = items[i];
         if (useNetLines) {
           final net = netLines[i];
+          final returnWac = isReturn // WAC المرتجع
+              ? (await _db.getProductById(item.productId))?.costPrice
+              : null;
           itemCompanions.add(buildSalesLineCompanion(
             item: item,
             netBeforeTax: net.beforeTax,
             netTax: net.tax,
             netRate: net.rate,
+            costPrice: returnWac ?? provisionalCosts[item.productId],
           ));
         } else {
           itemCompanions.add(SalesInvoiceItemsCompanion.insert(
@@ -452,6 +455,7 @@ class SalesTransactionOrchestrator {
           invoiceId: invoiceId,
           invNumber: invoice.invoiceNumber,
            invoiceTotal: total,
+          salesDiscount: invoice.discount,
           tax: tax,
           paid: paid,
           // ⚠️ **الفرقُ يُطرَح هنا ويُمرَّر سطراً هناك.** بدون الطرح تُقرأ
@@ -680,10 +684,8 @@ class SalesTransactionOrchestrator {
                 taxRatePercent: lineRate(item),
               ))
           .toList(),
-      globalDiscountAmount: FinancialUtils.round(
-        (subtotalBeforeDiscount - itemDiscountTotal) *
-            (request.discountPercent / 100),
-      ),
+      globalDiscountAmount:
+          request.invoiceDiscountOn(subtotalBeforeDiscount - itemDiscountTotal),
       lineDiscountAmounts: lineDiscounts,
       deliveryFee: request.deliveryFee,
       pricesIncludeTax: request.pricesIncludeTax,
@@ -909,7 +911,7 @@ class SalesTransactionOrchestrator {
     }
 
     // 3. UUID-First — mint one globalId shared between server and local cache
-    final saleGlobalId = UuidV7.generate();
+    final saleGlobalId = request.globalId ?? UuidV7.generate(); // R3 retry-stable
 
     // ── رقمٌ واحدٌ للبيعة الواحدة ───────────────────────────────────────────
     // ⚠️ كان يُولَّد **مرّتين** بمقدّمتَين مختلفتَين: الرقمُ المُرسَل للسيرفر
@@ -1075,11 +1077,8 @@ class SalesTransactionOrchestrator {
         // العميل أعلاه فيُسند القيمة.
         final invoiceNumber = clientSaleNumber ??
             await _db.generateInvoiceNumber(isReturn ? 'RET-' : 'Receipt');
-        // ⚠️ **وفرقُ التقريب يُطرَح — توأمُ `sales_mutations_dao` تماماً.**
-        // بدونه يكتب شقُّ العميل/المرآة `pending` لكلِّ بيعةٍ نقديّةٍ مقرَّبة
-        // (‏أدنى فرقٍ ٠٫٠٢٥ وهو فوق سقف ٠٫٠١ دائماً)، فيرى الكاشيرُ فاتورةً
-        // غيرَ مسدَّدةٍ لبيعةٍ قُبض ثمنُها كاملاً — ولا تُشفى إلّا حين يصل
-        // صدى الخادم. (‏بلاغُ التدقيق المحاسبيّ 2026-08-30 · MAJOR-3)
+        // ⚠️ فرقُ التقريب يُطرَح — توأمُ `sales_mutations_dao`، وإلا بقيت
+        // البيعةُ النقديّةُ المقرَّبة `pending`. (MAJOR-3 · 2026-08-30)
         final remaining = finalTotal - effectivePaid - roundingAdjustment;
         final status = remaining <= 0.01 ? 'completed' : 'pending';
 
@@ -1112,7 +1111,9 @@ class SalesTransactionOrchestrator {
             netBeforeTax: perLineBeforeTax[i],
             netTax: perLineTax[i],
             netRate: perLineRate[i],
-            costPrice: localWac,
+            costPrice: localWac > 0
+                ? localWac
+                : request.provisionalCosts[item.productId] ?? localWac,
           ));
         }
 
@@ -1251,6 +1252,7 @@ class SalesTransactionOrchestrator {
                   repEmployeeId: request.repEmployeeId,
                   routeId: request.routeId),
           cashOutsideDrawer: request.cashOutsideDrawer,
+          provisionalCosts: request.provisionalCosts,
         );
       }
 
@@ -1291,6 +1293,11 @@ class SalesTransactionOrchestrator {
         invoiceNumber: invoice.invoiceNumber,
         totals: null,
       );
+    } on CostRequiredException catch (e) {
+      // صنفٌ بلا تكلفةٍ معروفة: فشلٌ مُهيكَل تسأل عنه الواجهةُ وتعيد المحاولة.
+      return SaleResult.failure(e.toString(),
+          costRequiredProductId: e.productId,
+          costRequiredProductName: e.productName);
     } on MirrorCacheDivergenceException catch (e) {
       // Spec 131 (FR-006) — pre-flight raised divergence. Surface the
       // Fatal screen immediately (no 3-retry policy applies on this path)

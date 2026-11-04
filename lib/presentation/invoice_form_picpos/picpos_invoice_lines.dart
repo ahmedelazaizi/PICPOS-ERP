@@ -129,7 +129,7 @@ class _PicPosOrderLinkBar extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.end,
                 style: TextStyle(
-                    fontSize: 10, fontWeight: FontWeight.w600, color: muted),
+                    fontSize: 11, fontWeight: FontWeight.w600, color: muted),
               ),
             ),
         ],
@@ -211,7 +211,7 @@ class _PicPosQuickAdd extends StatelessWidget {
                     child: Text(
                       'F2',
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: muted,
                       ),
@@ -311,7 +311,7 @@ class _PicPosQuickAdd extends StatelessWidget {
         children: [
           Text(label,
               style: TextStyle(
-                  fontSize: 9, fontWeight: FontWeight.w800, color: muted)),
+                  fontSize: 11, fontWeight: FontWeight.w800, color: muted)),
           SizedBox(height: 18, child: child),
         ],
       ),
@@ -424,7 +424,7 @@ class _PicPosLinesTable extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 10.5,
+                fontSize: 11,
                 fontWeight: FontWeight.w800,
                 color: muted,
               ),
@@ -608,7 +608,7 @@ class _LineRow extends StatelessWidget {
                 child: Text(
                   '${index + 1}',
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: muted,
                   ),
@@ -858,7 +858,7 @@ class _LineRow extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 9.5,
+                        fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: muted,
                       ),

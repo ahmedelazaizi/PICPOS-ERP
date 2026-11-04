@@ -924,7 +924,7 @@ extension DatabaseStartup on AppDatabase {
         debugPrint('[Startup] No fiscal year covering $today — auto-creating...');
         final fyStart = DateTime(today.year, 1, 1);
         final fyEnd   = DateTime(today.year, 12, 31, 23, 59, 59);
-        final fyId = await createFiscalYear(
+        final fyId = await ensureFiscalYear(
           name: 'السنة المالية ${today.year}',
           startDate: fyStart,
           endDate: fyEnd,
@@ -1055,6 +1055,7 @@ extension DatabaseStartup on AppDatabase {
     } catch (e) {
       debugPrint('[Startup] tax rate label repair: $e');
     }
+    await deployReadyTemplates();
 
     // Step 7: Spec 136 ISS-2 — backfill deterministic globalIds on seeded
     // master-data defaults that still carry a NULL globalId (pre-globalId
@@ -1317,7 +1318,7 @@ extension DatabaseStartup on AppDatabase {
             roleId: grant.roleId,
             permissionId: approvePermission.id,
           ),
-          mode: InsertMode.insertOrIgnore,
+          onConflict: DoNothing(target: []),
         );
       }
     }
@@ -1729,16 +1730,19 @@ extension DatabaseStartup on AppDatabase {
   // Phase 6: Deferred background tasks
   // ─────────────────────────────────────────────────────────────────────────
 
-  /// Background tasks that don't block the user from logging in.
+  /// Non-blocking startup tasks.
   Future<void> _scheduleDeferredTasks() async {
     await _runFinancialIntegrityChecks();
-    await retryResPartiesBackfill(); // A-1 (never throws)
+    await retryResPartiesBackfill();
+    await retryFailedAutoposts();
+    // opt-in: المزامنة تسمح بتكرار الرقم بين الفروع (sync_engine_test)
+    if (await getSettingValue('enforce_unique_invoice_numbers') == 'true') {
+      await ensureInvoiceNumberUniqueIndexes(this); // never throws
+    }
     // Auto-backup on startup — only for SQLite (file-based)
     if (!_isPostgres) {
       try {
-        // تفريغ الـ WAL قبل النسخ — من غيره النسخة بتعكس آخر تفريغ تلقائي
-        // مش الحالة دلوقتي. مش إجباري هنا: التطبيق بيفتح والقراء الآخرين
-        // واردين، ونسخة ناقصة أحسن من ولا نسخة.
+        // WAL checkpoint first; best-effort (readers may hold it).
         await autoBackupOnStartup(
           checkpoint: () => walCheckpointTruncate(this),
         );

@@ -14,12 +14,23 @@ extension Epoch3V196ToV205Migrations on AppDatabase {
     // (rows stay guests; `backfillReservationParties(force: true)` re-runs it).
     if (from < 196) {
       await _safeMigrate(
-          'v196 reservation parties', ensureReservationPartiesSchema);
+        'v196 reservation parties',
+        ensureReservationPartiesSchema,
+      );
       try {
         await backfillReservationParties();
       } catch (e) {
         debugPrint('[Migration] v196 reservation parties backfill: $e');
       }
+    }
+
+    // v197 — nullable printer paper width; additive and data-preserving.
+    if (from < 197) {
+      await _safeMigrate('v197 printer paper width', () async {
+        await customStatement(
+          'ALTER TABLE printers ADD COLUMN paper_width_mm REAL NULL',
+        );
+      });
     }
   }
 }

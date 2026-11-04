@@ -1,3 +1,4 @@
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import 'package:picpos_erp/core/i18n/tr.dart';
 // شاشةُ العروض بهويّة PicPos — فوركٌ لا تعديلٌ للمشترك.
 //
@@ -232,7 +233,7 @@ class _OffersPicPosScreenState extends ConsumerState<OffersPicPosScreen>
                   label: tr('موقوفة'),
                   value: '$paused',
                   icon: PhosphorIconsBold.pauseCircle,
-                  tint: AppColors.textMuted,
+                  tint: context.picposMuted,
                 ),
               ],
             ),
@@ -257,10 +258,10 @@ class _OffersPicPosScreenState extends ConsumerState<OffersPicPosScreen>
                 //    التركيب، ولم يكن ليظهر في اختبار قطعة.
                 Text(
                   tr('المعروض: {p0} من {p1}', {'p0': offers.length, 'p1': all.length}),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textMuted,
+                    color: context.picposMuted,
                   ),
                 ),
               ],

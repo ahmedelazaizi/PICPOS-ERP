@@ -17,9 +17,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
     await repairTemplateCategories();
     final existing = await getAllTemplates();
     final existingTypes = existing.map((t) => t.type).toSet();
-    // ⚠️ الحارسُ بالفئة لا بالنوع لما ينفرد بفئته: قالبا A4 والمشتريات
-    // نوعُهما `a4` كلاهما (‏المصمّمُ لا يعرف نوعاً اسمُه `purchase`)، فحارسٌ
-    // بالنوع كان يمنع بذرَ الثاني أو يزدوج به.
+    // الحراسة بالفئة تميّز فاتورة A4 عن قالب مشتريات A4.
     final existingCategories =
         existing.map((t) => t.templateCategory).toSet();
 
@@ -151,7 +149,7 @@ extension InvoiceTemplateSeederDao on AppDatabase {
     }
 
     // Seed elements for existing templates that have no elements
-    await _seedMissingElements();
+    await _seedMissingElements(); await seedScaleBarcodeTemplateIfMissing();
   }
 
   /// Migrate old-format elements in DB to new format

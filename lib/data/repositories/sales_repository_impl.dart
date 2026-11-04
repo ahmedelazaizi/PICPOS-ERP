@@ -4,7 +4,6 @@ import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import '../../domain/entities/invoice_entity.dart';
 import '../../domain/entities/cart_item_entity.dart';
-import '../../domain/usecases/sales/calculate_invoice_totals_usecase.dart';
 import '../../domain/repositories/sales_repository.dart';
 import '../../services/generators/base_generator.dart' show InvoiceItem;
 import '../../services/accounting_service.dart';
@@ -20,6 +19,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database.dart';
 import '../../services/invoice_integrity_service.dart';
 import 'sales_summary_queries.dart';
+import 'sales_invoice_edit_reconciler.dart';
 import 'sales_transaction_orchestrator.dart';
 
 /// Sales repository implementation
@@ -380,14 +380,22 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
     final invoice = await db.getSalesInvoiceById(invoiceId);
     if (invoice == null) throw Exception('Invoice not found');
 
-    // CRUX 1 — recordPayment carries the ABSOLUTE newPaid; the collected amount
-    // is the delta over the current paid. Guard non-positive: a correction that
-    // lowers paid (or a no-op re-save) has no cash to receive → light marker only.
-    final delta = amount - invoice.paid;
-    if (delta <= 0) {
-      await db.updateSalesInvoicePaidAmount(invoiceId, amount);
-      return;
+    // recordPayment carries the absolute resulting paid amount. It is a
+    // collection path, not a reconciliation/reset path: reject non-positive
+    // targets and any decrease before either outbox or local state is changed.
+    if (amount <= 0) {
+      throw StateError('PAYMENT_NOT_POSITIVE: يجب أن يكون مبلغ التحصيل أكبر من صفر.');
     }
+    if (amount < invoice.paid) {
+      throw StateError('لا يمكن أن يُنقص التحصيل المدفوع المسجل مسبقاً.');
+    }
+    final delta = amount - invoice.paid;
+    if (amount > invoice.total) {
+      throw StateError(
+        'PAYMENT_EXCEEDS_REMAINING: مبلغ التحصيل يتجاوز المتبقي على الفاتورة.',
+      );
+    }
+    if (delta == 0) return;
 
     // R9 — a collection is ADDITIVE (unlike a void's idempotent terminal state),
     // so mint a FRESH per-event globalId (NOT derived from the invoice, which
@@ -821,8 +829,7 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
     int? revenueAccountId,
   }) async {
     // 0) Get original invoice to check if it's locked
-    final oldInvoice = await db.getSalesInvoiceById(invoiceId);
-    if (oldInvoice == null) throw Exception('Invoice not found');
+    final oldInvoice = await db.getSalesInvoiceForContentEdit(invoiceId);
     if (oldInvoice.isLocked) {
       await PermissionEnforcer(db.userHasPermission).requireCriticalOp(
         userId: userId,
@@ -838,6 +845,30 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
     );
 
     await db.transaction(() async {
+      final currentItems = await db.getSalesInvoiceItems(invoiceId);
+      final sameLines = currentItems.length == items.length &&
+          List<int>.generate(currentItems.length, (index) => index).every((index) {
+            final current = currentItems[index];
+            final edited = items[index];
+            return current.productId == edited.productId &&
+                current.quantity == edited.quantity &&
+                current.unitPrice == edited.unitPrice &&
+                current.discount == edited.discountAmount &&
+                current.unitName == edited.selectedUnitName &&
+                current.quantityInBase == edited.quantityInBase &&
+                current.taxRate == edited.taxRate;
+          });
+      if (sameLines &&
+          oldInvoice.customerId == customerId &&
+          oldInvoice.warehouseId == warehouseId &&
+          oldInvoice.paid == paid &&
+          oldInvoice.paymentMethod == paymentMethod &&
+          oldInvoice.notes == notes &&
+          oldInvoice.costCenterId == costCenterId &&
+          !changeRevenueAccount) {
+        return;
+      }
+
       // 0.5) Soft/Hard Period Closing Gating
       await db.validateFinancialPeriod(oldInvoice.invoiceDate, operation: 'تعديل فاتورة مبيعات');
 
@@ -874,55 +905,16 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
               .get()
               .then((rows) => rows.length);
 
-      // 2) Delete old invoice items
-      await (db.delete(db.salesInvoiceItems)..where((i) => i.invoiceId.equals(invoiceId))).go();
-
-      // 3) Reuse the creation formula: line discounts, invoice discount,
-      // tax on the discounted net, and currency rounding.
-      var lineDiscountTotal = 0.0;
-      for (final item in items) {
-        lineDiscountTotal += item.discountAmount;
-      }
-      final invoiceDiscountAmount = oldInvoice.discount - lineDiscountTotal;
-      final discountBase = items.fold<double>(
-        0,
-        (sum, item) => sum + item.totalBeforeTax,
+      final reconciler = SalesInvoiceEditReconciler(db);
+      final editTotals = await reconciler.replaceLines(
+        oldInvoice,
+        invoiceId,
+        warehouseId,
+        items,
       );
-      final invoiceDiscountPercent = discountBase > 0
-          ? (invoiceDiscountAmount < 0 ? 0 : invoiceDiscountAmount) /
-              discountBase * 100
-          : 0.0;
-      final totals = CalculateInvoiceTotalsUseCase().execute(
-        items: items,
-        invoiceDiscountPercent: invoiceDiscountPercent,
-      );
-      final discountRatio = discountBase > 0
-          ? (discountBase - (invoiceDiscountAmount < 0 ? 0 : invoiceDiscountAmount)) /
-              discountBase
-          : 0.0;
-
-      for (final item in items) {
-        final lineTax = FinancialUtils.round(
-          item.totalBeforeTax * discountRatio * item.taxRate / 100,
-        );
-        final lineTotal = FinancialUtils.round(item.totalBeforeTax + lineTax);
-        await db.into(db.salesInvoiceItems).insert(SalesInvoiceItemsCompanion.insert(
-          invoiceId: invoiceId,
-          productId: item.productId,
-          quantity: item.quantity,
-          unitName: Value(item.selectedUnitName),
-          quantityInBase: Value(item.quantityInBase),
-          unitPrice: item.unitPrice,
-          discount: Value(item.discountAmount),
-          total: lineTotal,
-          taxRate: Value(item.taxRate),
-          taxAmount: Value(lineTax),
-          note: Value(item.note),
-        ));
-      }
-
-      final subtotal = totals.subtotal;
+      final totals = editTotals.totals;
       final totalTax = totals.taxAmount;
+      final subtotal = editTotals.subtotal;
       final total = totals.total;
       final status = FinancialUtils.toMinorUnits(paid) >=
               FinancialUtils.toMinorUnits(total)
@@ -956,6 +948,13 @@ class SalesRepositoryImpl extends DatabaseAccessor<AppDatabase>
              paymentMethod: paymentMethod,
            )),
         ),
+      );
+
+      await SalesInvoiceEditReconciler(db).reconcilePartyBalance(
+        oldInvoice,
+        customerId,
+        total,
+        paid,
       );
 
       // 4.5) C2 — the chosen «حساب المبيعات», written before the repost so

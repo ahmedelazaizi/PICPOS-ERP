@@ -151,6 +151,7 @@ import 'presentation/pos/widgets/pos_opening_balance_dialog.dart';
 import 'presentation/widgets/fiscal_year_gate_dialog.dart';
 import 'domain/models/app_close_cart_gate.dart';
 import 'presentation/widgets/dialogs/cart_not_empty_close_dialog.dart';
+import 'presentation/shell/app_shell_cart_gate.dart';
 
 part 'app_main_screen_catalog.dart';
 part 'app_main_screen_navigation.dart';

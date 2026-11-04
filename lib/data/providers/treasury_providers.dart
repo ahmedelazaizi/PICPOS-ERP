@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'providers.dart'; // For supabaseDatabaseProvider
 import 'dashboard_filter_provider.dart';
+export 'cash_box_ledger_reconciliation_provider.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TREASURY PROVIDERS

@@ -12,6 +12,7 @@ import '../../../data/providers/providers.dart';
 import '../../../domain/models/picpos_booking_view.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
 import '../screens/bookings_picpos_screen.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 String _money(double v) =>
     '${v.toStringAsFixed(AppConstants.decimalPlaces)} '
@@ -113,7 +114,7 @@ class _CustomerRow extends StatelessWidget {
       BookingCustomerTier.platinum => AppColors.booking,
       BookingCustomerTier.gold => AppColors.warning,
       BookingCustomerTier.silver => AppColors.info,
-      BookingCustomerTier.bronze => AppColors.textMuted,
+      BookingCustomerTier.bronze => context.picposMuted,
     };
 
     return Container(
@@ -190,7 +191,7 @@ class _CustomerRow extends StatelessWidget {
                 child: Text(
                   tr(tier.label),
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: color,
                   ),
@@ -254,7 +255,7 @@ class _ReminderCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final due = row.isDue(DateTime.now());
-    final color = due ? AppColors.warning : AppColors.textMuted;
+    final color = due ? AppColors.warning : context.picposMuted;
 
     final message = bookingReminderMessage(
       customerName: row.customerName,
@@ -303,10 +304,10 @@ class _ReminderCard extends ConsumerWidget {
                   child: Text(
                     row.customerPhone ?? tr('بلا رقم'),
                     textDirection: TextDirection.ltr,
-                    style: const TextStyle(
-                      fontSize: 10.5,
+                    style: TextStyle(
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textMuted,
+                      color: context.picposMuted,
                       fontFeatures: bookingTabularFigures,
                     ),
                   ),
@@ -316,18 +317,18 @@ class _ReminderCard extends ConsumerWidget {
           ),
           SizedBox(
             width: 150,
-            child: _kv(tr('موعد الحجز'), bookingTimeLabel(row.bookingStartsAt)),
+            child: _kv(context, tr('موعد الحجز'), bookingTimeLabel(row.bookingStartsAt)),
           ),
           SizedBox(
             width: 170,
-            child: _kv(
+            child: _kv(context, 
               tr('القناة والتوقيت'),
               tr('{p0} · قبل {p1} دقيقة', {'p0': bookingReminderChannelLabel(row.channel), 'p1': row.offsetMinutes}),
             ),
           ),
           SizedBox(
             width: 130,
-            child: _kv(tr('الحالة'), bookingReminderStateLabel(row.state)),
+            child: _kv(context, tr('الحالة'), bookingReminderStateLabel(row.state)),
           ),
           // ⚠️ زرٌّ معطَّلٌ حين لا رابطَ ممكن (‏لا رقمَ أو رقمٌ بلا أرقام) —
           // رابطٌ يفتح محادثةً فارغةً يُوهم الموظَّفَ أنه أرسل ولم يُرسِل.
@@ -359,16 +360,16 @@ class _ReminderCard extends ConsumerWidget {
     );
   }
 
-  Widget _kv(String k, String v) => Column(
+  Widget _kv(BuildContext context, String k, String v) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             k,
-            style: const TextStyle(
-              fontSize: 9.5,
+            style: TextStyle(
+              fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: AppColors.textMuted,
+              color: context.picposMuted,
             ),
           ),
           Text(
@@ -476,10 +477,10 @@ class BookingsReportsView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textMuted,
+                      color: context.picposMuted,
                     )),
                 const SizedBox(height: 4),
                 Text(

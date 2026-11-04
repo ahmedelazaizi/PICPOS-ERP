@@ -247,7 +247,7 @@ class _TemplateCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final tint = template.isActive ? AppColors.primary : AppColors.textMuted;
+    final tint = template.isActive ? AppColors.primary : context.picposMuted;
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -288,7 +288,7 @@ class _TemplateCard extends StatelessWidget {
                             fontWeight: FontWeight.w800,
                             color: template.isActive
                                 ? context.picposText
-                                : AppColors.textMuted,
+                                : context.picposMuted,
                           ),
                         ),
                         Text(
@@ -297,7 +297,7 @@ class _TemplateCard extends StatelessWidget {
                               ? tr('{p0} سطر', {'p0': lines.length})
                               : tr('— سطر'),
                           style: text.labelSmall
-                              ?.copyWith(color: AppColors.textMuted),
+                              ?.copyWith(color: context.picposMuted),
                         ),
                       ],
                     ),
@@ -307,12 +307,12 @@ class _TemplateCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: AppColors.textMuted.withValues(alpha: 0.12),
+                        color: context.picposMuted.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(tr('غير نشط'),
                           style: text.labelSmall
-                              ?.copyWith(color: AppColors.textMuted)),
+                              ?.copyWith(color: context.picposMuted)),
                     ),
                 ],
               ),
@@ -325,7 +325,7 @@ class _TemplateCard extends StatelessWidget {
                       : tr('بلا وصف'),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: text.bodySmall?.copyWith(color: AppColors.textMuted),
+                  style: text.bodySmall?.copyWith(color: context.picposMuted),
                 ),
               ),
               const SizedBox(height: 8),
@@ -389,7 +389,7 @@ class _LinesPreview extends StatelessWidget {
             style: Theme.of(context)
                 .textTheme
                 .labelSmall
-                ?.copyWith(color: AppColors.textMuted)),
+                ?.copyWith(color: context.picposMuted)),
       );
     }
 
@@ -409,7 +409,7 @@ class _LinesPreview extends StatelessWidget {
               style: Theme.of(context)
                   .textTheme
                   .labelSmall
-                  ?.copyWith(color: AppColors.textMuted)),
+                  ?.copyWith(color: context.picposMuted)),
       ],
     );
   }
@@ -458,7 +458,7 @@ class _LineChip extends StatelessWidget {
           Text(
             line['account_code']?.toString() ?? '',
             style: text.labelSmall?.copyWith(
-              color: AppColors.textMuted,
+              color: context.picposMuted,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -475,7 +475,7 @@ class _LineChip extends StatelessWidget {
           Text(
             amount.toStringAsFixed(AppConstants.decimalPlaces),
             style: text.labelSmall?.copyWith(
-              color: AppColors.textMuted,
+              color: context.picposMuted,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -511,7 +511,7 @@ class _CountChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(label,
-              style: text.labelSmall?.copyWith(color: AppColors.textMuted)),
+              style: text.labelSmall?.copyWith(color: context.picposMuted)),
           const SizedBox(width: 6),
           Text(value,
               style: text.labelMedium

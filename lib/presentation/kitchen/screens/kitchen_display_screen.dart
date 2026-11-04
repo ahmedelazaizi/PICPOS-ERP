@@ -465,7 +465,7 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
                                   const SizedBox(width: 3),
                                   Text(
                                     tr('~{p0} د', {'p0': snap.data}),
-                                    style: const TextStyle(color: AppColors.info, fontSize: 10, fontWeight: FontWeight.bold),
+                                    style: const TextStyle(color: AppColors.info, fontSize: 11, fontWeight: FontWeight.bold),
                                   ),
                                 ],
                               ),
@@ -505,7 +505,7 @@ class _KitchenDisplayScreenState extends ConsumerState<KitchenDisplayScreen> {
                           order.station,
                           style: const TextStyle(
                             color: Colors.white60,
-                            fontSize: 10,
+                            fontSize: 11,
                           ),
                         ),
                       ),

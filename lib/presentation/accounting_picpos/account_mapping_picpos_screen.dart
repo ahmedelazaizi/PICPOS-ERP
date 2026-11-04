@@ -306,7 +306,7 @@ class _GroupStrip extends StatelessWidget {
       child: Row(
         children: [
           Text(summary,
-              style: text.labelSmall?.copyWith(color: AppColors.textMuted)),
+              style: text.labelSmall?.copyWith(color: context.picposMuted)),
           const SizedBox(width: 10),
           Expanded(
             child: SingleChildScrollView(
@@ -337,12 +337,12 @@ class _GroupStrip extends StatelessWidget {
                       children: [
                         Icon(g.icon,
                             size: 14,
-                            color: on ? g.color : AppColors.textMuted),
+                            color: on ? g.color : context.picposMuted),
                         const SizedBox(width: 6),
                         Text(g.title,
                             style: text.labelMedium?.copyWith(
                               color:
-                                  on ? g.color : AppColors.textSecondary,
+                                  on ? g.color : context.picposSecondary,
                               fontWeight:
                                   on ? FontWeight.w800 : FontWeight.w600,
                             )),
@@ -351,13 +351,13 @@ class _GroupStrip extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 1),
                           decoration: BoxDecoration(
-                            color: (on ? g.color : AppColors.textMuted)
+                            color: (on ? g.color : context.picposMuted)
                                 .withValues(alpha: 0.14),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text('$mapped/${g.items.length}',
                               style: text.labelSmall?.copyWith(
-                                color: on ? g.color : AppColors.textMuted,
+                                color: on ? g.color : context.picposMuted,
                                 fontWeight: FontWeight.w800,
                               )),
                         ),
@@ -469,7 +469,7 @@ class _PurposeRow extends StatelessWidget {
                     Text(
                       tr('{p0} · الافتراضي {p1}', {'p0': item.purpose, 'p1': item.defaultCode}),
                       style: text.labelSmall
-                          ?.copyWith(color: AppColors.textMuted),
+                          ?.copyWith(color: context.picposMuted),
                     ),
                   ],
                 ),
@@ -569,8 +569,8 @@ class _MappingChip extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(PhosphorIconsBold.arrowElbowDownRight,
-              size: 13, color: AppColors.textMuted),
+          Icon(PhosphorIconsBold.arrowElbowDownRight,
+              size: 13, color: context.picposMuted),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -673,7 +673,7 @@ class _MappingEditorDialogState extends State<_MappingEditorDialog> {
             style: Theme.of(context)
                 .textTheme
                 .bodySmall
-                ?.copyWith(color: AppColors.textMuted)),
+                ?.copyWith(color: context.picposMuted)),
         const SizedBox(height: 12),
         DropdownButtonFormField<int?>(
           initialValue: _costCenterId,

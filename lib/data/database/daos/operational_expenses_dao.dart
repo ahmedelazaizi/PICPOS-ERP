@@ -451,6 +451,11 @@ extension OperationalExpensesDao on AppDatabase {
         globalId: globalId,
       );
 
+      final isCashExpense = paymentMethod != 'bank';
+      final targetSafe = isCashExpense && !SyncInterceptor.isClientMode
+          ? await _resolveOperationalExpenseSafe(safeId)
+          : null;
+
       // EXP-1: throws (never silently returns null) when a required GL
       // account can't be resolved — that now rolls back the insert above too.
       final jeId = await accountingDao.autoPostOperationalExpense(
@@ -462,6 +467,7 @@ extension OperationalExpensesDao on AppDatabase {
         branchId: branchId,
         date: expenseDate,
         paymentMethod: paymentMethod,
+        safeId: targetSafe?.id,
       );
 
       // B13 (EXP-3): move the safe AFTER the GL JE posts, so a safe
@@ -482,14 +488,7 @@ extension OperationalExpensesDao on AppDatabase {
       // Full client-mode op-expense treasury submit is a deferred multi-device
       // gap (the same flow's GL JE already submits via createJournalEntry;
       // the treasury submit counterpart does not exist yet).
-      final isCashExpense = paymentMethod != 'bank';
       if (jeId != null && isCashExpense && !SyncInterceptor.isClientMode) {
-        Safe? targetSafe;
-        if (safeId != null) {
-          targetSafe = await (select(safes)..where((s) => s.id.equals(safeId)))
-              .getSingleOrNull();
-        }
-        targetSafe ??= await getDefaultSafeByType('cash');
 
         // Fail loud instead of silently posting a GL entry with no treasury
         // movement — consistent with B7's addPurchasePayment no-safe guard.

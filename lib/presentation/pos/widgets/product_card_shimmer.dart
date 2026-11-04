@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 class ProductCardShimmer extends StatelessWidget {
   const ProductCardShimmer({super.key});
@@ -19,7 +19,7 @@ class ProductCardShimmer extends StatelessWidget {
             flex: 10,
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.border.withValues(alpha: 0.3),
+                color: context.picposHairline.withValues(alpha: 0.3),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(16),
                 ),
@@ -40,7 +40,7 @@ class ProductCardShimmer extends StatelessWidget {
                     height: 12,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: AppColors.border.withValues(alpha: 0.3),
+                      color: context.picposHairline.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
@@ -51,7 +51,7 @@ class ProductCardShimmer extends StatelessWidget {
                         height: 14,
                         width: 50,
                         decoration: BoxDecoration(
-                          color: AppColors.border.withValues(alpha: 0.3),
+                          color: context.picposHairline.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -59,7 +59,7 @@ class ProductCardShimmer extends StatelessWidget {
                         height: 18,
                         width: 30,
                         decoration: BoxDecoration(
-                          color: AppColors.border.withValues(alpha: 0.3),
+                          color: context.picposHairline.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),

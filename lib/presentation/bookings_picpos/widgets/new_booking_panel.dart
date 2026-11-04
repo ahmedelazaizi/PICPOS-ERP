@@ -19,6 +19,7 @@ import '../../../core/permissions/permission_codes.dart';
 import '../../widgets/permission_guard.dart';
 import '../../shared_widgets/customer_picker/customer_picker_field.dart';
 import '../../shared_widgets/customer_picker/customer_picker_value.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// يفتح لوحَ الحجز الجديد. يعيد `true` حين يُحفَظ حجزٌ فعلاً.
 Future<bool?> showNewBookingPanel(BuildContext context, {DateTime? onDay}) {
@@ -327,10 +328,10 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textMuted,
+                color: context.picposMuted,
               )),
           const SizedBox(height: 4),
           child,
@@ -367,10 +368,10 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
           value,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w800,
-            color: AppColors.textMuted,
+            color: context.picposMuted,
           ),
         ),
       );
@@ -387,7 +388,7 @@ class _NewBookingPanelState extends ConsumerState<NewBookingPanel> {
           ),
           child: Row(
             children: [
-              Icon(icon, size: 15, color: AppColors.textMuted),
+              Icon(icon, size: 15, color: context.picposMuted),
               const SizedBox(width: 8),
               Text(value,
                   style: const TextStyle(

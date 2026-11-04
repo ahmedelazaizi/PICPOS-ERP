@@ -8,6 +8,7 @@ import '../../../data/providers/providers.dart';
 import '../../widgets/searchable_dropdown.dart';
 import 'package:picpos_erp/core/constants/app_constants.dart';
 import 'package:picpos_erp/core/utils/number_utils.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// Payment method selection and processing widget
 ///
@@ -125,7 +126,7 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
             height: 4,
             margin: const EdgeInsets.only(bottom: 16),
             decoration: BoxDecoration(
-              color: AppColors.border,
+              color: context.picposHairline,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -181,7 +182,7 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -275,7 +276,7 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
           Icon(
             icon,
             size: 16,
-            color: isSelected ? Colors.white : AppColors.textMuted,
+            color: isSelected ? Colors.white : context.picposMuted,
           ),
           const SizedBox(width: 4),
           Text(label),
@@ -351,7 +352,7 @@ class _PaymentSheetState extends ConsumerState<PaymentSheet> {
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
               tr('أدخل قيمة الدفع في الخانات التالية وزعها كما يقرر العميل'),
-              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 11, color: context.picposMuted),
             ),
           ),
         // Cash field

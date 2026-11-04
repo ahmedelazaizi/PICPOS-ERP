@@ -14,6 +14,7 @@ extension AccountingAutopostPurchaseReturnDao on AppDatabase {
     int? branchId, // Added branchId
     DateTime? date,
     String? paymentMethod, // F-12: 'cash', 'bank', or null (default: cash)
+    int? safeId,
   }) async {
     if (amount <= 0) return null;
     if (await hasAutoPostEntry('op_expense', expenseId)) return null;
@@ -25,6 +26,13 @@ extension AccountingAutopostPurchaseReturnDao on AppDatabase {
       AccountingDao.accountPurposes[creditPurpose]!,
     );
     Account? creditAccount = await accountingDao.getAccountByCode(creditCode);
+    if (creditPurpose == 'cash' && safeId != null) {
+      final safe = await (select(safes)..where((s) => s.id.equals(safeId)))
+          .getSingleOrNull();
+      if (safe?.linkedAccountId != null) {
+        creditAccount = await accountingDao.getAccountById(safe!.linkedAccountId!);
+      }
+    }
     if (creditAccount == null) {
       // Self-heal: re-seed the standard chart of accounts (same recovery
       // treasury_dao.dart uses for its cash account) then retry once.

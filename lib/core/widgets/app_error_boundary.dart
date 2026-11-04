@@ -1,9 +1,10 @@
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:picpos_erp/core/design_system/typography.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, visibleForTesting;
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../theme/app_colors.dart';
+import '../theme/core_surface_colors.dart';
 
 /// Installs a friendly, in-place replacement for Flutter's default
 /// `ErrorWidget` — the grey/red "exception caught by rendering library" box
@@ -34,6 +35,12 @@ void installGlobalErrorWidgetBuilder() {
     return _InlineErrorCard(details: details);
   };
 }
+
+/// Exposes the release-mode card so widget tests can audit it (the global
+/// builder returns Flutter's red box under `kDebugMode`).
+@visibleForTesting
+Widget inlineErrorCardForTest(FlutterErrorDetails details) =>
+    _InlineErrorCard(details: details);
 
 /// Release-mode stand-in for a widget whose `build` threw. Deliberately
 /// dependency-free (no Riverpod, no theme lookups, no `Directionality`
@@ -68,17 +75,17 @@ class _InlineErrorCard extends StatelessWidget {
              Text(
               tr('تعذّر عرض هذا الجزء من الشاشة'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 15,
-                color: AppColors.error,
+                color: context.coreStatusText(AppColors.error),
               ),
             ),
             const SizedBox(height: 6),
              Text(
               tr('باقي الشاشة يعمل بشكل طبيعي. ارجع للخلف ثم افتح الشاشة مرة أخرى. إذا تكرر الخطأ أرسل ملف السجل للدعم الفني.'),
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 12, color: context.coreTextMuted),
             ),
             const SizedBox(height: 8),
             Text(
@@ -86,9 +93,9 @@ class _InlineErrorCard extends StatelessWidget {
               textAlign: TextAlign.center,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 10,
-                color: AppColors.textMuted,
+              style: TextStyle(
+                fontSize: 11,
+                color: context.coreTextMuted,
                 fontFamily: AppTypography.mono,
               ),
             ),
@@ -141,16 +148,16 @@ class AppErrorWidget extends StatelessWidget {
               child: Icon(
                 icon,
                 size: 36,
-                color: AppColors.error.withValues(alpha: 0.7),
+                color: context.coreSoftIcon(AppColors.error, 0.7),
               ),
             ),
             const SizedBox(height: 16),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: context.coreTextPrimary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -169,7 +176,7 @@ class AppErrorWidget extends StatelessWidget {
                   message!,
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textMuted.withValues(alpha: 0.8),
+                    color: context.coreTextMuted.withValues(alpha: 0.8),
                     fontFamily: AppTypography.mono,
                   ),
                   textAlign: TextAlign.center,

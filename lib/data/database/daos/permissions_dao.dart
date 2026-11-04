@@ -525,6 +525,24 @@ extension PermissionsDao on AppDatabase {
       }
     }
 
+    // Idempotent defaults for the two close actions on existing databases.
+    final closeCodes = <String>{
+      FiscalPermissionCodes.fiscalPeriodClose,
+      FiscalPermissionCodes.fiscalYearClose,
+    };
+    for (final roleName in const ['محاسب', 'مدير مالي']) {
+      final role = await (select(roles)
+            ..where((r) => r.name.equals(roleName))
+            ..orderBy([(r) => OrderingTerm.asc(r.id)])
+            ..limit(1))
+          .getSingleOrNull();
+      if (role == null) continue;
+      final rolePermissions = await getAllPermissions();
+      for (final permission in rolePermissions.where((p) => closeCodes.contains(p.code))) {
+        await addPermissionToRole(role.id, permission.id);
+      }
+    }
+
     if (kDebugMode && newPermCodes.isNotEmpty) {
       debugPrint(
         '🔒 Permission sync: added ${newPermCodes.length} new permissions',

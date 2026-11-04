@@ -115,8 +115,8 @@ class _AutoScrollCartListState extends State<_AutoScrollCartList> {
                     const SizedBox(height: 4),
                     Text(
                       tr('كود: {p0}', {'p0': item.productCode}),
-                      style: const TextStyle(
-                        color: AppColors.textMuted,
+                      style: TextStyle(
+                        color: context.picposMuted,
                         fontSize: 12,
                       ),
                     ),
@@ -145,7 +145,7 @@ class _AutoScrollCartListState extends State<_AutoScrollCartList> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.border),
+                      border: Border.all(color: context.picposHairline),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(

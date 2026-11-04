@@ -105,7 +105,7 @@ mixin _ActivityLogItemsPicposMixin on ConsumerState<ActivityLogPicposScreen> {
         break;
       case 'settings_change':
         icon = PhosphorIconsBold.gear;
-        iconColor = AppColors.textMuted;
+        iconColor = context.picposMuted;
         break;
       case 'price_edit':
         icon = PhosphorIconsBold.currencyDollar;
@@ -221,7 +221,7 @@ mixin _ActivityLogItemsPicposMixin on ConsumerState<ActivityLogPicposScreen> {
         break;
       default:
         icon = PhosphorIconsBold.note;
-        iconColor = AppColors.textMuted;
+        iconColor = context.picposMuted;
     }
     return (icon: icon, color: iconColor);
   }
@@ -274,15 +274,15 @@ mixin _ActivityLogItemsPicposMixin on ConsumerState<ActivityLogPicposScreen> {
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
-            const Text('•', style: TextStyle(color: AppColors.textMuted)),
+            Text('•', style: TextStyle(color: context.picposMuted)),
             const SizedBox(width: 8),
             Text(
               entityLabel,
-              style: const TextStyle(color: AppColors.textMuted),
+              style: TextStyle(color: context.picposMuted),
             ),
             if (log.amount != null) ...[
               const SizedBox(width: 8),
-              const Text('•', style: TextStyle(color: AppColors.textMuted)),
+              Text('•', style: TextStyle(color: context.picposMuted)),
               const SizedBox(width: 8),
               Text(
                 tr('{p0} د.أ', {'p0': log.amount!.toStringAsFixed(AppConstants.decimalPlaces)}),
@@ -294,7 +294,7 @@ mixin _ActivityLogItemsPicposMixin on ConsumerState<ActivityLogPicposScreen> {
         trailing: Text(
           '${log.createdAt.hour.toString().padLeft(2, '0')}:${log.createdAt.minute.toString().padLeft(2, '0')}\n${log.createdAt.day}/${log.createdAt.month}',
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+          style: TextStyle(fontSize: 11, color: context.picposMuted),
         ),
         onTap: () => showLogDetails(log),
       ),

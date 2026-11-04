@@ -11,6 +11,8 @@ import '../../../data/providers/providers.dart';
 import '../../../services/client_write_interceptor.dart';
 import '../../widgets/permission_guard.dart';
 import 'package:picpos_erp/presentation/pos/providers/cart_controller.dart';
+import '../../picpos_shell/picpos_surface.dart';
+import '../../pos_picpos/widgets/picpos_pos_text.dart';
 
 /// زرار «إضافة عميل سريع» بجانب حقل البحث — مستخرج كودجت مستقل عن
 /// `_CustomerSelectorV2State` عشان يتعمله اختبار widget من غير ما نركّب
@@ -25,11 +27,16 @@ Widget buildPosCustomerAddIconButton({required VoidCallback onPressed}) {
     allowManagerOverride: true,
     actionName: tr('إضافة عميل سريع'),
     onGranted: onPressed,
-    child: IconButton(
-      icon: const Icon(PhosphorIconsBold.userPlus, size: 20),
-      onPressed: onPressed,
-      color: AppColors.primary,
-      tooltip: tr('إضافة عميل سريع'),
+    child: Builder(
+      builder: (context) => IconButton(
+        icon: const Icon(PhosphorIconsBold.userPlus, size: 20),
+        onPressed: onPressed,
+        // الداكن: حبر الهوية المقروء؛ الفاتح `AppColors.primary` كما كان.
+        color: context.picposIsDark
+            ? PicPosText.brandOf(context)
+            : AppColors.primary,
+        tooltip: tr('إضافة عميل سريع'),
+      ),
     ),
   );
 }
@@ -78,11 +85,11 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
           child: Material(
             elevation: 8,
             borderRadius: BorderRadius.circular(12),
-            color: AppColors.surface,
+            color: context.picposField,
             child: Container(
               constraints: const BoxConstraints(maxHeight: 300),
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: context.picposHairline),
                 borderRadius: BorderRadius.circular(12),
               ),
               // Use ValueListenableBuilder to rebuild on text change
@@ -142,7 +149,7 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
               children: [
                  Text(
                   tr('لا يوجد نتائج'),
-                  style: const TextStyle(color: AppColors.textMuted),
+                  style: TextStyle(color: context.picposMuted),
                 ),
                 const SizedBox(height: 8),
                 PermissionGuard(
@@ -153,6 +160,11 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
                   child: TextButton.icon(
                     onPressed: addCustomer,
                     icon: const Icon(PhosphorIconsBold.plus),
+                    // الداكن فقط: primary الثيم يقيس ٤٫١:١ على هذه القائمة.
+                    style: context.picposIsDark
+                        ? TextButton.styleFrom(
+                            foregroundColor: PicPosText.brandOf(context))
+                        : null,
                     label:  Text(tr('إضافة عميل جديد')),
                   ),
                 ),
@@ -247,7 +259,7 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
                   if (hasDebt)
                      Text(
                       tr('رصيد مستحق'),
-                      style: const TextStyle(fontSize: 10, color: AppColors.error),
+                      style: const TextStyle(fontSize: 11, color: AppColors.error),
                     ),
                 ],
               ),
@@ -300,9 +312,9 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.picposField,
           border: Border.all(
-            color: _isFocused ? AppColors.primary : AppColors.border,
+            color: _isFocused ? AppColors.primary : context.picposHairline,
           ),
           borderRadius: BorderRadius.circular(12),
           boxShadow: _isFocused
@@ -320,7 +332,11 @@ class _CustomerSelectorV2State extends ConsumerState<CustomerSelectorV2> {
             Icon(
               PhosphorIconsBold.user,
               size: 20,
-              color: isSelected ? AppColors.primary : AppColors.textMuted,
+              color: isSelected
+                  ? (context.picposIsDark
+                      ? PicPosText.brandOf(context)
+                      : AppColors.primary)
+                  : context.picposMuted,
             ),
             const SizedBox(width: 12),
             Expanded(

@@ -1,6 +1,8 @@
+import 'package:drift/drift.dart' show TableUpdateQuery;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'branch_scope_provider.dart';
+import 'providers.dart' show databaseProvider;
 import 'repository_providers.dart';
 
 /// Spec 136 (field 2026-06-11) — shared dashboard/analytics filter.
@@ -92,7 +94,21 @@ class DashboardKpi {
   });
 }
 
+/// المرحلة 7 (التحقق الحي 2026-11-03): عدّادٌ يتقدّم مع كل كتابةٍ على مصادر
+/// بطاقات اللوحة. تابُ اللوحة يبقى مبنياً في `IndexedStack`، فبلا هذا كان
+/// [dashboardKpiProvider] يُحسب مرةً عند الدخول (0 فاتورة) ولا يتحدّث أبداً.
+/// عدّادٌ لا `void` لنفس سبب `salesInvoicesChangeProvider`.
+final dashboardDataChangeProvider = StreamProvider.autoDispose<int>((ref) {
+  final db = ref.watch(databaseProvider);
+  var tick = 0;
+  return db
+      .tableUpdates(TableUpdateQuery.onAllTables(
+          [db.journalEntries, db.journalEntryLines, db.salesInvoices]))
+      .map((_) => ++tick);
+});
+
 final dashboardKpiProvider = FutureProvider.autoDispose<DashboardKpi>((ref) async {
+  ref.watch(dashboardDataChangeProvider);
   final f = ref.watch(dashboardFilterProvider);
   final repo = ref.watch(reportingRepositoryProvider);
 

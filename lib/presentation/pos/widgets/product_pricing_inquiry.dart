@@ -276,7 +276,7 @@ class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child:  Text(tr('إغلاق'), style: const TextStyle(color: AppColors.textPrimary)),
+            child:  Text(tr('إغلاق'), style: TextStyle(color: context.picposText)),
           ),
         ],
       ),
@@ -332,8 +332,8 @@ class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
                   ),
                   subtitle: Text(
                     product.code,
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textMuted),
+                    style: TextStyle(
+                        fontSize: 12, color: context.picposMuted),
                   ),
                   trailing: Text(
                     '${product.salePrice.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbol}',
@@ -403,11 +403,11 @@ class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
                             ),
                             child: Row(
                               children: [
-                                const Icon(PhosphorIconsBold.barcode, size: 12, color: AppColors.textMuted),
+                                Icon(PhosphorIconsBold.barcode, size: 12, color: context.picposMuted),
                                 const SizedBox(width: 4),
                                 Text(
                                   product.barcode!,
-                                  style: const TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.bold),
+                                  style: TextStyle(fontSize: 12, color: context.picposMuted, fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
@@ -417,7 +417,7 @@ class _ProductPricingDialogState extends ConsumerState<_ProductPricingDialog> {
                           Expanded(
                             child: Text(
                               tr('السعر شامل الضريبة: {p0} ({p1}%)', {'p0': originalPriceWithTax.toStringAsFixed(AppConstants.decimalPlaces), 'p1': taxRate.toStringAsFixed(0)}),
-                              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                              style: TextStyle(fontSize: 11, color: context.picposMuted),
                             ),
                           ),
                       ],

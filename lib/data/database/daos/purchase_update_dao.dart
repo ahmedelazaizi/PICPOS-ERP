@@ -131,6 +131,9 @@ extension PurchaseUpdateDao on AppDatabase {
 
       // Reverse old stock quantities and WAC
       final oldProductMap = await getProductsByIds(oldItems.map((i) => i.productId).toList());
+      // R2: stock level just BEFORE the old receipt (= stock after we undo it).
+      final oldStockBefore = <int, double>{};
+      var oldHasDuplicateProduct = false;
       for (final item in oldItems) {
         final product = oldProductMap[item.productId];
         if (product != null && product.trackInventory) {
@@ -158,6 +161,11 @@ extension PurchaseUpdateDao on AppDatabase {
             notes:
                 'تعديل فاتورة مشتريات (حذف قديم) #${oldInvoice.invoiceNumber}',
           );
+          if (oldStockBefore.containsKey(item.productId)) {
+            oldHasDuplicateProduct = true;
+          }
+          oldStockBefore[item.productId] =
+              (await getProductById(item.productId))?.currentStock ?? 0;
         }
       }
 
@@ -175,7 +183,37 @@ extension PurchaseUpdateDao on AppDatabase {
       // the safe — GL diverged from inventory/AP and the safe was never adjusted
       // for the payment delta on every edit. This mirrors updateFullSalesInvoice
       // (the sales sibling): delete the old JE + recompute balances, then re-post.
-      await _reverseOldPurchaseJournalEntry(invoiceId);
+      final oldAdjustment = await _reverseOldPurchaseJournalEntry(invoiceId);
+      // R2: the original receipt's cost-before-receipt is NOT persisted. It is
+      // recoverable exactly only when ONE line covered negative stock:
+      //   oldAdj = cover × (oldCost − costBefore) ⇒ costBefore = oldCost − oldAdj/cover
+      // (cover = min(|stockBefore|, qty), stockBefore = stock after undoing the
+      // old receipt). Otherwise the adjustment is dropped (old JE removed, none
+      // re-posted) and a manager warning is logged — never a made-up figure.
+      final coveringOld = oldItems
+          .where((i) => (oldStockBefore[i.productId] ?? 0) < 0)
+          .toList();
+      int? adjProductId;
+      var adjCostBefore = 0.0;
+      if (coveringOld.length == 1 && !oldHasDuplicateProduct) {
+        final c = coveringOld.single;
+        final sb = oldStockBefore[c.productId]!.abs();
+        adjProductId = c.productId;
+        adjCostBefore = c.unitCost - oldAdjustment / (sb < c.quantity ? sb : c.quantity);
+      }
+      var newAdjustment = 0.0;
+      if (adjProductId == null && (oldAdjustment != 0 || coveringOld.length > 1)) {
+        await logActivity(
+          userId: userId ?? 0,
+          userName: 'System',
+          action: 'accounting_warning',
+          entityType: 'purchase_invoice',
+          entityId: invoiceId,
+          description: '[R2] تعديل فاتورة المشتريات #${oldInvoice.invoiceNumber}: '
+              'حُذف قيد تسوية تكلفة المخزون السالب (${oldAdjustment.toStringAsFixed(3)}) '
+              'ولم يُعاد احتسابه (تعذّر استرجاع التكلفة السابقة للاستلام) — يلزم مراجعة المدير.',
+        );
+      }
       // F02-1/F02-2: reversing the old payment also reverses any separate GL
       // 'payment' JE (prevents the double-count on re-post) and yields the
       // original payment's safe so we re-record onto the SAME safe.
@@ -346,6 +384,13 @@ extension PurchaseUpdateDao on AppDatabase {
           throw StateError('رقم الدفعة وتاريخ الصلاحية مطلوبان للصنف ${product.name}.');
         }
         if (product != null && product.trackInventory) {
+          // R2: same formula as createPurchaseInvoice, on the live pre-receipt stock.
+          if (productId == adjProductId) {
+            final sb = (await getProductById(productId))?.currentStock ?? 0;
+            final cover = sb < 0 ? (sb.abs() < quantity ? sb.abs() : quantity) : 0.0;
+            newAdjustment +=
+                FinancialUtils.round(cover * (unitCost - adjCostBefore));
+          }
           // 1. Update WAC Cost with new values
           await updateProductWAC(
             productId: productId,
@@ -439,6 +484,17 @@ extension PurchaseUpdateDao on AppDatabase {
         await autoPostPurchase(
           repostInvoice,
           costCenterId: costCenterId ?? repostInvoice.costCenterId,
+        );
+      }
+
+      if (newAdjustment != 0) {
+        await _postEditedNegativeAdjustment(
+          invoiceId: invoiceId,
+          invoiceNumber: oldInvoice.invoiceNumber,
+          warehouseId: warehouseId,
+          date: oldInvoice.invoiceDate,
+          amount: newAdjustment,
+          costCenterId: costCenterId ?? repostInvoice?.costCenterId,
         );
       }
 

@@ -256,7 +256,7 @@ extension AccountingReportsDao on AppDatabase {
       JOIN journal_entry_lines l ON a.id = l.account_id
       JOIN journal_entries e ON l.entry_id = e.id
       WHERE a.account_type IN ('revenue', 'expense', 'contra_revenue')
-        AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue AND e.is_deleted = ${sqlBool(false)} $ccFilter $brFilter$azFilter
+        AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue AND e.is_deleted = ${sqlBool(false)} AND COALESCE(e.reference_type, '') <> 'fiscal_close' $ccFilter $brFilter$azFilter
       GROUP BY a.id
       ''',
       variables: [dateVar(from), dateVar(to), ...ccVars, ...brVars, ...azVars],
@@ -281,10 +281,7 @@ extension AccountingReportsDao on AppDatabase {
       'cogs', AccountingDao.accountPurposes['cogs']!,
     );
 
-    // Resolve depreciation expense account code (default: 5207)
-    final depreciationCode = await accountingDao.getMappedAccountCode(
-      'depreciation_expense', '5207',
-    );
+    final depreciationCode = await _resolveDepreciationReportCode();
 
     // #2: inventory surplus (4317, a revenue account) and shrinkage (6216, an
     // expense account) are inventory-COUNT adjustments, not sales/operating
@@ -465,6 +462,9 @@ extension AccountingReportsDao on AppDatabase {
     final azVars = az.vars;
     final boolTrue = sqlBool(true);
 
+    final balanceDateEnd = DateTime(
+      atDate.year, atDate.month, atDate.day, 23, 59, 59, 999,
+    );
     // Consolidated query for all BS accounts
     // C-01: Only include POSTED entries in balance sheet (ICR-01 compliance)
     final balances = await customSelect(
@@ -477,7 +477,7 @@ extension AccountingReportsDao on AppDatabase {
         AND e.entry_date <= ? AND e.is_posted = $boolTrue AND e.is_deleted = ${sqlBool(false)} $ccFilter $brFilter$azFilter
       GROUP BY a.id
       ''',
-      variables: [dateVar(atDate), ...ccVars, ...brVars, ...azVars],
+      variables: [dateVar(balanceDateEnd), ...ccVars, ...brVars, ...azVars],
       readsFrom: {accounts, journalEntryLines, journalEntries},
     ).get();
 
@@ -518,27 +518,30 @@ extension AccountingReportsDao on AppDatabase {
       }
     }
 
-    // Add Net Profit from P&L to Equity (fiscal year CONTAINING atDate)
-    // REP-2 fix (spec 149 B11): resolve the fiscal year that CONTAINS
-    // atDate — not "whichever FY is flagged isCurrent" — otherwise running
-    // the balance sheet for a prior/closed year mis-scopes the P&L window
-    // (fyStart from the CURRENT FY can be after atDate, inverting the
-    // range → 0/garbage "صافي الأرباح (دوري)"). Also forward the SAME
-    // branch scope (branchIds) used by the equity-account aggregation
-    // above so both sides agree — previously only the singular branchId
-    // was forwarded, so a multi-branch call scoped equity accounts per
-    // branchIds but net income company-wide.
+    // Add current-period profit and prior, still-open fiscal-year results to equity.
     final atDateFY = await getFiscalYearByDate(atDate);
     final fyStart = atDateFY?.startDate ?? DateTime(atDate.year, 1, 1);
-    // FIL-2: forward the SAME auth scope used for the account aggregation
-    // above, so the net-profit-in-equity figure doesn't leak other
-    // branches' P&L into a restricted user's balance sheet.
-    final pl = await getIncomeStatement(fyStart, atDate,
+    final pl = await getIncomeStatement(fyStart, balanceDateEnd,
         costCenterId: costCenterId, branchId: branchId, branchIds: branchIds,
         allowedBranchIds: allowedBranchIds);
     final netProfit = pl['netProfit'] as double;
     totalEquity += netProfit;
     equityDetails.add({'name': 'صافي الأرباح (دوري)', 'balance': netProfit});
+
+    final priorUnclosedProfit = await _sumPriorUnclosedFiscalProfit(
+      fyStart,
+      costCenterId: costCenterId,
+      branchId: branchId,
+      branchIds: branchIds,
+      allowedBranchIds: allowedBranchIds,
+    );
+    totalEquity += priorUnclosedProfit;
+    if (priorUnclosedProfit != 0) {
+      equityDetails.add({
+        'name': 'أرباح/خسائر سنوات سابقة غير مُقفلة',
+        'balance': priorUnclosedProfit,
+      });
+    }
 
     return {
       'totalAssets': totalAssets,
@@ -637,38 +640,22 @@ extension AccountingReportsDao on AppDatabase {
     // والتشغيليّةُ هي **الباقي**: ما ليس استثماريّاً ولا تمويليّاً. فصياغتُها
     // نفياً لاتّحاد القائمتَين تضمن أنّ أيَّ نوعٍ يُضاف إلى إحداهما يخرج من
     // التشغيليّة في اللحظة نفسِها — وهذا عينُ الانحراف الذي وقع.
-    final investingRefTypes = sqlRefTypeList(kInvestingJeReferenceTypes);
-    final financingRefTypes = sqlRefTypeList(kFinancingJeReferenceTypes);
-    final nonOperatingRefTypes = sqlRefTypeList(
-      {...kInvestingJeReferenceTypes, ...kFinancingJeReferenceTypes},
-    );
-
     // ─── Operating Activities (IAS 7.14) ─────────────────────────────────
     // ACC-006: only engine-written types are summed per type here; manual /
     // unknown entries are classified per entry by counter-account below.
-    const knownOperating = {
-      'cash_sale', 'credit_sale', 'sale', 'sales_invoice', 'sale_return',
-      'sales_return', 'purchase', 'purchase_invoice', 'purchase_return',
-      'salary', 'payroll', 'op_expense', 'expense', 'operational_expense',
-      'receipt', 'payment',
-    };
-    final knownOperatingRefTypes = sqlRefTypeList(knownOperating);
-    final operatingResults = await customSelect(
-      '''
-      SELECT je.reference_type,
-             SUM(jel.debit) as total_debit,
-             SUM(jel.credit) as total_credit
-      FROM journal_entry_lines jel
-      INNER JOIN journal_entries je ON je.id = jel.entry_id
-      INNER JOIN accounts a ON a.id = jel.account_id
-      WHERE $cashBankFilter
-        AND je.entry_date BETWEEN ? AND ? AND je.is_posted = $boolTrue AND je.is_deleted = ${sqlBool(false)} $ccFilter $brFilter$azFilter
-        AND je.reference_type IN ($knownOperatingRefTypes)
-      GROUP BY je.reference_type
-      ''',
-      variables: [dateVar(from), dateVar(to), ...ccVars, ...brVars, ...azVars],
-      readsFrom: {journalEntryLines, journalEntries, accounts},
-    ).get();
+    final operatingResults = await _selectKnownOperatingCashRows((
+      from: from,
+      to: to,
+      cashBankFilter: cashBankFilter,
+      cashBankIds: cashBankIds,
+      boolTrue: boolTrue,
+      ccFilter: ccFilter,
+      brFilter: brFilter,
+      azFilter: azFilter,
+      ccVars: ccVars,
+      brVars: brVars,
+      azVars: azVars,
+    ));
 
     double operatingInflow = 0;
     double operatingOutflow = 0;
@@ -683,6 +670,8 @@ extension AccountingReportsDao on AppDatabase {
       final refType = row.data['reference_type'] as String? ?? '';
       final debits = row.data['total_debit'] as double? ?? 0;
       final credits = row.data['total_credit'] as double? ?? 0;
+      final isSalaryPayment =
+          (row.data['salary_counter'] as num?)?.toInt() == 1;
 
       // H-02: Precise reference_type matching (not .contains())
       switch (refType) {
@@ -705,6 +694,8 @@ extension AccountingReportsDao on AppDatabase {
           break;
         case 'salary':
         case 'payroll':
+        case 'salary_payment':
+        case 'payroll_run':
           salaries += credits;
           break;
         case 'op_expense':
@@ -713,9 +704,22 @@ extension AccountingReportsDao on AppDatabase {
           expenses += credits;
           break;
         case 'receipt':
+        case 'receipt_voucher':
           otherReceipts += debits;
           break;
         case 'payment':
+          otherPayments += credits;
+          break;
+        case 'payment_voucher':
+          if (isSalaryPayment) {
+            salaries += credits;
+          } else {
+            otherPayments += credits;
+          }
+          break;
+        case 'commercial_paper':
+          // Customer and supplier cheques are operating cash movements (IAS 7.14).
+          otherReceipts += debits;
           otherPayments += credits;
           break;
       }
@@ -732,7 +736,7 @@ extension AccountingReportsDao on AppDatabase {
       INNER JOIN journal_entries je ON je.id = jel.entry_id
       WHERE $cashBankFilter
         AND je.entry_date BETWEEN ? AND ? AND je.is_posted = $boolTrue AND je.is_deleted = ${sqlBool(false)} $ccFilter $brFilter$azFilter
-        AND (je.reference_type IS NULL OR je.reference_type NOT IN ($knownOperatingRefTypes, $nonOperatingRefTypes))
+        AND (je.reference_type IS NULL OR je.reference_type NOT IN (${_knownOperatingRefTypes()}, ${_nonOperatingRefTypes()}))
       GROUP BY je.id
       ''',
       variables: [dateVar(from), dateVar(to), ...ccVars, ...brVars, ...azVars],
@@ -777,7 +781,7 @@ extension AccountingReportsDao on AppDatabase {
       INNER JOIN accounts a ON a.id = jel.account_id
       WHERE $cashBankFilter
         AND je.entry_date BETWEEN ? AND ? AND je.is_posted = $boolTrue AND je.is_deleted = ${sqlBool(false)} $ccFilter $brFilter$azFilter
-        AND je.reference_type IN ($investingRefTypes)
+        AND je.reference_type IN (${_investingRefTypes()})
       ''',
       variables: [dateVar(from), dateVar(to), ...ccVars, ...brVars, ...azVars],
       readsFrom: {journalEntryLines, journalEntries, accounts},
@@ -803,7 +807,8 @@ extension AccountingReportsDao on AppDatabase {
       INNER JOIN accounts a ON a.id = jel.account_id
       WHERE $cashBankFilter
         AND je.entry_date BETWEEN ? AND ? AND je.is_posted = $boolTrue AND je.is_deleted = ${sqlBool(false)} $ccFilter $brFilter$azFilter
-        AND je.reference_type IN ($financingRefTypes)
+        AND je.reference_type IN (${_financingRefTypes()})
+        AND je.reference_type NOT IN (${_knownOperatingRefTypes()})
       ''',
       variables: [dateVar(from), dateVar(to), ...ccVars, ...brVars, ...azVars],
       readsFrom: {journalEntryLines, journalEntries, accounts},
@@ -964,6 +969,9 @@ extension AccountingReportsDao on AppDatabase {
     final salesCode = await accountingDao.getMappedAccountCode(
       'sales', AccountingDao.accountPurposes['sales']!,
     );
+    final salesReturnCode = await accountingDao.getMappedAccountCode(
+      'sales_return', AccountingDao.accountPurposes['sales_return']!,
+    );
 
     // Output VAT (ضريبة مبيعات) from GL — credit balance = tax collected
     final outputVatResult = await customSelect(
@@ -991,18 +999,29 @@ extension AccountingReportsDao on AppDatabase {
       readsFrom: {journalEntryLines, journalEntries, accounts, purchaseInvoices},
     ).getSingle();
 
-    // Sales total (excl tax) from GL — credit balance on sales account
+    // Net sales base (excluding VAT) uses sales less sales returns from the GL.
     final salesResult = await customSelect(
       '''
       SELECT COALESCE(SUM(l.credit - l.debit), 0) as total
       FROM journal_entry_lines l
       JOIN journal_entries e ON l.entry_id = e.id
       JOIN accounts a ON l.account_id = a.id
-      WHERE a.code = ? AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue AND e.is_deleted = $boolFalse $ccFilter $brFilter$azFilter $outputWhFilter
+      WHERE a.code IN (?, ?) AND e.entry_date BETWEEN ? AND ? AND e.is_posted = $boolTrue AND e.is_deleted = $boolFalse $ccFilter $brFilter$azFilter $outputWhFilter
       ''',
-      variables: [Variable(salesCode), dateVar(from), dateVar(to), ...ccVars, ...brVars, ...azVars, ...outputWhVars],
+      variables: [Variable(salesCode), Variable(salesReturnCode), dateVar(from), dateVar(to), ...ccVars, ...brVars, ...azVars, ...outputWhVars],
       readsFrom: {journalEntryLines, journalEntries, accounts, salesInvoices},
     ).getSingle();
+
+    // Invoice discounts reduce the taxable sales base but are intentionally not
+    // posted as a separate GL line on the live sales path.
+    final salesDiscount = await _sumSalesInvoiceDiscounts((
+      from: from,
+      to: to,
+      costCenterId: costCenterId,
+      branchId: branchId,
+      allowedBranchIds: allowedBranchIds,
+      warehouseIds: warehouseIds,
+    ));
 
     // Purchase total (excl tax) from inventory account movements
     final inventoryCode = await accountingDao.getMappedAccountCode(
@@ -1027,7 +1046,9 @@ extension AccountingReportsDao on AppDatabase {
     return {
       'salesTax': salesTax,
       'purchaseTax': purchaseTax,
-      'salesTotalExclTax': (salesResult.data['total'] as num?)?.toDouble() ?? 0.0,
+      'salesTotalExclTax':
+          ((salesResult.data['total'] as num?)?.toDouble() ?? 0.0) -
+          salesDiscount,
       'purchaseTotalExclTax': (purchaseResult.data['total'] as num?)?.toDouble() ?? 0.0,
       'netTax': salesTax - purchaseTax,
     };

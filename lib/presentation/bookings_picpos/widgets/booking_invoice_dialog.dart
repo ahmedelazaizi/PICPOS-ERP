@@ -23,6 +23,7 @@ import '../../../data/providers/providers.dart';
 import '../../../domain/models/picpos_booking_view.dart';
 import '../../picpos_shell/picpos_dialog.dart';
 import '../screens/bookings_picpos_screen.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// يفتح حوارَ التفويتر. يعيد `true` حين تُسلَّم البيعةُ لنقطة البيع.
 Future<bool?> showBookingInvoiceDialog(
@@ -131,7 +132,7 @@ class _BookingInvoiceDialogState extends ConsumerState<BookingInvoiceDialog> {
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
-                  color: bold ? null : AppColors.textMuted,
+                  color: bold ? null : context.picposMuted,
                 ),
               ),
             ),

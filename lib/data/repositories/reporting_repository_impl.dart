@@ -152,6 +152,11 @@ class ReportingRepositoryImpl implements IReportingRepository {
       _db.getReturnedAmountsForInvoices(invoiceIds);
 
   @override
+  Future<Map<int, ({double cogs, double vat})>>
+      getReturnLedgerAmountsForInvoices(List<int> invoiceIds) =>
+          _db.getReturnLedgerAmountsForInvoices(invoiceIds);
+
+  @override
   Future<List<SalesInvoiceItem>> getSalesInvoiceItems(int invoiceId) =>
       _db.getSalesInvoiceItems(invoiceId);
 

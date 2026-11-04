@@ -3,6 +3,13 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../picpos_shell/picpos_surface.dart';
+import 'package:picpos_erp/core/theme/readable_colors.dart';
+
+/// رمادي الشرح: الفاتح كما كان، والداكن حبر التسمية المقروء.
+Color _dim(BuildContext c) =>
+    c.picposIsDark ? readableLabel(c) : Colors.grey.shade600;
+
 /// شريحة دونات واحدة — قيمة جاهزة تُمرَّر من الشاشة المستدعية، لا تُحسب هنا.
 class PicPosDonutSegment {
   final String label;
@@ -128,12 +135,13 @@ class _PicPosDonutState extends State<PicPosDonut>
                 segments: widget.segments,
                 progress: _controller.value,
                 selectedIndex: _selectedIndex,
+                emptyColor: context.picposHairline,
               ),
               child: Center(
                 child: total <= 0
                     ? Text(
                         tr('لا بيانات'),
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        style: TextStyle(fontSize: 12, color: _dim(context)),
                       )
                     : Column(
                         mainAxisSize: MainAxisSize.min,
@@ -148,7 +156,7 @@ class _PicPosDonutState extends State<PicPosDonut>
                           const SizedBox(height: 2),
                           Text(
                             selected?.label ?? widget.centerLabel ?? tr('الإجمالي'),
-                            style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                            style: TextStyle(fontSize: 11, color: _dim(context)),
                             textAlign: TextAlign.center,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -168,11 +176,13 @@ class _PicPosDonutPainter extends CustomPainter {
   final List<PicPosDonutSegment> segments;
   final double progress;
   final int? selectedIndex;
+  final Color emptyColor;
 
   _PicPosDonutPainter({
     required this.segments,
     required this.progress,
     required this.selectedIndex,
+    required this.emptyColor,
   });
 
   @override
@@ -185,7 +195,7 @@ class _PicPosDonutPainter extends CustomPainter {
 
     if (total <= 0) {
       final emptyPaint = Paint()
-        ..color = Colors.grey.shade300
+        ..color = emptyColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth;
       canvas.drawArc(rect, 0, 2 * math.pi, false, emptyPaint);
@@ -214,5 +224,6 @@ class _PicPosDonutPainter extends CustomPainter {
   bool shouldRepaint(covariant _PicPosDonutPainter oldDelegate) =>
       oldDelegate.segments != segments ||
       oldDelegate.progress != progress ||
+      oldDelegate.emptyColor != emptyColor ||
       oldDelegate.selectedIndex != selectedIndex;
 }

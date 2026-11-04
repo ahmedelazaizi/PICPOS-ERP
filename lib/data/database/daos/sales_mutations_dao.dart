@@ -8,7 +8,6 @@ part of '../database.dart';
 
 /// Extension for Sales Invoice mutation operations (create, update, delete)
 extension SalesMutationsDao on AppDatabase {
-
   /// Create a complete sales invoice with items
   Future<int> createSalesInvoice({
     String? invoiceNumber,
@@ -43,7 +42,8 @@ extension SalesMutationsDao on AppDatabase {
     String saleType = 'default',
     DateTime? invoiceDate,
     int? costCenterId, // مركز التكلفة من الفرع العميل
-    int? branchId, // L3: direct branchId from client (or resolved from warehouse)
+    int?
+    branchId, // L3: direct branchId from client (or resolved from warehouse)
     String? platformOrderNumber, // #Phase4: External platform order ID
     // UUID-First (Phase 1): server-side callers can pass the client's
     // globalId through so client and server rows share identity.
@@ -87,23 +87,32 @@ extension SalesMutationsDao on AppDatabase {
     RepStamp? repStamp,
   }) async {
     final invoiceId = await transaction(() async {
+      if (saleType == 'return' && returnOriginalIdFromNote(notes) == null) {
+        await _enforceNoInvoiceReturnCap(items);
+      }
+
       // Use client-provided date or current server time
       final effectiveInvoiceDate = invoiceDate ?? DateTime.now();
 
       // 0. Soft/Hard Period Closing Gating
-      await accountingDao.validateFinancialPeriod(effectiveInvoiceDate, operation: 'فاتورة مبيعات');
-
+      await accountingDao.validateFinancialPeriod(
+        effectiveInvoiceDate,
+        operation: 'فاتورة مبيعات',
+      );
 
       // Generate invoice number if not provided.
       // Cluster 027 / Issue 5 — POS quick-returns must advance the SRET
       // counter, not the POS one. Without the saleType branch, returns
       // ate POS sequence numbers (gaps in printed receipts and zero
       // numbering on the returns side).
-      final invNumber = invoiceNumber ??
+      final invNumber =
+          invoiceNumber ??
           await generateInvoiceNumber(
             saleType == 'return' ? 'RET-' : 'Receipt',
           );
-      debugPrint('[SALE] invoiceNumber param: $invoiceNumber → generated: $invNumber');
+      debugPrint(
+        '[SALE] invoiceNumber param: $invoiceNumber → generated: $invNumber',
+      );
 
       final orderNum = await getNextDailyOrderNumber();
 
@@ -114,7 +123,6 @@ extension SalesMutationsDao on AppDatabase {
       // `pending` إلى الأبد، ويُفتَح لها فرعُ الحدّ الائتمانيِّ أدناه، ويُضاف
       // فتاتُ التقريب إلى رصيد العميل في `_recordSalesReceipt`.
       final remaining = total - paid - roundingAdjustment;
-
 
       // #Phase4 + 062 (D1-004): Enforce credit limit, with override path
       // for users holding overrideCreditLimit. Override is logged.
@@ -128,35 +136,41 @@ extension SalesMutationsDao on AppDatabase {
           final projectedBalance = customer.balance + remaining;
           if (projectedBalance > customer.creditLimit) {
             final hasOverride = await permissionEnforcer.hasCriticalOp(
-              userId, PermissionCodes.overrideCreditLimit);
+              userId,
+              PermissionCodes.overrideCreditLimit,
+            );
             if (!hasOverride) {
               throw Exception(
                 'تجاوز العميل الحد الائتماني المسموح به (${customer.creditLimit})',
               );
             }
-            unawaited(DiagnosticLogger.log('CREDIT-OVERRIDE',
+            unawaited(
+              DiagnosticLogger.log(
+                'CREDIT-OVERRIDE',
                 'sales user=$userId customer=${customer.id} '
-                'projected=$projectedBalance limit=${customer.creditLimit}'));
+                    'projected=$projectedBalance limit=${customer.creditLimit}',
+              ),
+            );
           }
         }
       }
 
       // PIR P1-04: Expiry date check — block sale of all-expired-batch products
       for (final item in items) {
-        final product = await (select(products)
-              ..where((p) => p.id.equals(item.productId.value)))
-            .getSingleOrNull();
+        final product = await (select(
+          products,
+        )..where((p) => p.id.equals(item.productId.value))).getSingleOrNull();
         if (product != null && product.trackExpiry) {
           final now = DateTime.now();
           // Get all active batches for the product
-          final activeBatches = await (select(productBatches)
-                ..where(
-                  (b) =>
-                      b.productId.equals(item.productId.value) &
-                      b.status.equals('active') &
-                      b.quantity.isBiggerThan(const Variable(0)),
-                ))
-              .get();
+          final activeBatches =
+              await (select(productBatches)..where(
+                    (b) =>
+                        b.productId.equals(item.productId.value) &
+                        b.status.equals('active') &
+                        b.quantity.isBiggerThan(const Variable(0)),
+                  ))
+                  .get();
 
           if (activeBatches.isNotEmpty) {
             // Check if ALL batches are expired
@@ -184,17 +198,24 @@ extension SalesMutationsDao on AppDatabase {
 
       // Insert invoice
 
-
       // Pre-validate FK references to give clear error messages
-      final warehouse = await (select(warehouses)..where((w) => w.id.equals(warehouseId))).getSingleOrNull();
+      final warehouse = await (select(
+        warehouses,
+      )..where((w) => w.id.equals(warehouseId))).getSingleOrNull();
       if (warehouse == null) {
-        throw Exception('المخزن غير موجود (warehouseId=$warehouseId). يرجى التأكد من إعدادات المخزن.');
+        throw Exception(
+          'المخزن غير موجود (warehouseId=$warehouseId). يرجى التأكد من إعدادات المخزن.',
+        );
       }
       final branchId = warehouse.branchId;
 
-      final user = await (select(users)..where((u) => u.id.equals(userId))).getSingleOrNull();
+      final user = await (select(
+        users,
+      )..where((u) => u.id.equals(userId))).getSingleOrNull();
       if (user == null) {
-        throw Exception('المستخدم غير موجود (userId=$userId). يرجى تسجيل الدخول مرة أخرى.');
+        throw Exception(
+          'المستخدم غير موجود (userId=$userId). يرجى تسجيل الدخول مرة أخرى.',
+        );
       }
 
       // Safe-resolve nullable FKs — auto-null if reference missing
@@ -203,35 +224,50 @@ extension SalesMutationsDao on AppDatabase {
       int? safeDeliveryPartyId = deliveryCompanyPartyId;
 
       if (safeDeliveryCompanyId != null) {
-        final dc = await (select(deliveryCompanies)..where((d) => d.id.equals(safeDeliveryCompanyId!))).getSingleOrNull();
+        final dc = await (select(
+          deliveryCompanies,
+        )..where((d) => d.id.equals(safeDeliveryCompanyId!))).getSingleOrNull();
         if (dc == null) {
-          debugPrint('[FK_FIX] deliveryCompanyId=$safeDeliveryCompanyId not found — setting to null');
+          debugPrint(
+            '[FK_FIX] deliveryCompanyId=$safeDeliveryCompanyId not found — setting to null',
+          );
           safeDeliveryCompanyId = null;
         }
       }
       if (safeCourierId != null) {
-        final courier = await (select(couriers)..where((c) => c.id.equals(safeCourierId!))).getSingleOrNull();
+        final courier = await (select(
+          couriers,
+        )..where((c) => c.id.equals(safeCourierId!))).getSingleOrNull();
         if (courier == null) {
-          debugPrint('[FK_FIX] courierId=$safeCourierId not found — setting to null');
+          debugPrint(
+            '[FK_FIX] courierId=$safeCourierId not found — setting to null',
+          );
           safeCourierId = null;
         }
       }
       if (safeDeliveryPartyId != null) {
-        final party = await (select(parties)..where((p) => p.id.equals(safeDeliveryPartyId!))).getSingleOrNull();
+        final party = await (select(
+          parties,
+        )..where((p) => p.id.equals(safeDeliveryPartyId!))).getSingleOrNull();
         if (party == null) {
-          debugPrint('[FK_FIX] deliveryCompanyPartyId=$safeDeliveryPartyId not found — setting to null');
+          debugPrint(
+            '[FK_FIX] deliveryCompanyPartyId=$safeDeliveryPartyId not found — setting to null',
+          );
           safeDeliveryPartyId = null;
         }
       }
-
 
       // L3: resolve branchId from warehouse if caller didn't supply one
       int? resolvedBranchId = branchId;
       if (resolvedBranchId == null) {
         try {
-          final wh = await (select(warehouses)..where((w) => w.id.equals(warehouseId))).getSingleOrNull();
+          final wh = await (select(
+            warehouses,
+          )..where((w) => w.id.equals(warehouseId))).getSingleOrNull();
           resolvedBranchId = wh?.branchId;
-        } catch (_) {/* non-fatal */}
+        } catch (_) {
+          /* non-fatal */
+        }
       }
 
       // v164 — الاستحقاقُ لقطةٌ تُكتَب مرّةً من مهلةِ الطرف وقتَ الإصدار.
@@ -255,8 +291,8 @@ extension SalesMutationsDao on AppDatabase {
           tax: Value(tax),
           total: Value(total),
           paid: Value(paid),
-           currencyId: Value(currencyId),
-           exchangeRate: Value(exchangeRate),
+          currencyId: Value(currencyId),
+          exchangeRate: Value(exchangeRate),
           // v175 — لا تخصيصاتِ دفعاتٍ لفاتورةٍ تُولَد الآن، فالقاعدةُ هي
           // المسدَّدُ كلُّه. راجع `paidUnallocated` في تعريف الجدول.
           paidUnallocated: Value(paid),
@@ -293,8 +329,12 @@ extension SalesMutationsDao on AppDatabase {
         await setSalesInvoiceRevenueAccountId(invoiceId, revenueAccountId);
       }
       // v185 — المندوبُ والمسارُ يُختَمان لحظةَ الإنشاء.
-      await stampDocumentRep('sales_invoices', invoiceId, customerId,
-          explicit: repStamp);
+      await stampDocumentRep(
+        'sales_invoices',
+        invoiceId,
+        customerId,
+        explicit: repStamp,
+      );
       // J4 — بيعُ «عميل نقدي» بلا مسار: المندوبُ من ربط المستخدم بموظفه.
       await stampSalesInvoiceRepFromUser(invoiceId, customerId, userId);
       // Insert items and update stock
@@ -309,49 +349,56 @@ extension SalesMutationsDao on AppDatabase {
             ? item.taxRate.value
             : effectiveItemTaxRate(
                 rate: product?.taxRate ?? 0.0,
-                exempt: product != null &&
+                exempt:
+                    product != null &&
                     (await getTaxExemptProductIds([productId])).isNotEmpty,
                 companyDefault: 0,
               );
-        final lineTotal = (item.unitPrice.present ? item.unitPrice.value : 0.0) *
+        final lineTotal =
+            (item.unitPrice.present ? item.unitPrice.value : 0.0) *
             (item.quantity.present ? item.quantity.value : 1.0);
         final effectiveTaxAmount = item.taxAmount.present
             ? item.taxAmount.value
             : lineTotal * (effectiveTaxRate / 100.0);
         // UUID-First Phase 1 Slice 3: auto-mint per-line globalId so each
         // invoice item has stable cross-install identity.
-        final hasLineGid = item.globalId.present &&
-            (item.globalId.value?.isNotEmpty ?? false);
-        final effectiveCostPrice = item.costPrice.present
+        final hasLineGid =
+            item.globalId.present && (item.globalId.value?.isNotEmpty ?? false);
+        // Cost resolution (IAS 2): line cost → product cost → purchase
+        // average (SaleCostResolver) → else `zero_cost_policy`: block throws
+        // CostRequiredException (UI asks for a provisional cost and retries
+        // with item.costPrice, recorded below); warn logs; allow is silent.
+        // Returns reverse the snapshot, services legitimately cost 0.
+        var effectiveCostPrice = item.costPrice.present
             ? item.costPrice.value
             : (product?.costPrice ?? 0);
-        // Zero-cost safeguard (IAS 2). Sales returns use the item snapshot to
-        // reverse COGS — if we let a tracked item land with cost=0 now, the
-        // return would reverse zero cost and leave the JE out of balance.
-        // Non-tracked items (services) legitimately have cost=0.
-        // Honors the user-configurable `zero_cost_policy` setting:
-        //   block → throw (strict IAS 2)
-        //   warn  → allow save, log warning (default)
-        //   allow → allow save silently
-        if (saleType != 'return' &&
-            product != null &&
-            product.trackInventory &&
-            effectiveCostPrice <= 0) {
-          final policy = (await getSettingValue('zero_cost_policy')) ?? 'warn';
-          if (policy == 'block') {
-            throw Exception(
-              'تعذّر حفظ الفاتورة: الصنف "${product.name}" متعقّب للمخزون '
-              'وتكلفته غير محددة. يرجى تحديث تكلفة الصنف أولاً.',
-            );
+        if (saleType != 'return' && product != null && product.trackInventory) {
+          final costs = SaleCostResolver(this);
+          if (effectiveCostPrice <= 0) {
+            effectiveCostPrice = (await costs.resolve(
+              productId: productId,
+              productCost: 0,
+            )).cost;
+          } else if (product.costPrice <= 0) {
+            await costs.recordProvisionalCost(productId, effectiveCostPrice);
           }
-          if (policy == 'warn') {
-            await DiagnosticLogger.logZeroCostSale(
-              invoiceId: invoiceId,
-              invoiceNumber: invNumber,
-              productId: product.id,
-              quantity: (item.quantity.present ? item.quantity.value : 1.0) *
-                  (item.quantityInBase.present ? item.quantityInBase.value : 1.0),
-            );
+          if (effectiveCostPrice <= 0) {
+            final policy = await costs.policy();
+            if (policy == 'block') {
+              throw CostRequiredException(productId, product.name);
+            }
+            if (policy == 'warn') {
+              await DiagnosticLogger.logZeroCostSale(
+                invoiceId: invoiceId,
+                invoiceNumber: invNumber,
+                productId: product.id,
+                quantity:
+                    (item.quantity.present ? item.quantity.value : 1.0) *
+                    (item.quantityInBase.present
+                        ? item.quantityInBase.value
+                        : 1.0),
+              );
+            }
           }
         }
         final itemWithCost = item.copyWith(
@@ -363,18 +410,20 @@ extension SalesMutationsDao on AppDatabase {
         );
         await into(salesInvoiceItems).insert(itemWithCost);
 
-
         // Update product stock (UOM: multiply by quantityInBase for base-unit accuracy)
         final quantity = item.quantity.value;
-        final qtyInBase = item.quantityInBase.present ? item.quantityInBase.value : 1.0;
+        final qtyInBase = item.quantityInBase.present
+            ? item.quantityInBase.value
+            : 1.0;
         final stockQty = quantity * qtyInBase;
         if (product != null && product.trackInventory) {
           if (saleType == 'return') {
             // Quick POS return. Same rule as the returns dialog: blend the
             // returned units in at the cost the JE recognises, before
             // adjustStock (which is what changes current_stock).
-            final returnCost =
-                item.costPrice.present ? item.costPrice.value : 0.0;
+            final returnCost = item.costPrice.present
+                ? item.costPrice.value
+                : 0.0;
             await updateProductWAC(
               productId: productId,
               newQuantity: stockQty,
@@ -405,7 +454,6 @@ extension SalesMutationsDao on AppDatabase {
         }
       }
 
-
       // Update customer balance if on credit
       // SR-1: a sale increases what the customer owes; a return credits
       // (reduces) it. This mirrors the GL (autoPostSalesReturn credits AR
@@ -415,7 +463,9 @@ extension SalesMutationsDao on AppDatabase {
       // debt instead of reducing it, diverging parties.balance from the GL.
       if (customerId != null && remaining > 0) {
         await adjustPartyBalance(
-            customerId, saleType == 'return' ? -remaining : remaining);
+          customerId,
+          saleType == 'return' ? -remaining : remaining,
+        );
       }
       // Historical credit-sale returns posted before this fix may have left
       // parties.balance too HIGH by ~2x the AR refund (the GL was
@@ -431,7 +481,6 @@ extension SalesMutationsDao on AppDatabase {
       // 'sr1_ar_return_backfill_v1_applied', following the
       // mirror_cache_integrity_v1_applied self-heal pattern) as a follow-up.
 
-
       // #Phase2: Record delivery company debt if selected
       // Usually, for companies like Talabat/Careem, the total amount (net + fee) is debt on them
       // SR-1 audit note: no current caller threads `deliveryCompanyPartyId`
@@ -444,7 +493,6 @@ extension SalesMutationsDao on AppDatabase {
         await adjustPartyBalance(safeDeliveryPartyId, total - paid);
       }
 
-
       if (paid != 0) {
         final amountToRecord = saleType == 'return' ? -paid.abs() : paid.abs();
         if ((paymentMethod == 'multiple' || paymentMethod == 'mixed') &&
@@ -455,10 +503,18 @@ extension SalesMutationsDao on AppDatabase {
                 ? -cashAmount.abs()
                 : cashAmount.abs();
             await _recordSalesReceipt(
-              invoiceId, cashRec, 'cash',
-              userId: userId, specificSafeId: cashSafeId, warehouseId: warehouseId, customerId: customerId,
-               paymentRate: exchangeRate,
-               foreignAmount: currencyId != null && exchangeRate != null && exchangeRate > 0 ? cashRec.abs() / exchangeRate : null,
+              invoiceId,
+              cashRec,
+              'cash',
+              userId: userId,
+              specificSafeId: cashSafeId,
+              warehouseId: warehouseId,
+              customerId: customerId,
+              paymentRate: exchangeRate,
+              foreignAmount:
+                  currencyId != null && exchangeRate != null && exchangeRate > 0
+                  ? cashRec.abs() / exchangeRate
+                  : null,
             );
           }
           if (bankAmount != 0) {
@@ -466,10 +522,18 @@ extension SalesMutationsDao on AppDatabase {
                 ? -bankAmount.abs()
                 : bankAmount.abs();
             await _recordSalesReceipt(
-              invoiceId, bankRec, 'bank',
-              userId: userId, specificSafeId: bankSafeId, warehouseId: warehouseId, customerId: customerId,
-               paymentRate: exchangeRate,
-               foreignAmount: currencyId != null && exchangeRate != null && exchangeRate > 0 ? bankRec.abs() / exchangeRate : null
+              invoiceId,
+              bankRec,
+              'bank',
+              userId: userId,
+              specificSafeId: bankSafeId,
+              warehouseId: warehouseId,
+              customerId: customerId,
+              paymentRate: exchangeRate,
+              foreignAmount:
+                  currencyId != null && exchangeRate != null && exchangeRate > 0
+                  ? bankRec.abs() / exchangeRate
+                  : null,
             );
           }
           if (clickAmount != null && clickAmount != 0) {
@@ -477,25 +541,41 @@ extension SalesMutationsDao on AppDatabase {
                 ? -clickAmount.abs()
                 : clickAmount.abs();
             await _recordSalesReceipt(
-              invoiceId, clickRec, 'click',
-              userId: userId, specificSafeId: clickSafeId, warehouseId: warehouseId, customerId: customerId,
-               paymentRate: exchangeRate,
-               foreignAmount: currencyId != null && exchangeRate != null && exchangeRate > 0 ? clickRec.abs() / exchangeRate : null
+              invoiceId,
+              clickRec,
+              'click',
+              userId: userId,
+              specificSafeId: clickSafeId,
+              warehouseId: warehouseId,
+              customerId: customerId,
+              paymentRate: exchangeRate,
+              foreignAmount:
+                  currencyId != null && exchangeRate != null && exchangeRate > 0
+                  ? clickRec.abs() / exchangeRate
+                  : null,
             );
           }
         } else {
           // Single payment method
-          final isBankMethod = paymentMethod == 'transfer' ||
+          final isBankMethod =
+              paymentMethod == 'transfer' ||
               paymentMethod == 'card' ||
               paymentMethod == 'bank';
           await _recordSalesReceipt(
-            invoiceId, amountToRecord, paymentMethod,
-             paymentRate: exchangeRate,
-             foreignAmount: currencyId != null && exchangeRate != null && exchangeRate > 0 ? amountToRecord.abs() / exchangeRate : null,
+            invoiceId,
+            amountToRecord,
+            paymentMethod,
+            paymentRate: exchangeRate,
+            foreignAmount:
+                currencyId != null && exchangeRate != null && exchangeRate > 0
+                ? amountToRecord.abs() / exchangeRate
+                : null,
             userId: userId,
             specificSafeId: isBankMethod
-              ? bankSafeId
-              : (paymentMethod == 'click' ? clickSafeId : (paymentMethod == 'cash' ? cashSafeId : null)),
+                ? bankSafeId
+                : (paymentMethod == 'click'
+                      ? clickSafeId
+                      : (paymentMethod == 'cash' ? cashSafeId : null)),
             warehouseId: warehouseId,
             customerId: customerId,
           );
@@ -526,21 +606,22 @@ extension SalesMutationsDao on AppDatabase {
           final cashRefund = (paymentMethod == 'cash')
               ? paid
               : ((paymentMethod == 'multiple' || paymentMethod == 'mixed')
-                  ? (cashAmount ?? 0)
-                  : 0.0);
+                    ? (cashAmount ?? 0)
+                    : 0.0);
           final bankRefund = (isBankPaymentMethod(paymentMethod))
               ? paid
               : ((paymentMethod == 'multiple' || paymentMethod == 'mixed')
-                  ? (bankAmount ?? 0)
-                  : 0.0);
+                    ? (bankAmount ?? 0)
+                    : 0.0);
           final arRefund = (total - paid).clamp(0.0, double.infinity);
           final cogsAmount = items.fold<double>(
-              0.0,
-              (s, i) =>
-                  s +
-                  (i.costPrice.present ? i.costPrice.value : 0.0) *
-                      (i.quantity.present ? i.quantity.value : 0.0) *
-                      (i.quantityInBase.present ? i.quantityInBase.value : 1.0));
+            0.0,
+            (s, i) =>
+                s +
+                (i.costPrice.present ? i.costPrice.value : 0.0) *
+                    (i.quantity.present ? i.quantity.value : 0.0) *
+                    (i.quantityInBase.present ? i.quantityInBase.value : 1.0),
+          );
           await autoPostSalesReturn(
             originalInvoice: sale,
             returnAmount: total,
@@ -552,7 +633,8 @@ extension SalesMutationsDao on AppDatabase {
             costCenterId: costCenterId,
           );
         } else {
-          final isFullCredit = sale.paymentMethod == 'credit' ||
+          final isFullCredit =
+              sale.paymentMethod == 'credit' ||
               (sale.total - sale.paid > 0.01 && sale.paid == 0);
           if (isFullCredit) {
             await autoPostCreditSale(sale);
@@ -564,7 +646,9 @@ extension SalesMutationsDao on AppDatabase {
       }
     } catch (e) {
       // Log to failed_autoposts for startup repair.
-      debugPrint('[AUTOPOST] Sale #$invoiceId JE failed (logged to failed_autoposts): $e');
+      debugPrint(
+        '[AUTOPOST] Sale #$invoiceId JE failed (logged to failed_autoposts): $e',
+      );
       try {
         await into(failedAutoposts).insert(
           FailedAutopostsCompanion.insert(
@@ -574,70 +658,83 @@ extension SalesMutationsDao on AppDatabase {
           ),
         );
       } catch (logErr) {
-        debugPrint('[AUTOPOST-LOG] Failed to record failure for sale #$invoiceId: $logErr');
+        debugPrint(
+          '[AUTOPOST-LOG] Failed to record failure for sale #$invoiceId: $logErr',
+        );
       }
       // ISS-003: Immediate background retry — reduces the gap between the committed
       // safe balance update (Phase 6) and the JE creation from "until next startup"
       // to "milliseconds". The hasAutoPostEntry dedup guard makes retries idempotent.
       // Cluster 023 / Issue 1 — retry path branches on saleType too, otherwise a
       // failed quick-return retry would silently call autoPostCashSale (wrong direction).
-      unawaited(Future.delayed(const Duration(milliseconds: 150), () async {
-        try {
-          final saleForRetry = await getSalesInvoiceById(invoiceId);
-          if (saleForRetry == null) return;
-          if (saleType == 'return') {
-            final cashRefundRetry = (paymentMethod == 'cash')
-                ? paid
-                : ((paymentMethod == 'multiple' || paymentMethod == 'mixed')
-                    ? (cashAmount ?? 0)
-                    : 0.0);
-            final bankRefundRetry = (isBankPaymentMethod(paymentMethod))
-                ? paid
-                : ((paymentMethod == 'multiple' || paymentMethod == 'mixed')
-                    ? (bankAmount ?? 0)
-                    : 0.0);
-            final arRefundRetry = (total - paid).clamp(0.0, double.infinity);
-            final cogsRetry = items.fold<double>(
+      unawaited(
+        Future.delayed(const Duration(milliseconds: 150), () async {
+          try {
+            final saleForRetry = await getSalesInvoiceById(invoiceId);
+            if (saleForRetry == null) return;
+            if (saleType == 'return') {
+              final cashRefundRetry = (paymentMethod == 'cash')
+                  ? paid
+                  : ((paymentMethod == 'multiple' || paymentMethod == 'mixed')
+                        ? (cashAmount ?? 0)
+                        : 0.0);
+              final bankRefundRetry = (isBankPaymentMethod(paymentMethod))
+                  ? paid
+                  : ((paymentMethod == 'multiple' || paymentMethod == 'mixed')
+                        ? (bankAmount ?? 0)
+                        : 0.0);
+              final arRefundRetry = (total - paid).clamp(0.0, double.infinity);
+              final cogsRetry = items.fold<double>(
                 0.0,
                 (s, i) =>
                     s +
                     (i.costPrice.present ? i.costPrice.value : 0.0) *
                         (i.quantity.present ? i.quantity.value : 0.0) *
-                        (i.quantityInBase.present ? i.quantityInBase.value : 1.0));
-            await autoPostSalesReturn(
-              originalInvoice: saleForRetry,
-              returnAmount: total,
-              cogsAmount: cogsRetry,
-              cashRefund: cashRefundRetry,
-              bankRefund: bankRefundRetry,
-              arRefund: arRefundRetry,
-              vatAmount: tax,
-              costCenterId: costCenterId,
-            );
-            await (delete(failedAutoposts)
-                  ..where((f) =>
-                      f.invoiceId.equals(invoiceId) &
-                      f.referenceType.equals('sales_return')))
-                .go();
-          } else {
-            final isFullCreditRetry = saleForRetry.paymentMethod == 'credit' ||
-                (saleForRetry.total - saleForRetry.paid > 0.01 && saleForRetry.paid == 0);
-            if (isFullCreditRetry) {
-              await autoPostCreditSale(saleForRetry);
+                        (i.quantityInBase.present
+                            ? i.quantityInBase.value
+                            : 1.0),
+              );
+              await autoPostSalesReturn(
+                originalInvoice: saleForRetry,
+                returnAmount: total,
+                cogsAmount: cogsRetry,
+                cashRefund: cashRefundRetry,
+                bankRefund: bankRefundRetry,
+                arRefund: arRefundRetry,
+                vatAmount: tax,
+                costCenterId: costCenterId,
+              );
+              await (delete(failedAutoposts)..where(
+                    (f) =>
+                        f.invoiceId.equals(invoiceId) &
+                        f.referenceType.equals('sales_return'),
+                  ))
+                  .go();
             } else {
-              await autoPostCashSale(saleForRetry);
+              final isFullCreditRetry =
+                  saleForRetry.paymentMethod == 'credit' ||
+                  (saleForRetry.total - saleForRetry.paid > 0.01 &&
+                      saleForRetry.paid == 0);
+              if (isFullCreditRetry) {
+                await autoPostCreditSale(saleForRetry);
+              } else {
+                await autoPostCashSale(saleForRetry);
+              }
+              await (delete(failedAutoposts)..where(
+                    (f) =>
+                        f.invoiceId.equals(invoiceId) &
+                        f.referenceType.equals('sale'),
+                  ))
+                  .go();
             }
-            await (delete(failedAutoposts)
-                  ..where((f) =>
-                      f.invoiceId.equals(invoiceId) &
-                      f.referenceType.equals('sale')))
-                .go();
+            debugPrint(
+              '[AUTOPOST] Sale #$invoiceId JE retry succeeded — removed from failed_autoposts',
+            );
+          } catch (_) {
+            // Retry also failed — startup repair via repairFailedDeliveryAutoposts() will handle it
           }
-          debugPrint('[AUTOPOST] Sale #$invoiceId JE retry succeeded — removed from failed_autoposts');
-        } catch (_) {
-          // Retry also failed — startup repair via repairFailedDeliveryAutoposts() will handle it
-        }
-      }));
+        }),
+      );
     }
 
     // Phase 8.5: Submit for approval if a workflow applies (non-fatal)
@@ -651,17 +748,20 @@ extension SalesMutationsDao on AppDatabase {
           notes: 'فاتورة مبيعات تلقائية',
         );
       } catch (e) {
-        debugPrint('[APPROVAL] submitForApproval failed for invoice #$invoiceId: $e');
+        debugPrint(
+          '[APPROVAL] submitForApproval failed for invoice #$invoiceId: $e',
+        );
       }
     }
 
     // Phase 9: Auto-award loyalty points (non-fatal, runs after autopost)
     if (customerId != null && saleType != 'return' && total > 0.01) {
       try {
-        final program = await (select(loyaltyPrograms)
-              ..where((p) => p.isActive.equals(true))
-              ..limit(1))
-            .getSingleOrNull();
+        final program =
+            await (select(loyaltyPrograms)
+                  ..where((p) => p.isActive.equals(true))
+                  ..limit(1))
+                .getSingleOrNull();
         if (program != null) {
           // BUG-M08: round (not floor) so fractional point earns are not
           // systematically dropped. Owner-confirmed policy 2026-06-25; revert
@@ -681,20 +781,24 @@ extension SalesMutationsDao on AppDatabase {
                 ),
               );
               // Update or create customer balance record
-              final existing = await (select(customerLoyaltyPoints)
-                    ..where(
-                      (c) =>
-                          c.customerId.equals(customerId) &
-                          c.programId.equals(program.id),
-                    ))
-                  .getSingleOrNull();
+              final existing =
+                  await (select(customerLoyaltyPoints)..where(
+                        (c) =>
+                            c.customerId.equals(customerId) &
+                            c.programId.equals(program.id),
+                      ))
+                      .getSingleOrNull();
               if (existing != null) {
-                await (update(customerLoyaltyPoints)
-                      ..where((c) => c.id.equals(existing.id)))
-                    .write(CustomerLoyaltyPointsCompanion(
-                  totalEarned: Value(existing.totalEarned + pointsEarned),
-                  currentBalance: Value(existing.currentBalance + pointsEarned),
-                ));
+                await (update(
+                  customerLoyaltyPoints,
+                )..where((c) => c.id.equals(existing.id))).write(
+                  CustomerLoyaltyPointsCompanion(
+                    totalEarned: Value(existing.totalEarned + pointsEarned),
+                    currentBalance: Value(
+                      existing.currentBalance + pointsEarned,
+                    ),
+                  ),
+                );
               } else {
                 await into(customerLoyaltyPoints).insert(
                   CustomerLoyaltyPointsCompanion.insert(
@@ -709,7 +813,9 @@ extension SalesMutationsDao on AppDatabase {
           }
         }
       } catch (e) {
-        debugPrint('[LOYALTY] Auto-allocate points failed for invoice #$invoiceId: $e');
+        debugPrint(
+          '[LOYALTY] Auto-allocate points failed for invoice #$invoiceId: $e',
+        );
       }
     }
 
@@ -723,7 +829,8 @@ extension SalesMutationsDao on AppDatabase {
   }) async {
     return transaction(() async {
       // UUID-First (Phase 1): fill in a global_id if the caller didn't.
-      final legacyHasGid = invoice.globalId.present &&
+      final legacyHasGid =
+          invoice.globalId.present &&
           (invoice.globalId.value?.isNotEmpty ?? false);
       final invoiceToInsert = legacyHasGid
           ? invoice
@@ -737,7 +844,9 @@ extension SalesMutationsDao on AppDatabase {
         // Update stock (UOM: apply quantityInBase conversion)
         final product = await getProductById(item.productId.value);
         if (product != null && product.trackInventory) {
-          final legacyQtyInBase = item.quantityInBase.present ? item.quantityInBase.value : 1.0;
+          final legacyQtyInBase = item.quantityInBase.present
+              ? item.quantityInBase.value
+              : 1.0;
           await adjustStock(
             productId: product.id,
             warehouseId: invoice.warehouseId.value,
@@ -760,6 +869,13 @@ extension SalesMutationsDao on AppDatabase {
     required List<SalesInvoiceItemsCompanion> items,
   }) async {
     return transaction(() async {
+      final isNoInvoiceReturn =
+          invoice.saleType.present && invoice.saleType.value == 'return' &&
+              returnOriginalIdFromNote(
+                    invoice.notes.present ? invoice.notes.value : null,
+                  ) ==
+                  null;
+      if (isNoInvoiceReturn) await _enforceNoInvoiceReturnCap(items);
       final id = await into(salesInvoices).insertOnConflictUpdate(invoice);
       for (final item in items) {
         await into(
@@ -778,8 +894,9 @@ extension SalesMutationsDao on AppDatabase {
     String paymentMethod, {
     int? userId,
     int? specificSafeId, // Override: use this safe instead of default
-    int? warehouseId,    // Branch-aware safe resolution: prefer branch safe over system default
-    int? customerId,     // P1-6: link safe transaction to party for traceability
+    int?
+    warehouseId, // Branch-aware safe resolution: prefer branch safe over system default
+    int? customerId, // P1-6: link safe transaction to party for traceability
     double? paymentRate,
     double? foreignAmount,
   }) async {
@@ -788,7 +905,16 @@ extension SalesMutationsDao on AppDatabase {
 
     // Map payment method to safe type.
     // 'bank' covers all non-cash electronic payments (card, visa, transfer, etc.)
-    const bankMethods = {'bank', 'card', 'transfer', 'visa', 'mastercard', 'amex', 'mada', 'stcpay'};
+    const bankMethods = {
+      'bank',
+      'card',
+      'transfer',
+      'visa',
+      'mastercard',
+      'amex',
+      'mada',
+      'stcpay',
+    };
     final safeType = paymentMethod == 'click'
         ? 'click'
         : bankMethods.contains(paymentMethod)
@@ -818,9 +944,9 @@ extension SalesMutationsDao on AppDatabase {
     // Deterministic UUID — prevents duplicate safe transactions when the
     // same sale is submitted via multiple paths (POS + server sync).
     // Format: safe_txn:sales_invoice:<invoiceId>:<safeId>:<safeType>
-    final invoice = await (select(salesInvoices)
-          ..where((i) => i.id.equals(invoiceId)))
-        .getSingle();
+    final invoice = await (select(
+      salesInvoices,
+    )..where((i) => i.id.equals(invoiceId))).getSingle();
     final invoiceIdentity = invoice.globalId ?? 'id:$invoiceId';
     final txnGlobalId = const Uuid().v5(
       Uuid.NAMESPACE_URL,
@@ -840,29 +966,31 @@ extension SalesMutationsDao on AppDatabase {
         userId: Value(userId),
         partyId: Value(customerId),
         globalId: Value(txnGlobalId),
-         currencyId: Value(invoice.currencyId),
-         exchangeRate: Value(paymentRate),
-         foreignAmount: Value(foreignAmount),
+        currencyId: Value(invoice.currencyId),
+        exchangeRate: Value(paymentRate),
+        foreignAmount: Value(foreignAmount),
       ),
     ));
 
     if (paymentRate != null && foreignAmount != null) {
-       final bookingRate = invoice.exchangeRate;
-       if (invoice.currencyId != null && bookingRate != null && bookingRate > 0) {
-         await _postRealizedFxDifference(
-           invoiceType: 'sales',
-           invoiceId: invoiceId,
-           transactionId: txnGlobalId,
-           foreignAmount: foreignAmount,
-           bookingRate: bookingRate,
-           settlementRate: paymentRate,
-           partyId: customerId,
-           entryDate: DateTime.now(),
-         );
-       }
-     }
+      final bookingRate = invoice.exchangeRate;
+      if (invoice.currencyId != null &&
+          bookingRate != null &&
+          bookingRate > 0) {
+        await _postRealizedFxDifference(
+          invoiceType: 'sales',
+          invoiceId: invoiceId,
+          transactionId: txnGlobalId,
+          foreignAmount: foreignAmount,
+          bookingRate: bookingRate,
+          settlementRate: paymentRate,
+          partyId: customerId,
+          entryDate: DateTime.now(),
+        );
+      }
+    }
 
-     // H15 · `adjustSafeBalance` لا `updateSafeBalance`: الثاني كتابةٌ مطلقة
+    // H15 · `adjustSafeBalance` لا `updateSafeBalance`: الثاني كتابةٌ مطلقة
     // بعد قراءة (`safe.balance + amount`) — وهو سباقُ «التحديث الضائع» تحت
     // عزل PostgreSQL الافتراضيّ Read-Committed: بيعتان متزامنتان بـ١٠٠ على
     // نفس الخزنة تنزلان +١٠٠ لا +٢٠٠. الأول يُجري الحسابَ في SQL نفسِه.
@@ -879,25 +1007,31 @@ extension SalesMutationsDao on AppDatabase {
     int invoiceId,
     String descriptionPrefix,
   ) async {
-    final entries = await (select(journalEntries)
-          ..where((e) =>
-              (e.referenceType.equals('sales_invoice') |
-                  e.referenceType.equals('sale') |
-                  e.referenceType.equals('cash_sale') |
-                  e.referenceType.equals('credit_sale')) &
-              e.referenceId.equals(invoiceId) &
-              e.isPosted.equals(true) &
-              e.isDeleted.equals(false)))
-        .get();
+    final entries =
+        await (select(journalEntries)..where(
+              (e) =>
+                  (e.referenceType.equals('sales_invoice') |
+                      e.referenceType.equals('sale') |
+                      e.referenceType.equals('cash_sale') |
+                      e.referenceType.equals('credit_sale')) &
+                  e.referenceId.equals(invoiceId) &
+                  e.isPosted.equals(true) &
+                  e.isDeleted.equals(false),
+            ))
+            .get();
     var reversalCount = 0;
     for (final entry in entries) {
-      final reversal = await (select(journalEntries)
-            ..where((e) => e.referenceType.equals('reversal') &
-                e.referenceId.equals(entry.id) &
-                e.isPosted.equals(true) &
-                e.isDeleted.equals(false))
-            ..limit(1))
-          .getSingleOrNull();
+      final reversal =
+          await (select(journalEntries)
+                ..where(
+                  (e) =>
+                      e.referenceType.equals('reversal') &
+                      e.referenceId.equals(entry.id) &
+                      e.isPosted.equals(true) &
+                      e.isDeleted.equals(false),
+                )
+                ..limit(1))
+              .getSingleOrNull();
       if (reversal != null) {
         reversalCount++;
         continue;
@@ -912,281 +1046,6 @@ extension SalesMutationsDao on AppDatabase {
   }
 
   /// Update an existing sales invoice with new data
-  Future<void> updateSalesInvoice({
-    required int invoiceId,
-    required double subtotal,
-    required double discount,
-    required double tax,
-    required double total,
-    required double paid,
-    required String paymentMethod,
-    String? notes,
-    required List<SalesInvoiceItemsCompanion> items,
-    // 062 (D1-004): caller's userId for the modifyLockedInvoice gate.
-    // Null = no override = same throw as today.
-    int? userId,
-  }) async {
-    return transaction(() async {
-      // Get old invoice data first
-      final oldInvoice = await (select(
-        salesInvoices,
-      )..where((i) => i.id.equals(invoiceId))).getSingleOrNull();
-      if (oldInvoice == null) return;
-
-      // ISS-04 + 062 (D1-004): Prevent editing locked/posted invoices
-      // unless the caller holds the modifyLockedInvoice permission.
-      if (oldInvoice.isLocked) {
-        await permissionEnforcer.requireCriticalOp(
-          userId: userId,
-          code: PermissionCodes.modifyLockedInvoice,
-          arabicReason: 'لا يمكن تعديل فاتورة مُرحّلة محاسبيًا. '
-              'استخدم المرتجعات بدلاً من التعديل، '
-              'أو يلزم صلاحية "تعديل فاتورة مقفلة".',
-        );
-      }
-
-      // 0. Soft/Hard Period Closing Gating
-      await accountingDao.validateFinancialPeriod(oldInvoice.invoiceDate, operation: 'تعديل فاتورة مبيعات');
-
-      final oldItems = await (select(
-        salesInvoiceItems,
-      )..where((i) => i.invoiceId.equals(invoiceId))).get();
-      final amountsChanged = oldInvoice.isLocked &&
-          (oldInvoice.subtotal != subtotal ||
-              oldInvoice.discount != discount ||
-              oldInvoice.tax != tax ||
-              oldInvoice.total != total);
-      var repostRevision = 0;
-      if (amountsChanged) {
-        repostRevision = await _reverseActiveSaleEntriesForEdit(
-          invoiceId,
-          'عكس تعديل مبالغ فاتورة مبيعات',
-        );
-      }
-
-      final oldPaid = oldInvoice.paid;
-
-      // Restore old stock quantities (UOM: apply quantityInBase conversion)
-      for (final oldItem in oldItems) {
-        final product = await getProductById(oldItem.productId);
-        if (product != null && product.trackInventory) {
-          final oldQtyInBase = oldItem.quantityInBase > 0 ? oldItem.quantityInBase : 1.0;
-          final restoreQty = oldItem.quantity * oldQtyInBase;
-          // Editing an invoice restores the OLD lines and then re-issues the
-          // new ones. Nets to zero when the quantity is unchanged, but a
-          // reduced quantity leaves goods on hand — and those goods must
-          // carry the cost the original invoice froze, not today's WAC.
-          await updateProductWAC(
-            productId: oldItem.productId,
-            newQuantity: restoreQty,
-            newUnitCost: oldItem.costPrice,
-          );
-          await adjustStock(
-            productId: oldItem.productId,
-            warehouseId: oldInvoice.warehouseId,
-            quantity: restoreQty,
-            type: 'edit_reversal',
-            referenceType: 'sales_invoice',
-            referenceId: invoiceId,
-            unitCost: oldItem.costPrice,
-            notes: 'عكس الكمية لتعديل فاتورة مبيعات #$invoiceId',
-          );
-        }
-      }
-
-      // Delete old invoice items
-      await (delete(
-        salesInvoiceItems,
-      )..where((i) => i.invoiceId.equals(invoiceId))).go();
-
-      // Update invoice header
-      final remaining = total - paid;
-      final status = remaining <= 0 ? 'completed' : 'pending';
-
-      await (update(salesInvoices)..where((i) => i.id.equals(invoiceId))).write(
-        SalesInvoicesCompanion(
-          subtotal: Value(subtotal),
-          discount: Value(discount),
-          tax: Value(tax),
-          total: Value(total),
-          paymentMethod: Value(paymentMethod),
-          status: Value(status),
-          notes: Value(notes),
-        ),
-      );
-      // v175 — `paid` يُكتَب عبر الثابت وحدَه: تحريرُ فاتورةٍ لا يمسّ
-      // تخصيصاتِها، فالقاعدةُ تُعاد حسابُها من الفرق.
-      await _writeSalesInvoicePaid(invoiceId, paid);
-      await resignSalesInvoice(invoiceId);
-
-      // Insert new items and update stock
-      for (final item in items) {
-        await into(
-          salesInvoiceItems,
-        ).insert(item.copyWith(invoiceId: Value(invoiceId)));
-
-        // Deduct new stock (UOM: apply quantityInBase conversion)
-        final prodId = item.productId.value;
-        final quantity = item.quantity.value;
-        final editQtyInBase = item.quantityInBase.present ? item.quantityInBase.value : 1.0;
-        final product = await getProductById(prodId);
-        if (product != null && product.trackInventory) {
-          await adjustStock(
-            productId: prodId,
-            warehouseId: oldInvoice.warehouseId,
-            quantity: -(quantity * editQtyInBase),
-            type: 'edit_adjustment',
-            referenceType: 'sales_invoice',
-            referenceId: invoiceId,
-            notes: 'تعديل فاتورة مبيعات #$invoiceId',
-          );
-        }
-      }
-
-      // Adjust treasury if payment changed
-      // Enhanced: Properly splits diffs for multi-payment (cash+bank) invoices
-      final paymentDiff = paid - oldPaid;
-      if (paymentDiff != 0) {
-        final diff = SalesPaymentCalculator.computeProportionalDiff(
-          oldPaymentMethod: oldInvoice.paymentMethod,
-          oldTotalPaid: oldPaid,
-          oldCashPaid: oldInvoice.cashPaid,
-          oldBankPaid: oldInvoice.bankPaid,
-          oldClickPaid: oldInvoice.clickPaid,
-          newPaymentMethod: paymentMethod,
-          newTotalPaid: paid,
-        );
-
-  // ignore: unused_local_variable
-        final newCash = diff.newDistribution.cash;
-  // ignore: unused_local_variable
-        final newBank = diff.newDistribution.bank;
-  // ignore: unused_local_variable
-        final newClick = diff.newDistribution.click;
-
-        // Apply cash safe diff
-        final cashDiff = diff.cashDiff;
-        if (cashDiff != 0) {
-          final cashSafe = await getDefaultSafeByType('cash');
-          if (cashSafe != null) {
-            final newBalance = cashSafe.balance + cashDiff;
-            final voucherNumber = await generateInvoiceNumber(
-              cashDiff > 0 ? 'RV' : 'PV',
-            );
-            await into(safeTransactions).insert(
-              SafeTransactionsCompanion.insert(
-                voucherNumber: voucherNumber,
-                safeId: cashSafe.id,
-                transactionType: cashDiff > 0 ? 'receipt' : 'payment',
-                category: 'sales',
-                amount: cashDiff.abs(),
-                balanceAfter: newBalance,
-                referenceType: const Value('sales_invoice'),
-                referenceId: Value(invoiceId),
-                description: Value(
-                  'تعديل فاتورة مبيعات #$invoiceId — دفع متعدد (كاش)',
-                ),
-              ),
-            );
-            await adjustSafeBalance(cashSafe.id, cashDiff); // H15
-          }
-        }
-
-        // Apply bank safe diff
-        final bankDiff = diff.bankDiff;
-        if (bankDiff != 0) {
-          final bankSafe = await getDefaultSafeByType('bank');
-          if (bankSafe != null) {
-            final newBalance = bankSafe.balance + bankDiff;
-            final voucherNumber = await generateInvoiceNumber(
-              bankDiff > 0 ? 'RV' : 'PV',
-            );
-            await into(safeTransactions).insert(
-              SafeTransactionsCompanion.insert(
-                voucherNumber: voucherNumber,
-                safeId: bankSafe.id,
-                transactionType: bankDiff > 0 ? 'receipt' : 'payment',
-                category: 'sales',
-                amount: bankDiff.abs(),
-                balanceAfter: newBalance,
-                referenceType: const Value('sales_invoice'),
-                referenceId: Value(invoiceId),
-                description: Value(
-                  'تعديل فاتورة مبيعات #$invoiceId — دفع متعدد (بنك)',
-                ),
-              ),
-            );
-            await adjustSafeBalance(bankSafe.id, bankDiff); // H15
-          }
-        }
-
-        // Apply click safe diff
-        final clickDiff = diff.clickDiff;
-        if (clickDiff != 0) {
-          final clickSafe = await getDefaultSafeByType('click');
-          if (clickSafe != null) {
-            final newBalance = clickSafe.balance + clickDiff;
-            final voucherNumber = await generateInvoiceNumber(
-              clickDiff > 0 ? 'RV' : 'PV',
-            );
-            await into(safeTransactions).insert(
-              SafeTransactionsCompanion.insert(
-                voucherNumber: voucherNumber,
-                safeId: clickSafe.id,
-                transactionType: clickDiff > 0 ? 'receipt' : 'payment',
-                category: 'sales',
-                amount: clickDiff.abs(),
-                balanceAfter: newBalance,
-                referenceType: const Value('sales_invoice'),
-                referenceId: Value(invoiceId),
-                description: Value(
-                  'تعديل فاتورة مبيعات #$invoiceId — دفع متعدد (كليك)',
-                ),
-              ),
-            );
-            await adjustSafeBalance(clickSafe.id, clickDiff); // H15
-          }
-        }
-      }
-
-      // Update customer balance if applicable
-      if (oldInvoice.customerId != null) {
-        final oldRemaining = oldInvoice.total - oldPaid;
-        final newRemaining = total - paid;
-        final balanceDiff = newRemaining - oldRemaining;
-        if (balanceDiff != 0) {
-          await adjustPartyBalance(oldInvoice.customerId!, balanceDiff);
-         }
-       }
-
-       if (amountsChanged) {
-         final updated = await getSalesInvoiceById(invoiceId);
-         if (updated != null) {
-           if (paymentMethod == 'credit') {
-             final posted = await autoPostCreditSale(
-                updated,
-                repostAfterReversal: true,
-                repostRevision: repostRevision,
-              );
-              if (updated.total > 0 && (posted == null || posted == 0)) {
-                throw Exception('تعذّر إعادة ترحيل قيد الفاتورة بعد التعديل');
-              }
-           } else {
-             final posted = await autoPostCashSale(
-                updated,
-                repostAfterReversal: true,
-                repostRevision: repostRevision,
-              );
-              if (updated.total > 0 && (posted == null || posted == 0)) {
-                throw Exception('تعذّر إعادة ترحيل قيد الفاتورة بعد التعديل');
-              }
-           }
-        }
-      }
-      await resignSalesInvoice(invoiceId);
-    });
-  }
-
   /// Update sales invoice payment method and notes with treasury adjustments
   /// When payment method changes, moves amounts between cash and bank safes
   Future<void> updateSalesInvoicePayment(
@@ -1204,7 +1063,10 @@ extension SalesMutationsDao on AppDatabase {
       if (invoice == null) return;
 
       // 0. Soft/Hard Period Closing Gating
-      await accountingDao.validateFinancialPeriod(invoice.invoiceDate, operation: 'تعديل دفعة فاتورة مبيعات');
+      await accountingDao.validateFinancialPeriod(
+        invoice.invoiceDate,
+        operation: 'تعديل دفعة فاتورة مبيعات',
+      );
 
       // ISS-04 REVISED: Allow payment method changes on locked/posted invoices.
       // The existing journal entry is reversed and a new one is created so the
@@ -1359,24 +1221,26 @@ extension SalesMutationsDao on AppDatabase {
         if (updated != null) {
           if (newPaymentMethod == 'credit') {
             final posted = await autoPostCreditSale(
-                updated,
-                repostAfterReversal: true,
-                repostRevision: repostRevision,
-              );
-              if (updated.total > 0 && (posted == null || posted == 0)) {
-                throw Exception('تعذّر إعادة ترحيل قيد الفاتورة بعد التعديل');
-              }
+              updated,
+              repostAfterReversal: true,
+              repostRevision: repostRevision,
+            );
+            if (updated.total > 0 && (posted == null || posted == 0)) {
+              throw Exception('تعذّر إعادة ترحيل قيد الفاتورة بعد التعديل');
+            }
           } else {
             final posted = await autoPostCashSale(
-                updated,
-                repostAfterReversal: true,
-                repostRevision: repostRevision,
-              );
-              if (updated.total > 0 && (posted == null || posted == 0)) {
-                throw Exception('تعذّر إعادة ترحيل قيد الفاتورة بعد التعديل');
-              }
+              updated,
+              repostAfterReversal: true,
+              repostRevision: repostRevision,
+            );
+            if (updated.total > 0 && (posted == null || posted == 0)) {
+              throw Exception('تعذّر إعادة ترحيل قيد الفاتورة بعد التعديل');
+            }
           }
-          debugPrint('[SalesMutations] Re-posted journal entry for payment=$newPaymentMethod');
+          debugPrint(
+            '[SalesMutations] Re-posted journal entry for payment=$newPaymentMethod',
+          );
         }
       }
       await resignSalesInvoice(invoiceId);
@@ -1399,7 +1263,10 @@ extension SalesMutationsDao on AppDatabase {
   /// Update delivery status for a sales invoice.
   /// When status changes to 'delivered', triggers reversal of deferred revenue
   /// entry and creation of the proper sales revenue journal entry (GAP-22).
-  Future<void> updateSalesDeliveryStatus(int invoiceId, String newStatus) async {
+  Future<void> updateSalesDeliveryStatus(
+    int invoiceId,
+    String newStatus,
+  ) async {
     final oldInvoice = await getSalesInvoiceById(invoiceId);
     if (oldInvoice == null) return;
 
@@ -1454,9 +1321,9 @@ extension SalesMutationsDao on AppDatabase {
     double newPaid,
   ) async {
     // Fetch the invoice to get its total for status calculation
-    final invoice = await (select(salesInvoices)
-          ..where((i) => i.id.equals(invoiceId)))
-        .getSingleOrNull();
+    final invoice = await (select(
+      salesInvoices,
+    )..where((i) => i.id.equals(invoiceId))).getSingleOrNull();
 
     String newStatus = 'pending';
     if (invoice != null) {
@@ -1553,15 +1420,36 @@ extension SalesMutationsDao on AppDatabase {
       // local path and the server handler are idempotent. Inside the transaction
       // so it can't race a concurrent apply.
       if (globalId != null && globalId.isNotEmpty) {
-        final existing = await (select(safeTransactions)
-              ..where((t) => t.globalId.equals(globalId))
-              ..limit(1))
-            .getSingleOrNull();
+        final existing =
+            await (select(safeTransactions)
+                  ..where((t) => t.globalId.equals(globalId))
+                  ..limit(1))
+                .getSingleOrNull();
         if (existing != null) return;
       }
 
       final invoice = await getSalesInvoiceById(invoiceId);
       if (invoice == null) throw Exception('Invoice not found');
+
+      // A collection assigned to an invoice must be positive and bounded by
+      // that invoice's remaining balance. Unassigned receipt vouchers remain
+      // governed by the general receipt path and are intentionally unaffected.
+      final settledAtBooking =
+          invoice.currencyId != null &&
+                  invoice.exchangeRate != null &&
+                  invoice.exchangeRate! > 0 &&
+                  foreignAmount != null
+              ? foreignAmount * invoice.exchangeRate!
+              : amount;
+      if (amount <= 0 || settledAtBooking <= 0) {
+        throw StateError('PAYMENT_NOT_POSITIVE: يجب أن يكون مبلغ التحصيل أكبر من صفر.');
+      }
+      final remaining = invoice.total - invoice.paid;
+      if (settledAtBooking > remaining) {
+        throw StateError(
+          'PAYMENT_EXCEEDS_REMAINING: مبلغ التحصيل يتجاوز المتبقي على الفاتورة.',
+        );
+      }
 
       // Spec 151 C-05 — a collection MUST credit the customer's AR. With a null
       // customerId, createReceiptVoucher falls back to the 'sales' category
@@ -1577,15 +1465,11 @@ extension SalesMutationsDao on AppDatabase {
       }
 
       // 0. Soft/Hard Period Closing Gating (mirrors addPurchasePayment).
-      await accountingDao.validateFinancialPeriod(invoice.invoiceDate,
-          operation: 'تحصيل دفعة مبيعات');
+      await accountingDao.validateFinancialPeriod(
+        invoice.invoiceDate,
+        operation: 'تحصيل دفعة مبيعات',
+      );
 
-      final settledAtBooking = invoice.currencyId != null &&
-              invoice.exchangeRate != null &&
-              invoice.exchangeRate! > 0 &&
-              foreignAmount != null
-          ? foreignAmount * invoice.exchangeRate!
-          : amount;
       final newPaid = invoice.paid + settledAtBooking;
       final newRemaining = invoice.total - newPaid;
       final newStatus = newRemaining <= 0 ? 'paid' : 'partial';
@@ -1618,7 +1502,8 @@ extension SalesMutationsDao on AppDatabase {
       // guard is a defensive belt: the full money post returns the inserted
       // safe_transaction id (>0), so a 0 could only come from a future skip path
       // — reject it loudly rather than leave paid advanced with no treasury/GL.
-      if (paymentRate != null && foreignAmount != null &&
+      if (paymentRate != null &&
+          foreignAmount != null &&
           invoice.currencyId != null &&
           invoice.exchangeRate != null &&
           invoice.exchangeRate! > 0) {
@@ -1633,7 +1518,10 @@ extension SalesMutationsDao on AppDatabase {
           entryDate: DateTime.now(),
         );
         final bookingAmount = foreignAmount * invoice.exchangeRate!;
-        await adjustPartyBalance(invoice.customerId!, -(bookingAmount - amount));
+        await adjustPartyBalance(
+          invoice.customerId!,
+          -(bookingAmount - amount),
+        );
       }
 
       if (receiptTxnId <= 0) {
@@ -1647,4 +1535,72 @@ extension SalesMutationsDao on AppDatabase {
     });
   }
 
+  Future<void> _enforceNoInvoiceReturnCap(
+    List<SalesInvoiceItemsCompanion> items,
+  ) async {
+    final quantities = await _trackedReturnQuantities(items);
+    for (final entry in quantities.entries) {
+      final available = await _availableReturnQuantity(entry.key);
+      if (entry.value > available.quantity + 0.000001) {
+        throw StateError(
+          'لا يمكن إرجاع ${available.name} بلا فاتورة بكمية أكبر من صافي المباع منه '
+          '(المتاح: ${available.quantity < 0 ? 0 : available.quantity})',
+        );
+      }
+    }
+  }
+
+  Future<Map<int, double>> _trackedReturnQuantities(
+    List<SalesInvoiceItemsCompanion> items,
+  ) async {
+    final quantities = <int, double>{};
+    for (final line in items) {
+      final productId = line.productId.value;
+      final product = await (select(products)..where((p) => p.id.equals(productId)))
+          .getSingleOrNull();
+      if (product == null || !product.trackInventory || product.productType == 'service') {
+        continue;
+      }
+      final suppliedFactor = line.quantityInBase.present
+          ? line.quantityInBase.value
+          : 1.0;
+      final factor = suppliedFactor > 0 ? suppliedFactor : 1.0;
+      quantities.update(
+        productId,
+        (quantity) => quantity + line.quantity.value * factor,
+        ifAbsent: () => line.quantity.value * factor,
+      );
+    }
+    return quantities;
+  }
+
+  Future<({String name, double quantity})> _availableReturnQuantity(
+    int productId,
+  ) async {
+    if (isPostgres) {
+      await customSelect(
+        'SELECT id FROM products WHERE id = ? FOR UPDATE',
+        variables: [Variable<int>(productId)],
+      ).get();
+    }
+    final rows = await customSelect(
+      'SELECT p.name, COALESCE(SUM(CASE WHEN si.sale_type = \'return\' '
+      'THEN -1 ELSE 1 END * sii.quantity * sii.quantity_in_base), 0) - '
+      'COALESCE((SELECT SUM(sm.quantity) FROM stock_movements sm '
+      'WHERE sm.product_id = p.id AND sm.deleted_at IS NULL AND '
+      '((sm.reference_type = \'sales_return\' AND sm.movement_type = \'return\') OR '
+      '(sm.reference_type = \'return_cancel\' AND sm.movement_type = \'return_cancel\'))), 0) '
+      'AS available FROM products p '
+      'LEFT JOIN sales_invoice_items sii ON sii.product_id = p.id '
+      'LEFT JOIN sales_invoices si ON si.id = sii.invoice_id '
+      'AND si.is_deleted = 0 AND si.status <> \'voided\' '
+      'WHERE p.id = ? GROUP BY p.id, p.name',
+      variables: [Variable<int>(productId)],
+    ).get();
+    final row = rows.single;
+    return (
+      name: row.data['name'] as String,
+      quantity: (row.data['available'] as num).toDouble(),
+    );
+  }
 }

@@ -29,3 +29,20 @@
 /// وتنظر إلى سلّة البيع وحدها.
 bool shouldBlockAppCloseForCart(int saleCartItemCount) =>
     saleCartItemCount > 0;
+
+/// هل يُمنع التنقّلُ عن شاشة البيع إلى شاشةٍ أخرى؟ (قرارُ مالكٍ 2026-10-30)
+///
+/// يُمنع فقط حين: شريطُ التابات مخفيّ ([tabsBarVisible] = false) **و**
+/// التابُ النشطُ هو البيع ([activeIsPos]) **و**
+/// السلّةُ غير فارغة. مع الشريط الظاهر يبقى السلوكُ كما هو (الحارسُ أُزيل
+/// عمداً هناك لأنّ التابَ يُبقي السلّةَ حيّة والشريطُ يذكّر الكاشير بها).
+/// منعٌ لا تخيير: لا خيارَ «متابعة».
+bool shouldBlockNavigationAwayFromPos({
+  required bool tabsBarVisible,
+  required bool activeIsPos,
+  required int saleCartItemCount,
+}) => !tabsBarVisible && activeIsPos && saleCartItemCount > 0;
+
+/// هل يُمنع تسجيلُ الخروج بسبب أصنافٍ في سلة البيع؟ — بصرف النظر عن
+/// ظهور شريط التابات. (كان الخروج يفرّغ السلّةَ بصمت.)
+bool shouldBlockLogoutForCart(int saleCartItemCount) => saleCartItemCount > 0;

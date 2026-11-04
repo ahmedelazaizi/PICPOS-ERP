@@ -19,6 +19,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/models/picpos_booking_view.dart';
 import '../screens/bookings_picpos_screen.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// عرضُ الأعمدة الثابتة — من التصميم، ومجموعُها يترك «العميل» مرناً.
 // ⚠️ ‏١١٢ كما في التصميم لا ١٠٤: قِيس أنّ «10:00 ص» بوزنٍ ثقيلٍ وأرقامٍ
@@ -113,7 +114,7 @@ class _BoardRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final view = bookingStatusView(row.status);
-    final toneColor = bookingToneColor(view.tone);
+    final toneColor = bookingToneColor(view.tone, neutral: context.picposMuted);
     // الملغى والمتخلّفُ يُخفَّتان: قائمةٌ تعرضهما بنفس ثقل الحيّ تُربك القراءة.
     final dimmed = !row.occupiesTime;
 
@@ -130,8 +131,8 @@ class _BoardRow extends StatelessWidget {
               width: _kTimeW,
               child: Row(
                 children: [
-                  const Icon(PhosphorIconsBold.clock,
-                      size: 14, color: AppColors.textMuted),
+                  Icon(PhosphorIconsBold.clock,
+                      size: 14, color: context.picposMuted),
                   const SizedBox(width: 6),
                   // ‏`Flexible` حزامٌ ثانٍ: خطٌّ أعرضُ أو لغةٌ أطولُ تفيض
                   // بعرضٍ ثابتٍ مهما ضُبط، والقصُّ أهونُ من شريطٍ أصفر.
@@ -151,7 +152,7 @@ class _BoardRow extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: _twoLines(
+              child: _twoLines(context,
                 row.customerName,
                 row.customerPhone ?? '—',
                 // الهاتفُ يُقرأ يساراً إلى يمين ولو كانت الشاشةُ عربيّة —
@@ -173,7 +174,7 @@ class _BoardRow extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: _twoLines(
+                    child: _twoLines(context,
                       row.serviceName,
                       tr('{p0} دقيقة', {'p0': row.durationMinutes}),
                     ),
@@ -187,10 +188,10 @@ class _BoardRow extends StatelessWidget {
                   // حجزٌ بلا موظَّفٍ مسموحٌ — ويُقال صراحةً لا يُترك فراغاً.
                   ?  Text(
                       tr('بلا إسناد'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textMuted,
+                        color: context.picposMuted,
                       ),
                     )
                   : Row(
@@ -198,7 +199,7 @@ class _BoardRow extends StatelessWidget {
                         _avatar(row),
                         const SizedBox(width: 8),
                         Expanded(
-                          child: _twoLines(
+                          child: _twoLines(context,
                             row.resourceName!,
                             row.resourceRole ??
                                 (row.resourceKind == 'device' ? tr('جهاز') : '—'),
@@ -231,16 +232,16 @@ class _BoardRow extends StatelessWidget {
                       fontFeatures: bookingTabularFigures,
                       color: row.depositAmount > 0
                           ? AppColors.success
-                          : AppColors.textMuted,
+                          : context.picposMuted,
                     ),
                   ),
                   if (row.depositAmount > 0)
                     Text(
                       _depositLabel(row.depositStatus),
-                      style: const TextStyle(
-                        fontSize: 10,
+                      style: TextStyle(
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textMuted,
+                        color: context.picposMuted,
                       ),
                     ),
                 ],
@@ -273,7 +274,7 @@ class _BoardRow extends StatelessWidget {
       child: Text(
         initialsFor(row.resourceName!),
         style: TextStyle(
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: FontWeight.w800,
           color: color,
         ),
@@ -281,16 +282,16 @@ class _BoardRow extends StatelessWidget {
     );
   }
 
-  Widget _twoLines(String top, String bottom, {TextDirection? subDirection}) {
+  Widget _twoLines(BuildContext context, String top, String bottom, {TextDirection? subDirection}) {
     final sub = Text(
       bottom,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       textDirection: subDirection,
-      style: const TextStyle(
-        fontSize: 10.5,
+      style: TextStyle(
+        fontSize: 11,
         fontWeight: FontWeight.w600,
-        color: AppColors.textMuted,
+        color: context.picposMuted,
         fontFeatures: bookingTabularFigures,
       ),
     );
@@ -407,10 +408,10 @@ class _FooterRow extends StatelessWidget {
         // ‏لا مُرقِّمَ صفحاتٍ: يومٌ واحدٌ يبلغ عشراتِ الصفوف لا آلافَها،
         // والقائمةُ مُفهرَسةٌ فتنزلق. ومُرقِّمٌ لصفحةٍ واحدةٍ ضجيج.
         tr('إجمالي {count} حجزاً في هذا اليوم', {'count': count}),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 11.5,
           fontWeight: FontWeight.w700,
-          color: AppColors.textMuted,
+          color: context.picposMuted,
           fontFeatures: bookingTabularFigures,
         ),
       ),

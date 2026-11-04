@@ -39,6 +39,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/models/depreciation_math.dart';
 import '../../picpos_shell/picpos_dialog.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// فئةُ أصولٍ كما يحتاجها الحوار — الاسمُ والعمرُ الافتراضيُّ وحدَهما.
 typedef AssetCategoryOption = ({int id, String name, double defaultUsefulLife});
@@ -387,6 +388,14 @@ class _CreateAssetDialogState extends State<_CreateAssetDialog> {
         // ⚠️ الحسابُ المقابلُ هو **ما دُفع منه** ثمنُ الأصل (‏خزنةٌ أو بنكٌ أو
         //    ذمّةُ مورد). و`createFixedAsset` تمرّره `contraAccountId`، فتركُه
         //    فارغاً يدع الـDAO يختار الافتراضيّ.
+        if (_contraAccountId == null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              tr('لم يُختر حساب مقابل؛ سيُستخدم صندوق نقدي مرتبط إن وُجد، وإلا فحساب النقدية الاحتياطي دون حركة صندوق.'),
+              style: TextStyle(color: Theme.of(context).colorScheme.error, fontSize: 12),
+            ),
+          ),
         DropdownButtonFormField<int>(
           initialValue: _contraAccountId,
           isExpanded: true,
@@ -414,7 +423,7 @@ class _CreateAssetDialogState extends State<_CreateAssetDialog> {
             (
               label: tr('التخريدية'),
               value: _money.format(_salvage),
-              color: AppColors.textMuted,
+              color: context.picposMuted,
             ),
             (
               label: tr('القابل للإهلاك'),
@@ -436,7 +445,7 @@ class _CreateAssetDialogState extends State<_CreateAssetDialog> {
               value: end == null
                   ? '—'
                   : '${end.year}-${end.month.toString().padLeft(2, '0')}',
-              color: AppColors.textMuted,
+              color: context.picposMuted,
             ),
           ],
         ),

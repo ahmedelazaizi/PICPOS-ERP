@@ -373,7 +373,7 @@ extension ReturnDraftsSchema on AppDatabase {
             roleId: roleId,
             permissionId: approve.id,
           ),
-          mode: InsertMode.insertOrIgnore,
+          onConflict: DoNothing(target: []),
         );
       }
     }

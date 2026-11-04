@@ -9,8 +9,6 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 // `_CategoriesScreenState`. بما إنه مفيش `part of` نقدر نستورده، فالفورك هنا
 // بينسخ جسم الدوال دي حرفياً بلا أي تعديل منطقي — يتغيّر بس اسم الكلاس
 // وطبقة العرض (تستخدم picpos_shell بدل SectionHeader/Scaffold+Padding).
-// `categoriesControllerProvider` و`CategoryCard` و`CategoryIconPicker`
-// مُعاد استخدامهم من UralCash زي ما هم (import، مش نسخ).
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -30,6 +28,7 @@ import '../../../data/providers/providers.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_toolbar.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// شاشة التصنيفات بهوية PicPos. تُختار بالعلامة في app_main_screen
 /// (`Brand.isPicPos`). تعيد استخدام نفس `categoriesControllerProvider`
@@ -684,8 +683,8 @@ class _CategoriesPicposScreenState
                   const SizedBox(height: 12),
                   Text(
                     tr('بعد النقل سيتم حذف تصنيف "{p0}" (يمكن استرجاعه من سجل النشاطات).', {'p0': deleting.name}),
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textSecondary),
+                    style: TextStyle(
+                        fontSize: 12, color: context.picposSecondary),
                   ),
                 ],
               ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../core/constants/payment_methods.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
@@ -16,11 +18,16 @@ import '../../services/client_write_interceptor.dart';
 import '../../core/utils/uuid_v7.dart';
 import '../database/sync_interceptor.dart';
 
+part 'returns_repository_cap.dart';
+
 class ReturnsRepositoryImpl implements IReturnsRepository {
+  static final Map<int, Future<void>> _returnLockTails = {};
+
   final AppDatabase _db;
   final AccountingService _accountingService;
 
   ReturnsRepositoryImpl(this._db, this._accountingService);
+
 
   @override
   Future<List<SalesInvoiceData>> getInvoicesForReturn({
@@ -146,26 +153,6 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
   }) async {
     final invoiceItems = await _db.getSalesInvoiceItems(invoice.id);
     
-    // === PIR F9: Return Quantity Validation ===
-    // Validate that returnedQty ≤ (originalQty - alreadyReturnedQty)
-    for (final item in invoiceItems) {
-      final requestedReturn = returnQuantities[item.id] ?? 0;
-      if (requestedReturn > 0) {
-        final alreadyReturned = await _db.getAlreadyReturnedQty(
-          invoice.id,
-          item.productId,
-        );
-        final maxReturnable = item.quantity - alreadyReturned;
-        if (requestedReturn > maxReturnable + 0.001) {
-          throw Exception(
-            'الكمية المطلوب إرجاعها (${requestedReturn.toStringAsFixed(AppConstants.decimalPlaces)}) '
-            'أكبر من المتاح للإرجاع (${maxReturnable.toStringAsFixed(AppConstants.decimalPlaces)}) '
-            'للصنف رقم ${item.productId}',
-          );
-        }
-      }
-    }
-
     // Calculate total return amount
     double totalReturn = _calculateReturnTotal(invoice, invoiceItems, returnQuantities);
     if (totalReturn <= 0) return false;
@@ -352,7 +339,10 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
     }
 
     // ── Standalone/Server: Full local processing ──
-    await _db.transaction(() async {
+    await _withInvoiceReturnLock(invoice.id, () => _db.transaction(() async {
+      await _lockReturnInvoiceRow(invoice.id);
+      await _validateReturnQuantities(invoice.id, invoiceItems, returnQuantities);
+
       // B3: Generate sequential return invoice number
       final returnVoucherNumber = await _db.generateInvoiceNumber('SRET-');
 
@@ -726,7 +716,7 @@ class ReturnsRepositoryImpl implements IReturnsRepository {
         description: 'مرتجع فاتورة ${invoice.invoiceNumber}',
         amount: totalReturn,
       );
-    });
+    }));
 
     // Note: Client-mode sync is handled in the early-exit block above.
     // Server/standalone mode processes locally and doesn't need to sync.

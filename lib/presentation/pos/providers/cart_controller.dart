@@ -14,7 +14,12 @@ import '../../../services/invoice_generator.dart';
 import '../../../domain/usecases/sales/hold_order_usecase.dart';
 import '../../../application/services/cart_pricing_service.dart';
 import '../widgets/modifier_selection_dialog.dart';
+import 'cart_note_helpers.dart';
+import 'cart_return_lines.dart';
 import 'checkout_controller.dart';
+export 'cart_invoice_discount.dart';
+export 'cart_note_helpers.dart';
+export 'cart_return_lines.dart';
 
 /// نتيجة [CartController.applyOffer].
 ///
@@ -37,67 +42,15 @@ enum ApplyOfferOutcome {
   notADiscount,
 }
 
-/// بادئة سطر العرض **التلقائي** — كل جولة تطبيق بتصفّره وتعيد حسابه.
-String get kAutoOfferNotePrefix => tr('عرض:');
-
-/// بادئة سطر العرض **اليدوي** — إنسان طبّقه، فما بيتلمسش.
-///
-/// ⚠️ `'عرض (يدوي):'` **ما بيبدأش** بـ`'عرض:'` — بعد «عرض» بييجي « (» مش «:».
-/// اللي بيسأل «هل ده سطر عرض؟» بـ`startsWith(kAutoOfferNotePrefix)` لوحدها
-/// بيرجّع false للسطر اليدوي فيعامله كسطر أساس عادي. ده كان مصدر عطل ٣-٣.
-String get kManualOfferNotePrefix => tr('عرض (يدوي):');
-
-/// هل السطر ده سطر عرض بأي شكل — تلقائي أو يدوي؟
-///
-/// ده السؤال اللي كل حلقات التطبيق عايزة تسأله: «هل السطر ده متسعّر بعرض
-/// خلاص فما ينفعش أعيد تسعيره / أعدّه ككمية أساس؟». ستة مواضع كانت بتسأله
-/// بفلتر أضيق (التلقائي بس)، فسطر الخصم اليدوي كان بيتكتب فوقه، وملاحظته
-/// بتتحوّل لـ`عرض:` فالجولة اللي بعدها بتصفّره لسعر الأساس ⇒ الخصم اليدوي
-/// يتدمّر نهائياً والعميل يتحمّل زيادة.
-bool isOfferLineNote(String? note) =>
-    note != null &&
-    (note.startsWith(kAutoOfferNotePrefix) ||
-        note.startsWith(kManualOfferNotePrefix));
-
-/// يبني نص `CartItemEntity.note` المركّب من المعدِّلات + الملاحظة اليدوية.
-///
-/// ── ليه دالة واحدة ─────────────────────────────────────────────────────────
-/// نفس التركيب كان مكرَّر حرفياً في `updateItemModifiers` و`updateItemNote`.
-/// أي مسار تالت بيكتب `note` مباشرة (زي ما كان بيحصل في شاشة خدمة الطاولات)
-/// بيمسح المعدِّلات من النص من غير ما يمسحها من `item.modifiers` — فالفاتورة
-/// المطبوعة بتخسر الإضافات والمطبخ بيحضّر الطلب غلط. الحقل `itemNote` هو
-/// **مصدر الملاحظة اليدوية الوحيد**، و`note` مخرج مشتق بيتبني هنا بس.
-///
-/// النص الناتج بيتقرا كمان في `templated_invoice_service.dart` اللي بيحوّل
-/// `📝 ` لـ«ملاحظة: » و` | ` لسطر جديد — فالبادئة جزء من العقد مش تزيين.
-String? composeCartItemNote(
-  List<SelectedModifier> modifiers,
-  String? itemNote,
-) {
-  final parts = <String>[];
-  for (final m in modifiers) {
-    if (m.isOption) {
-      // Include quantity level label (قليل/بدون/كثير) when set
-      final levelLabel = m.quantityLevel.label;
-      final optionText =
-          levelLabel.isNotEmpty ? '$levelLabel ${m.itemName}' : m.itemName;
-      parts.add('(${m.groupName}: $optionText)');
-    } else {
-      parts.add('+${m.itemName}${m.extraPrice > 0 ? ' ${m.extraPrice.toStringAsFixed(0)} ${AppConstants.currencySymbolEn}' : ''}');
-    }
-  }
-  if (itemNote != null && itemNote.isNotEmpty) {
-    parts.add('📝 $itemNote');
-  }
-  return parts.isNotEmpty ? parts.join(' | ') : null;
-}
-
 class CartState {
   final List<CartItemEntity> items;
   final List<CartItemEntity> deletedItems;
 
   // Sale Session Data
   final double discountPercent;
+
+  /// خصمُ فاتورة بمبلغٍ ثابت: يتقدّم على [discountPercent] ولا يجتمعان.
+  final double? invoiceDiscountAmount;
   final bool taxEnabled;
   final double taxRate;
   final int? selectedCustomerId;
@@ -148,6 +101,7 @@ class CartState {
     this.items = const [],
     this.deletedItems = const [],
     this.discountPercent = 0,
+    this.invoiceDiscountAmount,
     this.taxEnabled = false,
     this.taxRate = 0.16,
     this.selectedCustomerId,
@@ -200,6 +154,7 @@ class CartState {
   InvoiceTotals get totals => CalculateInvoiceTotalsUseCase().execute(
     items: items,
     invoiceDiscountPercent: discountPercent,
+    invoiceDiscountAmount: invoiceDiscountAmount,
     taxPercent: taxEnabled ? taxRate * 100 : 0,
     taxEnabled: taxEnabled,
   );
@@ -215,6 +170,7 @@ class CartState {
     List<CartItemEntity>? items,
     List<CartItemEntity>? deletedItems,
     double? discountPercent,
+    Object? invoiceDiscountAmount = _unset,
     bool? taxEnabled,
     double? taxRate,
     Object? selectedCustomerId = _unset,
@@ -242,6 +198,9 @@ class CartState {
       items: items ?? this.items,
       deletedItems: deletedItems ?? this.deletedItems,
       discountPercent: discountPercent ?? this.discountPercent,
+      invoiceDiscountAmount: invoiceDiscountAmount == _unset
+          ? this.invoiceDiscountAmount
+          : invoiceDiscountAmount as double?,
       taxEnabled: taxEnabled ?? this.taxEnabled,
       taxRate: taxRate ?? this.taxRate,
       selectedCustomerId: selectedCustomerId == _unset ? this.selectedCustomerId : selectedCustomerId as int?,
@@ -529,6 +488,8 @@ class CartController extends Notifier<CartState> {
       // كتابة عشان نعرف إذا كان حد بدّل السلة أثناء الـ await. اقرا
       // [_cartChangedSince].
       final snapshotRef = state.items;
+      // سطرُ مرتجعٍ بلا فاتورة يوقف العروض (مطابقتُها بالصنف تخصم سعرَ المرتجع).
+      if (state.hasReturnLines) return;
       final snapshotItems = List<CartItemEntity>.from(snapshotRef);
 
       // Classify: auto-applied items have 'عرض:' prefix; manual have 'عرض (يدوي):'
@@ -872,6 +833,25 @@ class CartController extends Notifier<CartState> {
   /// بيحصل. النتيجة بتوصل عبر `state` زي أي تغيير تاني في السلة.
   void autoApplyMatchingOffers() => _tryAutoApplyOffers();
 
+  /// مرتجعٌ بلا فاتورة (بند ٤): سطرُ `returned` بسعر البيع الحاليّ أو [price] يدويّ.
+  void addReturnItem(ProductEntity product, {double quantity = 1, double? price}) {
+    if (quantity <= 0) return;
+    final base = _resolvePrice(product);
+    state = cartWithReturnLine(state, product,
+        unitPrice: base, quantity: quantity, price: price);
+    ref.read(checkoutControllerProvider.notifier).clearError();
+    _logAction(
+      'cart_add_return',
+      product.id,
+      tr('إضافة مرتجع بلا فاتورة: {p0} × {quantity}',
+          {'p0': product.name, 'quantity': quantity}),
+      (price ?? base) * quantity,
+    );
+  }
+
+  /// يُزيل الشقَّ الذي حُفظ مستنداً (مرتجعاً إن [returned] وإلا بيعاً).
+  void removeSettledLines({required bool returned}) =>
+      state = cartWithoutSettledLines(state, returned: returned);
   void convertToQuickReturn() {
     if (state.items.isEmpty) return;
 
@@ -994,8 +974,12 @@ class CartController extends Notifier<CartState> {
   }
 
   void setDiscount(double percent) {
-    state = state.copyWith(discountPercent: percent);
+    state = state.copyWith(discountPercent: percent, invoiceDiscountAmount: null);
   }
+
+  /// مبلغٌ ثابت (`<= 0` ⇒ إزالة).
+  void setInvoiceDiscountAmount(double amount) => state = state.copyWith(
+      discountPercent: 0, invoiceDiscountAmount: amount > 0 ? amount : null);
 
   /// Set discount percentage for a specific cart item
   void setItemDiscount(int index, double percent) {
@@ -1210,6 +1194,8 @@ class CartController extends Notifier<CartState> {
 
   Future<String?> holdOrder({String? customerName}) async {
     if (state.items.isEmpty) return null;
+    // التعليقُ لا يحفظ نوعَ السطر: مرتجعٌ بلا فاتورة كان سيعود بيعاً عند الاسترجاع.
+    if (state.hasReturnLines) return null;
 
     final holdOrderUseCase = ref.read(holdOrderUseCaseProvider);
     final holdNum = await holdOrderUseCase.executeHold(
@@ -1217,6 +1203,7 @@ class CartController extends Notifier<CartState> {
         items: state.items,
         subtotal: state.subtotal,
         discountPercent: state.discountPercent,
+        discountAmount: state.invoiceDiscountAmount,
         customerId: state.selectedCustomerId,
         customerName: customerName,
       ),
@@ -1238,7 +1225,8 @@ class CartController extends Notifier<CartState> {
         items: response.items,
         selectedCustomerId: response.customerId,
         selectedCustomerName: response.customerName,
-        discountPercent: response.discountPercent,
+        discountPercent: response.discountAmount != null ? 0 : response.discountPercent,
+        invoiceDiscountAmount: response.discountAmount,
       );
     }
   }
@@ -1282,6 +1270,7 @@ class CartController extends Notifier<CartState> {
       selectedCustomerId: quotationDetails.quotation.customerId,
       selectedCustomerName: quotationDetails.customerName,
       discountPercent: quotationDetails.quotation.discount,
+      invoiceDiscountAmount: null,
       orderNote: quotationDetails.quotation.notes ?? '',
       linkedQuotationId: quotationDetails.quotation.id,
     );

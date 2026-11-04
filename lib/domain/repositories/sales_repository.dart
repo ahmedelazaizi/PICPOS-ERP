@@ -1,3 +1,5 @@
+import '../../core/utils/financial_utils.dart';
+import '../usecases/sales/calculate_invoice_totals_usecase.dart';
 import '../entities/invoice_entity.dart';
 import '../entities/cart_item_entity.dart';
 import '../../data/database/database.dart'; // Drift classes for repository contract
@@ -314,6 +316,18 @@ class SaleRequest {
   final int? clickSafeId; // Target click safe
 
   final double discountPercent;
+
+  /// خصمُ الفاتورة بمبلغٍ ثابت (بند ٦ — ب). غير `null` ⇒ يتقدّم على
+  /// [discountPercent] ويُقصّ عند (المجموع − خصومات الأصناف). عمودُ
+  /// `SalesInvoices.discount` مبلغٌ أصلاً فلا تغييرَ في المخطط.
+  final double? invoiceDiscountAmount;
+
+  /// خصمُ الفاتورة المطبَّق على [base] (المجموع − خصومات الأصناف): المبلغُ
+  /// الثابت إن وُجد (مقصوصاً عند [base])، وإلا النسبة كما كانت.
+  double invoiceDiscountOn(double base) => invoiceDiscountAmount != null
+      ? CalculateInvoiceTotalsUseCase.clampInvoiceDiscountAmount(
+          invoiceDiscountAmount!, FinancialUtils.round(base))
+      : FinancialUtils.round(base * (discountPercent / 100));
   final double taxPercent;
   final bool taxEnabled;
   /// Whether entered unit prices are gross prices including VAT.
@@ -351,6 +365,10 @@ class SaleRequest {
   final int? routeId;
   final bool cashOutsideDrawer;
 
+  /// تكلفةٌ مؤقتةٌ (لوحدة الأساس) أدخلها المسؤول لأصنافٍ بلا تكلفةٍ معروفة
+  /// بعد `CostRequiredException`، بمفتاح `productId`. تُحفَظ على السطر.
+  final Map<int, double> provisionalCosts;
+
   const SaleRequest({
     required this.items,
     this.customerId,
@@ -365,6 +383,7 @@ class SaleRequest {
     this.bankSafeId,
     this.clickSafeId,
     this.discountPercent = 0,
+    this.invoiceDiscountAmount,
     this.taxPercent = kDefaultTaxPercent, // Spec 151 E-06 — named fallback, not a bare 14
     this.taxEnabled = true,
     this.pricesIncludeTax = false,
@@ -389,6 +408,7 @@ class SaleRequest {
     this.repEmployeeId,
     this.routeId,
     this.cashOutsideDrawer = false,
+    this.provisionalCosts = const {},
   });
 }
 
@@ -402,7 +422,9 @@ sealed class SaleResult {
     required dynamic totals, // dynamic to avoid tight coupling with UseCase totals
   }) = SaleSuccess;
 
-  factory SaleResult.failure(String error) = SaleFailure;
+  factory SaleResult.failure(String error,
+      {int? costRequiredProductId,
+      String? costRequiredProductName}) = SaleFailure;
 
   bool get isSuccess => this is SaleSuccess;
   bool get isFailure => this is SaleFailure;
@@ -428,5 +450,10 @@ class SaleSuccess extends SaleResult {
 
 class SaleFailure extends SaleResult {
   final String error;
-  const SaleFailure(this.error);
+
+  /// غير `null` ⇒ الفشل سببُه صنفٌ بلا تكلفةٍ معروفة (تسأل الواجهةُ وتعيد).
+  final int? costRequiredProductId;
+  final String? costRequiredProductName;
+  const SaleFailure(this.error,
+      {this.costRequiredProductId, this.costRequiredProductName});
 }

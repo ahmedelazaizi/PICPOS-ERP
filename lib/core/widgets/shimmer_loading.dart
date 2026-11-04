@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+import '../theme/core_surface_colors.dart';
 
 /// Shimmer loading effect for skeleton screens.
 /// Use instead of plain CircularProgressIndicator for a more polished look.
@@ -20,31 +20,33 @@ class ShimmerLoading extends StatefulWidget {
 
   /// Build a full card skeleton (title + 3 lines)
   static Widget card({double? width}) {
-    return Container(
-      width: width,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ShimmerLoading(width: 120, height: 14),
-          SizedBox(height: 12),
-          ShimmerLoading(height: 12),
-          SizedBox(height: 8),
-          ShimmerLoading(width: 200, height: 12),
-          SizedBox(height: 8),
-          ShimmerLoading(width: 160, height: 12),
-        ],
+    return Builder(
+      builder: (context) => Container(
+        width: width,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: context.coreCard,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ShimmerLoading(width: 120, height: 14),
+            SizedBox(height: 12),
+            ShimmerLoading(height: 12),
+            SizedBox(height: 8),
+            ShimmerLoading(width: 200, height: 12),
+            SizedBox(height: 8),
+            ShimmerLoading(width: 160, height: 12),
+          ],
+        ),
       ),
     );
   }
@@ -106,6 +108,7 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
     return AnimatedBuilder(
       animation: _animation,
       builder: (_, _) {
+        final skeleton = context.coreSkeleton;
         return Container(
           width: widget.width,
           height: widget.height,
@@ -115,9 +118,9 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
               begin: Alignment(_animation.value - 1, 0),
               end: Alignment(_animation.value, 0),
               colors: [
-                AppColors.surface,
-                AppColors.surface.withValues(alpha: 0.5),
-                AppColors.surface,
+                skeleton,
+                skeleton.withValues(alpha: 0.5),
+                skeleton,
               ],
             ),
           ),
@@ -135,9 +138,9 @@ class _ShimmerListItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.coreCard,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.surface),
+        border: Border.all(color: context.coreSkeleton),
       ),
       child: const Row(
         children: [

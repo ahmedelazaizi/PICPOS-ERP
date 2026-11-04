@@ -1,19 +1,11 @@
 part of 'cart_item_tile.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════
 // CART ITEM — Modifier / Options / Notes Inline Panel
 // Extracted from cart_item_tile.dart for maintainability (PIR Phase 2)
-// ═══════════════════════════════════════════════════════════════════════════
 
-/// حقل ملاحظة الصنف — مستخرج كودجت top-level مستقل عن
-/// `_CartItemModifierPanelMixin` عشان يتعمله اختبار widget بدون تركيب
-/// `CartItemTile` الحقيقي أو أي قاعدة بيانات (نفس نمط Task 6a/6b).
-///
-/// `allowManagerOverride` بلا `onGranted`: الحقل نص حر بلا زرار واحد واضح —
-/// إضافة ملاحظة عملية كتابة حقيقية على الصنف، مش مجرد عرض، فمن غير الصلاحية
-/// المستخدم لازم تصريح مدير. الموافقة هنا **بتفتح القفل** (نفس السيناريو
-/// الموثّق في `permission_guard.dart` لقسم/حقل بلا فعل واحد) بدل ما تشغّل
-/// حفظ فوري — بعدها الكاشير يكتب ويضغط ✓ بنفسه زي أي مستخدم مصرّح له.
+/// حقل ملاحظة الصنف — كودجت top-level مستقل لاختبار widget بلا CartItemTile.
+/// allowManagerOverride بلا onGranted: الموافقة تفتح القفل ثم الكاشير
+/// يكتب ويضغط ✓ بنفسه (كتابة حقيقية على الصنف، فتلزم صلاحية أو مدير).
 @visibleForTesting
 Widget buildCartItemNoteField({
   required TextEditingController noteController,
@@ -31,16 +23,18 @@ Widget buildCartItemNoteField({
       ),
       child: Row(
         children: [
-          Icon(
-            PhosphorIconsBold.notepad,
-            size: 14 * scaleFactor,
-            color: AppColors.warning,
+          Builder(
+            builder: (context) => Icon(
+              PhosphorIconsBold.notepad,
+              size: 14 * scaleFactor,
+              color: PicPosText.readableOn(context, AppColors.warning),
+            ),
           ),
           SizedBox(width: 4 * scaleFactor),
           Expanded(
             child: SizedBox(
               height: 30 * scaleFactor,
-              child: TextField(
+              child: Builder(builder: (context) => TextField(
                 controller: noteController,
                 style: TextStyle(fontSize: 11 * scaleFactor),
                 textInputAction: TextInputAction.done,
@@ -48,8 +42,8 @@ Widget buildCartItemNoteField({
                   isDense: true,
                   hintText: tr('ملاحظة على الصنف...'),
                   hintStyle: TextStyle(
-                    fontSize: 10 * scaleFactor,
-                    color: AppColors.textMuted,
+                    fontSize: 11 * scaleFactor,
+                    color: context.picposMuted,
                   ),
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: 8 * scaleFactor,
@@ -58,13 +52,13 @@ Widget buildCartItemNoteField({
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(6),
                     borderSide: BorderSide(
-                      color: AppColors.border.withValues(alpha: 0.3),
+                      color: context.picposHairline.withValues(alpha: 0.3),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(6),
                     borderSide: BorderSide(
-                      color: AppColors.border.withValues(alpha: 0.3),
+                      color: context.picposHairline.withValues(alpha: 0.3),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -78,12 +72,12 @@ Widget buildCartItemNoteField({
                     child: Icon(
                       PhosphorIconsBold.checkCircle,
                       size: 16 * scaleFactor,
-                      color: AppColors.success,
+                      color: PicPosText.readableOn(context, AppColors.success),
                     ),
                   ),
                 ),
                 onSubmitted: (_) => onSave(),
-              ),
+              )),
             ),
           ),
         ],
@@ -127,7 +121,7 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
             color: AppColors.primary.withValues(alpha: 0.02),
             border: Border(
               top: BorderSide(
-                color: AppColors.border.withValues(alpha: 0.3),
+                color: context.picposHairline.withValues(alpha: 0.3),
               ),
             ),
             borderRadius: const BorderRadius.vertical(
@@ -171,6 +165,11 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
 
   Widget _buildModifierTabBar(
       List<SelectedModifier> currentModifiers, double scaleFactor) {
+    final barBg = Color.alphaBlend(
+        AppColors.primary.withValues(alpha: 0.06), context.picposCard);
+    Color tabInk(Color c, bool active) => PicPosText.readableOn(context, c,
+        on: active ? Color.alphaBlend(c.withValues(alpha: 0.15), barBg) : barBg);
+    final mutedInk = PicPosText.readableOn(context, context.picposMuted, on: barBg);
     return Container(
       margin: EdgeInsets.symmetric(
         horizontal: 8 * scaleFactor,
@@ -206,20 +205,20 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
                       PhosphorIconsBold.plusCircle,
                       size: 13 * scaleFactor,
                       color: activeModifierTab == 0
-                          ? AppColors.success
-                          : AppColors.textMuted,
+                          ? tabInk(AppColors.success, true)
+                          : mutedInk,
                     ),
                     SizedBox(width: 4 * scaleFactor),
                     Text(
                       tr('الإضافات'),
                       style: TextStyle(
-                        fontSize: 10 * scaleFactor,
+                        fontSize: 11 * scaleFactor,
                         fontWeight: activeModifierTab == 0
                             ? FontWeight.w900
                             : FontWeight.w600,
                         color: activeModifierTab == 0
-                            ? AppColors.success
-                            : AppColors.textMuted,
+                            ? tabInk(AppColors.success, true)
+                            : mutedInk,
                       ),
                     ),
                     // Count badge
@@ -231,13 +230,13 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
                           vertical: 1,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.success,
+                          color: _whiteSafe(AppColors.success),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           '${currentModifiers.where((m) => !m.isOption).length}',
                           style: TextStyle(
-                            fontSize: 8 * scaleFactor,
+                            fontSize: 11 * scaleFactor,
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
@@ -273,20 +272,20 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
                       PhosphorIconsBold.listChecks,
                       size: 13 * scaleFactor,
                       color: activeModifierTab == 1
-                          ? AppColors.info
-                          : AppColors.textMuted,
+                          ? tabInk(AppColors.info, true)
+                          : mutedInk,
                     ),
                     SizedBox(width: 4 * scaleFactor),
                     Text(
                       tr('الخيارات'),
                       style: TextStyle(
-                        fontSize: 10 * scaleFactor,
+                        fontSize: 11 * scaleFactor,
                         fontWeight: activeModifierTab == 1
                             ? FontWeight.w900
                             : FontWeight.w600,
                         color: activeModifierTab == 1
-                            ? AppColors.info
-                            : AppColors.textMuted,
+                            ? tabInk(AppColors.info, true)
+                            : mutedInk,
                       ),
                     ),
                     // Count badge
@@ -298,13 +297,13 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
                           vertical: 1,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.info,
+                          color: _whiteSafe(AppColors.info),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           '${currentModifiers.where((m) => m.isOption).length}',
                           style: TextStyle(
-                            fontSize: 8 * scaleFactor,
+                            fontSize: 11 * scaleFactor,
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
@@ -354,7 +353,7 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
         padding: EdgeInsets.symmetric(vertical: 8 * scaleFactor),
         child: Text(
           tr('لا توجد إضافات لهذا الصنف'),
-          style: TextStyle(fontSize: 10 * scaleFactor, color: AppColors.textMuted),
+          style: TextStyle(fontSize: 11 * scaleFactor, color: context.picposMuted),
           textAlign: TextAlign.center,
         ),
       );
@@ -395,7 +394,7 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
               Text(
                 group.group.name,
                 style: TextStyle(
-                  fontSize: 10 * scaleFactor,
+                  fontSize: 11 * scaleFactor,
                   fontWeight: FontWeight.w800,
                   color: AppColors.success,
                 ),
@@ -403,7 +402,7 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
               if (group.group.isRequired) ...[
                 SizedBox(width: 3 * scaleFactor),
                 Text('*', style: TextStyle(
-                  fontSize: 10 * scaleFactor, color: AppColors.error,
+                  fontSize: 11 * scaleFactor, color: AppColors.error,
                   fontWeight: FontWeight.bold,
                 )),
               ],
@@ -432,7 +431,7 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
                     border: Border.all(
                       color: isSelected
                           ? AppColors.success.withValues(alpha: 0.5)
-                          : AppColors.border.withValues(alpha: 0.4),
+                          : context.picposHairline.withValues(alpha: 0.4),
                       width: isSelected ? 1.5 : 1,
                     ),
                     boxShadow: isSelected ? [
@@ -451,13 +450,13 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
                             ? PhosphorIconsBold.checkCircle
                             : PhosphorIconsBold.circle,
                         size: 12 * scaleFactor,
-                        color: isSelected ? AppColors.success : AppColors.textMuted,
+                        color: isSelected ? AppColors.success : context.picposMuted,
                       ),
                       SizedBox(width: 4 * scaleFactor),
                       Text(
                         item.name,
                         style: TextStyle(
-                          fontSize: 10 * scaleFactor,
+                          fontSize: 11 * scaleFactor,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                           color: isSelected ? AppColors.success : null,
                         ),
@@ -476,7 +475,7 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
                           child: Text(
                             '+${item.extraPrice.toStringAsFixed(0)} ${AppConstants.currencySymbolEn}',
                             style: TextStyle(
-                              fontSize: 8 * scaleFactor,
+                              fontSize: 11 * scaleFactor,
                               color: AppColors.success,
                               fontWeight: FontWeight.bold,
                             ),
@@ -509,7 +508,7 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
         padding: EdgeInsets.symmetric(vertical: 8 * scaleFactor),
         child: Text(
           tr('لا توجد خيارات لهذا الصنف'),
-          style: TextStyle(fontSize: 10 * scaleFactor, color: AppColors.textMuted),
+          style: TextStyle(fontSize: 11 * scaleFactor, color: context.picposMuted),
           textAlign: TextAlign.center,
         ),
       );
@@ -525,7 +524,7 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.border.withValues(alpha: 0.3)),
+            border: Border.all(color: context.picposHairline.withValues(alpha: 0.3)),
           ),
           padding: const EdgeInsets.all(3),
           child: Row(
@@ -561,15 +560,15 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
                         Icon(
                           level.icon,
                           size: 13 * scaleFactor,
-                          color: isActive ? level.color : AppColors.textMuted,
+                          color: isActive ? level.color : context.picposMuted,
                         ),
                         SizedBox(width: 4 * scaleFactor),
                         Text(
                           level.label,
                           style: TextStyle(
-                            fontSize: 10 * scaleFactor,
+                            fontSize: 11 * scaleFactor,
                             fontWeight: isActive ? FontWeight.w900 : FontWeight.w600,
-                            color: isActive ? level.color : AppColors.textMuted,
+                            color: isActive ? level.color : context.picposMuted,
                           ),
                         ),
                       ],
@@ -608,7 +607,7 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
               Text(
                 group.group.name,
                 style: TextStyle(
-                  fontSize: 10 * scaleFactor,
+                  fontSize: 11 * scaleFactor,
                   fontWeight: FontWeight.w800,
                   color: AppColors.info,
                 ),
@@ -616,7 +615,7 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
               if (group.group.isRequired) ...[
                 SizedBox(width: 3 * scaleFactor),
                 Text('*', style: TextStyle(
-                  fontSize: 10 * scaleFactor, color: AppColors.error,
+                  fontSize: 11 * scaleFactor, color: AppColors.error,
                   fontWeight: FontWeight.bold,
                 )),
               ],
@@ -635,7 +634,7 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
               );
               final isSelected = existingMod != null;
               final assignedLevel = existingMod?.quantityLevel ?? OptionQuantityLevel.none;
-              final chipColor = isSelected ? assignedLevel.color : AppColors.textMuted;
+              final chipColor = isSelected ? assignedLevel.color : context.picposMuted;
 
               return GestureDetector(
                 onTap: () => _toggleOption(group, item, isSelected, existingMod),
@@ -653,7 +652,7 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
                     border: Border.all(
                       color: isSelected
                           ? chipColor.withValues(alpha: 0.5)
-                          : AppColors.border.withValues(alpha: 0.4),
+                          : context.picposHairline.withValues(alpha: 0.4),
                       width: isSelected ? 1.5 : 1,
                     ),
                     boxShadow: isSelected ? [
@@ -676,7 +675,7 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
                       Text(
                         item.name,
                         style: TextStyle(
-                          fontSize: 10 * scaleFactor,
+                          fontSize: 11 * scaleFactor,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                           color: isSelected ? chipColor : null,
                         ),
@@ -696,7 +695,7 @@ mixin _CartItemModifierPanelMixin on State<CartItemTile> {
                           child: Text(
                             assignedLevel.label,
                             style: TextStyle(
-                              fontSize: 8 * scaleFactor,
+                              fontSize: 11 * scaleFactor,
                               color: chipColor,
                               fontWeight: FontWeight.bold,
                             ),

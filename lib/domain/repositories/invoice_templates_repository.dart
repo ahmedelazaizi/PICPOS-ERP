@@ -1,4 +1,5 @@
 import '../../data/database/database.dart' as db;
+import '../printing/label_design.dart';
 import '../printing/template_document.dart';
 import '../printing/template_save_result.dart';
 
@@ -108,5 +109,23 @@ abstract class IInvoiceTemplatesRepository {
     String? activateForDocumentType,
     int? activateBranchId,
     String? activateLocale,
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // ملصقاتُ الباركود — قماشٌ حرٌّ بأعمدة راسم الملصقات (لا نطاقات)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// يقرأ ملصقاً — `null` حين لا قالبَ أو ليس من فئة `barcode`.
+  Future<LabelDesign?> getLabelDesign(int templateId);
+
+  /// يحفظ الملصقَ في معاملةٍ واحدة **ولا يلمس `layout_version`**، ويُرجعه
+  /// كما قُرئ بعد الحفظ.
+  Future<LabelDesign> saveLabelDesign(LabelDesign design);
+
+  /// ينشئ ملصقاً بمقاسٍ مخصّص ويُرجع مُعرِّفَه.
+  Future<int> createLabelTemplate({
+    required String name,
+    required double widthMm,
+    required double heightMm,
   });
 }

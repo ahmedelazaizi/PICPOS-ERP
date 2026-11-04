@@ -14,6 +14,7 @@
 // ولا `package:pdf` هنا ولا `package:flutter`: يحرسه
 // `test/structural/template_document_has_no_ui_deps_test.dart`.
 
+import '../entities/shift_closing_snapshot.dart';
 import 'company_identity.dart';
 import 'party_statement_snapshot.dart';
 
@@ -45,8 +46,7 @@ const String kLrm = '‎';
 ///
 /// ويُحاط الطرفان: الأوّلُ يمنع W2، والأخيرُ يمنع امتدادَ الاتّجاه
 /// اليساريِّ إلى ما بعده.
-String ltrIsolate(String value) =>
-    value.isEmpty ? value : '$kLrm$value$kLrm';
+String ltrIsolate(String value) => value.isEmpty ? value : '$kLrm$value$kLrm';
 
 /// علامةُ **يمين-إلى-يسار** — `U+200F RLM`.
 const String kRlm = '‏';
@@ -77,8 +77,7 @@ const String kRlm = '‏';
 ///
 /// و`LRM` في الصدر يبقى ضروريّاً كما هو في [ltrIsolate]: بدونه تنطبق W2
 /// فتنقلب أرقامُ النسبة.
-String ltrTagInRtl(String value) =>
-    value.isEmpty ? value : '$kLrm$value$kRlm';
+String ltrTagInRtl(String value) => value.isEmpty ? value : '$kLrm$value$kRlm';
 
 /// كلُّ ما يحتاجه حقلٌ ليُحلَّ نصّاً.
 ///
@@ -197,12 +196,18 @@ String resolveContentValue(String type, PrintPayload p) {
       // بارتفاعٍ ثابتٍ ويليه عنصرٌ بإحداثيٍّ ثابت، فاسمان في صندوقٍ واحدٍ
       // كانا يلتفّان ويفيضان فوق العنوان (قِيس على فاتورة A4).
       return companyMainName(
-          nameAr: p.companyName, nameEn: p.companyNameEn, locale: p.locale);
+        nameAr: p.companyName,
+        nameEn: p.companyNameEn,
+        locale: p.locale,
+      );
     case 'company_name_en':
       // السطرُ الثانويُّ: الاسمُ الإنجليزيُّ على المستند العربيّ. وعلى
       // الإنجليزيّ `''` لأنّه صار الاسمَ الرئيسيَّ فلا يتكرّر.
       return companySecondaryName(
-          nameAr: p.companyName, nameEn: p.companyNameEn, locale: p.locale);
+        nameAr: p.companyName,
+        nameEn: p.companyNameEn,
+        locale: p.locale,
+      );
     case 'company_cr_number':
       return companyCrLine(p.companyCrNumber, locale: p.locale);
     case 'company_address':
@@ -212,7 +217,10 @@ String resolveContentValue(String type, PrintPayload p) {
     case 'company_tax_id':
     case 'company_tax_number':
       return companyTaxWithCr(
-          taxId: p.companyTaxId, crNumber: p.companyCrNumber, locale: p.locale);
+        taxId: p.companyTaxId,
+        crNumber: p.companyCrNumber,
+        locale: p.locale,
+      );
     case 'tax_registration':
       return ltrIsolate(p.companyTaxId ?? '');
     case 'payment_method':
@@ -248,7 +256,10 @@ String resolveContentValue(String type, PrintPayload p) {
       return n(p.remaining);
     // حقولٌ لم تصل الخدمةَ بياناتُها بعد — تُرجع `''` عن قصد.
     case 'table_number':
-      return p.platformOrderNumber ?? p.adhocCustomerName ?? p.customerName ?? '';
+      return p.platformOrderNumber ??
+          p.adhocCustomerName ??
+          p.customerName ??
+          '';
     case 'warehouse_name':
     case 'branch_name':
     case 'delivery_type':
@@ -274,7 +285,8 @@ String resolveContentValue(String type, PrintPayload p) {
 }
 
 /// تسميةُ الحقل العربيّة حين لا يكتب المصمّمُ تسميةً خاصّة.
-String contentLabel(String type) => const {
+String contentLabel(String type) =>
+    const {
       'invoice_number': 'رقم الفاتورة',
       'order_number': 'رقم الطلب',
       'date': 'التاريخ',
@@ -321,22 +333,22 @@ String contentLabel(String type) => const {
 
 /// حقلٌ يُرسم صفَّ «تسمية ↔ قيمة» بمحاذاةٍ إلى الحافّتين.
 bool isTotalField(String type) => const {
-      'subtotal',
-      'discount',
-      'tax',
-      'tax_amount',
-      'total',
-      'total_amount',
-      'grand_total',
-      'paid',
-      'paid_amount',
-      'remaining',
-      'change',
-      'cash_amount',
-      'bank_amount',
-      'click_amount',
-      'delivery_fee',
-    }.contains(type);
+  'subtotal',
+  'discount',
+  'tax',
+  'tax_amount',
+  'total',
+  'total_amount',
+  'grand_total',
+  'paid',
+  'paid_amount',
+  'remaining',
+  'change',
+  'cash_amount',
+  'bank_amount',
+  'click_amount',
+  'delivery_fee',
+}.contains(type);
 
 /// كودُ طريقة الدفع ⇒ تسميةٌ عربيّة.
 ///
@@ -365,6 +377,75 @@ String mapPaymentMethodLabel(String method) {
       return 'مختلط';
     default:
       return method;
+  }
+}
+
+/// قيمةُ حقلٍ من لقطة إغلاق الوردية — `null` تعني أن الحقل ليس من حقولها.
+/// نفسُ محلّل المسار القديم، مع تمرير دقّة المستند دون ربطه بالخدمة.
+String? resolveShiftClosingValue(
+  String type,
+  ShiftClosingSnapshot s, {
+  int decimals = 2,
+}) {
+  String n(double v) => v.toStringAsFixed(decimals);
+
+  switch (type) {
+    case 'shift_invoice_count':
+      return s.invoiceCount.toString();
+    case 'shift_total_sales':
+      return n(s.totalSales);
+    case 'shift_system_cash':
+      return n(s.systemCash);
+    case 'shift_actual_cash':
+      return n(s.actualCash);
+    case 'shift_cash_variance':
+      return n(s.cashVariance);
+    case 'shift_system_card':
+      return n(s.systemCard);
+    case 'shift_actual_card':
+      return n(s.actualCard);
+    case 'shift_card_variance':
+      return n(s.cardVariance);
+    case 'shift_system_click':
+      return n(s.systemClick);
+    case 'shift_actual_click':
+      return n(s.actualClick);
+    case 'shift_click_variance':
+      return n(s.clickVariance);
+    case 'shift_total_variance':
+      return n(s.totalVariance);
+    case 'shift_total_expenses':
+      return n(s.totalExpenses);
+    case 'shift_cash_refunds':
+      return n(s.cashRefunds);
+    case 'shift_opening_balance':
+      return n(s.openingBalance);
+    case 'shift_cash_income':
+      return n(s.cashIncome);
+    case 'shift_credit_sales':
+      return n(s.creditSales);
+    case 'shift_credit_count':
+      return s.creditSalesCount.toString();
+    case 'shift_total_system':
+      return n(s.systemCash + s.systemCard + s.systemClick);
+    case 'shift_total_actual':
+      return n(s.actualCash + s.actualCard + s.actualClick);
+    case 'shift_status':
+      if (s.totalVariance.abs() < 0.001) return 'مطابق';
+      return s.totalVariance < 0
+          ? 'عجز: ${n(s.totalVariance)}'
+          : 'زيادة: +${n(s.totalVariance)}';
+    case 'shift_number':
+      final who = s.employeeName?.trim();
+      final when = s.closedAt;
+      if (who != null && who.isNotEmpty && when != null) {
+        return '$who — ${when.day}/${when.month}/${when.year}';
+      }
+      return who?.isNotEmpty == true ? who! : '—';
+    case 'shift_closing':
+      return 'تقرير إغلاق الوردية';
+    default:
+      return null;
   }
 }
 

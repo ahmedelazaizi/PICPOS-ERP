@@ -177,7 +177,11 @@ extension VoucherAccountTransferDao on AppDatabase {
         await stampDocumentRep('safe_transactions', txnId, partyId);
       }
 
-      final discountCode = isReceipt ? '5205' : '4202';
+      final discountPurpose = isReceipt ? 'discount_allowed' : 'purchase_discount';
+      final discountCode = await accountingDao.getMappedAccountCode(
+        discountPurpose,
+        isReceipt ? '5205' : '4202',
+      );
       final discountAccount = discount > 0
           ? await accountingDao.getAccountByCode(discountCode)
           : null;

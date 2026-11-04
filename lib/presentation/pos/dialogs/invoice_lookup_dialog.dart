@@ -4,6 +4,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
 import '../../../../../../core/constants/app_constants.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// Result class for invoice lookup actions
 class InvoiceActionResult {
@@ -135,10 +136,10 @@ class _InvoiceLookupDialogState extends ConsumerState<InvoiceLookupDialog> {
     }
 
     if (_searchResults.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           '???? ?? ?????? ??????',
-          style: TextStyle(color: AppColors.textMuted),
+          style: TextStyle(color: context.picposMuted),
         ),
       );
     }

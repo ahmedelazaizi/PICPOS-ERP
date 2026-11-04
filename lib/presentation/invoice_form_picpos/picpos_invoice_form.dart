@@ -33,8 +33,7 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 //    كانت ستُبتلَع صفراً مهما أُدخلت. والخصمُ على المستند يُحفَظ فعلاً فهو
 //    المعروض. (التفصيل في `picpos_invoice_draft.dart`.)
 //  • **لا «تاريخ استحقاق»** في هذه الدفعة: قرارُ المالك أن يكون حقلاً
-//    يُحفَظ، وذلك يوجب عموداً وهجرةً و`build_runner` — وقد أُجِّل الـcodegen
-//    إلى دفعةٍ واحدةٍ في الآخر.
+//    يُحفَظ (عمودٌ وهجرةٌ و`build_runner` مؤجَّلة).
 //  • **ولا ضريبةَ ١٤٪ مطبوعة**: التصميمُ يكتبها قيمةَ عيّنة، والنسبةُ تأتي
 //    من إعداد النظام. وطبعُها ثابتةً كان سيكذب على كلّ تنصيبٍ بنسبةٍ أخرى.
 import 'dart:ui' as ui;
@@ -50,6 +49,7 @@ import '../../core/utils/number_utils.dart';
 import '../../domain/models/import_purchase_plan.dart';
 import '../../domain/models/invoice_due_date.dart';
 import '../../domain/models/picpos_invoice_draft.dart';
+import '../picpos_shell/picpos_surface.dart';
 
 part 'picpos_invoice_layout.dart';
 part 'picpos_invoice_lines.dart';
@@ -103,7 +103,7 @@ typedef PicPosInvoiceDraftCallback = Future<void> Function({
 Color _fMuted(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
         ? const Color(0xFF94A3B8)
-        : AppColors.textMuted;
+        : context.picposMuted;
 
 /// لونُ الحقل — `--field` في الوضعين.
 Color _fField(BuildContext context) =>
@@ -991,7 +991,7 @@ class _PicPosDocBar extends StatelessWidget {
       child: InkWell(
         onTap: () => _pickParty(context),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
           child: Row(
             children: [
               Container(
@@ -1020,7 +1020,7 @@ class _PicPosDocBar extends StatelessWidget {
                     Text(
                       state.widget.kind.partyLabel,
                       style: TextStyle(
-                        fontSize: 9.5,
+                        fontSize: 11,
                         fontWeight: FontWeight.w800,
                         color: muted,
                       ),
@@ -1043,7 +1043,7 @@ class _PicPosDocBar extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: muted,
                         ),
@@ -1081,7 +1081,7 @@ class _PicPosDocBar extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 9.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: muted,
                   ),
@@ -1144,7 +1144,7 @@ class _PicPosDocBar extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 9.5,
+                        fontSize: 11,
                         fontWeight: FontWeight.w800,
                         color: muted,
                       ),

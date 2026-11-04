@@ -31,7 +31,6 @@ import 'package:picpos_erp/core/utils/number_utils.dart';
 import 'package:picpos_erp/core/widgets/app_toast.dart';
 
 import '../../../core/constants/app_constants.dart';
-import '../../../core/theme/app_colors.dart';
 // ⚠️ **لا `import 'data/database/sync_interceptor.dart'` هنا.**
 //
 // `presentation_db_import_guard` يمنع أيَّ ملفِّ عرضٍ **جديد** من استيراد
@@ -50,6 +49,7 @@ import '../../picpos_shell/picpos_dialog.dart';
 import '../../screens/parties/party_helpers.dart';
 import '../../screens/parties/providers/party_groups_controller.dart';
 import 'party_phone_dedupe.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// حوارُ إضافة طرفٍ بهويّة PicPos. يُعيد **معرّفَ الطرف** المُنشأ (أو الموجودِ
 /// الذي اختاره المستخدمُ عند تكرار الهاتف)، و`null` عند الإلغاء — يعتمد عليه
@@ -669,10 +669,10 @@ class _FieldLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12.5,
           fontWeight: FontWeight.w800,
-          color: AppColors.textSecondary,
+          color: context.picposSecondary,
         ),
       );
 }

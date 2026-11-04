@@ -28,16 +28,17 @@ class PrintersRepositoryImpl implements IPrintersRepository {
     String printerType = 'thermal',
     String purpose = 'pos_receipt',
     String? description,
-  }) =>
-      _db.insertPrinter(
-        name: name,
-        port: port,
-        ipAddress: ipAddress,
-        portNumber: portNumber,
-        printerType: printerType,
-        purpose: purpose,
-        description: description,
-      );
+    double? paperWidthMm,
+  }) => _db.insertPrinter(
+    name: name,
+    port: port,
+    ipAddress: ipAddress,
+    portNumber: portNumber,
+    printerType: printerType,
+    purpose: purpose,
+    description: description,
+    paperWidthMm: paperWidthMm,
+  );
 
   @override
   Future<bool> updatePrinter({
@@ -49,19 +50,20 @@ class PrintersRepositoryImpl implements IPrintersRepository {
     String printerType = 'thermal',
     String purpose = 'pos_receipt',
     String? description,
+    double? paperWidthMm,
     bool isActive = true,
-  }) =>
-      _db.updatePrinter(
-        id: id,
-        name: name,
-        port: port,
-        ipAddress: ipAddress,
-        portNumber: portNumber,
-        printerType: printerType,
-        purpose: purpose,
-        description: description,
-        isActive: isActive,
-      );
+  }) => _db.updatePrinter(
+    id: id,
+    name: name,
+    port: port,
+    ipAddress: ipAddress,
+    portNumber: portNumber,
+    printerType: printerType,
+    purpose: purpose,
+    description: description,
+    paperWidthMm: paperWidthMm,
+    isActive: isActive,
+  );
 
   @override
   Future<void> deletePrinter(int id) async {

@@ -12,15 +12,27 @@ extension PurchasePaymentsDao on AppDatabase {
   /// Matches BOTH reference-type aliases a purchase JE can carry: the inline
   /// createPurchaseInvoice path stores 'purchase_invoice'; autoPostPurchase
   /// stores 'purchase'. Deleting both lets autoPostPurchase's dedup guard pass.
-  Future<void> _reverseOldPurchaseJournalEntry(int invoiceId) async {
+  ///
+  /// R2: also deletes the invoice's 'negative_stock_cost_adjustment' JE (the
+  /// unique (reference_type, reference_id) autopost index forbids keeping it
+  /// beside a re-posted one, and a second reversal entry per edit would hit the
+  /// same index). Returns that JE's signed amount (Dr COGS positive, 0 if none)
+  /// so [updatePurchaseInvoice] can recompute it; net GL effect stays exact.
+  Future<double> _reverseOldPurchaseJournalEntry(int invoiceId) async {
+    const adjType = 'negative_stock_cost_adjustment';
     final oldEntries = await (select(journalEntries)
           ..where((e) =>
-              e.referenceType.isIn(kPurchaseJeReferenceTypes.toList()) &
+              e.referenceType
+                  .isIn([...kPurchaseJeReferenceTypes, adjType]) &
               e.referenceId.equals(invoiceId) &
               e.isAutoPosted.equals(true)))
         .get();
-    if (oldEntries.isEmpty) return;
+    if (oldEntries.isEmpty) return 0;
 
+    final cogsAcc = await accountingDao.getAccountByCode(
+        await accountingDao.getMappedAccountCode(
+            'cogs', AccountingDao.accountPurposes['cogs']!));
+    var oldAdjustment = 0.0;
     final affectedAccountIds = <int>{};
     for (final entry in oldEntries) {
       final lines = await (select(journalEntryLines)
@@ -28,6 +40,9 @@ extension PurchasePaymentsDao on AppDatabase {
           .get();
       for (final l in lines) {
         affectedAccountIds.add(l.accountId);
+        if (entry.referenceType == adjType && l.accountId == cogsAcc?.id) {
+          oldAdjustment += l.debit - l.credit;
+        }
       }
       await (delete(journalEntryLines)..where((l) => l.entryId.equals(entry.id)))
           .go();
@@ -42,7 +57,7 @@ extension PurchasePaymentsDao on AppDatabase {
         'SELECT COALESCE(SUM(jel.debit),0) AS d, COALESCE(SUM(jel.credit),0) AS c '
         'FROM journal_entry_lines jel '
         'INNER JOIN journal_entries je ON je.id = jel.entry_id '
-        'WHERE jel.account_id = ? AND je.is_posted = 1',
+        'WHERE jel.account_id = ? AND je.is_posted = 1 AND je.is_deleted = false',
         variables: [Variable<int>(accId)],
         readsFrom: {journalEntryLines, journalEntries},
       ).getSingle();
@@ -51,6 +66,48 @@ extension PurchasePaymentsDao on AppDatabase {
       await (update(accounts)..where((a) => a.id.equals(accId)))
           .write(AccountsCompanion(balance: Value(d - c)));
     }
+    return oldAdjustment;
+  }
+
+  /// R2: re-post the negative-stock cost adjustment (same accounts/direction as
+  /// createPurchaseInvoice) for an EDITED invoice. [amount] > 0 ⇒ Dr COGS /
+  /// Cr Inventory; < 0 ⇒ the reverse. Runs inside updatePurchaseInvoice's tx.
+  Future<void> _postEditedNegativeAdjustment({
+    required int invoiceId,
+    required String invoiceNumber,
+    required int warehouseId,
+    required DateTime date,
+    required double amount,
+    int? costCenterId,
+  }) async {
+    final cogsAcc = await accountingDao.getAccountByCode(
+        await accountingDao.getMappedAccountCode(
+            'cogs', AccountingDao.accountPurposes['cogs']!));
+    final invAcc = await resolvePurchaseAccountOverride(invoiceId) ??
+        await accountingDao.getAccountByCode(
+            await accountingDao.getMappedAccountCode(
+                'inventory', AccountingDao.accountPurposes['inventory']!));
+    if (cogsAcc == null || invAcc == null) {
+      throw StateError('حساب المخزون أو تكلفة البضاعة المباعة غير موجود.');
+    }
+    final a = amount.abs();
+    final desc = 'تسوية تكلفة مخزون سالب #$invoiceNumber';
+    final dr = amount > 0 ? cogsAcc.id : invAcc.id;
+    final cr = amount > 0 ? invAcc.id : cogsAcc.id;
+    await accountingDao.createJournalEntry(
+      description: 'تسوية تكلفة مخزون سالب للفاتورة #$invoiceNumber (بعد التعديل)',
+      date: date,
+      lines: [
+        JournalLine(accountId: dr, debit: a, description: desc),
+        JournalLine(accountId: cr, credit: a, description: desc),
+      ],
+      referenceType: 'negative_stock_cost_adjustment',
+      referenceId: invoiceId,
+      isAutoPosted: true,
+      allowRepost: true,
+      costCenterId: costCenterId,
+      branchId: (await getWarehouseById(warehouseId))?.branchId,
+    );
   }
 
   /// F-02 (Spec 151): reverse the ORIGINAL treasury payment(s) recorded for

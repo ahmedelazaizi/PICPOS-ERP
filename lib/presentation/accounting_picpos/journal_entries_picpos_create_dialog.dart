@@ -1,6 +1,5 @@
 // =======================================================================
 // JOURNAL ENTRY CREATE DIALOG — Phase 7 God File Splitting
-// Extracted from journal_entries_screen.dart (lines 555-1030)
 // =======================================================================
 part of 'journal_entries_picpos_screen.dart';
 
@@ -192,7 +191,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                         decoration: BoxDecoration(
                           color: context.picposField,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+                          border: Border.all(color: context.picposHairline.withValues(alpha: 0.5)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -207,7 +206,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                                   ),
                                   child: Text(
                                     tr('بند {p0}', {'p0': i + 1}),
-                                    style: GoogleFonts.cairo(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.primary),
+                                    style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary),
                                   ),
                                 ),
                                 const Spacer(),
@@ -469,7 +468,7 @@ extension _JournalEntryCreateDialog on _JournalEntriesPicPosScreenState {
                 final templates = snapshot.data!;
                 if (templates.isEmpty) {
                   return Center(
-                    child: Text(tr('لا توجد قوالب نشطة مسجلة.'), style: GoogleFonts.cairo(color: AppColors.textMuted)),
+                    child: Text(tr('لا توجد قوالب نشطة مسجلة.'), style: GoogleFonts.cairo(color: context.picposMuted)),
                   );
                 }
                 return ListView.separated(

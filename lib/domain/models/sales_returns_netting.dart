@@ -58,19 +58,34 @@ double clampedReturnedTotal({
 /// تقرأ كائنَ التحليل نفسَه؛ حسمٌ عند كلّ بطاقةٍ على حدة كان سيترك الطباعةَ
 /// والتصديرَ على المجمل.
 ///
-/// الربحُ يتناسب: `netProfit = grossProfit × (1 − returned/gross)`.
-/// ولماذا التناسبُ لا الحسمُ من الأصناف: مسارُ المرتجع عندنا يكتب صفَّ
-/// فاتورةٍ **بلا أسطرِ أصناف** (`insertSalesInvoiceWithoutStock`)، فلا وجودَ
-/// لتكلفةِ سطرٍ مرتجَعٍ تُخصم. والتناسبُ يحفظ الهامشَ وهو أقربُ تقديرٍ متّسق.
+/// **الربحُ** — مع [actual] (‏FS-16، ما تمرّره شاشةُ التقرير): يُطرح من صافي
+/// الإيراد ومن التكلفة ما قيّده قيدُ كلِّ مرتجعٍ فعلاً (انظر
+/// [returnsProfitBasis])، فيطابق `4121 − 4212 − 4211 − 5211` للفواتير
+/// المعروضة.
 ///
-/// ولا يُوجَّه الربحُ إلى دفتر الأستاذ: فلاترُ الشاشة (مستخدم · دفع · نوع ·
-/// مخزن) بلا مقابلٍ محاسبيّ، فالرقمُ كان سينحرف صامتاً عن الجدول تحتها.
+/// وبدون [actual] يبقى المسارُ القديمُ كما كان، وهو **تقديرٌ** تناسبيّ:
+/// `netProfit = grossProfit × (1 − returned/gross)`. أُبقي لمن لا يملك قيودَ
+/// المرتجع (نداءاتٌ قديمةٌ واختباراتُ الحساب الخالص) لا لأنه صحيح: المعاملُ
+/// يُبنى من المردود **شاملَ الضريبة** على مجمل كلّ الفواتير، فيخطئ تكلفةَ
+/// المرتجع (دورة `fs_01`: ٥٩٫٥٧٤ بدل ٦٠ المقيّدة، والربحُ ١٣٦٫٢٤١ بدل
+/// ١٣٦٫٦٦٧)، ويخطئ الإيرادَ متى اختلفت نسبةُ الضريبة أو التوصيل بين الفواتير.
+/// وكان مبرَّرُه أن مستندَ المرتجع قد يكون **بلا أسطرِ أصناف**
+/// (`insertSalesInvoiceWithoutStock`) — لكن قيدَ المرتجع يحمل التكلفةَ
+/// المجمَّدةَ في الحالتين، فلا حاجةَ للأسطر.
+///
+/// ولا يُوجَّه الربحُ إلى أرصدة الأستاذ للفترة: فلاترُ الشاشة (مستخدم · دفع ·
+/// نوع · مخزن) بلا مقابلٍ محاسبيّ، فالرقمُ كان سينحرف صامتاً عن الجدول
+/// تحتها. لذا يُقرأ القيدُ **لكلّ فاتورةٍ معروضة** لا للفترة كلّها.
 ///
 /// **عددُ الفواتير لا ينقص**: الفاتورةُ المرتجَعةُ جزئياً ما زالت بيعاً
 /// معروضاً في الجدول، فإنقاصُ العدّاد كان سيخالف عددَ الصفوف. والضريبةُ
 /// والخصمُ يُتركان كما هما — بطاقةُ الضريبة تقرأ من الأستاذ في شاشتها،
 /// وتحريكُها هنا كان سيخالفها.
-SalesAnalytics netOfReturns(SalesAnalytics gross, double returnedTotal) {
+SalesAnalytics netOfReturns(
+  SalesAnalytics gross,
+  double returnedTotal, {
+  ReturnsProfitBasis? actual,
+}) {
   if (returnedTotal <= 0) return gross;
 
   final rawNet = gross.totalSales - returnedTotal;
@@ -80,11 +95,19 @@ SalesAnalytics netOfReturns(SalesAnalytics gross, double returnedTotal) {
   // على صفر: المعاملُ صفرٌ والصافي صفر.
   final factor = gross.totalSales > 0 ? netSales / gross.totalSales : 0.0;
 
+  final netRevenue = actual == null
+      ? gross.totalNetRevenue * factor
+      : gross.totalNetRevenue - actual.netRevenue;
+  final cogs =
+      actual == null ? gross.totalCOGS * factor : gross.totalCOGS - actual.cogs;
+  // ربحُ المبيعات = صافي الإيراد − التكلفة، بنفس تعريف `getSalesAnalytics`.
+  final profit = netRevenue - cogs;
+
   return SalesAnalytics(
     totalSales: netSales,
-    totalGrossProfit: gross.totalGrossProfit * factor,
-    totalNetProfit: gross.totalNetProfit * factor,
-    totalProfit: gross.totalProfit * factor,
+    totalGrossProfit: actual == null ? gross.totalGrossProfit * factor : profit,
+    totalNetProfit: actual == null ? gross.totalNetProfit * factor : profit,
+    totalProfit: actual == null ? gross.totalProfit * factor : profit,
     salesCount: gross.salesCount,
     invoiceCount: gross.invoiceCount,
     averageSaleValue:
@@ -93,7 +116,78 @@ SalesAnalytics netOfReturns(SalesAnalytics gross, double returnedTotal) {
         gross.invoiceCount > 0 ? netSales / gross.invoiceCount : 0.0,
     totalDiscount: gross.totalDiscount,
     totalTax: gross.totalTax,
-    totalCOGS: gross.totalCOGS * factor,
-    totalNetRevenue: gross.totalNetRevenue * factor,
+    totalCOGS: cogs,
+    totalNetRevenue: netRevenue,
+  );
+}
+
+/// ما يُطرح من صافي الإيراد ومن التكلفة لمرتجعات الفواتير المعروضة.
+class ReturnsProfitBasis {
+  const ReturnsProfitBasis({
+    required this.netRevenue,
+    required this.cogs,
+    required this.estimatedInvoiceCount,
+  });
+
+  /// المردودُ بلا ضريبةٍ ولا حصّةِ توصيل — نفسُ أساس `totalNetRevenue`.
+  final double netRevenue;
+
+  /// تكلفةُ البضاعة المرتجَعة كما عكسها قيدُ المرتجع.
+  final double cogs;
+
+  /// فواتيرُ رُدّ عليها ولا قيدَ مرتجعٍ لها في هذا المخزن، فحُسبت تقديراً.
+  final int estimatedInvoiceCount;
+
+  bool get isEstimated => estimatedInvoiceCount > 0;
+}
+
+/// يبني [ReturnsProfitBasis] لكلّ فاتورةٍ معروضةٍ رُدّ عليها.
+///
+/// [returnedByInvoice] — المردودُ شاملَ الضريبة (‏`getReturnedAmountsForInvoices`).
+/// [ledgerByInvoice] — `(cogs, vat)` من قيد المرتجع
+/// (‏`getReturnLedgerAmountsForInvoices`).
+///
+/// لكلّ فاتورة: `cap` = المردودُ مقصوصاً عند إجماليها كما في
+/// [clampedReturnedTotal]، وما يُطرح من القيد يُقصّ بالنسبة نفسها
+/// (`cap / refund`) كي لا يُطرح من التكلفة أكثرُ ممّا طُرح من الإيراد.
+///   * الإيرادُ = `cap − vat − cap × delivery / total`: حصّةُ التوصيل من
+///     المردود بالضبط هي `delivery / total` (‏`return_refund_calculator`
+///     يوزّع التوصيلَ بنسبة الأسطر المردودة نفسِها)، والتوصيلُ خارجَ
+///     `totalNetRevenue` أصلاً فيخرج من المردود كذلك.
+///   * التكلفةُ = `cogs` القيد.
+///
+/// فاتورةٌ بلا قيدٍ محلّيّ (نسخةُ عميلٍ لم يصلها القيدُ بعد) تُحسب **تقديراً**
+/// وتُعَدّ في [ReturnsProfitBasis.estimatedInvoiceCount] لتعلنه الشاشة: الإيرادُ
+/// بنسبة الفاتورة نفسِها والتكلفةُ بنسبة `COGS/المبيعات` للمجمل — وهو التقديرُ
+/// القديمُ مقصوراً على تلك الفاتورة.
+ReturnsProfitBasis returnsProfitBasis({
+  required SalesAnalytics gross,
+  required Map<int, double> returnedByInvoice,
+  required List<SalesInvoiceData> displayedInvoices,
+  required Map<int, ({double cogs, double vat})> ledgerByInvoice,
+}) {
+  var netRevenue = 0.0;
+  var cogs = 0.0;
+  var estimated = 0;
+  for (final inv in displayedInvoices) {
+    final refund = returnedByInvoice[inv.id];
+    if (refund == null || refund <= 0 || inv.total <= 0) continue;
+    final cap = refund > inv.total ? inv.total : refund;
+    final deliveryShare = cap * inv.deliveryFee / inv.total;
+    final ledger = ledgerByInvoice[inv.id];
+    if (ledger != null) {
+      final share = cap / refund;
+      netRevenue += cap - ledger.vat * share - deliveryShare;
+      cogs += ledger.cogs * share;
+    } else {
+      estimated++;
+      netRevenue += cap * (inv.total - inv.tax) / inv.total - deliveryShare;
+      if (gross.totalSales > 0) cogs += cap * gross.totalCOGS / gross.totalSales;
+    }
+  }
+  return ReturnsProfitBasis(
+    netRevenue: netRevenue,
+    cogs: cogs,
+    estimatedInvoiceCount: estimated,
   );
 }

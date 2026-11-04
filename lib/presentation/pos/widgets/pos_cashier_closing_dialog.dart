@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../../../data/providers/providers.dart';
 import '../providers/pos_notification_provider.dart';
@@ -113,7 +114,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
             const Spacer(),
             Text(
               '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
-              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 12, color: context.picposMuted),
             ),
           ],
         ),
@@ -154,8 +155,8 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                             const SizedBox(height: 8),
                              Text(
                               tr('افتح وردية جديدة من شاشة البيع السريع قبل محاولة إغلاقها. القيم التي تظهر هنا تُحسب فقط على معاملات الوردية الحالية لتمنع اختلاط أرقام ورديات سابقة.'),
-                              style: const TextStyle(
-                                color: AppColors.textMuted,
+                              style: TextStyle(
+                                color: context.picposMuted,
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -232,9 +233,9 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════
+  // ═══════
   // RECONCILIATION TABLE (per-channel)
-  // ═══════════════════════════════════════════════════════════════════
+  // ═══════
 
   String _fmt(double v) =>
       '${v.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}';
@@ -244,10 +245,10 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
   /// for channels that don't apply (e.g. opening balance on bank/click).
   Widget _cell(double? value, {Color? color, bool emphasis = false, String prefix = ''}) {
     if (value == null) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         child: Text('—', textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+            style: TextStyle(fontSize: 12, color: context.picposMuted)),
       );
     }
     return Padding(
@@ -278,10 +279,10 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
   }
 
   TableRow _headerRow() {
-    const headerStyle = TextStyle(
+    final headerStyle = TextStyle(
       fontSize: 11,
       fontWeight: FontWeight.bold,
-      color: AppColors.textMuted,
+      color: context.picposMuted,
     );
     Widget h(String t, {Color? bg}) => Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
@@ -297,7 +298,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
         h(tr('نقد'), bg: AppColors.primary.withValues(alpha: 0.08)),
         h(tr('بنك'), bg: AppColors.info.withValues(alpha: 0.08)),
         h(tr('كليك'), bg: AppColors.warning.withValues(alpha: 0.08)),
-        h(tr('آجل'), bg: AppColors.textMuted.withValues(alpha: 0.08)),
+        h(tr('آجل'), bg: context.picposMuted.withValues(alpha: 0.08)),
         h(tr('الإجمالى')),
       ],
     );
@@ -318,11 +319,11 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
   }) {
     final hideValue = !canViewDetails;
     Widget v(double? val) => hideValue
-        ? const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        ? Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
             child: Text('---',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                style: TextStyle(fontSize: 12, color: context.picposMuted)),
           )
         : _cell(val, color: color, emphasis: emphasis, prefix: prefix);
     return TableRow(
@@ -376,8 +377,8 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                   ),
                 ),
                 Text(shiftTimeText,
-                    style: const TextStyle(
-                        fontSize: 11, color: AppColors.textMuted)),
+                    style: TextStyle(
+                        fontSize: 11, color: context.picposMuted)),
               ],
             ),
             const Divider(height: 20),
@@ -494,7 +495,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                     canViewDetails: canViewDetails),
 
                 // Subtotal — total outflow per channel.
-                _dataRow(tr('إجمالى الخصم'),
+                _dataRow(tr('إجمالي المدفوعات من الصندوق'),
                     cash: a.totalOutflowCash,
                     bank: a.totalOutflowBank,
                     click: a.totalOutflowClick,
@@ -548,14 +549,14 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                       padding: const EdgeInsets.symmetric(vertical: 2),
                       child: Row(
                         children: [
-                          const Icon(PhosphorIconsBold.caretLeft,
-                              size: 10, color: AppColors.textMuted),
+                          Icon(PhosphorIconsBold.caretLeft,
+                              size: 10, color: context.picposMuted),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(e.description,
-                                style: const TextStyle(
+                                style: TextStyle(
                                     fontSize: 11,
-                                    color: AppColors.textMuted),
+                                    color: context.picposMuted),
                                 overflow: TextOverflow.ellipsis),
                           ),
                           Container(
@@ -563,10 +564,10 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                                 horizontal: 4, vertical: 1),
                             margin: const EdgeInsetsDirectional.only(end: 6),
                             decoration: BoxDecoration(
-                              color: AppColors.surface,
+                              color: context.picposField,
                               borderRadius: BorderRadius.circular(3),
                               border:
-                                  Border.all(color: AppColors.border),
+                                  Border.all(color: context.picposHairline),
                             ),
                             child: Text(
                               e.safeType == 'bank'
@@ -574,9 +575,9 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                                   : (e.safeType == 'click'
                                       ? tr('كليك')
                                       : tr('نقد')),
-                              style: const TextStyle(
-                                  fontSize: 9,
-                                  color: AppColors.textMuted),
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: context.picposMuted),
                             ),
                           ),
                           Text(
@@ -601,8 +602,8 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
               runSpacing: 4,
               children: [
                 _statChip(
-                    tr('إجمالى فواتير'),
-                    '${a.salesCount + a.returnsCount}',
+                    tr('فواتير بيع'),
+                    '${a.salesCount} · ${tr('مرتجعات')}: ${a.returnsCount}',
                     PhosphorIconsBold.receipt),
                 if (a.tableSalesCount > 0)
                   _statChip(tr('طاولات'), '${a.tableSalesCount}',
@@ -610,8 +611,6 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                 if (a.tableSalesCount > 0)
                   _statChip(tr('كاونتر'), '${a.counterSalesCount}',
                       PhosphorIconsBold.storefront),
-                _statChip(tr('مرتجعات'), '${a.returnsCount}',
-                    PhosphorIconsBold.arrowUDownLeft),
                 _statChip(tr('سندات قبض'), '${a.receiptCount}',
                     PhosphorIconsBold.arrowDown),
                 _statChip(tr('سندات صرف'), '${a.paymentCount}',
@@ -638,8 +637,8 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                     Expanded(
                       child: Text(
                         tr('عمود "آجل" عرض فقط — لا يُطلب جرد فعلى له (تحرك على ذمم العملاء بدون حركة نقدية).'),
-                        style: const TextStyle(
-                            fontSize: 10, color: AppColors.textMuted),
+                        style: TextStyle(
+                            fontSize: 11, color: context.picposMuted),
                       ),
                     ),
                   ],
@@ -662,18 +661,18 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 11, color: AppColors.textMuted),
+          Icon(icon, size: 11, color: context.picposMuted),
           const SizedBox(width: 3),
           Text('$label:',
-              style: const TextStyle(
-                  fontSize: 10, color: AppColors.textMuted)),
+              style: TextStyle(
+                  fontSize: 11, color: context.picposMuted)),
           const SizedBox(width: 2),
           Text(value,
               style: const TextStyle(
@@ -684,6 +683,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
   }
 
   Widget _buildReconciliationSection(bool canViewDetails, PosClosingState state) {
+    final cashActualEntered = _actualCashController.text.trim().isNotEmpty;
     if (!canViewDetails) {
       return Card(
         color: Theme.of(context).cardColor,
@@ -723,11 +723,11 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
               ],
             ),
             const Divider(),
-            _buildReconciliationRow(tr('النقدى الفعلى'), _actualCashController, state.cashVariance, PhosphorIconsBold.money, AppColors.primary, state.isRevealed),
+            _buildReconciliationRow(tr('النقدى الفعلى'), _actualCashController, state.cashVariance, PhosphorIconsBold.money, AppColors.primary, state.isRevealed && cashActualEntered),
             const SizedBox(height: 12),
-            _buildReconciliationRow(tr('البنك الفعلى'), _actualCardController, state.bankVariance, PhosphorIconsBold.creditCard, AppColors.info, state.isRevealed),
+            _buildReconciliationRow(tr('البنك الفعلى'), _actualCardController, state.bankVariance, PhosphorIconsBold.creditCard, AppColors.info, state.isRevealed && cashActualEntered),
             const SizedBox(height: 12),
-            _buildReconciliationRow(tr('كليك الفعلى'), _actualClickController, state.clickVariance, PhosphorIconsBold.deviceMobile, AppColors.warning, state.isRevealed),
+            _buildReconciliationRow(tr('كليك الفعلى'), _actualClickController, state.clickVariance, PhosphorIconsBold.deviceMobile, AppColors.warning, state.isRevealed && cashActualEntered),
             const SizedBox(height: 16),
             if (!state.isRevealed)
               SizedBox(
@@ -738,7 +738,8 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
                   child:  Text(tr('إظهار النتائج والمطابقة')),
                 ),
               ),
-            if (state.isRevealed) _buildTotalVarianceStatus(state.totalVariance),
+            if (state.isRevealed && cashActualEntered)
+              _buildTotalVarianceStatus(state.totalVariance),
           ],
         ),
       ),
@@ -784,7 +785,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
             width: 80,
             child: Column(
               children: [
-                 Text(tr('الفرق'), style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                 Text(tr('الفرق'), style: TextStyle(fontSize: 11, color: context.picposMuted)),
                 Text(
                   '${variance > 0 ? '+' : ''}${variance.toStringAsFixed(AppConstants.decimalPlaces)}',
                   style: TextStyle(
@@ -820,7 +821,7 @@ class _PosCashierClosingDialogState extends ConsumerState<PosCashierClosingDialo
           Text(
             totalVar.abs() < 0.001
                 ? tr('المطابقة تمام ✓')
-                : (totalVar < 0 ? tr('نقص: {p0} {p1}', {'p0': totalVar.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}) : tr('زيادة: +{p0} {p1}', {'p0': totalVar.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn})),
+                : (totalVar < 0 ? tr('عجز: {p0} {p1}', {'p0': totalVar.abs().toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}) : tr('فائض: +{p0} {p1}', {'p0': totalVar.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn})),
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color),
           ),
         ],

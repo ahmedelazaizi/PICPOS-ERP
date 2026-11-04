@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../theme/core_surface_colors.dart';
 
 /// A professional, cross-platform On-Screen Keyboard (OSK) for touch devices.
 /// Supports numeric and alphanumeric layouts with Arabic/English support.
@@ -45,13 +46,13 @@ class AppOSK extends StatelessWidget {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          if (isNumeric) _buildNumericLayout() else _buildAlphanumericLayout(),
+          if (isNumeric) _buildNumericLayout(context) else _buildAlphanumericLayout(),
         ],
       ),
     );
   }
 
-  Widget _buildNumericLayout() {
+  Widget _buildNumericLayout(BuildContext context) {
     return GridView.count(
       shrinkWrap: true,
       crossAxisCount: 3,
@@ -92,7 +93,10 @@ class AppOSK extends StatelessWidget {
         _buildActionKey(
           icon: Icons.close,
           onTap: onClosed,
-          color: AppColors.textMuted,
+          color: context.coreStatusText(
+            AppColors.textMuted,
+            on: AppColors.secondary,
+          ),
         ),
       ],
     );

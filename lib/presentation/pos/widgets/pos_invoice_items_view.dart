@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 // `SalesInvoiceItemWithProduct` يجي من `providers.dart` — ملف `projections.dart`
 // نفسه `part of` قاعدة البيانات فمايتستوردش مباشرة.
 import '../../../data/providers/providers.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// The item lines of a posted sales invoice plus its total.
 ///
@@ -73,7 +74,7 @@ class PosInvoiceItemsView extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Text(
                   tr('لا توجد أصناف في هذه الفاتورة'),
-                  style: const TextStyle(color: AppColors.textMuted),
+                  style: TextStyle(color: context.picposMuted),
                 ),
               )
             else

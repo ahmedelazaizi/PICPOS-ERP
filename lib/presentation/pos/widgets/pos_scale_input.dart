@@ -135,7 +135,7 @@ class _PosScaleInputState extends State<PosScaleInput> {
           // Label
            Text(
             tr('الوزن:'),
-            style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 14, color: context.picposMuted),
           ),
           const SizedBox(width: 8),
 
@@ -165,7 +165,7 @@ class _PosScaleInputState extends State<PosScaleInput> {
                   const SizedBox(width: 8),
                    Text(
                     tr('كجم'),
-                    style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
+                    style: TextStyle(fontSize: 14, color: context.picposMuted),
                   ),
                 ],
               ),

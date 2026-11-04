@@ -10,7 +10,7 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 //     الذاكرة** وتُبلّغ المضيفَ — وهو ما يجعل «تراجع» ممكناً أصلاً.
 //   • الأصلُ يعرف الطاولاتِ وحدَها، وهذه ترسم **معالمَ القاعة** معها.
 //   • الأصلُ يشتقّ المقاسَ من السعة حصراً، وهذه تقرأ المحفوظَ أوّلاً
-//     (`resolveTableSize`) — فطاولتا اثنَين وثلاثةٍ لم تعودا متطابقتَين.
+//     (`resolveTableSize`).
 //
 // ═══ ⚠️ ولا استيرادَ لـ`data/database` هنا ═══
 //
@@ -23,6 +23,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/models/floor_plan_layout.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// ما تعرفه اللوحةُ عن الطاولة **غيرَ هندستها** — اسمٌ وسعةٌ وحالة.
 ///
@@ -627,8 +628,8 @@ class _FloorPlanEditorCanvasState extends State<FloorPlanEditorCanvas> {
           Text(
             '${meta?.capacity ?? 4}',
             style: GoogleFonts.cairo(
-              fontSize: 10,
-              color: AppColors.textMuted,
+              fontSize: 11,
+              color: context.picposMuted,
             ),
           ),
         ],

@@ -23,8 +23,8 @@ extension AppDatabaseNumbering on AppDatabase {
   ///
   /// On PostgreSQL the counter row is locked with `FOR UPDATE` before it is
   /// read — without that, concurrent callers on separate connections issue
-  /// duplicate numbers, and there is no UNIQUE index on `invoice_number` to
-  /// catch them.
+  /// duplicate numbers (the partial unique index on `invoice_number` exists
+  /// only on databases without legacy duplicates).
   Future<String> generateInvoiceNumber(String prefix) async {
     // 066 (D5-001) — defensive guard. The counter advance and the dependent
     // voucher insert MUST be atomic; Drift makes a nested transaction() into
@@ -83,9 +83,8 @@ extension AppDatabaseNumbering on AppDatabase {
       //
       // Measured on a live PG with two connections: 16 allocations produced 8
       // distinct numbers — a 100% collision rate on every concurrent pair, not
-      // an intermittent race. And nothing catches it downstream: there is no
-      // UNIQUE index on `invoice_number` (see the note where the number is
-      // returned).
+      // an intermittent race. The unique index (see the note where the number
+      // is returned) is only a backstop, and absent on legacy-duplicate DBs.
       //
       // `FOR UPDATE` makes the second reader wait for the first to commit, so
       // it reads N+1 and the sequence advances correctly.
@@ -115,14 +114,38 @@ extension AppDatabaseNumbering on AppDatabase {
             .toList()
           ..add(normalizedPrefix);
 
+        // R9: the seed is MAX(numeric tail)+1, NOT COUNT+1. With gaps (deleted
+        // invoices: 1,2,5 → delete 2) COUNT hands out 3.. and eventually
+        // re-issues 5, and no UNIQUE index would catch it. Only
+        // `<alias>-<digits>` matches, so a longer prefix such as `POSX-7`
+        // (which `LIKE 'POS%'` used to swallow) is ignored. The user's display
+        // prefix is scanned too, since that is what the numbers actually carry.
+        final scanPrefixes = <String>{
+          for (final p in [...aliasesForThis, displayPrefix])
+            p.endsWith('-') ? p.substring(0, p.length - 1) : p,
+        };
         int maxExisting = 0;
-        for (final alias in aliasesForThis) {
-          final count = await (selectOnly(salesInvoices)
-                ..addColumns([salesInvoices.id.count()])
-                ..where(salesInvoices.invoiceNumber.like('$alias%')))
-              .map((row) => row.read(salesInvoices.id.count()))
-              .getSingle();
-          if ((count ?? 0) > maxExisting) maxExisting = count!;
+        final tail = RegExp(r'^\d+$');
+        for (final p in scanPrefixes) {
+          final likeValue = '$p-%';
+          final numbers = <String>[
+            ...await (selectOnly(salesInvoices)
+                  ..addColumns([salesInvoices.invoiceNumber])
+                  ..where(salesInvoices.invoiceNumber.like(likeValue)))
+                .map((r) => r.read(salesInvoices.invoiceNumber) ?? '')
+                .get(),
+            ...await (selectOnly(purchaseInvoices)
+                  ..addColumns([purchaseInvoices.invoiceNumber])
+                  ..where(purchaseInvoices.invoiceNumber.like(likeValue)))
+                .map((r) => r.read(purchaseInvoices.invoiceNumber) ?? '')
+                .get(),
+          ];
+          for (final number in numbers) {
+            final t = number.substring(p.length + 1);
+            if (!tail.hasMatch(t)) continue;
+            final n = int.tryParse(t) ?? 0;
+            if (n > maxExisting) maxExisting = n;
+          }
         }
 
         // Seed the row at the FIRST number to hand out and let the shared
@@ -168,7 +191,18 @@ extension AppDatabaseNumbering on AppDatabase {
       )..where((s) => s.prefix.equals(normalizedPrefix))..limit(1))
           .getSingleOrNull();
 
-      final nextNumber = seq?.nextValue ?? 1;
+      var nextNumber = seq?.nextValue ?? 1;
+      // Skip numbers a live invoice already holds (legacy shared display
+      // prefix, a manually typed number, rows pulled from another terminal):
+      // the unique index would reject them. Only invoice prefixes are checked,
+      // and the counter advances past the skipped numbers.
+      for (var i = 0;
+          i < 1000 &&
+              await invoiceNumberInUse(
+                  this, normalizedPrefix, '$displayPrefix-$nextNumber');
+          i++) {
+        nextNumber++;
+      }
       await (update(
         documentSequences,
       )..where((s) => s.prefix.equals(normalizedPrefix))).write(
@@ -179,15 +213,9 @@ extension AppDatabaseNumbering on AppDatabase {
       // Per product request 2026-04: drop the year + 6-digit zero-pad. Counter
       // is unbounded and human-readable.
       //
-      // NOTE: this used to claim uniqueness was "guaranteed by the sequence
-      // plus the UNIQUE index on invoice_number". There is no such index, on
-      // either backend — `SalesInvoices.invoiceNumber` and
-      // `PurchaseInvoices.invoiceNumber` are plain `text().withLength(max: 50)`
-      // and the partial unique index was deliberately deferred because customer
-      // databases may already hold duplicates (see
-      // client_issue_m4_duplicate_invoice_no_test.dart). The sequence is the
-      // ONLY guarantee, which is why the `FOR UPDATE` lock above is load-bearing
-      // rather than defensive.
+      // Uniqueness: the sequence + the `FOR UPDATE` lock above, plus the
+      // partial unique indexes from invoice_number_unique_index.dart (created
+      // at deferred startup only when the DB holds no legacy duplicates).
       return '$displayPrefix-$nextNumber';
     });
   }

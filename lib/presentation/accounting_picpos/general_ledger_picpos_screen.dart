@@ -119,7 +119,7 @@ class _GeneralLedgerPicPosScreenState
                 style: Theme.of(context)
                     .textTheme
                     .labelMedium
-                    ?.copyWith(color: AppColors.textMuted)),
+                    ?.copyWith(color: context.picposMuted)),
             const SizedBox(width: 10),
             IconButton(
               tooltip: tr('طباعة PDF'),
@@ -578,7 +578,7 @@ class _AccountPickerButton extends StatelessWidget {
                 children: [
                   Text(tr('الحساب المعروض'),
                       style: text.labelSmall
-                          ?.copyWith(color: AppColors.textMuted)),
+                          ?.copyWith(color: context.picposMuted)),
                   Text(
                     label,
                     maxLines: 1,
@@ -589,8 +589,8 @@ class _AccountPickerButton extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(PhosphorIconsBold.caretDown,
-                size: 14, color: AppColors.textMuted),
+            Icon(PhosphorIconsBold.caretDown,
+                size: 14, color: context.picposMuted),
           ],
         ),
       ),
@@ -632,17 +632,17 @@ class _FilterChip extends StatelessWidget {
           children: [
             Icon(icon,
                 size: 14,
-                color: active ? AppColors.primary : AppColors.textMuted),
+                color: active ? AppColors.primary : context.picposMuted),
             const SizedBox(width: 8),
             Text(label,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: active
                           ? AppColors.primary
-                          : AppColors.textSecondary,
+                          : context.picposSecondary,
                     )),
             const SizedBox(width: 6),
-            const Icon(PhosphorIconsBold.caretDown,
-                size: 12, color: AppColors.textMuted),
+            Icon(PhosphorIconsBold.caretDown,
+                size: 12, color: context.picposMuted),
           ],
         ),
       ),
@@ -658,7 +658,7 @@ class _LedgerHeaderRow extends StatelessWidget {
     final style = Theme.of(context)
         .textTheme
         .labelSmall
-        ?.copyWith(color: AppColors.textMuted, fontWeight: FontWeight.w800);
+        ?.copyWith(color: context.picposMuted, fontWeight: FontWeight.w800);
     return Container(
       height: 34,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -726,7 +726,7 @@ class _LedgerRow extends StatelessWidget {
             width: _wDate,
             child: Text(dateStr,
                 style: text.labelMedium
-                    ?.copyWith(color: AppColors.textSecondary)),
+                    ?.copyWith(color: context.picposSecondary)),
           ),
           SizedBox(
             width: _wNo,
@@ -755,7 +755,7 @@ class _LedgerRow extends StatelessWidget {
               costCenterName,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: text.labelSmall?.copyWith(color: AppColors.textMuted),
+              style: text.labelSmall?.copyWith(color: context.picposMuted),
             ),
           ),
           SizedBox(

@@ -3,6 +3,11 @@ import 'picpos_surface.dart';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import 'picpos_header_actions.dart';
+import 'package:picpos_erp/core/theme/readable_colors.dart';
+
+/// حبر أيقونات الهوية: الفاتح `AppColors.primary` كما كان، والداكن أفتح قراءةً.
+Color _brandInk(BuildContext c) =>
+    c.picposIsDark ? readableBrand(c) : AppColors.primary;
 
 /// هيدر شاشات PicPos: خلفية فاتحة، عنوان داكن، وخط لوني سفلي 2.5px بلون العلامة
 /// (فلسفة PicPosTheme: «شريط علوي فاتح بشريحة لونية سفلية»). التايبوغرافي من الثيم.
@@ -94,7 +99,7 @@ class PicPosPageHeader extends StatelessWidget {
               key: const Key('picpos_header_back'),
               onPressed: onBack ?? () => Navigator.maybePop(context),
               icon: const Icon(Icons.arrow_back),
-              color: AppColors.primary,
+              color: _brandInk(context),
               tooltip: tr('رجوع'),
               style: IconButton.styleFrom(
                 backgroundColor: AppColors.primary.withValues(alpha: 0.08),
@@ -109,7 +114,7 @@ class PicPosPageHeader extends StatelessWidget {
                 color: AppColors.primary.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: AppColors.primary, size: 22),
+              child: Icon(icon, color: _brandInk(context), size: 22),
             ),
             const SizedBox(width: 12),
           ],

@@ -401,7 +401,7 @@ class _PicPosActionBar extends StatelessWidget {
             child: Text(
               'F9',
               style: TextStyle(
-                fontSize: 9.5,
+                fontSize: 11,
                 fontWeight: FontWeight.w700,
                 color: onPrimary.withValues(alpha: .8),
               ),

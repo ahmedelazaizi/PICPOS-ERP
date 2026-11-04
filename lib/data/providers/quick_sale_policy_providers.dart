@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../domain/models/no_invoice_return_policy.dart';
 import '../../domain/models/quick_sale_policy.dart';
 import 'providers.dart';
 
@@ -12,6 +13,8 @@ Set<String> get quickSalePolicyKeys => {
       for (final row in kQuickSaleRows)
         if (row.mirrorKey != null) row.mirrorKey!,
       for (final pick in kQuickSalePicks) pick.settingKey,
+      // سقفُ المرتجع بلا فاتورة — مفتاحٌ مستقلّ (انظر `no_invoice_return_policy`).
+      kNoInvoiceReturnCapKey,
     };
 
 /// قيمُ السياسة كما هي في القاعدة.

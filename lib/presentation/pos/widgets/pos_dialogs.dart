@@ -5,6 +5,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
 import '../../../services/scale_service.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import '../../widgets/searchable_dropdown.dart';
 import 'package:picpos_erp/core/constants/app_constants.dart';
 

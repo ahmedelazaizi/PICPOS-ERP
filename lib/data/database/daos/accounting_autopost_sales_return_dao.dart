@@ -19,20 +19,27 @@ extension AccountingAutopostSalesReturnDao on AppDatabase {
   }
 
   Future<int?> _activeSaleEntryId(int saleId) async {
-    final entries = await (select(journalEntries)
-          ..where((e) => e.referenceType.equals('sale') &
-              e.referenceId.equals(saleId) &
-              e.isPosted.equals(true) &
-              e.isDeleted.equals(false)))
-        .get();
+    final entries =
+        await (select(journalEntries)..where(
+              (e) =>
+                  e.referenceType.equals('sale') &
+                  e.referenceId.equals(saleId) &
+                  e.isPosted.equals(true) &
+                  e.isDeleted.equals(false),
+            ))
+            .get();
     for (final entry in entries) {
-      final reversal = await (select(journalEntries)
-            ..where((e) => e.referenceType.equals('reversal') &
-                e.referenceId.equals(entry.id) &
-                e.isPosted.equals(true) &
-                e.isDeleted.equals(false))
-            ..limit(1))
-          .getSingleOrNull();
+      final reversal =
+          await (select(journalEntries)
+                ..where(
+                  (e) =>
+                      e.referenceType.equals('reversal') &
+                      e.referenceId.equals(entry.id) &
+                      e.isPosted.equals(true) &
+                      e.isDeleted.equals(false),
+                )
+                ..limit(1))
+              .getSingleOrNull();
       if (reversal == null) return entry.id;
     }
     return null;
@@ -50,10 +57,11 @@ extension AccountingAutopostSalesReturnDao on AppDatabase {
   /// pass, and a genuine retry (identical gid) is caught for a clean idempotent
   /// skip before the journal_entries.globalId UNIQUE index would hard-fail it.
   Future<bool> _hasAutoPostEntryByGlobalId(String globalId) async {
-    final existing = await (select(journalEntries)
-          ..where((e) => e.globalId.equals(globalId))
-          ..limit(1))
-        .getSingleOrNull();
+    final existing =
+        await (select(journalEntries)
+              ..where((e) => e.globalId.equals(globalId))
+              ..limit(1))
+            .getSingleOrNull();
     return existing != null;
   }
 
@@ -64,17 +72,30 @@ extension AccountingAutopostSalesReturnDao on AppDatabase {
     int invoiceId,
     String? returnEventId,
   ) async {
-    if (returnEventId == null || returnEventId.isEmpty) return null;
-    final row = await (select(safeTransactions).join([
-      innerJoin(safes, safes.id.equalsExp(safeTransactions.safeId)),
-    ])
-          ..where(safeTransactions.referenceType.equals('sales_return') &
-              safeTransactions.referenceId.equals(invoiceId) &
-              safeTransactions.voucherNumber.equals(returnEventId) &
-              safeTransactions.transactionType.equals('payment') &
-              safes.safeType.equals('cash'))
-          ..limit(1))
-        .getSingleOrNull();
+    final joined = select(
+      safeTransactions,
+    ).join([innerJoin(safes, safes.id.equalsExp(safeTransactions.safeId))]);
+    final row = returnEventId != null && returnEventId.isNotEmpty
+        ? await (joined
+                ..where(
+                  safeTransactions.referenceType.equals('sales_return') &
+                      safeTransactions.referenceId.equals(invoiceId) &
+                      safeTransactions.voucherNumber.equals(returnEventId) &
+                      safeTransactions.transactionType.equals('payment') &
+                      safes.safeType.equals('cash'),
+                )
+                ..limit(1))
+              .getSingleOrNull()
+        : await (joined
+                ..where(
+                  safeTransactions.referenceType.equals('sales_invoice') &
+                      safeTransactions.referenceId.equals(invoiceId) &
+                      safeTransactions.transactionType.equals('payment') &
+                      safes.safeType.equals('cash'),
+                )
+                ..orderBy([OrderingTerm.desc(safeTransactions.id)])
+                ..limit(1))
+              .getSingleOrNull();
     final linked = row?.readTable(safes).linkedAccountId;
     return linked == null ? null : accountingDao.getAccountById(linked);
   }
@@ -94,6 +115,7 @@ extension AccountingAutopostSalesReturnDao on AppDatabase {
   /// reversalCogs param) get exactly the same JE as before.
   Future<int?> autoPostSalesReturn({
     required SalesInvoiceData originalInvoice,
+
     /// تاريخ حدث المرتجع. `null` = السلوك القديم (تاريخ الفاتورة الأصلية).
     DateTime? returnDate,
     required double returnAmount,
@@ -126,10 +148,10 @@ extension AccountingAutopostSalesReturnDao on AppDatabase {
     // createJournalEntry's (refType,refId) dedup.
     final eventDiscriminator =
         (returnEventId != null && returnEventId.isNotEmpty)
-            ? returnEventId
-            : returnAmount.toStringAsFixed(AppConstants.decimalPlaces);
-    final returnKey =
-        '${originalInvoice.id}_$eventDiscriminator'.hashCode.abs();
+        ? returnEventId
+        : returnAmount.toStringAsFixed(AppConstants.decimalPlaces);
+    final returnKey = '${originalInvoice.id}_$eventDiscriminator'.hashCode
+        .abs();
     // Deterministic JE globalId — used BOTH as the dedup guard and as the
     // journal_entries.globalId (UNIQUE). Distinct return events → distinct gid
     // → distinct JE; a true retry → identical gid → clean idempotent skip.
@@ -144,7 +166,10 @@ extension AccountingAutopostSalesReturnDao on AppDatabase {
     if (await _hasAutoPostEntryByGlobalId(jeGid)) return null;
 
     // Resolve Branch from Warehouse
-    final warehouse = await (select(warehouses)..where((w) => w.id.equals(originalInvoice.warehouseId))).getSingleOrNull();
+    final warehouse =
+        await (select(warehouses)
+              ..where((w) => w.id.equals(originalInvoice.warehouseId)))
+            .getSingleOrNull();
     final branchId = warehouse?.branchId;
 
     // C2: a return of an invoice that chose its own «حساب المبيعات» debits
@@ -152,23 +177,36 @@ extension AccountingAutopostSalesReturnDao on AppDatabase {
     // the quick-return link note). NULL ⇒ the mapped 'sales_return' account.
     final salesReturnAccount =
         await resolveSalesRevenueAccountOverride(originalInvoice.id) ??
-            await accountingDao.getAccountByCode(
-              await accountingDao.getMappedAccountCode('sales_return', AccountingDao.accountPurposes['sales_return']!),
-            );
+        await accountingDao.getAccountByCode(
+          await accountingDao.getMappedAccountCode(
+            'sales_return',
+            AccountingDao.accountPurposes['sales_return']!,
+          ),
+        );
     // الرد النقدي يُقيَّد على حساب الخزينة الفعلية التي خرج منها (كما يفعل البيع —
     // Spec 136 ISS-13)؛ وإن لم توجد خزنة مرتبطة بحساب يبقى الحساب المعيَّن «cash».
-    final cashAccount = await _resolveReturnCashSafeAccount(
+    final cashAccount =
+        await _resolveReturnCashSafeAccount(
           originalInvoice.id,
           returnEventId,
         ) ??
         await accountingDao.getAccountByCode(
-          await accountingDao.getMappedAccountCode('cash', AccountingDao.accountPurposes['cash']!),
+          await accountingDao.getMappedAccountCode(
+            'cash',
+            AccountingDao.accountPurposes['cash']!,
+          ),
         );
     final bankAccount = await accountingDao.getAccountByCode(
-      await accountingDao.getMappedAccountCode('bank', AccountingDao.accountPurposes['bank']!),
+      await accountingDao.getMappedAccountCode(
+        'bank',
+        AccountingDao.accountPurposes['bank']!,
+      ),
     );
     final receivableControlAccount = await accountingDao.getAccountByCode(
-      await accountingDao.getMappedAccountCode('receivables', AccountingDao.accountPurposes['receivables']!),
+      await accountingDao.getMappedAccountCode(
+        'receivables',
+        AccountingDao.accountPurposes['receivables']!,
+      ),
     );
     // Route AR refund line to the customer's sub-account so the reversal is
     // visible on the customer's ledger card (not just the 1201 control).
@@ -209,52 +247,65 @@ extension AccountingAutopostSalesReturnDao on AppDatabase {
     // account left the entry short by vatAmount → hard-fail, return blocked.
     final vatAccount = vatAmount > 0
         ? await accountingDao.getAccountByCode(
-            await accountingDao.getMappedAccountCode('output_vat', AccountingDao.accountPurposes['output_vat']!),
+            await accountingDao.getMappedAccountCode(
+              'output_vat',
+              AccountingDao.accountPurposes['output_vat']!,
+            ),
           )
         : null;
     final salesReturnNet = (vatAmount > 0 && vatAccount != null)
         ? (returnAmount - vatAmount)
         : returnAmount;
-    lines.add(JournalLine(
-      accountId: salesReturnAccount.id,
-      debit: salesReturnNet,
-      description: 'مردودات مبيعات (صافى)',
-    ));
+    lines.add(
+      JournalLine(
+        accountId: salesReturnAccount.id,
+        debit: salesReturnNet,
+        description: 'مردودات مبيعات (صافى)',
+      ),
+    );
 
     // Debit: Output VAT reversal (عكس ضريبة المبيعات)
     if (vatAmount > 0 && vatAccount != null) {
-      lines.add(JournalLine(
-        accountId: vatAccount.id,
-        debit: vatAmount,
-        description: 'عكس ضريبة مرتجع',
-      ));
+      lines.add(
+        JournalLine(
+          accountId: vatAccount.id,
+          debit: vatAmount,
+          description: 'عكس ضريبة مرتجع',
+        ),
+      );
     }
 
     // Credit: Cash refund
     if (cashRefund > 0 && cashAccount != null) {
-      lines.add(JournalLine(
-        accountId: cashAccount.id,
-        credit: cashRefund,
-        description: 'رد نقدي',
-      ));
+      lines.add(
+        JournalLine(
+          accountId: cashAccount.id,
+          credit: cashRefund,
+          description: 'رد نقدي',
+        ),
+      );
     }
 
     // Credit: Bank refund
     if (bankRefund > 0 && bankAccount != null) {
-      lines.add(JournalLine(
-        accountId: bankAccount.id,
-        credit: bankRefund,
-        description: 'رد بنكي',
-      ));
+      lines.add(
+        JournalLine(
+          accountId: bankAccount.id,
+          credit: bankRefund,
+          description: 'رد بنكي',
+        ),
+      );
     }
 
     // Credit: AR adjustment
     if (arRefund > 0 && receivableAccount != null) {
-      lines.add(JournalLine(
-        accountId: receivableAccount.id,
-        credit: arRefund,
-        description: 'تسوية ذمم مدينة',
-      ));
+      lines.add(
+        JournalLine(
+          accountId: receivableAccount.id,
+          credit: arRefund,
+          description: 'تسوية ذمم مدينة',
+        ),
+      );
     }
 
     // Reverse COGS: Dr Inventory / Cr COGS
@@ -268,22 +319,32 @@ extension AccountingAutopostSalesReturnDao on AppDatabase {
         : cogsAmount;
     if (effectiveCogs > 0) {
       final cogsAccount = await accountingDao.getAccountByCode(
-        await accountingDao.getMappedAccountCode('cogs', AccountingDao.accountPurposes['cogs']!),
+        await accountingDao.getMappedAccountCode(
+          'cogs',
+          AccountingDao.accountPurposes['cogs']!,
+        ),
       );
       final inventoryAccount = await accountingDao.getAccountByCode(
-        await accountingDao.getMappedAccountCode('inventory', AccountingDao.accountPurposes['inventory']!),
+        await accountingDao.getMappedAccountCode(
+          'inventory',
+          AccountingDao.accountPurposes['inventory']!,
+        ),
       );
       if (cogsAccount != null && inventoryAccount != null) {
-        lines.add(JournalLine(
-          accountId: inventoryAccount.id,
-          debit: effectiveCogs,
-          description: 'إرجاع مخزون',
-        ));
-        lines.add(JournalLine(
-          accountId: cogsAccount.id,
-          credit: effectiveCogs,
-          description: 'عكس تكلفة بضاعة',
-        ));
+        lines.add(
+          JournalLine(
+            accountId: inventoryAccount.id,
+            debit: effectiveCogs,
+            description: 'إرجاع مخزون',
+          ),
+        );
+        lines.add(
+          JournalLine(
+            accountId: cogsAccount.id,
+            credit: effectiveCogs,
+            description: 'عكس تكلفة بضاعة',
+          ),
+        );
       }
     }
 
@@ -298,16 +359,19 @@ extension AccountingAutopostSalesReturnDao on AppDatabase {
     final returnRoundingAdj = originalInvoice.roundingAdjustment;
     if (returnRoundingAdj != 0 &&
         returnAmount >= originalInvoice.total - 0.01) {
-      final roundingAccount =
-          await accountingDao.getLeafAccountByPurpose('rounding_difference');
+      final roundingAccount = await accountingDao.getLeafAccountByPurpose(
+        'rounding_difference',
+      );
       if (roundingAccount != null) {
-        lines.add(JournalLine(
-          accountId: roundingAccount.id,
-          // بعكس اتجاه سطر البيع تماماً: ما كان مديناً هناك دائنٌ هنا.
-          debit: returnRoundingAdj < 0 ? -returnRoundingAdj : 0,
-          credit: returnRoundingAdj > 0 ? returnRoundingAdj : 0,
-          description: 'عكس فروق تقريب',
-        ));
+        lines.add(
+          JournalLine(
+            accountId: roundingAccount.id,
+            // بعكس اتجاه سطر البيع تماماً: ما كان مديناً هناك دائنٌ هنا.
+            debit: returnRoundingAdj < 0 ? -returnRoundingAdj : 0,
+            credit: returnRoundingAdj > 0 ? returnRoundingAdj : 0,
+            description: 'عكس فروق تقريب',
+          ),
+        );
       }
     }
 

@@ -47,6 +47,7 @@ import '../../../core/logging/diagnostic_logger.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../../widgets/permission_guard.dart' show requestManagerApproval;
 import '../../shared_widgets/open_shift_prompt.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 // ── Part files (dialogs and operations) ────────────────────────────────
 part 'pos_main_dialogs.dart';
@@ -317,12 +318,12 @@ class _PosScreenV2State extends ConsumerState<PosScreenV2>
       child: MouseRegion(
         cursor: SystemMouseCursors.resizeLeftRight,
         child: Container(
-          width: 20, decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, border: Border.symmetric(vertical: BorderSide(color: AppColors.border.withValues(alpha: 0.3)))),
+          width: 20, decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, border: Border.symmetric(vertical: BorderSide(color: context.picposHairline.withValues(alpha: 0.3)))),
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             _buildRatioButton(0.3, '30%'), const SizedBox(height: 4),
             _buildRatioButton(0.4, '40%'), const SizedBox(height: 4),
             _buildRatioButton(0.5, '50%'), const SizedBox(height: 8),
-            const Icon(PhosphorIconsBold.dotsThreeVertical, size: 16, color: AppColors.textMuted),
+            Icon(PhosphorIconsBold.dotsThreeVertical, size: 16, color: context.picposMuted),
           ]),
         ),
       ),
@@ -337,7 +338,7 @@ class _PosScreenV2State extends ConsumerState<PosScreenV2>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 3),
         decoration: BoxDecoration(color: isActive ? AppColors.primary : Colors.transparent, borderRadius: BorderRadius.circular(3)),
-        child: Text(label, style: TextStyle(fontSize: 8, fontWeight: isActive ? FontWeight.bold : FontWeight.normal, color: isActive ? Colors.white : AppColors.textMuted)),
+        child: Text(label, style: TextStyle(fontSize: 11, fontWeight: isActive ? FontWeight.bold : FontWeight.normal, color: isActive ? Colors.white : context.picposMuted)),
       ),
     );
   }

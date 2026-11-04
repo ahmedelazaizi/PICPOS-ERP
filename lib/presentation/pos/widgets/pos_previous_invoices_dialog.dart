@@ -1,3 +1,5 @@
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
+import '../../pos_picpos/widgets/picpos_pos_text.dart';
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,17 +10,28 @@ import '../../../data/providers/providers.dart';
 import '../../../domain/repositories/sales_repository.dart';
 import 'pos_invoice_items_view.dart';
 
+/// هل يُعرض زرُّ «مرتجع» لهذه الفاتورة؟ ليست مرتجعاً ولا مرتجعةً كلّياً.
+/// (الفواتير المحذوفة لا تصل القائمة أصلاً: `isDeleted = false`.)
+bool canReturnFromPreviousInvoices(SalesInvoiceData invoice) =>
+    invoice.saleType != 'return' && invoice.status != 'returned';
+
 /// Dialog for viewing and reprinting/editing previous invoices from the current shift
 class PosPreviousInvoicesDialog extends ConsumerStatefulWidget {
   final Function(SalesInvoiceData) onEdit;
   final Function(int) onReprint;
   final Function(int) onPrintKitchen;
 
+  /// اختياريّ: زرُّ «مرتجع» يظهر فقط عند تمريره (فالبيعُ القديم لا يتأثّر)،
+  /// ويحترم إعدادَ `show_return_button_pos`. المستدعي هو مَن يُغلق هذا
+  /// الحوار ويفتح مسارَ المرتجع.
+  final void Function(SalesInvoiceData)? onReturn;
+
   const PosPreviousInvoicesDialog({
     super.key,
     required this.onEdit,
     required this.onReprint,
     required this.onPrintKitchen,
+    this.onReturn,
   });
 
   /// Static helper to show the dialog
@@ -27,6 +40,7 @@ class PosPreviousInvoicesDialog extends ConsumerStatefulWidget {
     required Function(SalesInvoiceData) onEdit,
     required Function(int) onReprint,
     required Function(int) onPrintKitchen,
+    void Function(SalesInvoiceData)? onReturn,
   }) async {
     return showDialog<void>(
       context: context,
@@ -34,6 +48,7 @@ class PosPreviousInvoicesDialog extends ConsumerStatefulWidget {
         onEdit: onEdit,
         onReprint: onReprint,
         onPrintKitchen: onPrintKitchen,
+        onReturn: onReturn,
       ),
     );
   }
@@ -77,13 +92,14 @@ class _PosPreviousInvoicesDialogState
       child: AlertDialog(
         title:  Row(
           children: [
-            const Icon(PhosphorIconsBold.receipt, color: AppColors.info),
+            Icon(PhosphorIconsBold.receipt,
+                color: PicPosText.readableOn(context, AppColors.info)),
             const SizedBox(width: 8),
             Text(tr('الفواتير السابقة')),
             const Spacer(),
             Text(
               tr('اليوم'),
-              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 12, color: context.picposMuted),
             ),
           ],
         ),
@@ -291,6 +307,9 @@ class _PosPreviousInvoicesDialogState
     SalesInvoiceData invoice,
     Map<int, String> userMap,
   ) {
+    final showReturnButton =
+        ref.watch(showReturnButtonInPOSProvider).value ?? true;
+    final onReturn = widget.onReturn;
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: AppColors.success.withValues(alpha: 0.1),
@@ -298,14 +317,19 @@ class _PosPreviousInvoicesDialogState
           invoice.orderNumber != null
               ? '#${invoice.orderNumber}'
               : '#${invoice.id}',
-          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
         ),
       ),
       title: Row(
         children: [
-          Text(
-            tr('فاتورة #{p0}', {'p0': invoice.invoiceNumber}),
-            style: const TextStyle(fontWeight: FontWeight.bold),
+          // Flexible: زرُّ «مرتجع» أضاف ٤٨px للـtrailing، فلا يُترك العنوانُ
+          // يفيض حين يضيق الصفّ.
+          Flexible(
+            child: Text(
+              tr('فاتورة #{p0}', {'p0': invoice.invoiceNumber}),
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
           if (invoice.orderNumber != null) ...[
             const SizedBox(width: 8),
@@ -317,9 +341,9 @@ class _PosPreviousInvoicesDialogState
               ),
               child: Text(
                 tr('طلب {p0}', {'p0': invoice.orderNumber}),
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: AppColors.info,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: PicPosText.readableOn(context, AppColors.info),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -336,26 +360,26 @@ class _PosPreviousInvoicesDialogState
         children: [
           Text(
             '${invoice.total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: AppColors.success,
+              color: PicPosText.readableOn(context, AppColors.success),
             ),
           ),
           const SizedBox(width: 8),
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               PhosphorIconsBold.eye,
               size: 20,
-              color: AppColors.info,
+              color: PicPosText.readableOn(context, AppColors.info),
             ),
             onPressed: () => _showInvoiceDetails(context, invoice),
             tooltip: tr('تفاصيل الأصناف'),
           ),
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               PhosphorIconsBold.pencilSimple,
               size: 20,
-              color: AppColors.warning,
+              color: PicPosText.readableOn(context, AppColors.warning),
             ),
             onPressed: () {
               Navigator.pop(context);
@@ -364,14 +388,27 @@ class _PosPreviousInvoicesDialogState
             tooltip: tr('تعديل الفاتورة'),
           ),
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               PhosphorIconsBold.cookingPot,
               size: 20,
-              color: AppColors.info,
+              color: PicPosText.readableOn(context, AppColors.info),
             ),
             onPressed: () => widget.onPrintKitchen(invoice.id),
             tooltip: tr('طباعة المطبخ'),
           ),
+          if (onReturn != null &&
+              showReturnButton &&
+              canReturnFromPreviousInvoices(invoice))
+            IconButton(
+              key: ValueKey('previous_invoice_return_${invoice.id}'),
+              icon: Icon(
+                PhosphorIconsBold.arrowUUpLeft,
+                size: 20,
+                color: PicPosText.readableOn(context, AppColors.error),
+              ),
+              onPressed: () => onReturn(invoice),
+              tooltip: tr('مرتجع'),
+            ),
           IconButton(
             icon: const Icon(PhosphorIconsBold.printer, size: 20),
             onPressed: () => widget.onReprint(invoice.id),
@@ -406,15 +443,15 @@ class _PosPreviousInvoicesDialogState
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.border)),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(8)),
+      decoration: BoxDecoration(
+        color: context.picposField,
+        border: Border(top: BorderSide(color: context.picposHairline)),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(8)),
       ),
       child: Row(
         children: [
-          const Icon(PhosphorIconsBold.receipt,
-              size: 16, color: AppColors.textMuted),
+          Icon(PhosphorIconsBold.receipt,
+              size: 16, color: context.picposMuted),
           const SizedBox(width: 6),
           Text(
             tr('عدد الفواتير: {p0}', {'p0': invoices.length}),
@@ -424,21 +461,22 @@ class _PosPreviousInvoicesDialogState
             const SizedBox(width: 8),
              Text(
               tr('(حسب البحث)'),
-              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 11, color: context.picposMuted),
             ),
           ],
           const Spacer(),
            Text(
             tr('إجمالي المعروض:'),
-            style: const TextStyle(color: AppColors.textMuted),
+            style: TextStyle(color: context.picposMuted),
           ),
           const SizedBox(width: 6),
           Text(
             '${total.toStringAsFixed(AppConstants.decimalPlaces)} '
             '${AppConstants.currencySymbolAr}',
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: AppColors.success,
+              color: PicPosText.readableOn(context, AppColors.success,
+                  on: context.picposField),
               fontSize: 16,
             ),
           ),
@@ -452,17 +490,17 @@ class _PosPreviousInvoicesDialogState
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             PhosphorIconsBold.receiptX,
             size: 64,
-            color: AppColors.textMuted,
+            color: context.picposMuted,
           ),
           const SizedBox(height: 16),
           Text(
             _invoiceSearchQuery.isEmpty && _orderSearchQuery.isEmpty
                 ? tr('لا توجد فواتير اليوم')
                 : tr('لا توجد نتائج بحث'),
-            style: const TextStyle(color: AppColors.textMuted),
+            style: TextStyle(color: context.picposMuted),
           ),
         ],
       ),

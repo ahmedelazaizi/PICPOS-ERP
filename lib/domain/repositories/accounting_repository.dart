@@ -92,7 +92,7 @@ abstract class IAccountingRepository {
   Stream<List<AccountingPeriodData>> watchAccountingPeriods(int yearId);
   Future<void> generatePeriodsForYear(int yearId, DateTime startDate, DateTime endDate);
   Future<void> closeAccountingPeriod(int periodId, int userId);
-  Future<void> reopenAccountingPeriod(int periodId);
+  Future<void> reopenAccountingPeriod(int periodId, int userId);
 
   // --- Cost Centers & Activity Profiles ---
   Future<List<CostCenter>> getCostCenters();
@@ -167,6 +167,7 @@ abstract class IAccountingRepository {
     int? branchId,
     DateTime? date,
     String? paymentMethod, // F-12: 'cash' | 'bank'
+    int? safeId,
   });
 
   /// EXP-2 (batch B7 / S-FAILLOUD): atomic record + GL-post for an

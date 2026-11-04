@@ -13,6 +13,7 @@ abstract class IPrintersRepository {
     String printerType,
     String purpose,
     String? description,
+    double? paperWidthMm,
   });
   Future<bool> updatePrinter({
     required int id,
@@ -23,6 +24,7 @@ abstract class IPrintersRepository {
     String printerType,
     String purpose,
     String? description,
+    double? paperWidthMm,
     bool isActive,
   });
   Future<void> deletePrinter(int id);

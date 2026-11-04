@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../domain/entities/product_entity.dart';
 import '../../../data/providers/repository_providers.dart';
+import 'scale_barcode_config.dart';
 
 class ScaleBarcodeResult {
   final ProductEntity product;
@@ -64,27 +65,37 @@ abstract class ScaleBarcodeDataSource {
 
 /// Adapts repositories to ScaleBarcodeDataSource interface.
 class RepositoryBarcodeAdapter implements ScaleBarcodeDataSource {
-  final dynamic _ref; 
+  final dynamic _ref;
   RepositoryBarcodeAdapter(this._ref);
 
   @override
-  Future<String?> getSettingValue(String key) => 
-    _ref.read(settingsRepositoryProvider).getSetting(key);
-  
+  Future<String?> getSettingValue(String key) =>
+      _ref.read(settingsRepositoryProvider).getSetting(key);
+
   @override
-  Future<ProductEntity?> getProductByScalePlu(int pluNumber) => 
-    _ref.read(productRepositoryProvider).getProductByScalePlu(pluNumber);
-  
+  Future<ProductEntity?> getProductByScalePlu(int pluNumber) =>
+      _ref.read(productRepositoryProvider).getProductByScalePlu(pluNumber);
+
   @override
-  Future<ProductEntity?> getProductByCode(String code) => 
-    _ref.read(productRepositoryProvider).getProductByCode(code);
-    
+  Future<ProductEntity?> getProductByCode(String code) =>
+      _ref.read(productRepositoryProvider).getProductByCode(code);
+
   @override
-  Future<ProductEntity?> getProductByBarcode(String barcode) => 
-    _ref.read(productRepositoryProvider).getProductByBarcode(barcode);
+  Future<ProductEntity?> getProductByBarcode(String barcode) =>
+      _ref.read(productRepositoryProvider).getProductByBarcode(barcode);
 }
 
 class ScaleBarcodeHandler {
+  static Future<ScaleBarcodeConfig> readConfig(
+    ScaleBarcodeDataSource source,
+  ) async {
+    final values = <String, String?>{};
+    for (final key in ScaleBarcodeConfig.readKeys) {
+      values[key] = await source.getSettingValue(key);
+    }
+    return ScaleBarcodeConfig.fromSettings(values);
+  }
+
   /// Try to parse a scale barcode (EAN-13 starting with '2')
   /// Returns ScaleBarcodeResult or null if not a scale barcode
   ///
@@ -135,18 +146,24 @@ class ScaleBarcodeHandler {
       return null;
     }
 
-    // Step 4: Load profile from settings (or use defaults)
-    final pricePfx = await dataSource.getSettingValue('scale_price_prefix') ?? '20';
-    final weightPfx = await dataSource.getSettingValue('scale_weight_prefix') ?? '21';
-    final fallbackPfx =
-        await dataSource.getSettingValue('scale_fallback_prefix') ?? '22';
+    // Step 4: Use the same config model as settings/label printing.
+    final config = await readConfig(dataSource);
+    final pricePfx = config.pricePrefix;
+    final weightPfx = config.weightPrefix;
+    final fallbackPfx = config.fallbackPrefix;
 
     debugPrint(
       '[ScaleBarcode] Profile: pricePrefix=$pricePfx, weightPrefix=$weightPfx, fallback=$fallbackPfx',
     );
 
+    // Step 5: A disabled profile is not a scale barcode; let ordinary lookup handle it.
+    if (barcode.startsWith(pricePfx) && !config.priceEnabled) return null;
+    if ((barcode.startsWith(weightPfx) || barcode.startsWith(fallbackPfx)) &&
+        !config.weightEnabled)
+      return null;
+
     // Step 5: Detect mode by prefix
-    if (barcode.startsWith(pricePfx)) {
+    if (config.priceEnabled && barcode.startsWith(pricePfx)) {
       debugPrint('[ScaleBarcode] Mode: PRICE (prefix=$pricePfx)');
       return _extractScaleProduct(
         dataSource,
@@ -158,8 +175,8 @@ class ScaleBarcodeHandler {
         100.0,
         isPriceMode: true,
       );
-    } else if (barcode.startsWith(weightPfx) ||
-        barcode.startsWith(fallbackPfx)) {
+    } else if (config.weightEnabled &&
+        (barcode.startsWith(weightPfx) || barcode.startsWith(fallbackPfx))) {
       final prefix = barcode.startsWith(weightPfx) ? weightPfx : fallbackPfx;
       debugPrint('[ScaleBarcode] Mode: WEIGHT (prefix=$prefix)');
       return _extractScaleProduct(
@@ -173,7 +190,8 @@ class ScaleBarcodeHandler {
       );
     }
 
-    // Auto-detect: prefix "2X" not in configured list — try default weight parse
+    // Auto-detect legacy scale prefixes only when weight mode is enabled.
+    if (!config.weightEnabled) return null;
     final autoPrefix = barcode.substring(0, 2);
     debugPrint(
       '[ScaleBarcode] ⚠ Prefix "$autoPrefix" not configured '
@@ -244,7 +262,9 @@ class ScaleBarcodeHandler {
       }
 
       // 3. Fallback: try by code without leading zeros
-      if (product == null && trimmedCode.isNotEmpty && trimmedCode != productCode) {
+      if (product == null &&
+          trimmedCode.isNotEmpty &&
+          trimmedCode != productCode) {
         debugPrint('[ScaleBarcode] 3. Lookup by trimmed code: "$trimmedCode"');
         product = await dataSource.getProductByCode(trimmedCode);
       }
@@ -256,8 +276,12 @@ class ScaleBarcodeHandler {
       }
 
       // 5. Fallback: try barcode without leading zeros
-      if (product == null && trimmedCode.isNotEmpty && trimmedCode != productCode) {
-        debugPrint('[ScaleBarcode] 5. Lookup by trimmed barcode: "$trimmedCode"');
+      if (product == null &&
+          trimmedCode.isNotEmpty &&
+          trimmedCode != productCode) {
+        debugPrint(
+          '[ScaleBarcode] 5. Lookup by trimmed barcode: "$trimmedCode"',
+        );
         product = await dataSource.getProductByBarcode(trimmedCode);
       }
 
@@ -265,7 +289,9 @@ class ScaleBarcodeHandler {
         debugPrint(
           '[ScaleBarcode] ✗ NO PRODUCT FOUND for PLU "$productCode" (int: $pluInt)',
         );
-        debugPrint('[ScaleBarcode] ✗ تأكد من إدخال رقم PLU ($pluInt) في إعدادات المنتج أو مطابقة كود الصنف');
+        debugPrint(
+          '[ScaleBarcode] ✗ تأكد من إدخال رقم PLU ($pluInt) في إعدادات المنتج أو مطابقة كود الصنف',
+        );
         // P5 (Issue #1): Extra context to help diagnose codes starting with '2'.
         // If the PLU exceeds typical scale limits (e.g. 9999, 19999), the
         // upload likely was silently dropped on the device — see
@@ -301,13 +327,17 @@ class ScaleBarcodeHandler {
           return null;
         }
         quantity = totalPrice / product.salePrice;
-        displayText = tr('سعر ميزان: {p0}', {'p0': totalPrice.toStringAsFixed(AppConstants.decimalPlaces)});
+        displayText = tr('سعر ميزان: {p0}', {
+          'p0': totalPrice.toStringAsFixed(AppConstants.decimalPlaces),
+        });
         debugPrint(
           '[ScaleBarcode] ✓ PRICE mode: totalPrice=$totalPrice qty=$quantity',
         );
       } else {
         quantity = value / divider;
-        displayText = tr('وزن ميزان: {p0} kg', {'p0': quantity.toStringAsFixed(3)});
+        displayText = tr('وزن ميزان: {p0} kg', {
+          'p0': quantity.toStringAsFixed(3),
+        });
         debugPrint(
           '[ScaleBarcode] ✓ WEIGHT mode: weight=${quantity.toStringAsFixed(3)} kg',
         );

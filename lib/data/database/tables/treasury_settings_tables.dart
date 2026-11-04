@@ -10,18 +10,27 @@ class Safes extends Table {
   TextColumn get name => text().withLength(max: 100)();
   TextColumn get safeType =>
       text().withDefault(const Constant('cash'))(); // cash, bank
-  TextColumn get bankName => text().nullable()(); // اسم البنك (مثلاً: البنك الأهلي)
+  TextColumn get bankName =>
+      text().nullable()(); // اسم البنك (مثلاً: البنك الأهلي)
   TextColumn get accountNumber => text().nullable()(); // رقم الحساب البنكي
   RealColumn get balance => real().withDefault(const Constant(0))();
   IntColumn get branchId => integer().nullable().references(Branches, #id)();
-  IntColumn get costCenterId => integer().nullable().references(CostCenters, #id)(); // مركز التكلفة المرتبط بالصندوق
-  IntColumn get linkedAccountId => integer().nullable().references(Accounts, #id)(); // الحساب المرتبط من شجرة الحسابات
+  IntColumn get costCenterId => integer().nullable().references(
+    CostCenters,
+    #id,
+  )(); // مركز التكلفة المرتبط بالصندوق
+  IntColumn get linkedAccountId => integer().nullable().references(
+    Accounts,
+    #id,
+  )(); // الحساب المرتبط من شجرة الحسابات
   BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   IntColumn get regionId => integer().nullable().references(Regions, #id)();
-  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  TextColumn get globalId =>
+      text().nullable().unique()(); // UUID for deterministic sync
   // Spec 129 F6 — seeded-default flag (see Branches.isSystemDefault).
-  BoolColumn get isSystemDefault => boolean().withDefault(const Constant(false))();
+  BoolColumn get isSystemDefault =>
+      boolean().withDefault(const Constant(false))();
   DateTimeColumn get lastModifiedAt => dateTime().nullable()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
   TextColumn get originClientId => text().nullable()();
@@ -52,24 +61,33 @@ class SafeTransactions extends Table {
   TextColumn get category =>
       text()(); // sales, purchase, expense, salary, advance, other
   RealColumn get amount => real()(); // المبلغ الصافي
-  RealColumn get discount => real().withDefault(const Constant(0))(); // مبلغ الخصم المسموح به أو المكتسب
+  RealColumn get discount => real().withDefault(
+    const Constant(0),
+  )(); // مبلغ الخصم المسموح به أو المكتسب
   RealColumn get balanceAfter => real()();
   TextColumn get referenceType => text().nullable()();
   IntColumn get referenceId => integer().nullable()();
   IntColumn get partyId => integer().nullable().references(Parties, #id)();
   TextColumn get description => text().nullable()();
   IntColumn get userId => integer().nullable().references(Users, #id)();
-  IntColumn get costCenterId => integer().nullable().references(CostCenters, #id)(); // مركز التكلفة
-  IntColumn get employeeId => integer().nullable().references(Employees, #id)(); // الموظف (للرواتب والسلف)
-  TextColumn get disbursementType => text().nullable()(); // salary, advance, expense — نوع الصرفية
+  IntColumn get costCenterId =>
+      integer().nullable().references(CostCenters, #id)(); // مركز التكلفة
+  IntColumn get employeeId => integer().nullable().references(
+    Employees,
+    #id,
+  )(); // الموظف (للرواتب والسلف)
+  TextColumn get disbursementType =>
+      text().nullable()(); // salary, advance, expense — نوع الصرفية
 
   /// لقطة تسوية العملة الأجنبية على حركة الخزينة.
-  IntColumn get currencyId => integer().nullable().references(Currencies, #id)();
+  IntColumn get currencyId =>
+      integer().nullable().references(Currencies, #id)();
   RealColumn get exchangeRate => real().nullable()();
   RealColumn get foreignAmount => real().nullable()();
 
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
-  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  TextColumn get globalId =>
+      text().nullable().unique()(); // UUID for deterministic sync
   DateTimeColumn get lastModifiedAt => dateTime().nullable()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
   TextColumn get originClientId => text().nullable()();
@@ -90,8 +108,11 @@ class Printers extends Table {
   )(); // pos_receipt, kitchen, tables
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   TextColumn get description => text().nullable()(); // وصف اختياري
+  /// عرضُ الورق الاسميّ بالمليمتر؛ null للطابعات التي لم يُحدَّد عرضُها.
+  RealColumn get paperWidthMm => real().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
-  TextColumn get globalId => text().nullable().unique()(); // UUID for deterministic sync
+  TextColumn get globalId =>
+      text().nullable().unique()(); // UUID for deterministic sync
   DateTimeColumn get lastModifiedAt => dateTime().nullable()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
   TextColumn get originClientId => text().nullable()();
@@ -186,7 +207,6 @@ class PosTerminals extends Table {
   IntColumn get branchId => integer().references(Branches, #id)();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   TextColumn get notes => text().nullable()();
-  DateTimeColumn get createdAt =>
-      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   TextColumn get globalId => text().nullable().unique()();
 }

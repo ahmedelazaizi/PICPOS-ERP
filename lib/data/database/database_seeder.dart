@@ -177,7 +177,7 @@ extension DatabaseSeeder on AppDatabase {
       await into(settings).insert(
         SettingsCompanion.insert(
           key: 'zero_cost_policy',
-          value: const Value('block'),
+          value: const Value('warn'),
         ),
       );
     }

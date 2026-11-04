@@ -1,10 +1,12 @@
 import 'dart:convert';
 
 import '../../data/database/database.dart' as db;
+import '../../domain/printing/label_design.dart';
 import '../../domain/printing/template_document.dart';
 import '../../domain/printing/template_save_result.dart';
 import '../../domain/repositories/invoice_templates_repository.dart';
 import '../../services/printing/template_migration.dart';
+import 'label_layout_writer.dart' as labels;
 import 'template_layout_writer.dart' as writer;
 
 class InvoiceTemplatesRepositoryImpl implements IInvoiceTemplatesRepository {
@@ -130,6 +132,23 @@ class InvoiceTemplatesRepositoryImpl implements IInvoiceTemplatesRepository {
         activateBranchId: activateBranchId,
         activateLocale: activateLocale,
       );
+
+  @override
+  Future<LabelDesign?> getLabelDesign(int templateId) =>
+      labels.loadLabelDesign(_db, templateId);
+
+  @override
+  Future<LabelDesign> saveLabelDesign(LabelDesign design) =>
+      labels.saveLabelDesign(_db, design);
+
+  @override
+  Future<int> createLabelTemplate({
+    required String name,
+    required double widthMm,
+    required double heightMm,
+  }) =>
+      labels.createLabelTemplate(_db,
+          name: name, widthMm: widthMm, heightMm: heightMm);
 
   @override
   Future<List<db.TemplateBinding>> getAllBindings() => _db.getAllBindings();

@@ -196,7 +196,9 @@ class DriftAccountingRepository implements IAccountingRepository {
     // propagates through every accounting validator call (payment voucher,
     // receipt voucher, expense, sale, ...) and blocks the operation.
     return (_db.select(_db.fiscalYears)
-          ..where((y) => y.startDate.isSmallerOrEqualValue(now) & y.endDate.isBiggerOrEqualValue(now))
+          ..where((y) => y.deletedAt.isNull() &
+              y.startDate.isSmallerOrEqualValue(now) &
+              y.endDate.isBiggerOrEqualValue(now))
           ..limit(1))
         .getSingleOrNull();
   }
@@ -204,7 +206,9 @@ class DriftAccountingRepository implements IAccountingRepository {
   @override
   Future<FiscalYearData?> getFiscalYearByDate(DateTime date) async {
     return (_db.select(_db.fiscalYears)
-          ..where((y) => y.startDate.isSmallerOrEqualValue(date) & y.endDate.isBiggerOrEqualValue(date))
+          ..where((y) => y.deletedAt.isNull() &
+              y.startDate.isSmallerOrEqualValue(date) &
+              y.endDate.isBiggerOrEqualValue(date))
           ..limit(1))
         .getSingleOrNull();
   }
@@ -399,6 +403,7 @@ class DriftAccountingRepository implements IAccountingRepository {
     int? branchId, // Added for branch isolation
     DateTime? date,
     String? paymentMethod, // F-12
+    int? safeId,
   }) {
     return _db.autoPostOperationalExpense(
       expenseId: expenseId,
@@ -409,6 +414,7 @@ class DriftAccountingRepository implements IAccountingRepository {
       branchId: branchId,
       date: date,
       paymentMethod: paymentMethod,
+      safeId: safeId,
     );
   }
 
@@ -459,32 +465,15 @@ class DriftAccountingRepository implements IAccountingRepository {
       final regionBranches = await _db.getBranchesByRegion(regionId);
       final branchIds = regionBranches.map((b) => b.id).toList();
       if (branchIds.isEmpty) return [];
-      if (branchIds.length == 1) {
-        resolvedBranchId = branchIds.first;
-      } else {
-        final results = await Future.wait(
-          branchIds.map((bid) => _db.getTrialBalance(from, to, costCenterId: costCenterId, branchId: bid)),
+      if (branchIds.length > 1) {
+        return _db.getTrialBalance(
+          from,
+          to,
+          costCenterId: costCenterId,
+          branchIds: branchIds,
         );
-        // Merge trial balances across branches
-        final merged = <String, Map<String, dynamic>>{};
-        for (final branchData in results) {
-          for (final row in branchData) {
-            final code = row['code'] as String? ?? '';
-            if (merged.containsKey(code)) {
-              final m = merged[code]!;
-              m['openingDebit'] = (m['openingDebit'] as double) + (row['openingDebit'] as double? ?? 0.0);
-              m['openingCredit'] = (m['openingCredit'] as double) + (row['openingCredit'] as double? ?? 0.0);
-              m['movementDebit'] = (m['movementDebit'] as double) + (row['movementDebit'] as double? ?? 0.0);
-              m['movementCredit'] = (m['movementCredit'] as double) + (row['movementCredit'] as double? ?? 0.0);
-              m['closingDebit'] = (m['closingDebit'] as double) + (row['closingDebit'] as double? ?? 0.0);
-              m['closingCredit'] = (m['closingCredit'] as double) + (row['closingCredit'] as double? ?? 0.0);
-            } else {
-              merged[code] = Map<String, dynamic>.from(row);
-            }
-          }
-        }
-        return merged.values.toList();
       }
+      resolvedBranchId = branchIds.first;
     }
     return _db.getTrialBalance(from, to, costCenterId: costCenterId, branchId: resolvedBranchId);
   }
@@ -496,47 +485,15 @@ class DriftAccountingRepository implements IAccountingRepository {
       final regionBranches = await _db.getBranchesByRegion(regionId);
       final branchIds = regionBranches.map((b) => b.id).toList();
       if (branchIds.isEmpty) return {'totalRevenue': 0.0, 'totalExpenses': 0.0, 'netProfit': 0.0, 'totalCOGS': 0.0, 'grossProfit': 0.0, 'operatingProfit': 0.0, 'totalDepreciation': 0.0, 'revenueDetails': <Map<String, dynamic>>[], 'expenseDetails': <Map<String, dynamic>>[], 'cogsDetails': <Map<String, dynamic>>[], 'depreciationDetails': <Map<String, dynamic>>[]};
-      if (branchIds.length == 1) resolvedBranchId = branchIds.first;
-      else {
-        final results = await Future.wait(
-          branchIds.map((bid) => _db.getIncomeStatement(from, to, costCenterId: costCenterId, branchId: bid)),
+      if (branchIds.length > 1) {
+        return _db.getIncomeStatement(
+          from,
+          to,
+          costCenterId: costCenterId,
+          branchIds: branchIds,
         );
-        // Merge income statements across branches
-        double totalRevenue = 0, totalExpenses = 0, totalCOGS = 0, grossProfit = 0, operatingProfit = 0, totalDepreciation = 0, netProfit = 0;
-        final revenueMap = <String, Map<String, dynamic>>{};
-        final expenseMap = <String, Map<String, dynamic>>{};
-        final cogsMap = <String, Map<String, dynamic>>{};
-        final depreciationMap = <String, Map<String, dynamic>>{};
-        for (final data in results) {
-          totalRevenue += (data['totalRevenue'] as double? ?? 0);
-          totalExpenses += (data['totalExpenses'] as double? ?? 0);
-          totalCOGS += (data['totalCOGS'] as double? ?? 0);
-          grossProfit += (data['grossProfit'] as double? ?? 0);
-          operatingProfit += (data['operatingProfit'] as double? ?? 0);
-          totalDepreciation += (data['totalDepreciation'] as double? ?? 0);
-          netProfit += (data['netProfit'] as double? ?? 0);
-          for (final list in [['revenueDetails', revenueMap], ['expenseDetails', expenseMap], ['cogsDetails', cogsMap], ['depreciationDetails', depreciationMap]]) {
-            final key = list[0] as String;
-            final map = list[1] as Map<String, Map<String, dynamic>>;
-            final details = data[key] as List?;
-            if (details == null) continue;
-            for (final d in details) {
-              final name = d['name'] as String? ?? '';
-              if (map.containsKey(name)) {
-                map[name]!['amount'] = (map[name]!['amount'] as double) + (d['amount'] as double? ?? 0.0);
-              } else {
-                map[name] = Map<String, dynamic>.from(d as Map);
-              }
-            }
-          }
-        }
-        return {
-          'totalRevenue': totalRevenue, 'totalExpenses': totalExpenses, 'totalCOGS': totalCOGS,
-          'grossProfit': grossProfit, 'operatingProfit': operatingProfit, 'totalDepreciation': totalDepreciation, 'netProfit': netProfit,
-          'revenueDetails': revenueMap.values.toList(), 'expenseDetails': expenseMap.values.toList(),
-          'cogsDetails': cogsMap.values.toList(), 'depreciationDetails': depreciationMap.values.toList(),
-        };
       }
+      resolvedBranchId = branchIds.first;
     }
     return _db.getIncomeStatement(from, to, costCenterId: costCenterId, branchId: resolvedBranchId);
   }
@@ -548,40 +505,14 @@ class DriftAccountingRepository implements IAccountingRepository {
       final regionBranches = await _db.getBranchesByRegion(regionId);
       final branchIds = regionBranches.map((b) => b.id).toList();
       if (branchIds.isEmpty) return {'totalAssets': 0.0, 'totalLiabilities': 0.0, 'totalEquity': 0.0, 'isBalanced': true, 'assetDetails': <Map<String, dynamic>>[], 'liabilityDetails': <Map<String, dynamic>>[], 'equityDetails': <Map<String, dynamic>>[]};
-      if (branchIds.length == 1) resolvedBranchId = branchIds.first;
-      else {
-        final results = await Future.wait(
-          branchIds.map((bid) => _db.getBalanceSheet(atDate, costCenterId: costCenterId, branchId: bid)),
+      if (branchIds.length > 1) {
+        return _db.getBalanceSheet(
+          atDate,
+          costCenterId: costCenterId,
+          branchIds: branchIds,
         );
-        double totalAssets = 0, totalLiabilities = 0, totalEquity = 0;
-        final assetMap = <String, Map<String, dynamic>>{};
-        final liabilityMap = <String, Map<String, dynamic>>{};
-        final equityMap = <String, Map<String, dynamic>>{};
-        for (final data in results) {
-          totalAssets += (data['totalAssets'] as double? ?? 0);
-          totalLiabilities += (data['totalLiabilities'] as double? ?? 0);
-          totalEquity += (data['totalEquity'] as double? ?? 0);
-          for (final list in [['assetDetails', assetMap], ['liabilityDetails', liabilityMap], ['equityDetails', equityMap]]) {
-            final key = list[0] as String;
-            final map = list[1] as Map<String, Map<String, dynamic>>;
-            final details = data[key] as List?;
-            if (details == null) continue;
-            for (final d in details) {
-              final name = d['name'] as String? ?? '';
-              if (map.containsKey(name)) {
-                map[name]!['balance'] = (map[name]!['balance'] as double) + (d['balance'] as double? ?? 0.0);
-              } else {
-                map[name] = Map<String, dynamic>.from(d as Map);
-              }
-            }
-          }
-        }
-        return {
-          'totalAssets': totalAssets, 'totalLiabilities': totalLiabilities, 'totalEquity': totalEquity,
-          'isBalanced': (totalAssets - (totalLiabilities + totalEquity)).abs() < 0.01,
-          'assetDetails': assetMap.values.toList(), 'liabilityDetails': liabilityMap.values.toList(), 'equityDetails': equityMap.values.toList(),
-        };
       }
+      resolvedBranchId = branchIds.first;
     }
     return _db.getBalanceSheet(atDate, costCenterId: costCenterId, branchId: resolvedBranchId);
   }
@@ -736,23 +667,21 @@ class DriftAccountingRepository implements IAccountingRepository {
 
   // --- Fiscal Years (Batch 3) ---
   @override
-  Stream<List<FiscalYearData>> watchFiscalYears() =>
-      _db.select(_db.fiscalYears).watch();
+  Stream<List<FiscalYearData>> watchFiscalYears() => _db.watchFiscalYears();
 
   @override
-  Future<int> createFiscalYear({required String name, required DateTime startDate, required DateTime endDate}) async {
-    return _db.into(_db.fiscalYears).insert(
-      FiscalYearsCompanion.insert(
+  Future<int> createFiscalYear({required String name, required DateTime startDate, required DateTime endDate}) =>
+      _db.createFiscalYear(
         name: name,
         startDate: startDate,
         endDate: endDate,
-        // Spec 136 ISS-2 — deterministic gid from the natural key so server +
-        // client converge on the sync Tier-1 globalId match.
-        globalId: Value(UuidV7.deriveFiscalYearGlobalId(
-            name: name, startDate: startDate, endDate: endDate)),
-      ),
-    );
-  }
+        // Preserve the legacy repository natural-key identity exactly.
+        globalId: UuidV7.deriveFiscalYearGlobalId(
+          name: name,
+          startDate: startDate,
+          endDate: endDate,
+        ),
+      );
 
   @override
   Future<void> closeFiscalYear(int yearId, int userId) async {
@@ -775,7 +704,7 @@ class DriftAccountingRepository implements IAccountingRepository {
       _db.closeAccountingPeriod(periodId, userId);
 
   @override
-  Future<void> reopenAccountingPeriod(int periodId) => _db.reopenAccountingPeriod(periodId);
+  Future<void> reopenAccountingPeriod(int id,int uid)=>_db.reopenAccountingPeriod(id,uid);
 
   // --- Cost Centers (active filter) ---
   @override
@@ -827,7 +756,7 @@ class DriftAccountingRepository implements IAccountingRepository {
       'SELECT COALESCE(SUM(debit - credit), 0) as calculated_balance '
       'FROM journal_entry_lines l '
       'JOIN journal_entries e ON l.entry_id = e.id '
-      'WHERE l.account_id = ? AND e.is_posted = 1',
+      'WHERE l.account_id = ? AND e.is_posted = 1 AND e.is_deleted = false',
       variables: [Variable(accountId)],
       readsFrom: {_db.journalEntryLines, _db.journalEntries},
     ).getSingle();

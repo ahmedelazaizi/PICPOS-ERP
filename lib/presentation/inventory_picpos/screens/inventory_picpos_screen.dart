@@ -19,6 +19,7 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_kpi_row.dart';
 import '../../../domain/models/picpos_product_view.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// شاشة المخزون بهوية PicPos. تُختار بالعلامة في app_main_screen. fork متوسط:
 /// تنظيم الصفحات (paging) للتبويب الأول منسوخ حرفياً من `InventoryScreen`
@@ -224,7 +225,7 @@ class _InventoryPicposScreenState extends ConsumerState<InventoryPicposScreen>
         fillColor: Theme.of(context).cardColor,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: context.picposHairline),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       ),
@@ -241,7 +242,7 @@ class _InventoryPicposScreenState extends ConsumerState<InventoryPicposScreen>
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: context.picposHairline),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<int?>(
@@ -272,7 +273,7 @@ class _InventoryPicposScreenState extends ConsumerState<InventoryPicposScreen>
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: context.picposHairline),
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<int?>(
@@ -303,7 +304,7 @@ class _InventoryPicposScreenState extends ConsumerState<InventoryPicposScreen>
       selectedColor: AppColors.warning.withValues(alpha: 0.2),
       checkmarkColor: AppColors.warning,
       labelStyle: TextStyle(
-        color: state.showLowStockOnly ? AppColors.warning : AppColors.textMuted,
+        color: state.showLowStockOnly ? AppColors.warning : context.picposMuted,
         fontWeight: state.showLowStockOnly
             ? FontWeight.bold
             : FontWeight.normal,
@@ -507,7 +508,7 @@ class _InventoryPicposScreenState extends ConsumerState<InventoryPicposScreen>
                   color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: selectedProductId != null ? AppColors.primary : AppColors.border,
+                    color: selectedProductId != null ? AppColors.primary : context.picposHairline,
                   ),
                 ),
                 child: DropdownButtonHideUnderline(
@@ -594,7 +595,7 @@ class _InventoryPicposScreenState extends ConsumerState<InventoryPicposScreen>
       label: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: isSelected ? Colors.white : AppColors.textMuted),
+          Icon(icon, size: 14, color: isSelected ? Colors.white : context.picposMuted),
           const SizedBox(width: 4),
           Text(label),
         ],
@@ -606,7 +607,7 @@ class _InventoryPicposScreenState extends ConsumerState<InventoryPicposScreen>
       selectedColor: AppColors.primary,
       checkmarkColor: Colors.white,
       labelStyle: TextStyle(
-        color: isSelected ? Colors.white : AppColors.textMuted,
+        color: isSelected ? Colors.white : context.picposMuted,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         fontSize: 12,
       ),

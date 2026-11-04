@@ -90,6 +90,12 @@ abstract class ISalesReportingRepository {
   /// (‏مسارُ السيرفر).
   Future<Map<int, double>> getReturnedAmountsForInvoices(List<int> invoiceIds);
 
+  /// FS-16 — `{معرّفُ الفاتورة الأصلية: (cogs, vat)}` كما قيّدها قيدُ المرتجع
+  /// لنفس المرتجعات التي تجمعها [getReturnedAmountsForInvoices]؛ يبني منه
+  /// تقريرُ المبيعات ربحاً يطابق الأستاذ بدل التقدير التناسبيّ.
+  Future<Map<int, ({double cogs, double vat})>>
+      getReturnLedgerAmountsForInvoices(List<int> invoiceIds);
+
   Future<List<SalesInvoiceItem>> getSalesInvoiceItems(int invoiceId);
 
   Future<List<Map<String, dynamic>>> getDeliveryReport({

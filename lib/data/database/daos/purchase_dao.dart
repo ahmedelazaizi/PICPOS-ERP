@@ -630,7 +630,8 @@ extension PurchaseDao on AppDatabase {
         costCenterId: ccId,
         branchId: branchId,
       );
-       // Correct the cost of units sold while stock was negative.
+       // Correct the cost of units sold while stock was negative: receipt cost above
+       // the cost used at sale ⇒ extra COGS (Dr COGS / Cr Inventory); below ⇒ reverse.
        if (negativeStockCostAdjustment != 0) {
          final cogsCode = await accountingDao.getMappedAccountCode(
            'cogs', AccountingDao.accountPurposes['cogs']!,
@@ -642,15 +643,15 @@ extension PurchaseDao on AppDatabase {
          final amount = negativeStockCostAdjustment.abs();
          final adjustmentLines = negativeStockCostAdjustment > 0
              ? [
-                 JournalLine(accountId: invAcc.id, debit: amount,
-                     description: 'تسوية تكلفة مخزون سالب #$invoiceNumber'),
-                 JournalLine(accountId: cogsAccount.id, credit: amount,
-                     description: 'تسوية تكلفة مخزون سالب #$invoiceNumber'),
-               ]
-             : [
                  JournalLine(accountId: cogsAccount.id, debit: amount,
                      description: 'تسوية تكلفة مخزون سالب #$invoiceNumber'),
                  JournalLine(accountId: invAcc.id, credit: amount,
+                     description: 'تسوية تكلفة مخزون سالب #$invoiceNumber'),
+               ]
+             : [
+                 JournalLine(accountId: invAcc.id, debit: amount,
+                     description: 'تسوية تكلفة مخزون سالب #$invoiceNumber'),
+                 JournalLine(accountId: cogsAccount.id, credit: amount,
                      description: 'تسوية تكلفة مخزون سالب #$invoiceNumber'),
                ];
          await accountingDao.createJournalEntry(

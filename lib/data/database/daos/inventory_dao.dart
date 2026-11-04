@@ -10,6 +10,13 @@
 
 part of '../database.dart';
 
+class SalesInsufficientStockException implements Exception {
+  final String message;
+  const SalesInsufficientStockException(this.message);
+  @override
+  String toString() => message;
+}
+
 /// Extension for Inventory-related database operations
 extension InventoryDao on AppDatabase {
   // ═══════════════════════════════════════════════════════════════════════
@@ -581,8 +588,8 @@ extension InventoryDao on AppDatabase {
         );
 
         if (affectedRows == 0) {
-          throw Exception(
-            'عفواً، الكمية المتوفرة حالياً في المستودع ($warehouseId) غير كافية لمنتج $productName'
+          throw SalesInsufficientStockException(
+            'عفواً، الكمية المتوفرة حالياً في المستودع ($warehouseId) غير كافية لمنتج $productName',
           );
         }
       } else {
@@ -923,58 +930,6 @@ extension InventoryDao on AppDatabase {
     }
   }
 
-  /// Get the total returned quantity for a specific product from a specific invoice.
-  /// Used to prevent double returns.
-  ///
-  /// PREFER [getReturnedQuantitiesForInvoice] when processing multiple items of
-  /// the same invoice — it returns all items' totals in a single query.
-  Future<double> getReturnedQuantityForInvoiceItem({
-    required int invoiceId,
-    required int productId,
-  }) async {
-    final query = select(stockMovements)
-      ..where(
-        (m) =>
-            m.movementType.equals('return') &
-            m.referenceType.equalsNullable('sales_invoice') &
-            m.referenceId.equalsNullable(invoiceId) &
-            m.productId.equals(productId),
-      );
-
-    final movements = await query.get();
-    double totalReturned = 0;
-    for (final m in movements) {
-      totalReturned += m.quantity;
-    }
-    return totalReturned;
-  }
-
-  /// Batch version: returns `{productId: totalReturnedQuantity}` for ALL
-  /// return movements referencing the given invoice, in ONE query + GROUP BY.
-  ///
-  /// Solves the N+1 freeze on the sales-returns invoice picker, where the
-  /// previous per-item loop was performing a full-table scan × N items.
-  Future<Map<int, double>> getReturnedQuantitiesForInvoice(int invoiceId) async {
-    final query = selectOnly(stockMovements, distinct: false)
-      ..addColumns([stockMovements.productId, stockMovements.quantity.sum()])
-      ..where(
-        stockMovements.movementType.equals('return') &
-            stockMovements.referenceType.equalsNullable('sales_invoice') &
-            stockMovements.referenceId.equalsNullable(invoiceId),
-      )
-      ..groupBy([stockMovements.productId]);
-
-    final rows = await query.get();
-    final result = <int, double>{};
-    for (final row in rows) {
-      final pid = row.read(stockMovements.productId);
-      final qty = row.read(stockMovements.quantity.sum());
-      if (pid != null) {
-        result[pid] = qty ?? 0.0;
-      }
-    }
-    return result;
-  }
 
   // ═══════════════════════════════════════════════════════════════════════
   // WAREHOUSES

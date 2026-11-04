@@ -162,7 +162,7 @@ mixin _OfferCardsMixin on ConsumerState<OffersPicPosScreen> {
     Color statusColor;
     if (!offer.isActive) {
       statusText = tr('غير فعال');
-      statusColor = AppColors.textMuted;
+      statusColor = context.picposMuted;
     } else if (isExpired) {
       statusText = tr('منتهي');
       statusColor = AppColors.error;
@@ -229,7 +229,7 @@ mixin _OfferCardsMixin on ConsumerState<OffersPicPosScreen> {
                             child: Text(
                               offerTypeLabel(offer.offerType),
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 11,
                                 fontWeight: FontWeight.bold,
                                 color: offerTypeColor(offer.offerType),
                               ),
@@ -288,7 +288,7 @@ mixin _OfferCardsMixin on ConsumerState<OffersPicPosScreen> {
               children: [
                  Text(
                   tr('سعر العرض: '),
-                  style: const TextStyle(color: AppColors.textMuted),
+                  style: TextStyle(color: context.picposMuted),
                 ),
                 Flexible(
                   child: Text(
@@ -310,10 +310,10 @@ mixin _OfferCardsMixin on ConsumerState<OffersPicPosScreen> {
             if (offer.startDate != null || offer.endDate != null) ...[
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     PhosphorIconsBold.calendar,
                     size: 14,
-                    color: AppColors.textMuted,
+                    color: context.picposMuted,
                   ),
                   const SizedBox(width: 4),
                   Flexible(
@@ -321,9 +321,9 @@ mixin _OfferCardsMixin on ConsumerState<OffersPicPosScreen> {
                       formatDateRange(offer.startDate, offer.endDate),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textMuted,
+                        color: context.picposMuted,
                       ),
                     ),
                   ),
@@ -345,17 +345,17 @@ mixin _OfferCardsMixin on ConsumerState<OffersPicPosScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             PhosphorIconsBold.package,
                             size: 14,
-                            color: AppColors.textMuted,
+                            color: context.picposMuted,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             tr('{p0} أصناف في العرض', {'p0': items.length}),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textMuted,
+                              color: context.picposMuted,
                             ),
                           ),
                         ],
@@ -398,9 +398,9 @@ mixin _OfferCardsMixin on ConsumerState<OffersPicPosScreen> {
                                         ),
                                         Text(
                                           '×${item.quantity.toStringAsFixed(0)}',
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 11,
-                                            color: AppColors.textMuted,
+                                            color: context.picposMuted,
                                           ),
                                         ),
                                       ],
@@ -414,9 +414,9 @@ mixin _OfferCardsMixin on ConsumerState<OffersPicPosScreen> {
                       if (items.length > 3)
                         Text(
                           tr('+{p0} أصناف أخرى', {'p0': items.length - 3}),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: AppColors.textMuted,
+                            color: context.picposMuted,
                           ),
                         ),
                     ],

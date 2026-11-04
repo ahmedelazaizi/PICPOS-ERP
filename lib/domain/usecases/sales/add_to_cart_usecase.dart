@@ -51,7 +51,10 @@ class AddToCartUseCase {
         false, // When true, weight items accumulate quantity (barcode scans)
   }) {
     final existingIndex = currentCart.indexWhere(
-      (item) => item.productId == productId,
+      // سطرُ المرتجع بلا فاتورة (`returned`) لا يستقبل بيعاً: دمجُ وحدةِ بيعٍ
+      // فيه كان سيقلبها مرتجعاً (بند ٤).
+      (item) =>
+          item.productId == productId && item.itemType != CartItemType.returned,
     );
 
     // Don't merge if: sold by weight (unless mergeWeight), forced new entry, or price differs.

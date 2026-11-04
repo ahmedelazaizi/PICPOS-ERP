@@ -2,6 +2,7 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import 'package:picpos_erp/core/constants/app_constants.dart';
+import '../../../picpos_shell/picpos_surface.dart';
 
 /// Discount dialog with percentage and value tabs
 class CartDiscountDialog extends StatefulWidget {
@@ -9,6 +10,11 @@ class CartDiscountDialog extends StatefulWidget {
   final double currentDiscountPercent;
   final double? maxDiscountPercent;
   final Function(double percent) onApply;
+
+  /// اختياري (بند ٦ — ب): إن مُرِّر، ففي تبويب «قيمة» يُمرَّر المبلغُ **كما
+  /// أُدخل** إليه بدل تحويله إلى نسبة، ولا يُستدعى [onApply] حينها. الشاشةُ
+  /// القديمة لا تمرّره فيبقى سلوكُها (قيمة → نسبة) كما هو.
+  final Function(double amount)? onApplyAmount;
   final VoidCallback onRemove;
 
   const CartDiscountDialog({
@@ -17,6 +23,7 @@ class CartDiscountDialog extends StatefulWidget {
     required this.currentDiscountPercent,
     this.maxDiscountPercent,
     required this.onApply,
+    this.onApplyAmount,
     required this.onRemove,
   });
 
@@ -56,7 +63,7 @@ class _CartDiscountDialogState extends State<CartDiscountDialog> {
             // Toggle tabs
             Container(
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: context.picposField,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -202,7 +209,7 @@ class _CartDiscountDialogState extends State<CartDiscountDialog> {
           label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textPrimary,
+            color: isSelected ? Colors.white : context.picposText,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -250,6 +257,12 @@ class _CartDiscountDialogState extends State<CartDiscountDialog> {
   void _apply() {
     final inputValue = double.tryParse(_controller.text) ?? 0;
     double percent;
+
+    if (!_isPercentMode && widget.onApplyAmount != null) {
+      widget.onApplyAmount!(inputValue < 0 ? 0 : inputValue);
+      if (context.mounted) Navigator.pop(context);
+      return;
+    }
 
     if (_isPercentMode) {
       percent = inputValue.clamp(0, 100);

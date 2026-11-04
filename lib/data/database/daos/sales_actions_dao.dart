@@ -309,15 +309,27 @@ extension SalesActionsDao on AppDatabase {
         }
       }
 
-      // Reverse customer balance
+      // Reverse only the receivable actually posted for this invoice. The
+      // current `paid` field includes later receipts; the original invoice JE
+      // is the reliable source for the sale-time customer subledger leg (zero
+      // for a cash sale). Receipts remain posted, so a collected credit sale
+      // correctly becomes a negative customer balance matching its ledger.
       if (inv.customerId != null) {
-        // ⚠️ **وفرقُ التقريب يُطرَح — وإلّا صار الإبطالُ يمنح العميلَ رصيداً.**
-        // إنشاءُ البيعة لم يُضِف الفرقَ إلى `parties.balance` (‏المصدرُ
-        // `sales_mutations_dao` يطرحه)، فإبطالُها بطرحه يمنح دائناً بمقدار
-        // ٠٫٠٢ لم يوجد قطّ — ويتراكم بلا قيدٍ يقابله.
-        final remaining = inv.total - inv.paid - inv.roundingAdjustment;
-        if (remaining > 0) {
-          await adjustPartyBalance(inv.customerId!, -remaining);
+        final partyLeg = await customSelect(
+          'SELECT COALESCE(SUM(l.debit - l.credit), 0.0) AS net '
+          'FROM journal_entry_lines l '
+          'JOIN journal_entries e ON e.id = l.entry_id '
+          'JOIN parties p ON p.account_id = l.account_id '
+          'WHERE p.id = ? AND e.reference_id = ? '
+          "AND e.reference_type IN ('sale', 'sales_invoice', 'deferred_sale') "
+          'AND e.is_auto_posted = ${sqlBool(true)} '
+          'AND e.is_posted = ${sqlBool(true)} AND e.is_deleted = ${sqlBool(false)}',
+          variables: [Variable<int>(inv.customerId!), Variable<int>(inv.id)],
+          readsFrom: {journalEntryLines, journalEntries, parties},
+        ).getSingle();
+        final receivable = (partyLeg.data['net'] as num).toDouble();
+        if (receivable != 0) {
+          await adjustPartyBalance(inv.customerId!, -receivable);
         }
       }
 
@@ -466,22 +478,20 @@ extension SalesActionsDao on AppDatabase {
   }
 
   /// Get the total quantity already returned for a specific product on a specific invoice.
-  /// Used to prevent returning more than the original sold quantity.
+  /// Used by cap validation; returns base units from persisted stock movements.
   Future<double> getAlreadyReturnedQty(int invoiceId, int productId) async {
     final result = await customSelect(
-      'SELECT COALESCE(SUM(quantity), 0) as total_returned '
-      'FROM stock_movements '
-      'WHERE reference_type = ? AND reference_id = ? '
-      'AND product_id = ? AND movement_type = ?',
-      variables: [
-        const Variable('sales_invoice'),
-        Variable(invoiceId),
-        Variable(productId),
-        const Variable('return'),
-      ],
+      'SELECT COALESCE(SUM(quantity), 0) AS total_returned '
+      'FROM stock_movements WHERE reference_id = ? AND product_id = ? AND '
+      "deleted_at IS NULL AND "
+      "((reference_type IN ('sales_return', 'sales_invoice') "
+      "AND movement_type = 'return') OR "
+      "(reference_type = 'return_cancel' AND movement_type = 'return_cancel'))",
+      variables: [Variable(invoiceId), Variable(productId)],
       readsFrom: {stockMovements},
     ).getSingle();
 
-    return (result.data['total_returned'] as num?)?.toDouble() ?? 0.0;
+    final total = (result.data['total_returned'] as num?)?.toDouble() ?? 0.0;
+    return total > 0 ? total : 0.0;
   }
 }

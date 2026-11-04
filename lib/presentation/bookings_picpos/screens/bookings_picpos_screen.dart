@@ -335,12 +335,12 @@ Color bookingColorOf(String? hex, {Color fallback = AppColors.primary}) {
 }
 
 /// نغمةُ الحالة ⇒ لونُ الثيمة.
-Color bookingToneColor(BookingStatusTone tone) => switch (tone) {
+Color bookingToneColor(BookingStatusTone tone, {Color? neutral}) => switch (tone) {
       BookingStatusTone.success => AppColors.success,
       BookingStatusTone.info => AppColors.info,
       BookingStatusTone.warning => AppColors.warning,
       BookingStatusTone.danger => AppColors.error,
-      BookingStatusTone.neutral => AppColors.textMuted,
+      BookingStatusTone.neutral => neutral ?? AppColors.textMuted,
     };
 
 /// أرقامٌ جدوليّةٌ — تمنع رقصَ الأعمدة الرقميّة بين الصفوف.

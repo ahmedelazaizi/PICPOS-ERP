@@ -2,6 +2,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../picpos_shell/picpos_surface.dart';
+import 'package:picpos_erp/core/theme/readable_colors.dart';
+
 /// قوس متحرك (0..1) بهوية PicPos — عرض فقط (Pure presentation).
 ///
 /// **لا يحسب ولا يجلب أي رقم.** يستقبل [value] جاهزة من الشاشة المستدعية
@@ -119,7 +122,10 @@ class _PicPosGaugeState extends State<PicPosGauge>
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: widget.size * 0.09,
-                      color: Colors.grey.shade700,
+                      // الداكن: حبر التسمية المقروء؛ الفاتح كما كان.
+                      color: context.picposIsDark
+                          ? readableLabel(context)
+                          : Colors.grey.shade700,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

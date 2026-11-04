@@ -692,7 +692,7 @@ extension DatabaseSeederPostgres on AppDatabase {
 
     final fyStart = DateTime(today.year, 1, 1);
     final fyEnd = DateTime(today.year, 12, 31, 23, 59, 59);
-    final fyId = await createFiscalYear(
+    final fyId = await ensureFiscalYear(
       name: 'السنة المالية ${today.year}',
       startDate: fyStart,
       endDate: fyEnd,

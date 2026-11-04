@@ -47,6 +47,18 @@ extension _MainScreenNavigation on _MainScreenState {
   /// من قائمةٍ أخرى. والتاباتُ تضيف عملاً ثالثاً (‏الفتحَ والإخلاء) — فنسخُه
   /// سبعاً كان يُنتج شريطاً يتناقض مع المحتوى.
   void _activateScreenImpl(int screenIndex) {
+    // قرارُ مالكٍ 2026-10-30: الشريطُ مخفيّ + سلّةُ البيع غير فارغة ⇒ منعٌ
+    // (لا خيارَ متابعة). مع الشريط الظاهر لا يتغيّر شيء.
+    if (screenIndex != _tabs.active &&
+        shouldBlockNavigationAwayFromPos(
+          tabsBarVisible: ref.read(showTopBarProvider).value ?? true,
+          activeIsPos: _tabs.active == AppScreen.pos.value,
+          saleCartItemCount: ref.read(cartControllerProvider).items.length,
+        )) {
+      if (mounted) _holdCartThenActivate(screenIndex);
+      return;
+    }
+
     // ⚠️ **والمسارُ الفرعيُّ يُزال أوّلاً.** الشاشاتُ تدفع مساراتٍ على
     // مُوجِّه الشلّ (‏تقريرٌ مفتوحٌ، شاشةُ وحداتِ قياس…) وهي تعلو الكومةَ
     // كلَّها؛ فتبديلُ التاب تحتها لا يُرى — نقرةٌ عاملةٌ تبدو ميّتة، وهو
@@ -92,6 +104,18 @@ extension _MainScreenNavigation on _MainScreenState {
       _pruneTabScopes();
       _tabFocusScopes[screenIndex]?.requestFocus();
     });
+  }
+
+  /// قرارُ مالكٍ: المنعُ يعرض «تعليق الفاتورة ثم الانتقال» — عند نجاح التعليق
+  /// تفرغ السلّةُ فيعبر النداءُ الثاني الحارسَ، وعند الفشل/الإلغاء نبقى.
+  Future<void> _holdCartThenActivate(int screenIndex) async {
+    final ok = await confirmHoldCartToLeave(
+      context,
+      ref,
+      title: tr('لا يمكن مغادرة شاشة البيع'),
+      holdLabel: tr('تعليق الفاتورة ثم الانتقال'),
+    );
+    if (ok && mounted) _activateScreenImpl(screenIndex);
   }
 
   /// تسميةُ شاشةٍ بفهرسها — للرسائل وحدَها.

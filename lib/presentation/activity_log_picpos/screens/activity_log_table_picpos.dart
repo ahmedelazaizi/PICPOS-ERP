@@ -130,7 +130,7 @@ class PicPosActivityTableRow extends StatelessWidget {
                     Text(
                       row.dateLabel,
                       style: TextStyle(
-                        fontSize: 10.5,
+                        fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: muted,
                         fontFeatures: const [ui.FontFeature.tabularFigures()],
@@ -179,7 +179,7 @@ class PicPosActivityTableRow extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 10.5,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: bottomColor ?? muted,
                 fontFeatures: bottomTabular

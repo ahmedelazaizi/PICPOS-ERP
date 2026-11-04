@@ -9,6 +9,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/i18n/tr.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/models/picpos_party_view.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class PartyRouteRow extends StatelessWidget {
   const PartyRouteRow({super.key, required this.party, this.onAssign});
@@ -21,7 +22,7 @@ class PartyRouteRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final muted = theme.textTheme.bodySmall?.color ?? AppColors.textMuted;
+    final muted = theme.textTheme.bodySmall?.color ?? context.picposMuted;
     final onRoute = party.routeName != null;
     // J3 — العميلُ النقديُّ متاحٌ على كلّ المسارات (استثناءُ قاعدة المسار
     // الواحد) فلا يُسنَد إلى مسارٍ بعينه.
@@ -34,7 +35,7 @@ class PartyRouteRow extends StatelessWidget {
             children: [
               Text(label,
                   style: TextStyle(
-                      fontSize: 9.5, fontWeight: FontWeight.w700, color: muted)),
+                      fontSize: 11, fontWeight: FontWeight.w700, color: muted)),
               Text(
                 value ?? '—',
                 maxLines: 1,

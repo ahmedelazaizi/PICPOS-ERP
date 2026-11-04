@@ -105,7 +105,7 @@ class PicPosStatTile extends StatelessWidget {
                 Text(
                   '${change.abs().toStringAsFixed(1)}%',
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.bold,
                     color: change >= 0 ? AppColors.success : AppColors.error,
                   ),
@@ -117,7 +117,7 @@ class PicPosStatTile extends StatelessWidget {
                       caption!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 10, color: muted),
+                      style: TextStyle(fontSize: 11, color: muted),
                     ),
                   ),
                 ],
@@ -129,7 +129,7 @@ class PicPosStatTile extends StatelessWidget {
               caption!,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 10, color: muted),
+              style: TextStyle(fontSize: 11, color: muted),
             ),
           ],
         ],

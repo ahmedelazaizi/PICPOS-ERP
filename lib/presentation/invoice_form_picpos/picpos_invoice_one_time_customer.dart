@@ -132,7 +132,7 @@ class _PicPosOneTimeCustomerBarState extends State<_PicPosOneTimeCustomerBar> {
             ),
           Text(
             tr('يُطبع الاسم على الفاتورة بدل «عميل نقدي»'),
-            style: TextStyle(fontSize: 10.5, color: _fMuted(context)),
+            style: TextStyle(fontSize: 11, color: _fMuted(context)),
           ),
         ],
       ),

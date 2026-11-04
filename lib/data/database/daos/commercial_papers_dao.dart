@@ -298,13 +298,9 @@ extension CommercialPapersDao on AppDatabase {
     // fired and the journal entry was silently skipped — which is exactly
     // why deposits didn't show up in دليل الحسابات or دفتر اليومية.
     //
-    // Route the AR/AP lines through the customer/supplier sub-account
-    // when possible so per-party balances appear in the COA tree (same
-    // pattern applied to sales/purchase posting).
+    // Route AR/AP through party subaccounts so their balances appear in the CoA.
     final notesReceivable = await _cpResolveAccount('notes_receivable');
     final notesPayable = await _cpResolveAccount('notes_payable');
-    final defaultCashAccount = await _cpResolveAccount('cash');
-    final defaultBankAccount = await _cpResolveAccount('bank');
 
     // Feature 048 — caller-chosen contra leg takes precedence over the
     // defaults from the purposes map. Validates the override actually
@@ -338,8 +334,8 @@ extension CommercialPapersDao on AppDatabase {
         );
       }
     }
-    final cashAccount = counterOverride ?? defaultCashAccount;
-    final bankAccount = counterOverride ?? defaultBankAccount;
+    final (cash: cashAccount, bank: bankAccount) =
+        await _cpResolvePaperCashAccounts(paper, oldStatus, newStatus, counterOverride);
     final receivablesControl = await _cpResolveAccount('receivables');
     final payablesControl = await _cpResolveAccount('payables');
     // Prefer the party's sub-account when the paper is tied to a specific
@@ -822,10 +818,7 @@ extension CommercialPapersDao on AppDatabase {
           ? 'لا يوجد صندوق بنكي مسجل. يرجى إضافة حساب بنكي في الخزن.'
           : 'لا يوجد صندوق نقدي مسجل. يرجى إضافة صندوق نقدي في الخزن.');
     }
-    await customStatement(
-      'UPDATE safes SET balance = balance + ? WHERE id = ?',
-      [paper.amount, safe.id],
-    );
+    await adjustSafeBalance(safe.id, paper.amount); // يُخطر تيار safes
   }
 
   Future<void> _cpDebitSafeForPaper(CommercialPaperData paper,
@@ -836,10 +829,7 @@ extension CommercialPapersDao on AppDatabase {
           ? 'لا يوجد صندوق بنكي مسجل. يرجى إضافة حساب بنكي في الخزن.'
           : 'لا يوجد صندوق نقدي مسجل. يرجى إضافة صندوق نقدي في الخزن.');
     }
-    await customStatement(
-      'UPDATE safes SET balance = balance - ? WHERE id = ?',
-      [paper.amount, safe.id],
-    );
+    await adjustSafeBalance(safe.id, -paper.amount); // يُخطر تيار safes
   }
 
   /// Spec 136 (field 2026-06-14): resolve the safe to move money in/out of when

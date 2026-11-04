@@ -7,7 +7,7 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 // شاشةٌ واحدةٌ كانت تخدم **ثلاثةَ** مستخدمين: النادلُ يفتحها كلَّ دقيقة،
 // والمديرُ كلَّ شهور، والمُعِدُّ مرّةً واحدة. والمحرّرُ مضغوطٌ في بطاقةٍ
 // داخلَ شاشةِ تشغيل، فالسحبُ حيٌّ تحت يدِ من يريد أن **ينقر** طاولةً لا أن
-// يحرّكها. وهذا نصُّ البلاغ: «التصميمُ والخريطةُ فيهما مشاكلُ ومش مريح».
+// يحرّكها.
 //
 // ═══ 🔴 والمخطَّطُ **مسوّدةٌ في الذاكرة** حتّى يُحفَظ ═══
 //
@@ -39,6 +39,7 @@ import '../../widgets/permission_guard.dart';
 import '../widgets/floor_plan_canvas_picpos.dart';
 import 'floor_plan_designer_dirty.dart';
 import 'floor_plan_designer_navigation.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// المقاسُ الابتدائيُّ لكلّ نوعِ معلَم — جدارٌ شريطٌ طويلٌ نحيف، وعمودٌ
 /// مربّعٌ صغير. ولو وُلِد الكلُّ بمقاسٍ واحدٍ لوجب على المستخدم تحجيمُ كلّ
@@ -699,7 +700,7 @@ class _FloorPlanDesignerPicposScreenState
            Expanded(
             child: Text(
               tr('الأقسامُ تُرى معاً على أرضيّةٍ واحدة — اسحب القسمَ ليجاور موضعَه الحقيقيَّ في المحلّ.'),
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+              style: TextStyle(color: context.picposMuted, fontSize: 12),
             ),
           ),
           FilledButton.icon(
@@ -730,7 +731,7 @@ class _FloorPlanDesignerPicposScreenState
         width: 1,
         height: 24,
         margin: const EdgeInsets.symmetric(horizontal: 6),
-        color: AppColors.border.withValues(alpha: 0.4),
+        color: context.picposHairline.withValues(alpha: 0.4),
       );
 
   // ─── جسمُ المحرّر ──────────────────────────────────────────────────────
@@ -809,7 +810,7 @@ class _FloorPlanDesignerPicposScreenState
           width: it.width * scale,
           height: it.height * scale,
           child: Container(
-            color: AppColors.textMuted.withValues(alpha: 0.35),
+            color: context.picposMuted.withValues(alpha: 0.35),
           ),
         ),
       for (final t in layout.tables)

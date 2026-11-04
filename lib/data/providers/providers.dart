@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart' hide User;
@@ -47,7 +46,7 @@ export 'repository_providers.dart';
 // Conditional import for native database and services
 import 'providers_native.dart' if (dart.library.html) 'providers_web_stub.dart';
 export 'providers_native.dart' if (dart.library.html) 'providers_web_stub.dart';
-import '../../services/theme_service.dart';
+export 'theme_mode_provider.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CORE INFRASTRUCTURE PROVIDERS
@@ -103,7 +102,6 @@ final isWebProvider = Provider<bool>((ref) => kIsWeb);
 // THEME PROVIDER
 // ═══════════════════════════════════════════════════════════════════════════
 
-final themeServiceProvider = Provider<ThemeService>((ref) => ThemeService());
 
 /// أفعالُ الحجز التي تُكتب في سجلّ النشاط.
 ///
@@ -357,42 +355,6 @@ final tableCheckoutCoordinatorProvider = Provider<TableCheckoutCoordinator>((
   );
 });
 
-class ThemeModeNotifier extends Notifier<ThemeMode> {
-  late final ThemeService _service;
-
-  @override
-  ThemeMode build() {
-    _service = ref.read(themeServiceProvider);
-
-    // Attempt to load saved theme mode
-    // Note: build() should return a value immediately.
-    // For persistent states, we usually initialize with a default
-    // or use a separate initialization flow.
-    // Here we use ThemeMode.light as default.
-    return ThemeMode.light;
-  }
-
-  /// Load the saved theme mode from persistent storage
-  Future<void> init() async {
-    final savedMode = await _service.getThemeMode();
-    state = savedMode;
-  }
-
-  Future<void> setMode(ThemeMode mode) async {
-    state = mode;
-    await _service.saveThemeMode(mode);
-  }
-
-  // Backward compatibility for old calls
-  void setDarkMode(bool value) {
-    setMode(value ? ThemeMode.dark : ThemeMode.light);
-  }
-}
-
-final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(() {
-  return ThemeModeNotifier();
-});
-
 /// ── System Currency ──────────────────────────────────────────────────
 class SystemCurrencyNotifier extends Notifier<String> {
   @override
@@ -452,6 +414,13 @@ final systemCurrencyProvider = NotifierProvider<SystemCurrencyNotifier, String>(
     return SystemCurrencyNotifier();
   },
 );
+
+final systemCurrencySettingProvider = FutureProvider<String?>((ref) async {
+  ref.watch(systemCurrencyProvider);
+  final saved = await ref.read(databaseProvider).getSettingValue('system_currency');
+  if (saved == null || saved.isEmpty) return null;
+  return CurrencyInfo.fromCode(saved).code;
+});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SERVER-SIDE DATA CHANGE NOTIFIER (auto-refresh reports)

@@ -11,6 +11,7 @@ import '../../../data/providers/providers.dart';
 import '../../../services/invoice_generator.dart';
 import '../../widgets/permission_guard.dart';
 import '../providers/cart_controller.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// زرار طباعة أمر شغل لفاتورة معلقة — مستخرج كودجت top-level عشان يتعمله
 /// اختبار widget من غير الديالوج كله.
@@ -70,7 +71,7 @@ class HeldOrdersDialog extends ConsumerWidget {
             error: (e, _) => Center(child: Text(tr('خطأ: {e}', {'e': e}))),
             data: (orders) {
               if (orders.isEmpty) {
-                return _buildEmptyState();
+                return _buildEmptyState(context);
               }
 
               return ListView.separated(
@@ -174,16 +175,16 @@ class HeldOrdersDialog extends ConsumerWidget {
     }
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return  Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(PhosphorIconsBold.tray, size: 64, color: AppColors.textMuted),
+          Icon(PhosphorIconsBold.tray, size: 64, color: context.picposMuted),
           const SizedBox(height: 16),
           Text(
             tr('لا توجد فواتير معلقة'),
-            style: const TextStyle(color: AppColors.textMuted),
+            style: TextStyle(color: context.picposMuted),
           ),
         ],
       ),
@@ -245,7 +246,7 @@ class _HeldOrderTile extends ConsumerWidget {
       ),
       subtitle: Text(
         '${order.subtotal.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr} • ${_formatTime(order.createdAt)}',
-        style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+        style: TextStyle(fontSize: 12, color: context.picposMuted),
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,

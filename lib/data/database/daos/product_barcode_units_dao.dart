@@ -300,6 +300,10 @@ extension ProductBarcodeUnitsDao on AppDatabase {
 
   /// Insert a product unit
   Future<int> insertProductUnit(ProductUnitsCompanion unit) async {
+    if ((unit.salePrice.present && unit.salePrice.value < 0) ||
+        (unit.costPrice.present && unit.costPrice.value < 0)) {
+      throw ArgumentError('لا يمكن أن يكون سعر الوحدة أو تكلفتها سالباً');
+    }
     // UUID-First Phase 1 Slice 3: auto-mint if caller didn't supply a
     // globalId so both client and server rows share the same identity.
     final hasGid = unit.globalId.present &&
@@ -316,6 +320,9 @@ extension ProductBarcodeUnitsDao on AppDatabase {
 
   /// Update a product unit
   Future<bool> updateProductUnit(ProductUnit unit) async {
+    if (unit.salePrice < 0 || unit.costPrice < 0) {
+      throw ArgumentError('لا يمكن أن يكون سعر الوحدة أو تكلفتها سالباً');
+    }
     if (SyncInterceptor.isClientMode) {
       await SyncInterceptor.instance?.updateProductUnit(unit.id, {
         'unitName': unit.unitName,

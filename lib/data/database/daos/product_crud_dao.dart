@@ -469,8 +469,23 @@ extension ProductCrudDao on AppDatabase {
         .watch();
   }
 
+  void _validateNonNegativeProductPrices(Iterable<double?> prices) {
+    if (prices.any((price) => price != null && price < 0)) {
+      throw ArgumentError('لا يمكن أن يكون سعر الصنف أو تكلفته سالباً');
+    }
+  }
+
   /// Insert a new product with trial version limits
   Future<int> insertProduct(ProductsCompanion product) async {
+    _validateNonNegativeProductPrices([
+      product.salePrice.present ? product.salePrice.value : null,
+      product.costPrice.present ? product.costPrice.value : null,
+      product.wholesalePrice.present ? product.wholesalePrice.value : null,
+      product.priceTalabat.present ? product.priceTalabat.value : null,
+      product.priceCareem.present ? product.priceCareem.value : null,
+      product.priceAshyae.present ? product.priceAshyae.value : null,
+      product.pricePerUnit.present ? product.pricePerUnit.value : null,
+    ]);
     // Trial version limit: configurable via TrialPolicy
     if (AppConfig.isDemo) {
       // Check HMAC-verified activation status (cached at app startup)
@@ -510,6 +525,15 @@ extension ProductCrudDao on AppDatabase {
 
   /// Update an existing product
   Future<bool> updateProduct(Product product) async {
+    _validateNonNegativeProductPrices([
+      product.salePrice,
+      product.costPrice,
+      product.wholesalePrice,
+      product.priceTalabat,
+      product.priceCareem,
+      product.priceAshyae,
+      product.pricePerUnit,
+    ]);
     final pWithSearch = product.copyWith(
       searchName: Value(ArabicUtils.normalize(product.name)),
     );
@@ -525,6 +549,15 @@ extension ProductCrudDao on AppDatabase {
     int changedBy = 0,
     String changedByName = 'SYSTEM',
   }) async {
+    _validateNonNegativeProductPrices([
+      entity.salePrice,
+      entity.costPrice,
+      entity.wholesalePrice,
+      entity.priceTalabat,
+      entity.priceCareem,
+      entity.priceAshyae,
+      entity.pricePerUnit,
+    ]);
     // Read current values for audit comparison
     final existing = await (select(products)
           ..where((p) => p.id.equals(entity.id)))
@@ -901,37 +934,6 @@ extension ProductCrudDao on AppDatabase {
     return (result.data['total'] as int?) ?? 0;
   }
 
-  /// Feature 045: Soft-delete a category, optionally bulk-moving its
-  /// active products to a destination category first.
-  ///
-  /// Old behaviour (pre-v128) was a HARD DELETE preceded by a "move
-  /// products to the FIRST category" step. Two real bugs flowed from that:
-  ///
-  ///   1. **Resurrection across users** — the UI dialog claimed
-  ///      "سيتم نقل الأصناف للتصنيف الافتراضي" but `(select(categories)
-  ///      ..limit(1))` returned an arbitrary row, not the actual default.
-  ///      Then the DELETE made the row vanish; on the next DeltaPull from
-  ///      a server that still held it, the row was re-inserted and the
-  ///      "deleted" category reappeared for whoever logged in next. The
-  ///      original field report: "بدخل بمستخدم تانى بلاقى التصنيفات
-  ///      اللى حذفتها بتظهر للمستخدم التانى".
-  ///   2. **Orphan FKs** — when the chosen "default" was the category
-  ///      being deleted itself, the move was skipped and the products
-  ///      ended up referencing a deleted row.
-  ///
-  /// Post-v128 behaviour:
-  ///   - The caller explicitly picks the destination (`moveToCategoryId`
-  ///     can be a real id or null — null = "بدون تصنيف" since
-  ///     `Products.categoryId` is nullable).
-  ///   - The whole operation runs in a single transaction.
-  ///   - Category is soft-deleted (`isActive=false` + `deletedAt=NOW()`)
-  ///     so the next DeltaPull's `CategorySyncStrategy` honours the
-  ///     deletion via its `isActive=false` write (line 64 of that file).
-  ///   - The pre-flight count check is the **caller's** responsibility
-  ///     (`countActiveProductsInCategory`) — the DAO no longer guesses a
-  ///     default. We still defensively move ALL active products keyed by
-  ///     `categoryId` here so a race-window create between the count and
-  ///     this call doesn't orphan a new product.
   /// يفعّل «السماح بالبيع بالسالب» على كل الأصناف النشطة في نقلة واحدة.
   ///
   /// ── ليه ده محتاج وجود، والإعداد العام موجود؟ ─────────────────────────
@@ -956,38 +958,6 @@ extension ProductCrudDao on AppDatabase {
           ..where((p) =>
               p.isActive.equals(true) & p.allowNegativeSale.equals(false)))
         .write(const ProductsCompanion(allowNegativeSale: Value(true)));
-  }
-
-  Future<void> deleteCategory(
-    int categoryId, {
-    int? moveToCategoryId,
-  }) async {
-    if (moveToCategoryId != null && moveToCategoryId == categoryId) {
-      throw ArgumentError(
-        'moveToCategoryId must differ from the category being deleted',
-      );
-    }
-    await transaction(() async {
-      // 1. Re-target active products (idempotent: rows already on
-      //    `moveToCategoryId` aren't touched). When `moveToCategoryId`
-      //    is null, products land on "بدون تصنيف" (categoryId NULL) —
-      //    valid because Products.categoryId is nullable.
-      await (update(products)
-            ..where((p) =>
-                p.categoryId.equals(categoryId) & p.isActive.equals(true)))
-          .write(ProductsCompanion(categoryId: Value(moveToCategoryId)));
-
-      // 2. Soft-delete the category itself. The schema's `isActive` +
-      //    `deletedAt` columns have been in place since v100 but the
-      //    delete path bypassed them (HARD DELETE) — fixed here.
-      await (update(categories)..where((c) => c.id.equals(categoryId)))
-          .write(CategoriesCompanion(
-        isActive: const Value(false),
-        deletedAt: Value(DateTime.now()),
-        lastModifiedAt: Value(DateTime.now()),
-      ));
-    });
-    invalidateCategoryCache();
   }
 
   /// Get category by name

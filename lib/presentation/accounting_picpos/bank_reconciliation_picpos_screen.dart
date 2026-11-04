@@ -419,7 +419,7 @@ class _BankReconciliationPicposScreenState
           hintStyle: TextStyle(fontSize: 11.5, color: context.picposMuted),
           // خطأُ إدخالٍ يُقال — لا يُستبدَل بصفرٍ صامت.
           errorText: invalid ? tr('قيمةٌ غيرُ صالحة') : null,
-          errorStyle: const TextStyle(fontSize: 10.5),
+          errorStyle: const TextStyle(fontSize: 11),
           filled: true,
           fillColor: context.picposField,
           contentPadding:

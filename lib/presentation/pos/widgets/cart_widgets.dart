@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../../../../core/constants/app_constants.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// Row widget for displaying totals in cart summary
 class TotalRow extends StatelessWidget {
@@ -27,14 +28,14 @@ class TotalRow extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              color: AppColors.textSecondary,
+              color: context.picposSecondary,
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
             ),
           ),
           Text(
             '${value.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
             style: TextStyle(
-              color: valueColor ?? AppColors.textPrimary,
+              color: valueColor ?? context.picposText,
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
             ),
           ),
@@ -72,7 +73,7 @@ class PaymentButton extends StatelessWidget {
               : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
+            color: isSelected ? AppColors.primary : context.picposHairline,
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -81,14 +82,14 @@ class PaymentButton extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.primary : AppColors.textMuted,
+              color: isSelected ? AppColors.primary : context.picposMuted,
               size: 20,
             ),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                color: isSelected ? AppColors.primary : context.picposSecondary,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),

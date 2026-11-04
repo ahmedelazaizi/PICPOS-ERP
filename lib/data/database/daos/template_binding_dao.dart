@@ -46,9 +46,9 @@ extension TemplateBindingDao on AppDatabase {
 
   /// رابطاتُ قالبٍ بعينه — يقرؤها زرُّ الحذف قبل أن يرفض.
   Future<List<TemplateBinding>> getBindingsForTemplate(int templateId) =>
-      (select(templateBindings)
-            ..where((b) => b.templateId.equals(templateId)))
-          .get();
+      (select(
+        templateBindings,
+      )..where((b) => b.templateId.equals(templateId))).get();
 
   /// يُفعِّل قالباً لمفتاحٍ رباعيّ، ويُرجع **الرابطاتِ التي أُلغيت**.
   ///
@@ -67,13 +67,18 @@ extension TemplateBindingDao on AppDatabase {
     int priority = 0,
     double? printerWidthMm,
   }) async {
-    // الفحصُ قبل المعاملة — فالرفضُ لا يترك رابطةً نصفَ مكتوبة.
-    if (printerWidthMm != null) {
+    // الفحصُ قبل المعاملة — العرضُ الممرّر يتقدّم، وإلا نقرأ العرضَ المحفوظ
+    // للطابعة المحدّدة. الطابعة القديمة ذات null تبقى بلا افتراض عرضٍ مختلق.
+    var effectivePrinterWidthMm = printerWidthMm;
+    if (effectivePrinterWidthMm == null && printerId != null) {
+      effectivePrinterWidthMm = (await getPrinterById(printerId))?.paperWidthMm;
+    }
+    if (effectivePrinterWidthMm != null) {
       final tpl = await getTemplateById(templateId);
       if (tpl != null) {
         final verdict = checkPaperFit(
           templateWidthMm: tpl.paperWidth,
-          printerWidthMm: printerWidthMm,
+          printerWidthMm: effectivePrinterWidthMm,
         );
         if (verdict.isRejected) throw PaperMismatchException(verdict.reason);
       }
@@ -82,24 +87,27 @@ extension TemplateBindingDao on AppDatabase {
     return transaction(() async {
       // المتعارضُ: نفسُ المفتاح الرباعيِّ بالضبط. و`null` تعني «أيّاً كان»
       // فلا تُطابَق بـ`equals` — لذلك يُفصَّل الشرطُ لكلِّ حقلٍ على حدة.
-      final conflicts = await (select(templateBindings)
-            ..where((b) {
-              var w = b.documentType.equals(documentType);
-              w = w &
-                  (branchId == null
-                      ? b.branchId.isNull()
-                      : b.branchId.equals(branchId));
-              w = w &
-                  (printerId == null
-                      ? b.printerId.isNull()
-                      : b.printerId.equals(printerId));
-              w = w &
-                  (locale == null
-                      ? b.locale.isNull()
-                      : b.locale.equals(locale));
-              return w;
-            }))
-          .get();
+      final conflicts =
+          await (select(templateBindings)..where((b) {
+                var w = b.documentType.equals(documentType);
+                w =
+                    w &
+                    (branchId == null
+                        ? b.branchId.isNull()
+                        : b.branchId.equals(branchId));
+                w =
+                    w &
+                    (printerId == null
+                        ? b.printerId.isNull()
+                        : b.printerId.equals(printerId));
+                w =
+                    w &
+                    (locale == null
+                        ? b.locale.isNull()
+                        : b.locale.equals(locale));
+                return w;
+              }))
+              .get();
 
       final cancelled = conflicts
           .where((b) => b.templateId != templateId)
@@ -133,23 +141,23 @@ extension TemplateBindingDao on AppDatabase {
     int? printerId,
     String? locale,
   }) =>
-      (delete(templateBindings)
-            ..where((b) {
-              var w = b.documentType.equals(documentType);
-              w = w &
-                  (branchId == null
-                      ? b.branchId.isNull()
-                      : b.branchId.equals(branchId));
-              w = w &
-                  (printerId == null
-                      ? b.printerId.isNull()
-                      : b.printerId.equals(printerId));
-              w = w &
-                  (locale == null
-                      ? b.locale.isNull()
-                      : b.locale.equals(locale));
-              return w;
-            }))
+      (delete(templateBindings)..where((b) {
+            var w = b.documentType.equals(documentType);
+            w =
+                w &
+                (branchId == null
+                    ? b.branchId.isNull()
+                    : b.branchId.equals(branchId));
+            w =
+                w &
+                (printerId == null
+                    ? b.printerId.isNull()
+                    : b.printerId.equals(printerId));
+            w =
+                w &
+                (locale == null ? b.locale.isNull() : b.locale.equals(locale));
+            return w;
+          }))
           .go();
 
   /// يحسم القالبَ بالسلسلة السباعيّة.
@@ -238,8 +246,12 @@ extension TemplateBindingDao on AppDatabase {
           .where((t) => t['file'] == '$file.json')
           .firstOrNull;
       if (entry == null) {
-        unawaited(DiagnosticLogger.log(DiagnosticLogger.printOut,
-            'مِزلاجُ القالب يشير إلى ملفٍّ مجهول "$file" — سقوطٌ للمستوى التالي'));
+        unawaited(
+          DiagnosticLogger.log(
+            DiagnosticLogger.printOut,
+            'مِزلاجُ القالب يشير إلى ملفٍّ مجهول "$file" — سقوطٌ للمستوى التالي',
+          ),
+        );
         return null;
       }
 
@@ -248,17 +260,24 @@ extension TemplateBindingDao on AppDatabase {
           .firstOrNull;
       if (match == null) {
         // القالبُ لم يُستورَد بعد، أو حُذف من المكتبة بعد ضبط المِزلاج.
-        unawaited(DiagnosticLogger.log(
+        unawaited(
+          DiagnosticLogger.log(
             DiagnosticLogger.printOut,
             'مِزلاجُ القالب يشير إلى "${entry['name']}" وهو غيرُ موجودٍ في '
-            'القاعدة — سقوطٌ للمستوى التالي'));
+            'القاعدة — سقوطٌ للمستوى التالي',
+          ),
+        );
         return null;
       }
       return match.id;
     } catch (e) {
       // إعدادٌ لا يُقرأ لا يُسقط طباعةً.
-      unawaited(DiagnosticLogger.log(DiagnosticLogger.printOut,
-          'تعذّرت قراءةُ مِزلاج القالب — سقوطٌ للمستوى التالي ($e)'));
+      unawaited(
+        DiagnosticLogger.log(
+          DiagnosticLogger.printOut,
+          'تعذّرت قراءةُ مِزلاج القالب — سقوطٌ للمستوى التالي ($e)',
+        ),
+      );
       return null;
     }
   }

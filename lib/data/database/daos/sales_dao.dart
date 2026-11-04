@@ -1240,22 +1240,15 @@ extension SalesDao on AppDatabase {
     // is what keeps the attribution correct after DeltaPull replaces a locally
     // written return row with the server's copy, which carries the SERVER id.
     // Rows written before the gid format fall back to the raw number.
+    // FS-16: that link SQL now lives in `_salesReturnDocLinkSql`
+    // (sales_returns_ledger_dao.dart), unchanged, so the report's return-cost
+    // read resolves the SAME documents this refund total does.
     final invRows = await customSelect(
-      'SELECT COALESCE(orig.id, r.legacy_id) AS orig_id, '
-      'COALESCE(SUM(r.total), 0) AS total '
-      'FROM ('
-      '  SELECT total, '
-      "    CAST(SUBSTR(notes, INSTR(notes, '#') + 1) AS INTEGER) AS legacy_id, "
-      "    CASE WHEN INSTR(notes, '|gid:') > 0 "
-      "         THEN SUBSTR(notes, INSTR(notes, '|gid:') + 5) END AS orig_gid "
-      '  FROM sales_invoices '
-      "  WHERE sale_type = 'return' "
-      "    AND notes LIKE 'Return for invoice #%' "
-      '    AND is_deleted = 0 '
-      ') r '
-      'LEFT JOIN sales_invoices orig ON orig.global_id = r.orig_gid '
-      'WHERE COALESCE(orig.id, r.legacy_id) IN ($placeholders) '
-      'GROUP BY orig_id',
+      'SELECT link.orig_id AS orig_id, '
+      'COALESCE(SUM(link.doc_total), 0) AS total '
+      'FROM ($_salesReturnDocLinkSql) link '
+      'WHERE link.orig_id IN ($placeholders) '
+      'GROUP BY link.orig_id',
       variables: invoiceIdVars,
       readsFrom: {salesInvoices},
     ).get();

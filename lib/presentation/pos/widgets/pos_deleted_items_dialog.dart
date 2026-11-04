@@ -8,6 +8,7 @@ import '../../../core/permissions/permission_codes.dart';
 import '../providers/pos_controller.dart';
 import '../../../data/providers/providers.dart';
 import '../../widgets/permission_guard.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// Dialog for viewing deleted items in the current POS session
 class PosDeletedItemsDialog extends ConsumerWidget {
@@ -41,7 +42,7 @@ class PosDeletedItemsDialog extends ConsumerWidget {
             const Spacer(),
             Text(
               tr('{p0} صنف', {'p0': deletedItems.length}),
-              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 12, color: context.picposMuted),
             ),
           ],
         ),
@@ -52,7 +53,7 @@ class PosDeletedItemsDialog extends ConsumerWidget {
               ?  Center(
                   child: Text(
                     tr('لا توجد أصناف محذوفة'),
-                    style: const TextStyle(color: AppColors.textMuted),
+                    style: TextStyle(color: context.picposMuted),
                   ),
                 )
               : ListView.separated(
@@ -78,9 +79,9 @@ class PosDeletedItemsDialog extends ConsumerWidget {
                       ),
                       trailing: Text(
                         item.note ?? '',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: AppColors.textMuted,
+                          color: context.picposMuted,
                         ),
                       ),
                     );

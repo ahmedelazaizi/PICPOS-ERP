@@ -150,7 +150,7 @@ class FinVarianceLine extends StatelessWidget {
             caption,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 10.5, color: context.picposMuted),
+            style: TextStyle(fontSize: 11, color: context.picposMuted),
           ),
         ),
         const SizedBox(width: Spacing.sm),

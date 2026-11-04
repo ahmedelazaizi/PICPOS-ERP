@@ -9,6 +9,7 @@ import '../../../../data/providers/settings_providers.dart';
 import '../../../../data/database/database.dart';
 import '../../../widgets/permission_guard.dart';
 import '../../providers/cart_controller.dart';
+import '../../../picpos_shell/picpos_surface.dart';
 
 class CartPaymentSelector extends ConsumerWidget {
   final CartState state;
@@ -188,7 +189,7 @@ class CartPaymentSelector extends ConsumerWidget {
                       child: Text(
                         selectedBankName,
                         style: TextStyle(
-                          fontSize: 10 * scaleFactor,
+                          fontSize: 11 * scaleFactor,
                           color: AppColors.info,
                           fontWeight: FontWeight.w600,
                         ),
@@ -224,7 +225,7 @@ class CartPaymentSelector extends ConsumerWidget {
                     child: Text(
                       tr('الصندوق: {cashSafeName}', {'cashSafeName': cashSafeName}),
                       style: TextStyle(
-                        fontSize: 10 * scaleFactor,
+                        fontSize: 11 * scaleFactor,
                         color: AppColors.success,
                         fontWeight: FontWeight.w600,
                       ),
@@ -294,7 +295,7 @@ class CartPaymentSelector extends ConsumerWidget {
                 Icon(
                   PhosphorIconsBold.bank,
                   size: 16,
-                  color: isSelected ? AppColors.primary : AppColors.textMuted,
+                  color: isSelected ? AppColors.primary : context.picposMuted,
                 ),
                 const SizedBox(width: 8),
                 Expanded(

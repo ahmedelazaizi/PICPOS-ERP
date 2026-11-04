@@ -3,6 +3,7 @@ import '../../domain/models/document_record.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'base_repository.dart';
+import 'treasury_open_invoice_reads.dart';
 import '../../services/accounting_service.dart';
 import '../database/sync_interceptor.dart';
 import '../../services/client_write_interceptor.dart';
@@ -13,8 +14,7 @@ import '../../services/cheque_receipt_jes.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../../services/permission_enforcer.dart';
 
-/// Repository for treasury operations
-class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRepository {
+class TreasuryRepositoryImpl extends BaseRepository<Safe> with OpenInvoiceReads implements ITreasuryRepository {
   final Ref _ref;
   TreasuryRepositoryImpl(super.db, this._ref);
 
@@ -463,10 +463,7 @@ class TreasuryRepositoryImpl extends BaseRepository<Safe> implements ITreasuryRe
     )).toList());
   }
 
-  /// Issue 14 — branch-scoped recent transactions. `branchIds == null`
-  /// means full access (admin). The mapping body mirrors
-  /// [watchRecentTransactions] so consumers don't need to special-case
-  /// the scoped path.
+  /// Branch-scoped records; mapping mirrors [watchRecentTransactions].
   @override
   Stream<List<TransactionData>> watchRecentTransactionsForBranches(
     Set<int>? branchIds,

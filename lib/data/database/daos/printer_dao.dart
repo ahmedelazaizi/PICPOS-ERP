@@ -52,6 +52,7 @@ extension PrinterDao on AppDatabase {
     String printerType = 'thermal',
     String purpose = 'pos_receipt',
     String? description,
+    double? paperWidthMm,
   }) async {
     final gid = UuidV7.generate();
     if (SyncInterceptor.isClientMode) {
@@ -64,6 +65,7 @@ extension PrinterDao on AppDatabase {
         'printerType': printerType,
         'purpose': purpose,
         'description': description,
+        'paperWidthMm': paperWidthMm,
       });
       if (serverId != null) return serverId;
     }
@@ -76,6 +78,7 @@ extension PrinterDao on AppDatabase {
         printerType: Value(printerType),
         purpose: Value(purpose),
         description: Value(description),
+        paperWidthMm: Value(paperWidthMm),
         globalId: Value(gid),
       ),
     );
@@ -91,6 +94,7 @@ extension PrinterDao on AppDatabase {
     String printerType = 'thermal',
     String purpose = 'pos_receipt',
     String? description,
+    double? paperWidthMm,
     bool isActive = true,
   }) async {
     if (SyncInterceptor.isClientMode) {
@@ -102,6 +106,9 @@ extension PrinterDao on AppDatabase {
         'printerType': printerType,
         'purpose': purpose,
         'description': description,
+        ...?(paperWidthMm == null
+            ? null
+            : <String, dynamic>{'paperWidthMm': paperWidthMm}),
         'isActive': isActive,
       });
     }
@@ -115,6 +122,9 @@ extension PrinterDao on AppDatabase {
             printerType: Value(printerType),
             purpose: Value(purpose),
             description: Value(description),
+            paperWidthMm: paperWidthMm == null
+                ? const Value.absent()
+                : Value(paperWidthMm),
             isActive: Value(isActive),
           ),
         )
@@ -130,7 +140,9 @@ extension PrinterDao on AppDatabase {
     await (update(categories)..where((c) => c.printerId.equals(id))).write(
       const CategoriesCompanion(printerId: Value(null)),
     );
-    return (delete(printers)..where((p) => p.id.equals(id))).go().then((count) => count > 0);
+    return (delete(
+      printers,
+    )..where((p) => p.id.equals(id))).go().then((count) => count > 0);
   }
 
   // ─────────────────────────────────────────────────────────────────────────

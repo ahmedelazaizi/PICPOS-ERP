@@ -19,6 +19,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 // ⚠️ `bookingReminderOffsetKey` و`bookingReminderOffsetDefault` انتقلا إلى
 // `data/database/tables/booking_tables.dart` — يحتاجهما مولِّدُ التذكيرات في
@@ -70,10 +71,10 @@ class BookingsSettingsView extends ConsumerWidget {
                             fontSize: 13, fontWeight: FontWeight.w800)),
                     Text(
                       tr('كم دقيقة قبل الموعد يُجدوَل التذكير للحجوزات الجديدة.'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textMuted,
+                        color: context.picposMuted,
                       ),
                     ),
                   ],
@@ -176,10 +177,10 @@ class BookingsSettingsView extends ConsumerWidget {
                     detail,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textMuted,
+                      color: context.picposMuted,
                     ),
                   ),
               ],

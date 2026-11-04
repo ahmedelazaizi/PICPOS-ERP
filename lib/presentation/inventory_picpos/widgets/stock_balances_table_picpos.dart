@@ -13,6 +13,7 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 // ما تغيّر: عمقُ الاستيراد، اسمُ الصنف العامّ، وشريطُ امتلاءِ المخزون تحت
 // الرصيد (‏`barW`/`barC` في التصميم). ولا منطقَ تغيّر.
 import 'package:flutter/material.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../domain/models/picpos_product_view.dart';
@@ -245,15 +246,15 @@ class _StockBalancesTableState extends ConsumerState<StockBalancesTablePicpos> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     PhosphorIconsBold.archive,
                     size: 48,
-                    color: AppColors.textMuted,
+                    color: context.picposMuted,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     tr('لا توجد أصناف مطابقة للبحث'),
-                    style: const TextStyle(color: AppColors.textSecondary),
+                    style: TextStyle(color: context.picposSecondary),
                   ),
                 ],
               ),
@@ -431,8 +432,8 @@ class _StockBalancesHeader extends StatelessWidget {
       height: _kHeaderHeight,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        border: const Border(
-          bottom: BorderSide(color: AppColors.border, width: 1),
+        border: Border(
+          bottom: BorderSide(color: context.picposHairline, width: 1),
         ),
       ),
       child: Row(
@@ -502,7 +503,7 @@ class _StockBalanceRow extends StatelessWidget {
         ? AppColors.error
         : isLow
             ? AppColors.warning
-            : AppColors.textPrimary;
+            : context.picposText;
 
     return Container(
       height: _kRowHeight,
@@ -510,8 +511,8 @@ class _StockBalanceRow extends StatelessWidget {
         color: isStriped
             ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.4)
             : Colors.transparent,
-        border: const Border(
-          bottom: BorderSide(color: AppColors.border, width: 0.5),
+        border: Border(
+          bottom: BorderSide(color: context.picposHairline, width: 0.5),
         ),
       ),
       child: Row(
@@ -524,7 +525,7 @@ class _StockBalanceRow extends StatelessWidget {
             unitLabel,
             _kUnitColWidth,
             fontSize: 12,
-            color: AppColors.textSecondary,
+            color: context.picposSecondary,
           ),
           SizedBox(
             width: _kStockColWidth,
@@ -686,10 +687,10 @@ class StockCellPicpos extends StatelessWidget {
                   tr('حد أدنى {p0}', {'p0': minStock.toStringAsFixed(0)}),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 10,
+                  style: TextStyle(
+                    fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textMuted,
+                    color: context.picposMuted,
                   ),
                 ),
               ),
@@ -703,7 +704,7 @@ class StockCellPicpos extends StatelessWidget {
             child: LinearProgressIndicator(
               value: ratio,
               minHeight: 5,
-              backgroundColor: AppColors.border,
+              backgroundColor: context.picposHairline,
               valueColor: AlwaysStoppedAnimation<Color>(stockColor),
             ),
           ),
@@ -763,12 +764,12 @@ class _ExpiryBadge extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: AppColors.textMuted.withValues(alpha: 0.1),
+          color: context.picposMuted.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(6),
         ),
-        child: const Text(
+        child: Text(
           '-',
-          style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+          style: TextStyle(color: context.picposMuted, fontSize: 12),
         ),
       );
     }

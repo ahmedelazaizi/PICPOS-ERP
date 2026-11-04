@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/picpos_theme.dart';
+import '../../core/theme/readable_colors.dart';
 
 /// ألوانُ أسطح PicPos تابعةً للوضع (فاتح/غامق).
 ///
@@ -53,5 +54,5 @@ extension PicPosSurface on BuildContext {
   /// `AppColors.primary` في المقدّمة، وتحويلُها يمسّ عشراتِ المواضع فيُقاس
   /// على حدة. المستعمَلُ هنا هو شريطُ التقارير وحدَه.
   Color get picposBrandInk =>
-      picposIsDark ? const Color(0xFF7DA6F5) : AppColors.primary;
+      picposIsDark ? kBrandInkDark : AppColors.primary;
 }

@@ -17,6 +17,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../domain/models/picpos_return_view.dart';
 import 'picpos_kpi_row.dart';
+import 'package:picpos_erp/core/theme/readable_colors.dart';
 
 /// لونُ النصِّ الخافت — يُعاد تصديرُه باسمٍ محلّيٍّ كي لا تتغيّر مواضعُ
 /// الاستعمال في شاشتَي المرتجعات.
@@ -180,7 +181,7 @@ class PicPosReturnInvoiceTile extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 10.5,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: muted,
                         ),
@@ -215,7 +216,7 @@ class PicPosReturnInvoiceTile extends StatelessWidget {
                       ),
                       child: Text(
                         row.status.displayLabel,
-                        style: TextStyle(fontSize: 9.5, color: statusColor),
+                        style: TextStyle(fontSize: 11, color: readableOn(context, statusColor)),
                       ),
                     ),
                   ],
@@ -292,7 +293,7 @@ class PicPosReturnsInvoicePanel extends StatelessWidget {
                 Text(
                   '${rows.length}',
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: muted,
                     fontFeatures: const [ui.FontFeature.tabularFigures()],

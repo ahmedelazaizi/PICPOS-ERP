@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../data/providers/parties_providers.dart';
 import '../../../widgets/searchable_dropdown.dart';
 import '../../providers/pos_controller.dart';
+import '../../../picpos_shell/picpos_surface.dart';
 
 class CartDeliveryPanel extends ConsumerWidget {
   final PosState state;
@@ -37,7 +38,7 @@ class CartDeliveryPanel extends ConsumerWidget {
         border: Border.all(
           color: state.deliveryStatus != null
               ? AppColors.info.withValues(alpha: 0.3)
-              : AppColors.border,
+              : context.picposHairline,
         ),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -50,7 +51,7 @@ class CartDeliveryPanel extends ConsumerWidget {
                 size: iconSize,
                 color: state.deliveryStatus != null
                     ? AppColors.info
-                    : AppColors.textMuted,
+                    : context.picposMuted,
               ),
               SizedBox(width: spacing),
               Text(

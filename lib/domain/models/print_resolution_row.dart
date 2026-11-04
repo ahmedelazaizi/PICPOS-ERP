@@ -47,25 +47,25 @@ enum ResolutionHealth {
 
 extension ResolutionHealthLabel on ResolutionHealth {
   String get label => switch (this) {
-        ResolutionHealth.builtIn => 'بلا قالب',
-        ResolutionHealth.paperMismatch => 'ورق غير مطابق',
-        ResolutionHealth.collision => 'تصادم فئة',
-        ResolutionHealth.unwired => 'بانتظار التوصيل',
-        ResolutionHealth.branchScoped => 'من الفرع',
-        ResolutionHealth.categoryOnly => 'بالفئة',
-        ResolutionHealth.bound => 'مضبوط',
-      };
+    ResolutionHealth.builtIn => 'بلا قالب',
+    ResolutionHealth.paperMismatch => 'ورق غير مطابق',
+    ResolutionHealth.collision => 'تصادم فئة',
+    ResolutionHealth.unwired => 'بانتظار التوصيل',
+    ResolutionHealth.branchScoped => 'من الفرع',
+    ResolutionHealth.categoryOnly => 'بالفئة',
+    ResolutionHealth.bound => 'مضبوط',
+  };
 
   /// شرحُ الشارة تحت اسم القالب — سببُ الحسم لا اسمُه.
   String get note => switch (this) {
-        ResolutionHealth.builtIn => 'يسقط على التصميم المدمج في الكود',
-        ResolutionHealth.paperMismatch => 'عرضُ القالب يتجاوز عرضَ الطابعة',
-        ResolutionHealth.collision => 'يتقاسم افتراضيَّ الفئة مع نوعٍ آخر',
-        ResolutionHealth.unwired => 'القالبُ جاهزٌ والمسارُ لا يستشيره بعد',
-        ResolutionHealth.branchScoped => 'رابطةٌ على مستوى الفرع',
-        ResolutionHealth.categoryOnly => 'افتراضيُّ الفئة — السلوكُ القائم',
-        ResolutionHealth.bound => 'رابطةٌ صريحةٌ لهذا المستند',
-      };
+    ResolutionHealth.builtIn => 'يسقط على التصميم المدمج في الكود',
+    ResolutionHealth.paperMismatch => 'عرضُ القالب يتجاوز عرضَ الطابعة',
+    ResolutionHealth.collision => 'يتقاسم افتراضيَّ الفئة مع نوعٍ آخر',
+    ResolutionHealth.unwired => 'القالبُ جاهزٌ والمسارُ لا يستشيره بعد',
+    ResolutionHealth.branchScoped => 'رابطةٌ على مستوى الفرع',
+    ResolutionHealth.categoryOnly => 'افتراضيُّ الفئة — السلوكُ القائم',
+    ResolutionHealth.bound => 'رابطةٌ صريحةٌ لهذا المستند',
+  };
 
   /// «يحتاج معالجة» في عدّاد الترويسة.
   bool get needsAttention =>
@@ -145,6 +145,11 @@ class PrintResolutionRow {
   /// اسمُ الطابعة المربوطة، و`null` حين لا رابطةَ تحدّدها.
   final String? printerName;
 
+  /// معرّف الطابعة الفائزة، لإزالة الربط الدقيق دون استيراد صف قاعدة البيانات.
+  final int? printerId;
+  final int? branchId;
+  final String? locale;
+
   /// «USB001 · المعادي» أو سببُ الغياب.
   final String printerNote;
 
@@ -167,6 +172,9 @@ class PrintResolutionRow {
     required this.templateName,
     required this.paperLabel,
     required this.printerName,
+    this.printerId,
+    this.branchId,
+    this.locale,
     required this.printerNote,
     required this.copies,
     required this.directPrint,

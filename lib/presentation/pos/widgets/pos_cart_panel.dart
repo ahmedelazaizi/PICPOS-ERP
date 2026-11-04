@@ -1,12 +1,12 @@
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/theme/app_colors.dart';
 import '../widgets/cart_view.dart';
 import '../providers/pos_controller.dart';
 import '../providers/cart_controller.dart';
 import '../../../data/providers/providers.dart';
 import '../../../services/cash_drawer_service.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 class PosCartPanel extends ConsumerWidget {
   final PosState posState;
@@ -47,7 +47,7 @@ class PosCartPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
-      color: AppColors.surface,
+      color: context.picposField,
       child: CartView(
         onCheckout: onCheckout,
         onClearCart: onClearCart,

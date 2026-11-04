@@ -10,6 +10,7 @@ import '../../../services/client_write_interceptor.dart';
 import '../../../services/generators/thermal_receipt_generator.dart';
 import '../providers/pos_notification_provider.dart';
 import 'pos_expense_dialog.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// Dialog for viewing and managing previous expenses from the POS
 class PosPreviousExpensesDialog extends ConsumerStatefulWidget {
@@ -112,7 +113,7 @@ class _PosPreviousExpensesDialogState
                 ),
                 child:  Text(
                   tr('مصروفاتي'),
-                  style: const TextStyle(fontSize: 10, color: AppColors.info),
+                  style: const TextStyle(fontSize: 11, color: AppColors.info),
                 ),
               ),
           ],
@@ -134,15 +135,15 @@ class _PosPreviousExpensesDialogState
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         PhosphorIconsBold.money,
                         size: 48,
-                        color: AppColors.textMuted,
+                        color: context.picposMuted,
                       ),
                       const SizedBox(height: 16),
                       Text(
                         tr('لا توجد مصروفات اليوم'),
-                        style: const TextStyle(color: AppColors.textMuted),
+                        style: TextStyle(color: context.picposMuted),
                       ),
                     ],
                   ),

@@ -13,8 +13,20 @@ import '../../widgets/permission_guard.dart';
 import '../../widgets/searchable_unit_selection_dialog.dart';
 import 'modifier_selection_dialog.dart';
 import 'cart/cart_discount_dialog.dart';
+import '../../picpos_shell/picpos_surface.dart';
+import '../../pos_picpos/widgets/picpos_pos_text.dart';
 
 part 'cart_item_modifier_panel.dart';
+
+/// يغمّق [c] حتى يقرأ عليه الأبيض 4.5:1.
+Color _whiteSafe(Color c) {
+  double ratio(Color b) => 1.05 / (b.computeLuminance() + 0.05);
+  var out = c;
+  for (var i = 0; i < 30 && ratio(out) < 4.5; i++) {
+    out = Color.lerp(out, Colors.black, 0.05)!;
+  }
+  return out;
+}
 
 class CartItemTile extends ConsumerStatefulWidget {
   final CartItemEntity item;
@@ -148,6 +160,11 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                   ? Theme.of(context).cardColor
                   : Theme.of(context).colorScheme.surface);
 
+        final rowBg = Color.alphaBlend(backgroundColor, context.picposCard);
+        Color ink(Color c) => PicPosText.readableOn(context, c, on: rowBg);
+        final qtyInk = PicPosText.readableOn(context, AppColors.primary,
+            on: Color.alphaBlend(
+                AppColors.primary.withValues(alpha: 0.08), rowBg));
         return Container(
           margin: EdgeInsets.symmetric(
             horizontal: 6 * scaleFactor,
@@ -159,7 +176,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
             border: Border.all(
               color: isReturned
                   ? AppColors.error.withValues(alpha: 0.3)
-                  : AppColors.border.withValues(alpha: 0.5),
+                  : context.picposHairline.withValues(alpha: 0.5),
               width: 1,
             ),
             boxShadow: [
@@ -193,7 +210,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                                 ? PhosphorIconsBold.arrowUUpLeft
                                 : PhosphorIconsBold.tag,
                             size: 14 * scaleFactor,
-                            color: isReturned ? AppColors.error : AppColors.textMuted,
+                            color: isReturned ? ink(AppColors.error) : ink(context.picposMuted),
                           ),
                           const SizedBox(width: 4),
                           Expanded(
@@ -201,7 +218,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                               widget.item.productCode,
                               style: TextStyle(
                                 fontSize: smallFontSize - 1,
-                                color: AppColors.textMuted,
+                                color: ink(context.picposMuted),
                                 fontWeight: FontWeight.w600,
                                 fontFamily: AppTypography.mono,
                               ),
@@ -230,7 +247,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                                     fontSize: fontSize,
                                     fontWeight: FontWeight.w800,
                                     color: isReturned
-                                        ? AppColors.error
+                                        ? ink(AppColors.error)
                                         : Theme.of(
                                             context,
                                           ).textTheme.bodyLarge?.color,
@@ -244,7 +261,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                                     tr('مرتجع من العميل'),
                                     style: TextStyle(
                                       fontSize: smallFontSize - 2,
-                                      color: AppColors.error.withValues(alpha: 0.8),
+                                      color: ink(AppColors.error),
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -273,8 +290,8 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                                     : PhosphorIconsBold.arrowUUpLeft,
                                 size: 18 * scaleFactor,
                                 color: isReturned
-                                    ? AppColors.success
-                                    : AppColors.error,
+                                    ? ink(AppColors.success)
+                                    : ink(AppColors.error),
                               ),
                               tooltip: isReturned
                                   ? tr('تبديل إلى بيع')
@@ -329,7 +346,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                                       style: TextStyle(
                                         fontSize: fontSize,
                                         fontWeight: FontWeight.w900,
-                                        color: AppColors.primary,
+                                        color: qtyInk,
                                       ),
                                       decoration: const InputDecoration(
                                         isDense: true,
@@ -372,7 +389,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                                           style: TextStyle(
                                             fontSize: fontSize,
                                             fontWeight: FontWeight.w900,
-                                            color: AppColors.primary,
+                                            color: qtyInk,
                                           ),
                                         ),
                                       ),
@@ -411,7 +428,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                               style: TextStyle(
                                 fontSize: fontSize,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.warningDark,
+                                color: ink(AppColors.warningDark),
                               ),
                               decoration: InputDecoration(
                                 isDense: true,
@@ -454,11 +471,11 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                                       widget.item.effectivePrice.toStringAsFixed(AppConstants.decimalPlaces),
                                       style: TextStyle(
                                         fontSize: fontSize - 1,
-                                        color:
+                                        color: ink(
                                             Theme.of(context).brightness ==
                                                 Brightness.light
                                             ? AppColors.warningDark
-                                            : AppColors.warning,
+                                            : AppColors.warning),
                                         fontWeight: FontWeight.w800,
                                       ),
                                     ),
@@ -466,7 +483,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                                       tr('سعر الوحدة'),
                                       style: TextStyle(
                                         fontSize: smallFontSize - 3,
-                                        color: AppColors.textMuted,
+                                        color: ink(context.picposMuted),
                                       ),
                                     ),
                                   ],
@@ -497,29 +514,16 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              // `total` بيضيف ضريبة الصف **بلا شرط**، بينما
-                              // `CalculateInvoiceTotalsUseCase` بيتجاهل ضريبة
-                              // الصف المخزّنة عن قصد ويعيد حسابها على الصافي
-                              // **ومشروطة بـ `taxEnabled`** (سبيك ١٣٧ —
-                              // BUG-C02/BUG-H01).
-                              //
-                              // فلما الضريبة تكون مقفولة، الصف كان بيعرض
-                              // ضريبة الفاتورة قررت ما تحصّلهاش: صنف ٧ × ٥
-                              // يعرض ٤٠.٦ والإجمالي النهائي ٣٥. الباج كامن
-                              // عند أي عميل شغّال بضريبة مفتوحة، وبيظهر فوراً
-                              // لما تتقفل.
-                              //
-                              // الصافي هو اللي بيجمع للمجموع الفرعي، والضريبة
-                              // سطر مستقل في لوحة الإجماليات.
+                              // الصافي (بلا ضريبة الصف) هو اللي بيجمع للمجموع الفرعي (سبيك ١٣٧).
                               widget.item.totalBeforeTax
                                   .abs()
                                   .toStringAsFixed(AppConstants.decimalPlaces),
                               style: TextStyle(
                                 fontSize: fontSize + 1,
                                 fontWeight: FontWeight.w900,
-                                color: isReturned
+                                color: ink(isReturned
                                     ? AppColors.error
-                                    : AppColors.getPriceColor(context),
+                                    : AppColors.getPriceColor(context)),
                               ),
                             ),
                             // Show item discount badge
@@ -536,7 +540,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                                   '-${widget.item.discountPercent.toStringAsFixed(0)}%',
                                   style: TextStyle(
                                     fontSize: smallFontSize - 2,
-                                    color: AppColors.success,
+                                    color: ink(AppColors.success),
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -546,7 +550,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                                 tr('خصم'),
                                 style: TextStyle(
                                   fontSize: smallFontSize - 3,
-                                  color: AppColors.textMuted.withValues(alpha: 0.5),
+                                  color: ink(context.picposMuted),
                                 ),
                               ),
                             // BUG-C03: use the fresh getter (net of line
@@ -557,7 +561,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                                 tr('+ {p0} ضريبة', {'p0': widget.item.calculatedTaxAmount.toStringAsFixed(AppConstants.decimalPlaces)}),
                                 style: TextStyle(
                                   fontSize: smallFontSize - 3,
-                                  color: AppColors.textMuted,
+                                  color: ink(context.picposMuted),
                                 ),
                               ),
                           ],
@@ -578,7 +582,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                         icon: Icon(
                           PhosphorIconsBold.trash,
                           size: 18 * scaleFactor,
-                          color: AppColors.error.withValues(alpha: 0.6),
+                          color: ink(AppColors.error),
                         ),
                         splashRadius: 20,
                       ),
@@ -603,7 +607,6 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
     );
   }
 
-  /// Small arrow button to expand/collapse modifier panel
   Widget _buildExpandArrow(double scaleFactor) {
     return GestureDetector(
       onTap: () => setState(() => _isExpanded = !_isExpanded),
@@ -622,7 +625,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
             child: Icon(
               PhosphorIconsBold.caretDown,
               size: 20 * scaleFactor, // Increased size
-              color: AppColors.primary,
+              color: PicPosText.readableOn(context, AppColors.primary),
             ),
           ),
         ),
@@ -648,8 +651,8 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
             child: Text(
               unitName,
               style: TextStyle(
-                fontSize: 9 * scaleFactor,
-                color: AppColors.info,
+                fontSize: 11 * scaleFactor,
+                color: PicPosText.readableOn(context, AppColors.info),
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -689,8 +692,8 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                 Text(
                   unitName,
                   style: TextStyle(
-                    fontSize: 9 * scaleFactor,
-                    color: AppColors.info,
+                    fontSize: 11 * scaleFactor,
+                    color: PicPosText.readableOn(context, AppColors.info),
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -698,7 +701,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                 Icon(
                   PhosphorIconsBold.caretDown,
                   size: 8 * scaleFactor,
-                  color: AppColors.info,
+                  color: PicPosText.readableOn(context, AppColors.info),
                 ),
               ],
             ),
@@ -729,8 +732,8 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
             child: Text(
               '+${addon.itemName}',
               style: TextStyle(
-                fontSize: 9 * scaleFactor,
-                color: AppColors.success,
+                fontSize: 11 * scaleFactor,
+                color: PicPosText.readableOn(context, AppColors.success),
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -761,7 +764,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
                 Text(
                   opt.displayText,
                   style: TextStyle(
-                    fontSize: 9 * scaleFactor,
+                    fontSize: 11 * scaleFactor,
                     color: opt.quantityLevel != OptionQuantityLevel.none
                         ? opt.quantityLevel.color
                         : AppColors.info,
@@ -782,8 +785,8 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
             child: Text(
               '📝 $itemNote',
               style: TextStyle(
-                fontSize: 9 * scaleFactor,
-                color: AppColors.warningDark,
+                fontSize: 11 * scaleFactor,
+                color: PicPosText.readableOn(context, AppColors.warningDark),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -802,6 +805,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
     required VoidCallback? onTap,
   }) {
     final size = 28.0 * scaleFactor;
+    final ink = PicPosText.readableOn(context, color);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -812,7 +816,7 @@ class _CartItemTileState extends ConsumerState<CartItemTile>
           shape: BoxShape.circle,
           border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
-        child: Icon(icon, size: 14 * scaleFactor, color: color),
+        child: Icon(icon, size: 14 * scaleFactor, color: ink),
       ),
     );
   }

@@ -77,7 +77,7 @@ class _PosProductSearchFieldState extends ConsumerState<PosProductSearchField> {
           decoration: InputDecoration(
             hintText: tr('بحث عن منتج...'),
             hintStyle: TextStyle(
-              color: AppColors.textMuted.withValues(alpha: 0.7),
+              color: context.picposMuted.withValues(alpha: 0.7),
               fontSize: 13,
             ),
             prefixIcon: const Icon(

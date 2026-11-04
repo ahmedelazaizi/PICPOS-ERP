@@ -7,6 +7,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/entities/product_entity.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 class ProductCard extends ConsumerStatefulWidget {
   final ProductEntity product;
@@ -126,7 +127,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                       ? AppColors.error.withValues(alpha: 0.5)
                       : isLowStock
                       ? AppColors.warning.withValues(alpha: 0.5)
-                      : AppColors.border.withValues(alpha: 0.6),
+                      : context.picposHairline.withValues(alpha: 0.6),
                   width: (isOutOfStock || isLowStock) ? 1.5 : 0.8,
                 ),
               ),
@@ -239,7 +240,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w900,
-                                  fontSize: 10,
+                                  fontSize: 11,
                                 ),
                               ),
                             ),
@@ -402,7 +403,7 @@ class _ProductCardState extends ConsumerState<ProductCard>
         color: Theme.of(context).cardColor,
         border: Border(
           top: BorderSide(
-            color: AppColors.border.withValues(alpha: 0.5),
+            color: context.picposHairline.withValues(alpha: 0.5),
             width: 0.5,
           ),
         ),
@@ -461,9 +462,9 @@ class _ProductCardState extends ConsumerState<ProductCard>
                           TextSpan(
                             text: tr(' د.أ'),
                             style: TextStyle(
-                              fontSize: 9 * scaleFactor,
+                              fontSize: 11 * scaleFactor,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.textMuted,
+                              color: context.picposMuted,
                             ),
                           ),
                         ],

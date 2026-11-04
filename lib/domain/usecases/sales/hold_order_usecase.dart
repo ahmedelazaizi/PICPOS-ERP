@@ -12,6 +12,10 @@ class HoldOrderRequest {
   final List<CartItemEntity> items;
   final double subtotal;
   final double discountPercent;
+
+  /// خصمُ فاتورةٍ بمبلغٍ ثابت؛ غير `null` ⇒ يُحفظ في عمود `discount` مع
+  /// `discountIsPercent=false` (العمودان موجودان أصلاً، بلا تغيير مخطط).
+  final double? discountAmount;
   final int? customerId;
   final String? customerName;
 
@@ -19,6 +23,7 @@ class HoldOrderRequest {
     required this.items,
     required this.subtotal,
     required this.discountPercent,
+    this.discountAmount,
     this.customerId,
     this.customerName,
   });
@@ -31,9 +36,13 @@ class RetrieveHeldOrderResponse {
   final String? customerName;
   final double discountPercent;
 
+  /// غير `null` حين كان الخصمُ المعلَّق مبلغاً ثابتاً.
+  final double? discountAmount;
+
   RetrieveHeldOrderResponse({
     required this.items,
     required this.discountPercent,
+    this.discountAmount,
     this.customerId,
     this.customerName,
   });
@@ -71,8 +80,8 @@ class HoldOrderUseCase {
       await db.createHeldOrder(
         holdNumber: holdNum,
         subtotal: request.subtotal,
-        discount: request.discountPercent,
-        discountIsPercent: true,
+        discount: request.discountAmount ?? request.discountPercent,
+        discountIsPercent: request.discountAmount == null,
         customerId: request.customerId,
         customerName: request.customerName,
         items: items,
@@ -170,7 +179,8 @@ class HoldOrderUseCase {
           ),
           customerId: order.customerId,
           customerName: order.customerName,
-          discountPercent: order.discount,
+          discountPercent: order.discountIsPercent ? order.discount : 0,
+          discountAmount: order.discountIsPercent ? null : order.discount,
         );
       }
     } catch (e) {

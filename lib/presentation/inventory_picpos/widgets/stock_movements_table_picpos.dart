@@ -421,7 +421,7 @@ class _StockMovementRow extends StatelessWidget {
                   ),
                   Text(
                     timeText,
-                    style: TextStyle(fontSize: 10, color: context.picposMuted),
+                    style: TextStyle(fontSize: 11, color: context.picposMuted),
                   ),
                 ],
               ),

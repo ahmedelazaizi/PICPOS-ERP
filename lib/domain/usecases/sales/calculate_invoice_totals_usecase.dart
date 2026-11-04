@@ -7,17 +7,57 @@ import '../../entities/cart_item_entity.dart';
 ///
 /// Pure business logic - no UI or database dependencies
 class CalculateInvoiceTotalsUseCase {
+  /// خصمُ فاتورةٍ بمبلغٍ ثابت بعد القصّ: `[0, base]` (قاعدةٌ غير موجبة ⇒ ٠).
+  static double clampInvoiceDiscountAmount(double amount, double base) {
+    if (base <= 0 || amount <= 0) return 0;
+    return FinancialUtils.round(amount > base ? base : amount);
+  }
+
   /// Execute the use case
   ///
   /// Returns calculated totals for the given cart items
   InvoiceTotals execute({
     required List<CartItemEntity> items,
     double invoiceDiscountPercent = 0,
+    double? invoiceDiscountAmount,
     double taxPercent = 0,
     bool taxEnabled = true,
+    bool pricesIncludeTax = false,
   }) {
     if (items.isEmpty) {
       return const InvoiceTotals.empty();
+    }
+
+    // سلّةٌ مختلطة (بيع + مرتجع بلا فاتورة): الأرقامُ **صافية** = بيع − مرتجع.
+    // خصمُ الفاتورة ورسومُها على شقّ البيع وحدَه، والمرتجعُ بلا خصم فاتورة.
+    // سلّةُ مرتجعٍ خالصة أو بيعٍ خالص تمرّ كما كانت بالحرف.
+    final returnedLines =
+        items.where((i) => i.itemType == CartItemType.returned).toList();
+    if (returnedLines.isNotEmpty && returnedLines.length < items.length) {
+      final sale = execute(
+        items: items.where((i) => i.itemType != CartItemType.returned).toList(),
+        invoiceDiscountPercent: invoiceDiscountPercent,
+        invoiceDiscountAmount: invoiceDiscountAmount,
+        taxPercent: taxPercent,
+        taxEnabled: taxEnabled,
+        pricesIncludeTax: pricesIncludeTax,
+      );
+      final ret = execute(
+        items: returnedLines,
+        taxPercent: taxPercent,
+        taxEnabled: taxEnabled,
+      );
+      double net(double a, double b) => NumberUtils.roundCurrency(a - b);
+      return InvoiceTotals(
+        itemCount: items.length,
+        quantityTotal: sale.quantityTotal + ret.quantityTotal,
+        subtotal: net(sale.subtotal, ret.subtotal),
+        itemDiscounts: net(sale.itemDiscounts, ret.itemDiscounts),
+        invoiceDiscount: sale.invoiceDiscount,
+        totalDiscount: net(sale.totalDiscount, ret.totalDiscount),
+        taxAmount: net(sale.taxAmount, ret.taxAmount),
+        total: net(sale.total, ret.total),
+      );
     }
 
     final subtotal = items.fold<double>(0, (sum, item) => sum + item.subtotal);
@@ -26,9 +66,13 @@ class CalculateInvoiceTotalsUseCase {
       (sum, item) => sum + item.discountAmount,
     );
     final invoiceDiscountBase = FinancialUtils.round(subtotal - itemDiscounts);
-    final invoiceDiscount = FinancialUtils.round(
-      invoiceDiscountBase * (invoiceDiscountPercent / 100),
-    );
+    // خصمٌ بمبلغٍ ثابت (بند ٦ — ب) يتقدّم على النسبة، ويُخصم كما أُدخل ويُقصّ
+    // عند القاعدة. النسبةُ تبقى كما كانت تماماً حين لا مبلغ.
+    final invoiceDiscount = invoiceDiscountAmount != null
+        ? clampInvoiceDiscountAmount(invoiceDiscountAmount, invoiceDiscountBase)
+        : FinancialUtils.round(
+            invoiceDiscountBase * (invoiceDiscountPercent / 100),
+          );
     final totals = FinancialUtils.calculateInvoiceTotals(
       items: items
           .map(
@@ -47,6 +91,7 @@ class CalculateInvoiceTotalsUseCase {
           .toList(),
       globalDiscountAmount: invoiceDiscount,
       lineDiscountAmounts: items.map((item) => item.discountAmount).toList(),
+      pricesIncludeTax: pricesIncludeTax,
     );
     final taxAmount = taxEnabled ? totals.totalTax : 0.0;
     final total = totals.grandTotal;

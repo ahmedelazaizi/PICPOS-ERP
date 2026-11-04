@@ -13,12 +13,12 @@ part of 'parties_picpos_screen.dart';
 /// ⚠️ **نفسُ `getPartyTypeColor` حرفيّاً** (‏`party_helpers.dart`) بنفس ترتيب
 /// الأولويّة — لا لوحةً جديدة. الفوركان يلوّنان نفسَ الطرف، فانحرافُ اللون
 /// بينهما عيبٌ يُبلَّغ عنه لا ذوقٌ مختلف.
-Color _partyTint(PicPosPartyCard p) {
+Color _partyTint(BuildContext context, PicPosPartyCard p) {
   if (p.isDeliveryCompany) return Colors.teal;
   if (p.isCustomer && p.isSupplier) return Colors.purple;
   if (p.isCustomer) return AppColors.primary;
   if (p.isSupplier) return AppColors.warning;
-  return AppColors.textMuted;
+  return context.picposMuted;
 }
 
 /// إجراءاتُ البطاقة — تُمرَّر من الشاشة لأن كلَّ واحدٍ منها يفتح حواراً أو
@@ -67,7 +67,7 @@ class PartyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final muted = _partiesMuted(context);
-    final tint = _partyTint(party);
+    final tint = _partyTint(context, party);
     final tintBg = tint.withValues(alpha: 31 / 255);
 
     return Container(
@@ -156,7 +156,7 @@ class PartyCard extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 10.5,
+                  fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: muted,
                   fontFeatures: const [ui.FontFeature.tabularFigures()],
@@ -175,7 +175,7 @@ class PartyCard extends StatelessWidget {
           child: Text(
             party.typeLabel,
             style: TextStyle(
-              fontSize: 9.5,
+              fontSize: 11,
               fontWeight: FontWeight.w800,
               color: tint,
             ),
@@ -200,7 +200,7 @@ class PartyCard extends StatelessWidget {
               Text(
                 tr('الرصيد'),
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: 11,
                   fontWeight: FontWeight.w700,
                   color: muted,
                 ),
@@ -224,7 +224,7 @@ class PartyCard extends StatelessWidget {
         Text(
           canSeeFigures ? party.creditLimitLabel : '—',
           style: TextStyle(
-            fontSize: 10.5,
+            fontSize: 11,
             fontWeight: FontWeight.w700,
             color: muted,
           ),
@@ -254,7 +254,7 @@ class PartyCard extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  fontSize: 10.5,
+                  fontSize: 11,
                   fontWeight: FontWeight.w800,
                   color: AppColors.error,
                 ),
@@ -444,7 +444,7 @@ class PartiesCardGrid extends StatelessWidget {
             crossAxisCount: columns,
             crossAxisSpacing: 11,
             mainAxisSpacing: 11,
-            mainAxisExtent: showRoute ? 212 : 168,
+            mainAxisExtent: showRoute ? 214 : 168,
           ),
           itemCount: parties.length,
           itemBuilder: (context, i) => PartyCard(

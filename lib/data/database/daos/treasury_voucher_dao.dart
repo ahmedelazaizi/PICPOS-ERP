@@ -624,8 +624,8 @@ extension TreasuryVoucherDao on AppDatabase {
     // this we silently dropped the JE at the null-guard below.
     cashAccount ??= await accountingDao.getLeafAccountByPurpose('cash');
 
-    // Get or create discount account
-    final discountCode = isReceipt ? '5205' : '4202';
+    // Get or create discount account using mapped purposes, retaining legacy fallbacks.
+    final discountCode = await accountingDao.getMappedAccountCode(isReceipt ? 'discount_allowed' : 'purchase_discount', isReceipt ? '5205' : '4202');
     final discountName = isReceipt ? 'خصم مسموح به (Settlement)' : 'خصم مكتسب (Settlement)';
     var discountAccount = await accountingDao.getAccountByCode(discountCode);
     if (discountAccount == null && discount > 0) {
@@ -640,12 +640,8 @@ extension TreasuryVoucherDao on AppDatabase {
       discountAccount = await accountingDao.getAccountByCode(discountCode);
     }
 
-    // Cluster 023 / Issue 1 — silently returning here was the silent bug:
-    // safe transaction got persisted but the JE was skipped, so the GL
-    // balance drifted from the safe's actual balance. Throw loudly instead
-    // — the outer transaction rolls back and the operator sees a clear
-    // error pointing at the misconfigured account, instead of an invisible
-    // ledger drift discovered weeks later.
+    // Throw instead of silently skipping: the outer transaction rolls back
+    // and exposes missing account setup before safe/GL balances can drift.
     if (categoryAccount == null) {
       throw Exception(
         'تعذّر تحديد حساب التصنيف لسند ${isReceipt ? 'القبض' : 'الصرف'} '

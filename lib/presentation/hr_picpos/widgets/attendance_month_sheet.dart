@@ -11,6 +11,7 @@ import '../../../domain/models/hr_attendance.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../hr_attendance_labels.dart';
 import '../hr_attendance_providers.dart';
+import 'package:picpos_erp/core/theme/readable_colors.dart';
 
 /// مجاميعُ الشهر بلاطاتٍ تلتفّ.
 class AttendanceTotals extends StatelessWidget {
@@ -220,13 +221,13 @@ class _Calendar extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                      fontSize: 10.5, fontWeight: FontWeight.w800, color: color)),
+                      fontSize: 11, fontWeight: FontWeight.w800, color: readableOn(context, color))),
             if (times != null)
               Text(times,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     color: context.picposMuted,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   )),
@@ -237,7 +238,7 @@ class _Calendar extends StatelessWidget {
                       size: 10, color: AppColors.statusWarning(context)),
                   Text(' ${a.lateMinutes}',
                       style: TextStyle(
-                          fontSize: 10, color: AppColors.statusWarning(context))),
+                          fontSize: 11, color: AppColors.statusWarning(context))),
                   const SizedBox(width: 4),
                 ],
                 if (a.overtimeMinutes > 0) ...[
@@ -245,7 +246,7 @@ class _Calendar extends StatelessWidget {
                       size: 10, color: AppColors.statusSuccess(context)),
                   Text(' ${a.overtimeMinutes}',
                       style: TextStyle(
-                          fontSize: 10, color: AppColors.statusSuccess(context))),
+                          fontSize: 11, color: AppColors.statusSuccess(context))),
                 ],
               ]),
           ],

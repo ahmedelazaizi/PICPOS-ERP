@@ -5,21 +5,28 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/errors/app_exceptions.dart';
 import '../../../core/logging/diagnostic_logger.dart';
 import '../../../domain/usecases/sales/calculate_invoice_totals_usecase.dart';
+import '../../../domain/usecases/sales/cart_settlement_plan.dart';
 import '../../../domain/repositories/sales_repository.dart';
 import '../../../data/providers/providers.dart';
 import '../../../data/providers/e_invoicing_providers.dart';
 import '../../../domain/entities/cart_item_entity.dart';
 import 'cart_controller.dart';
+import 'checkout_attempt_id.dart';
 
 class CheckoutState {
   final bool isProcessing;
   final String? error;
   final int? lastInvoiceId;
 
+  /// صنفٌ بلا تكلفةٍ معروفة أفشل الحفظ الأخير (`zero_cost_policy=block`):
+  /// الواجهةُ تسأل عن تكلفته وتعيد المحاولة بـ`provisionalCosts`.
+  final CostRequiredException? costRequired;
+
   const CheckoutState({
     this.isProcessing = false,
     this.error,
     this.lastInvoiceId,
+    this.costRequired,
   });
 
   /// `error ?? this.error` معناه «مرِّر null = ما تغيّرش»، فـ`clearError()`
@@ -34,16 +41,20 @@ class CheckoutState {
     String? error,
     bool clearError = false,
     int? lastInvoiceId,
+    CostRequiredException? costRequired,
   }) {
     return CheckoutState(
       isProcessing: isProcessing ?? this.isProcessing,
       error: clearError ? null : (error ?? this.error),
       lastInvoiceId: lastInvoiceId ?? this.lastInvoiceId,
+      costRequired: clearError ? null : (costRequired ?? this.costRequired),
     );
   }
 }
 
 class CheckoutController extends Notifier<CheckoutState> {
+  final CheckoutAttemptId _attemptId = CheckoutAttemptId();
+
   @override
   CheckoutState build() {
     return const CheckoutState();
@@ -64,6 +75,7 @@ class CheckoutController extends Notifier<CheckoutState> {
     double? clickAmount,
     int? bankSafeId,
     int? customerId,
+    Map<int, double> provisionalCosts = const {},
   }) async {
     if (state.isProcessing) return false;
     state = state.copyWith(isProcessing: true, clearError: true);
@@ -119,7 +131,13 @@ class CheckoutController extends Notifier<CheckoutState> {
         clickAmount: click,
         bankSafeId: bankSafeId,
         customerId: customerId,
+        provisionalCosts: provisionalCosts,
       );
+    } on ShiftRequiredException {
+      // طلبُ إجراء لا عطل: يصل إلى runWithOpenShiftPrompt ليعرض فتحَ وردية.
+      // ابتلاعُه هنا كان يُظهر «AppException(SHIFT_REQUIRED…)» نصاً خاماً.
+      state = state.copyWith(isProcessing: false);
+      rethrow;
     } catch (e) {
       state = state.copyWith(isProcessing: false, error: e.toString());
       return false;
@@ -134,6 +152,14 @@ class CheckoutController extends Notifier<CheckoutState> {
     double? clickAmount,
     int? bankSafeId,
     int? customerId,
+    // ── التسوية المختلطة (بند ٤): حفظُ شقٍّ واحدٍ من السلّة مستنداً مستقلاً ──
+    // [onlyItems] أسطرُ هذا المستند وحدَها (الافتراضُ كلُّ السلّة كما كان)،
+    // و[asReturn] يجعله `RET-` بلا خصمِ فاتورةٍ ولا رسوم توصيل، و[clearCartOnSuccess]
+    // `false` كي لا يمحو الشقَّ الآخر قبل حفظه.
+    List<CartItemEntity>? onlyItems,
+    bool asReturn = false,
+    bool clearCartOnSuccess = true,
+    Map<int, double> provisionalCosts = const {},
   }) async {
     // NOTE: No re-entrancy guard here — processPayment() already sets
     // isProcessing=true before calling this method. Adding a guard here
@@ -214,8 +240,22 @@ class CheckoutController extends Notifier<CheckoutState> {
       final pricesIncludeTax =
           await ref.read(databaseProvider).getSettingValue('prices_include_tax') ==
               'true';
+      // مستندُ مرتجعٍ: إمّا شقٌّ صريح، أو السلّةُ القديمةُ كلُّها `returned`.
+      final isReturnDoc = asReturn ||
+          (onlyItems == null &&
+              cartState.items.any((i) => i.itemType == CartItemType.returned));
+      final returnPart = asReturn && onlyItems != null;
+      // R3: نفسُ المعرّف عند إعادة المحاولة بنفس السلّة بعد فشلٍ جزئي.
+      final attemptGlobalId = _attemptId.idFor(CheckoutAttemptId.fingerprint(
+        items: onlyItems ?? cartState.items,
+        customerId: customerId ?? cartState.selectedCustomerId,
+        paymentMethod: paymentMethod,
+        paidAmount: paidAmount,
+        asReturn: isReturnDoc,
+        warehouseId: warehouseId,
+      ));
       final request = SaleRequest(
-        items: cartState.items,
+        items: onlyItems ?? cartState.items,
         customerId: customerId ?? cartState.selectedCustomerId,
         warehouseId: warehouseId,
         userId: userId,
@@ -227,29 +267,34 @@ class CheckoutController extends Notifier<CheckoutState> {
         cashSafeId: mappedCashSafeId,
         bankSafeId: bankSafeId ?? mappedBankSafeId,
         clickSafeId: mappedClickSafeId,
-        discountPercent: cartState.discountPercent,
+        discountPercent: returnPart ? 0 : cartState.discountPercent,
+        invoiceDiscountAmount:
+            returnPart ? null : cartState.invoiceDiscountAmount,
         taxPercent: cartState.taxRate * 100,
         taxEnabled: cartState.taxEnabled,
         pricesIncludeTax: pricesIncludeTax,
-        deliveryFee: cartState.deliveryFee,
+        deliveryFee: returnPart ? 0 : cartState.deliveryFee,
         deliveryCompanyId: cartState.deliveryCompanyId,
         courierId: cartState.courierId,
         deliveryStatus: cartState.deliveryStatus,
         notes: finalNotes,
         quotationId: cartState.linkedQuotationId,
-        isReturn: cartState.items.any((i) => i.itemType == CartItemType.returned),
-        saleType: cartState.items.any((i) => i.itemType == CartItemType.returned) ? 'return' : saleType,
+        isReturn: isReturnDoc,
+        saleType: isReturnDoc ? 'return' : saleType,
         adhocCustomerName: adhocName,
         adhocCustomerPhone: adhocPhone,
         adhocCustomerNote: adhocNote,
         costCenterId: costCenterId,
         branchId: branchId,
         platformOrderNumber: cartState.platformOrderNumber,
+        provisionalCosts: provisionalCosts,
+        globalId: attemptGlobalId,
       );
 
       final result = await useCase.execute(request);
 
       if (result.isSuccess) {
+        _attemptId.clear();
         // #Forensic Log: Sale Completion (fire-and-forget — don't block UI)
         try {
           final userName = authState.originalUser?.displayName ?? tr('مجهول');
@@ -323,7 +368,9 @@ class CheckoutController extends Notifier<CheckoutState> {
           isProcessing: false,
           lastInvoiceId: result.invoiceId,
         );
-        ref.read(cartControllerProvider.notifier).clearCart();
+        if (clearCartOnSuccess) {
+          ref.read(cartControllerProvider.notifier).clearCart();
+        }
 
         // Belt-and-suspenders: force the sales-list watcher to emit so the
         // Sales Invoices screen reflects this sale immediately. Drift's
@@ -333,9 +380,15 @@ class CheckoutController extends Notifier<CheckoutState> {
 
         return true;
       } else {
+        final failure = result is SaleFailure ? result : null;
+        final costId = failure?.costRequiredProductId;
         state = state.copyWith(
           isProcessing: false,
           error: result.errorMessage,
+          costRequired: costId == null
+              ? null
+              : CostRequiredException(
+                  costId, failure?.costRequiredProductName ?? ''),
         );
         return false;
       }
@@ -351,6 +404,72 @@ class CheckoutController extends Notifier<CheckoutState> {
         error: tr('حدث خطأ غير متوقع: {e}', {'e': e}),
       );
       return false;
+    }
+  }
+
+  /// يحفظ سلّةً فيها سطورُ **مرتجعٍ بلا فاتورة** (بند ٤): مرتجعٌ خالصٌ أو
+  /// مختلطٌ مع بيع. كلُّ شقٍّ مستندٌ مستقلّ لأن `saleType='return'` يقلب المستندَ
+  /// كلَّه (انظر [CartSettlementPlan]).
+  ///
+  /// * **النقدُ فقط**: الاستردادُ نقدٌ بقرار المالك، وشقُّ البيع نقدٌ كذلك كي
+  ///   يتقاصّ مع المرتجع في الدرج (الصافي = ما قبضه الكاشير فعلاً).
+  /// * **البيعُ أوّلاً**: إخفاقُه (مخزونٌ/ائتمان) لا يترك أثراً. فإن نجح وأخفق
+  ///   المرتجعُ، فالبيعُ محفوظٌ ومُزالٌ من السلّة وتبقى سطورُ المرتجع ويُقال ذلك
+  ///   صراحةً — فلا يُباع الشقُّ مرّتين عند إعادة المحاولة.
+  /// * `ShiftRequiredException` يُعاد رميُه كما في `processCheckout` (قبل أيّ
+  ///   حفظ: شرطُ الورديّة واحدٌ للمستندين).
+  Future<bool> processNoInvoiceReturnSettlement({
+    required CartSettlementPlan plan,
+    int? customerId,
+  }) async {
+    if (state.isProcessing) return false;
+    state = state.copyWith(isProcessing: true, clearError: true);
+    final cart = ref.read(cartControllerProvider.notifier);
+    int? saleInvoiceId;
+    try {
+      if (plan.hasSale) {
+        final ok = await processCheckout(
+          paymentMethod: 'cash',
+          paidAmount: plan.saleTotal,
+          cashAmount: plan.saleTotal,
+          bankAmount: 0,
+          customerId: customerId,
+          onlyItems: plan.saleItems,
+          clearCartOnSuccess: false,
+        );
+        if (!ok) return false;
+        saleInvoiceId = state.lastInvoiceId;
+        cart.removeSettledLines(returned: false);
+        state = state.copyWith(isProcessing: true);
+      }
+
+      final ok = await processCheckout(
+        paymentMethod: 'cash',
+        paidAmount: plan.returnTotal,
+        cashAmount: plan.returnTotal,
+        bankAmount: 0,
+        customerId: customerId,
+        onlyItems: plan.returnItems,
+        asReturn: true,
+        clearCartOnSuccess: false,
+      );
+      if (!ok) {
+        if (saleInvoiceId != null) {
+          state = state.copyWith(
+            error: tr(
+              'حُفظت فاتورة البيع لكن تعذّر حفظ المرتجع: {e}',
+              {'e': state.error ?? ''},
+            ),
+          );
+        }
+        return false;
+      }
+      cart.clearCart();
+      state = state.copyWith(lastInvoiceId: saleInvoiceId);
+      return true;
+    } catch (_) {
+      state = state.copyWith(isProcessing: false);
+      rethrow;
     }
   }
 
@@ -383,6 +502,7 @@ class CheckoutController extends Notifier<CheckoutState> {
       final totals = calcUseCase.execute(
         items: cartState.items,
         invoiceDiscountPercent: cartState.discountPercent,
+        invoiceDiscountAmount: cartState.invoiceDiscountAmount,
         taxPercent: cartState.taxEnabled ? cartState.taxRate * 100 : 0,
         taxEnabled: cartState.taxEnabled,
       );

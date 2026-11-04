@@ -218,7 +218,7 @@ class PicPosEntityCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 10.5,
+                          fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: context.picposMuted,
                         ),
@@ -291,7 +291,7 @@ class PicPosEntityCard extends StatelessWidget {
                 Text(
                   openLabel ?? tr('الملف الكامل'),
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: context.picposBrandInk,
                   ),

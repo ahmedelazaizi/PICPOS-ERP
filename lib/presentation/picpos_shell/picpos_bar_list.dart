@@ -252,7 +252,7 @@ class PicPosBarList extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: context.picposMuted,
                   ),

@@ -10,6 +10,7 @@ import '../picpos_shell/picpos_dialog.dart';
 import '../picpos_shell/picpos_screen_scaffold.dart';
 import '../picpos_shell/picpos_toolbar.dart';
 import 'financial_report_lazy_tab.dart';
+import 'income_statement_export_rows.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../screens/reports/report_export_guard.dart';
 import '../screens/coa/coa_dialogs.dart';
@@ -20,7 +21,7 @@ import '../../data/providers/providers.dart';
 import '../../data/providers/manufacturing_providers.dart';
 import '../../services/invoice_generator.dart';
 import '../../services/network_service.dart';
-// ⚠️ لا استيرادَ مباشرٍ لـ`data/database` من طبقة العرض: حارسُ
+// لا استيرادَ مباشرٍ لـ`data/database` من طبقة العرض: حارسُ
 // `presentation_db_import_guard` يرفض أيَّ ملفٍّ **جديد** يفعلها، وقائمتُه
 // البيضاء مقفولة. والأصلُ المشتركُ يستورد `sync_interceptor` مباشرةً لأنّه
 // سابقٌ للحارس، والفوركُ ملفٌّ جديدٌ فيسري عليه.
@@ -465,14 +466,7 @@ class _FinancialStatementsPicPosScreenState
           break;
         case 1: // Income Statement
           final data = await repo.getIncomeStatement(_fromDate, _toDate, costCenterId: _selectedCostCenterId, branchId: _selectedBranchId, regionId: _selectedRegionId, allowedBranchIds: _allowedBranchIds);
-          final List<List<dynamic>> rows = [];
-          for (final item in (data['revenueDetails'] as List)) {
-            rows.add([tr('إيراد'), item['name'], item['amount']]);
-          }
-          for (final item in (data['expenseDetails'] as List)) {
-            rows.add([tr('مصروف'), item['name'], item['amount']]);
-          }
-          rows.add(['', tr('صافي الربح'), data['netProfit']]);
+          final rows = incomeStatementExportRows(data, label: tr);
           await service.exportReport(
       periodFrom: _fromDate,
       periodTo: _toDate,
@@ -786,7 +780,7 @@ class _FinancialStatementsPicPosScreenState
               ),
               const SizedBox(height: 16),
               // COGS Section
-              if ((data['totalCOGS'] as double) > 0) ...[
+              if (data['totalCOGS'] != null) ...[
                 _buildSectionTitle(tr('تكلفة البضاعة المباعة')),
                 ...(data['cogsDetails'] as List? ?? []).map(
                   (d) => _buildReportLine(d['name'], d['amount']),
@@ -1482,7 +1476,7 @@ class _FinancialStatementsPicPosScreenState
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(tr('{p0} بانتظار', {'p0': pending.length}),
-                          style: const TextStyle(fontSize: 10, color: AppColors.warning, fontWeight: FontWeight.bold)),
+                          style: const TextStyle(fontSize: 11, color: AppColors.warning, fontWeight: FontWeight.bold)),
                     ),
                   const SizedBox(width: 4),
                   if (failed.isNotEmpty)
@@ -1493,7 +1487,7 @@ class _FinancialStatementsPicPosScreenState
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(tr('{p0} فشل نهائي', {'p0': failed.length}),
-                          style: const TextStyle(fontSize: 10, color: AppColors.error, fontWeight: FontWeight.bold)),
+                          style: const TextStyle(fontSize: 11, color: AppColors.error, fontWeight: FontWeight.bold)),
                     ),
                 ],
               ),
@@ -1551,7 +1545,7 @@ class _FinancialStatementsPicPosScreenState
                               border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
                             ),
                             child:  Text(tr('فشل نهائي'),
-                                style: const TextStyle(fontSize: 9, color: AppColors.error, fontWeight: FontWeight.bold)),
+                                style: const TextStyle(fontSize: 11, color: AppColors.error, fontWeight: FontWeight.bold)),
                           ),
                       ],
                     ),
@@ -1560,13 +1554,13 @@ class _FinancialStatementsPicPosScreenState
                       children: [
                         Text(
                           tr('{p0} | المحاولات: {p1}', {'p0': _syncOperationTitle(item.operation), 'p1': item.attempts}),
-                          style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                         ),
                         if (item.lastError != null)
                           Text(
                             item.lastError!.replaceAll('DEAD_LETTER: ', ''),
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 11,
                               color: isDeadLetter ? AppColors.error : AppColors.warning,
                             ),
                             maxLines: 2,

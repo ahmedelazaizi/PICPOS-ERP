@@ -3,6 +3,16 @@ part of '../database.dart';
 /// A cycle-count item row joined with its product name/code + category name, for
 /// the counting screen. Getters delegate to [item] so callers read the count
 /// fields (expectedQty/countedQty/variance…) exactly as before.
+class CycleCountGenerationException implements Exception {
+  CycleCountGenerationException(this.code, this.message);
+
+  final String code;
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 class CycleCountItemView {
   final CycleCountItemData item;
   final String productName;
@@ -93,25 +103,6 @@ extension CycleCountDao on AppDatabase {
     String? abcClassification,
     int? assignedTo,
   }) async {
-    // Get products for this warehouse sorted by movement value (ABC)
-    const productQuery = '''
-      SELECT p.id, p.name,
-        COALESCE(ib.quantity, 0) as expected_qty,
-        COALESCE(
-          (SELECT SUM(ABS(sm.quantity) * sm.unit_cost) 
-           FROM stock_movements sm 
-           WHERE sm.product_id = p.id AND sm.deleted_at IS NULL
-             AND sm.warehouse_id = ?
-             AND sm.created_at > ?),
-          0
-        ) as movement_value
-      FROM products p
-      LEFT JOIN inventory_balances ib ON ib.product_id = p.id AND ib.warehouse_id = ?
-      WHERE p.is_active = 1 AND COALESCE(ib.quantity, 0) > 0
-      ORDER BY movement_value DESC
-      LIMIT ?
-    ''';
-
     // نافذةُ الـ٩٠ يوماً تُربَط بثواني الحقبة عبر [AppDatabase.dateVar]، لا
     // بـ`datetime('now', '-90 days')`: drift يخزِّن `created_at` عدداً صحيحاً،
     // وترتيبُ الأنواع في SQLite يضع كلَّ عددٍ قبل أيِّ نصّ — فالشرطُ النصّيُّ
@@ -120,19 +111,75 @@ extension CycleCountDao on AppDatabase {
     final movementWindowStart =
         DateTime.now().subtract(const Duration(days: 90));
 
-    final results = await customSelect(
-      productQuery,
-      variables: [
-        Variable(warehouseId),
-        dateVar(movementWindowStart),
-        Variable(warehouseId),
-        Variable(productsPerTask),
-      ],
-    ).get();
-
-    if (results.isEmpty) return -1;
-
     return transaction(() async {
+      // Serialize generators for this warehouse. The no-op update acquires a
+      // SQLite write lock and a PostgreSQL row lock without a schema change.
+      await customStatement(
+        'UPDATE warehouses SET id = id WHERE id = ?',
+        [warehouseId],
+      );
+
+      const productQuery = '''
+        SELECT p.id, p.name,
+          COALESCE(ib.quantity, 0) as expected_qty,
+          COALESCE(
+            (SELECT SUM(ABS(sm.quantity) * sm.unit_cost)
+             FROM stock_movements sm
+             WHERE sm.product_id = p.id AND sm.deleted_at IS NULL
+               AND sm.warehouse_id = ?
+               AND sm.created_at > ?),
+            0
+          ) as movement_value
+        FROM products p
+        LEFT JOIN inventory_balances ib
+          ON ib.product_id = p.id AND ib.warehouse_id = ?
+        WHERE p.is_active = 1 AND COALESCE(ib.quantity, 0) > 0
+          AND NOT EXISTS (
+            SELECT 1
+            FROM cycle_count_items reserved_item
+            INNER JOIN cycle_count_tasks reserved_task
+              ON reserved_task.id = reserved_item.task_id
+            INNER JOIN cycle_count_plans reserved_plan
+              ON reserved_plan.id = reserved_task.plan_id
+            WHERE reserved_item.product_id = p.id
+              AND reserved_plan.warehouse_id = ?
+              AND reserved_task.status IN ('pending', 'in_progress')
+              AND reserved_task.deleted_at IS NULL
+              AND reserved_item.deleted_at IS NULL
+          )
+        ORDER BY movement_value DESC
+        LIMIT ?
+      ''';
+
+      final results = await customSelect(
+        productQuery,
+        variables: [
+          Variable(warehouseId),
+          dateVar(movementWindowStart),
+          Variable(warehouseId),
+          Variable(warehouseId),
+          Variable(productsPerTask),
+        ],
+      ).get();
+
+      if (results.isEmpty) {
+        final stockRows = await customSelect(
+          'SELECT COUNT(*) AS count FROM products p '
+          'LEFT JOIN inventory_balances ib '
+          'ON ib.product_id = p.id AND ib.warehouse_id = ? '
+          'WHERE p.is_active = 1 AND COALESCE(ib.quantity, 0) > 0',
+          variables: [Variable(warehouseId)],
+        ).get();
+        final stockCount = stockRows.single.data['count'] as num;
+        if (stockCount > 0) {
+          throw CycleCountGenerationException(
+            'all_reserved',
+            'جميع الأصناف ذات المخزون الموجب محجوزة في مهام جرد قيد التنفيذ.',
+          );
+        }
+        return -1;
+      }
+
       final taskId = await into(cycleCountTasks).insert(
         CycleCountTasksCompanion.insert(
           planId: planId,

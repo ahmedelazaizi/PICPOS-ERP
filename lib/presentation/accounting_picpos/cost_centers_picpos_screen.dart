@@ -119,7 +119,7 @@ class _CostCentersPicPosScreenState
                     style: Theme.of(context)
                         .textTheme
                         .labelMedium
-                        ?.copyWith(color: AppColors.textMuted)),
+                        ?.copyWith(color: context.picposMuted)),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -289,7 +289,7 @@ class _CostCentersPicPosScreenState
           child: _InfoCard(
             label: tr('الحالة'),
             value: center.isActive ? tr('نشط') : tr('معطل'),
-            tint: center.isActive ? AppColors.success : AppColors.textMuted,
+            tint: center.isActive ? AppColors.success : context.picposMuted,
           ),
         ),
         const SizedBox(width: 8),
@@ -420,7 +420,7 @@ class _TreeTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final tint = center.isActive ? AppColors.primary : AppColors.textMuted;
+    final tint = center.isActive ? AppColors.primary : context.picposMuted;
 
     return InkWell(
       onTap: onTap,
@@ -469,12 +469,12 @@ class _TreeTile extends StatelessWidget {
                           selected ? FontWeight.w800 : FontWeight.w700,
                       color: center.isActive
                           ? context.picposText
-                          : AppColors.textMuted,
+                          : context.picposMuted,
                     ),
                   ),
                   Text(center.code,
                       style: text.labelSmall
-                          ?.copyWith(color: AppColors.textMuted)),
+                          ?.copyWith(color: context.picposMuted)),
                 ],
               ),
             ),
@@ -483,12 +483,12 @@ class _TreeTile extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.textMuted.withValues(alpha: 0.12),
+                  color: context.picposMuted.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(5),
                 ),
                 child: Text(tr('معطل'),
                     style: text.labelSmall
-                        ?.copyWith(color: AppColors.textMuted)),
+                        ?.copyWith(color: context.picposMuted)),
               ),
           ],
         ),
@@ -580,7 +580,7 @@ class _EntityChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: AppColors.textMuted),
+          Icon(icon, size: 13, color: context.picposMuted),
           const SizedBox(width: 6),
           Text(label, style: Theme.of(context).textTheme.labelSmall),
         ],
@@ -615,7 +615,7 @@ class _InfoCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(label,
-              style: text.labelSmall?.copyWith(color: AppColors.textMuted)),
+              style: text.labelSmall?.copyWith(color: context.picposMuted)),
           const SizedBox(height: 4),
           Text(
             value,
@@ -664,7 +664,7 @@ class _MovementRow extends StatelessWidget {
           SizedBox(
             width: 82,
             child: Text(dateStr,
-                style: text.labelSmall?.copyWith(color: AppColors.textMuted)),
+                style: text.labelSmall?.copyWith(color: context.picposMuted)),
           ),
           SizedBox(
             width: 78,
@@ -690,7 +690,7 @@ class _MovementRow extends StatelessWidget {
               row['account_name']?.toString() ?? '',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: text.labelSmall?.copyWith(color: AppColors.textMuted),
+              style: text.labelSmall?.copyWith(color: context.picposMuted),
             ),
           ),
           SizedBox(
@@ -701,7 +701,7 @@ class _MovementRow extends StatelessWidget {
                   : '-',
               textAlign: TextAlign.end,
               style: text.labelSmall?.copyWith(
-                color: debit > 0 ? AppColors.success : AppColors.textMuted,
+                color: debit > 0 ? AppColors.success : context.picposMuted,
                 fontWeight: debit > 0 ? FontWeight.w800 : FontWeight.normal,
               ),
             ),
@@ -714,7 +714,7 @@ class _MovementRow extends StatelessWidget {
                   : '-',
               textAlign: TextAlign.end,
               style: text.labelSmall?.copyWith(
-                color: credit > 0 ? AppColors.error : AppColors.textMuted,
+                color: credit > 0 ? AppColors.error : context.picposMuted,
                 fontWeight: credit > 0 ? FontWeight.w800 : FontWeight.normal,
               ),
             ),

@@ -34,9 +34,12 @@ import '../../services/developer_auth_service.dart';
 import '../../services/network_service.dart';
 import '../logging/diagnostic_logger.dart';
 import 'app_config.dart';
+import 'developer_session.dart';
 import 'feature_key.dart';
 import 'feature_validator.dart';
 import 'runtime_config_snapshot.dart';
+
+export 'developer_session.dart';
 
 // ─── Settings repository (cached) ──────────────────────────────────────
 
@@ -222,49 +225,8 @@ final adminPasswordServiceProvider = Provider<AdminPasswordService>((ref) {
   return AdminPasswordService(ref.watch(settingsRepositoryCachedProvider));
 });
 
-class DeveloperSession {
-  final bool unlocked;
-  final DateTime? expiresAt;
-  const DeveloperSession({this.unlocked = false, this.expiresAt});
-
-  bool get isActive {
-    if (!unlocked || expiresAt == null) return false;
-    return DateTime.now().isBefore(expiresAt!);
-  }
-}
-
-class DeveloperSessionNotifier extends Notifier<DeveloperSession> {
-  /// Sliding window length — every successful auth or developer-tools
-  /// mutation extends the session to `now + window`.
-  static const Duration window = Duration(minutes: 10);
-
-  @override
-  DeveloperSession build() => const DeveloperSession();
-
-  void unlock() {
-    state = DeveloperSession(
-      unlocked: true,
-      expiresAt: DateTime.now().add(window),
-    );
-  }
-
-  void extend() {
-    if (!state.isActive) return;
-    state = DeveloperSession(
-      unlocked: true,
-      expiresAt: DateTime.now().add(window),
-    );
-  }
-
-  void clear() {
-    state = const DeveloperSession();
-  }
-}
-
-final developerSessionProvider =
-    NotifierProvider<DeveloperSessionNotifier, DeveloperSession>(
-  DeveloperSessionNotifier.new,
-);
+// DeveloperSession / developerSessionProvider → developer_session.dart
+// (أُعيد تصديرها من أعلى الملف ليبقى كلُّ المستوردين يعملون).
 
 // ─── ConfigService — single mutation entry-point ───────────────────────
 

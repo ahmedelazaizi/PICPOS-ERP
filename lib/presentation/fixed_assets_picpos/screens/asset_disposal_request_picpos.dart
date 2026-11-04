@@ -309,7 +309,7 @@ class AssetDisposalRequestFormState extends State<AssetDisposalRequestForm> {
     final status = widget.value?.status ?? 'draft';
     final (label, tint) = switch (status) {
       'approved' => (tr('معتمد'), AppColors.success),
-      'cancelled' => (tr('ملغى'), AppColors.textMuted),
+      'cancelled' => (tr('ملغى'), context.picposMuted),
       _ => (tr('مسودة'), _warn),
     };
     return Container(
@@ -510,7 +510,7 @@ class AssetDisposalRequestFormState extends State<AssetDisposalRequestForm> {
         ? AppColors.success
         : o.gainLoss < 0
             ? _err
-            : AppColors.textMuted;
+            : context.picposMuted;
     return InputDecorator(
       decoration: InputDecoration(
         labelText: o.label,
@@ -543,7 +543,7 @@ class AssetDisposalRequestFormState extends State<AssetDisposalRequestForm> {
               Text(
                 tr('{p0} بلا تحصيل — ولا قيدَ نقديّةٍ ولا ذمّة.', {'p0': disposalMethodLabel(_method)}),
                 key: const Key('disposal_no_collection'),
-                style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 12, color: context.picposMuted),
               )
             else ...[
               Row(
@@ -679,7 +679,7 @@ class _CreditNote extends StatelessWidget {
         child: Text(
           tr('لا خزينة — الآجل يُحمَّل على ذمّة الطرف'),
           key: const Key('disposal_credit_note'),
-          style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+          style: TextStyle(fontSize: 12, color: context.picposMuted),
         ),
       );
 }

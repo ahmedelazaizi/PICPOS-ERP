@@ -6,6 +6,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../data/providers/providers.dart';
 import '../providers/pos_notification_provider.dart';
+import '../../picpos_shell/picpos_surface.dart';
+import '../../pos_picpos/widgets/picpos_pos_text.dart';
 
 /// Dialog for editing invoice payment details and notes
 class PosEditInvoiceDialog extends ConsumerStatefulWidget {
@@ -108,9 +110,9 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
       child: AlertDialog(
         title: Row(
           children: [
-            const Icon(
+            Icon(
               PhosphorIconsBold.pencilSimple,
-              color: AppColors.warning,
+              color: PicPosText.readableOn(context, AppColors.warning),
             ),
             const SizedBox(width: 8),
             Flexible(
@@ -163,14 +165,15 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
                     padding: const EdgeInsets.only(top: 8),
                     child: Row(
                       children: [
-                        const Icon(PhosphorIconsBold.info,
-                            size: 14, color: AppColors.info),
+                        Icon(PhosphorIconsBold.info,
+                            size: 14,
+                            color: PicPosText.readableOn(context, AppColors.info)),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             tr('مبلغ كليك يُرحَّل بالكامل على صندوق كليك تلقائياً'),
-                            style: const TextStyle(
-                                fontSize: 11, color: AppColors.textMuted),
+                            style: TextStyle(
+                                fontSize: 11, color: context.picposMuted),
                           ),
                         ),
                       ],
@@ -193,9 +196,9 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
                           keyboardType: TextInputType.number,
                           decoration:  InputDecoration(
                             labelText: tr('نقدي'),
-                            prefixIcon: const Icon(
+                            prefixIcon: Icon(
                               PhosphorIconsBold.money,
-                              color: AppColors.success,
+                              color: PicPosText.readableOn(context, AppColors.success),
                             ),
                           ),
                           onChanged: (val) => _recalculateSplit(fromCash: true),
@@ -208,9 +211,9 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
                           keyboardType: TextInputType.number,
                           decoration:  InputDecoration(
                             labelText: tr('بطاقة/تحويل'),
-                            prefixIcon: const Icon(
+                            prefixIcon: Icon(
                               PhosphorIconsBold.creditCard,
-                              color: AppColors.info,
+                              color: PicPosText.readableOn(context, AppColors.info),
                             ),
                           ),
                           onChanged: (val) =>
@@ -252,13 +255,16 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
     );
   }
 
+  /// الألوان الدلالية تُقرأ على خلفية بطاقة المعلومات (picposField).
+  Color _ink(Color c) => PicPosText.readableOn(context, c, on: context.picposField);
+
   Widget _buildInvoiceInfoCard() {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -268,13 +274,13 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
             children: [
                Text(
                 tr('الإجمالي:'),
-                style: const TextStyle(color: AppColors.textMuted),
+                style: TextStyle(color: context.picposMuted),
               ),
               Text(
                 '${widget.invoice.total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: AppColors.success,
+                  color: _ink(AppColors.success),
                 ),
               ),
             ],
@@ -285,7 +291,7 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
             children: [
                Text(
                 tr('المدفوع حالياً:'),
-                style: const TextStyle(color: AppColors.textMuted),
+                style: TextStyle(color: context.picposMuted),
               ),
               Text(
                 '${widget.invoice.paid.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
@@ -299,15 +305,15 @@ class _PosEditInvoiceDialogState extends ConsumerState<PosEditInvoiceDialog> {
             children: [
                Text(
                 tr('المتبقي:'),
-                style: const TextStyle(color: AppColors.textMuted),
+                style: TextStyle(color: context.picposMuted),
               ),
               Text(
                 '${(widget.invoice.total - widget.invoice.paid).toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: (widget.invoice.total - widget.invoice.paid) > 0
+                  color: _ink((widget.invoice.total - widget.invoice.paid) > 0
                       ? AppColors.error
-                      : AppColors.success,
+                      : AppColors.success),
                 ),
               ),
             ],

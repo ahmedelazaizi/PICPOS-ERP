@@ -569,8 +569,8 @@ const List<QuickSaleStep> kQuickSaleSteps = [
             id: 'drawer',
             settingKey: 'pos_open_drawer_on_print',
             kind: QuickSaleControl.toggle,
-            title: 'فتح درج النقدية مع الطباعة',
-            sub: 'يفتح في الدفع النقدي فقط',
+            title: 'فتح الدرج عند قبض النقد',
+            sub: 'نقدي أو مختلط بجزء نقدي، حتى بدون طباعة؛ لا يُفتح عند رد نقد',
             defaultIndex: 1,
             enforced: true,
           ),
@@ -928,7 +928,7 @@ List<QuickSaleImpactLine> quickSaleImpact(
         QuickSaleImpactLine(
           QuickSaleImpactTone.neutral,
           drawer
-              ? 'الدرج يُفتح مع الطباعة في الدفع النقدي فقط.'
+              ? 'يُفتح الدرج عند قبض النقد (نقدي أو مختلط بجزء نقدي) حتى بدون طباعة، ولا يُفتح عند رد نقد.'
               : 'الدرج لا يُفتح آلياً — فتحه اليدوي يُسجَّل في الوردية.',
         ),
         QuickSaleImpactLine(
@@ -1023,10 +1023,8 @@ double quickSaleRoundingStep(QuickSalePolicyValues v) =>
 
 /// الإجماليُّ **المقبوض** بعد التقريب لأقرب [step].
 ///
-/// ⚠️ **ولا يمسّ `total` المحفوظ.** الإيرادُ والوعاءُ الضريبيُّ يُشتقّان من
-/// الإجماليِّ الحقيقيّ؛ وتقريبُ `total` نفسِه كان **يتّزن ويكذب**: أطرافُ
-/// القيد تُشتقّ منه فتتوازن بالبناء مهما كان الرقم، فيُبتلَع الفرقُ في
-/// المبيعات أو في الخصم بلا سطرٍ ولا تشخيص. (‏تدقيقٌ محاسبيٌّ 2026-08-30)
+/// ⚠️ **ولا يمسّ `total` المحفوظ:** الإيرادُ والوعاءُ الضريبيُّ من الإجماليِّ
+/// الحقيقيّ، وتقريبُه كان يُبتلع في المبيعات بلا سطرٍ. (تدقيق 2026-08-30)
 ///
 /// `step <= 0` ⇒ يعود الإجماليُّ كما هو، فخيارُ «بلا تقريب» لا يمرّ بحساب.
 double quickSaleRoundedTotal({required double total, required double step}) {

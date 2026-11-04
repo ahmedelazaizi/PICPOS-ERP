@@ -410,7 +410,7 @@ class _JournalVoucherPicposScreenState
       decoration: BoxDecoration(
         color: context.picposField,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border: Border.all(color: context.picposHairline.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -11,6 +11,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/models/picpos_booking_view.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
@@ -97,10 +98,10 @@ class _WaitCard extends StatelessWidget {
                   child: Text(
                     row.customerPhone ?? '—',
                     textDirection: TextDirection.ltr,
-                    style: const TextStyle(
-                      fontSize: 10.5,
+                    style: TextStyle(
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textMuted,
+                      color: context.picposMuted,
                       fontFeatures: bookingTabularFigures,
                     ),
                   ),
@@ -134,12 +135,14 @@ class _WaitCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 9.5,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textMuted,
+        Builder(
+          builder: (context) => Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: context.picposMuted,
+            ),
           ),
         ),
         Text(
@@ -269,7 +272,7 @@ class BookingsResourcesView extends ConsumerWidget {
           padding: const EdgeInsets.all(12),
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
             maxCrossAxisExtent: 340,
-            mainAxisExtent: 148,
+            mainAxisExtent: 152,
             crossAxisSpacing: 10,
             mainAxisSpacing: 10,
           ),
@@ -390,10 +393,10 @@ class _ResourceCard extends StatelessWidget {
                       role ?? (kind == 'device' ? tr('مورد — جهاز') : tr('موظَّف')),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textMuted,
+                        color: context.picposMuted,
                       ),
                     ),
                   ],
@@ -410,10 +413,10 @@ class _ResourceCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             shiftLabel,
-            style: const TextStyle(
-              fontSize: 10.5,
+            style: TextStyle(
+              fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: AppColors.textMuted,
+              color: context.picposMuted,
               fontFeatures: bookingTabularFigures,
             ),
           ),
@@ -467,12 +470,14 @@ class _ResourceCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 9.5,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textMuted,
+        Builder(
+          builder: (context) => Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: context.picposMuted,
+            ),
           ),
         ),
         Text(
@@ -650,10 +655,10 @@ class _ServiceCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             tr('حجوزات اليوم: {todayCount}', {'todayCount': todayCount}),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: AppColors.textMuted,
+              color: context.picposMuted,
               fontFeatures: bookingTabularFigures,
             ),
           ),
@@ -667,12 +672,14 @@ class _ServiceCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 9.5,
-            fontWeight: FontWeight.w700,
-            color: AppColors.textMuted,
+        Builder(
+          builder: (context) => Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: context.picposMuted,
+            ),
           ),
         ),
         Text(

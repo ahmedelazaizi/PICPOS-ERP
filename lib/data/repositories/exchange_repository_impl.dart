@@ -302,11 +302,9 @@ class ExchangeRepositoryImpl {
     // **للنداء كلِّه** لا للسطر، والوسمُ مطلوبٌ لكلّ سطر. فالنداءُ يُقسَم إلى
     // مجموعتَين متباينتَين داخل نفس المعاملة.
     //
-    // والانقسامُ آمنٌ من التحقّق المتقاطع (مقيس): سياجُ الكمية في
-    // `processSalesReturn` يقرأ `getAlreadyReturnedQty` وهي تعدّ
-    // `stock_movements` بـ`reference_type = 'sales_invoice'` فقط، بينما هذا
-    // المسارُ يكتب حركاتِه بـ`'sales_return'` — فلا يرى النداءُ الثاني كمياتِ
-    // الأوّل ولا يرفضها خطأً.
+    // وسياجُ الكمية يجمع حركاتِ `sales_return` حسب الفاتورة والصنف، لذلك
+    // يرى النداءُ الثاني كميةَ الشقّ الأوّل ويُجيز المجموعَ فقط إذا بقي ضمن
+    // المباع. والقسمتان متباينتان بالسطر، ولا يضاعفان الكمية.
     final soundQuantities = <int, double>{
       for (final e in returnQuantities.entries)
         if (e.value > 0 && !damagedItemIds.contains(e.key)) e.key: e.value,

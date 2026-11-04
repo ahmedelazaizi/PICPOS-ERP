@@ -514,10 +514,10 @@ class _EInvoicingPicposScreenState
                               fontSize: 13.5, fontWeight: FontWeight.w800),
                           overflow: TextOverflow.ellipsis),
                     ),
-                    const SizedBox(width: 7),
+                    const SizedBox(width: 5),
                     _pill(isProduction ? tr('إنتاج') : tr('تجريبي'),
                         isProduction ? _err : _warn),
-                    const SizedBox(width: 5),
+                    const SizedBox(width: 3),
                     _pill(isEnabled ? tr('مُفعَّل') : tr('موقوف'),
                         isEnabled ? _ok : _idle),
                   ],
@@ -525,7 +525,7 @@ class _EInvoicingPicposScreenState
                 const SizedBox(height: 3),
                 Text(metaLine,
                     style: TextStyle(
-                        fontSize: 10.5,
+                        fontSize: 11,
                         fontWeight: FontWeight.w600,
                         fontFamily: AppTypography.mono,
                         color: context.picposMuted),
@@ -545,7 +545,7 @@ class _EInvoicingPicposScreenState
                       color: meta.tint)),
               Text(tr('مُرسَلة اليوم'),
                   style: TextStyle(
-                      fontSize: 9.5,
+                      fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: context.picposMuted)),
             ],
@@ -773,7 +773,7 @@ class _EInvoicingPicposScreenState
                         const SizedBox(width: 5),
                         Text(e.value.label,
                             style: TextStyle(
-                                fontSize: 10.5,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w800,
                                 color: on
                                     ? e.value.tint
@@ -781,7 +781,7 @@ class _EInvoicingPicposScreenState
                         const SizedBox(width: 5),
                         Text(_ar(n),
                             style: TextStyle(
-                                fontSize: 9.5,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w800,
                                 color: (on ? e.value.tint : context.picposMuted)
                                     .withValues(alpha: 0.65))),
@@ -846,7 +846,7 @@ class _EInvoicingPicposScreenState
                       overflow: TextOverflow.ellipsis),
                   Text(r.invoiceNumber ?? tr('فاتورة #{p0}', {'p0': r.saleId}),
                       style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: context.picposMuted),
                       overflow: TextOverflow.ellipsis),
@@ -884,7 +884,7 @@ class _EInvoicingPicposScreenState
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(tr('أُعيدت {p0} مرات', {'p0': _ar(r.retryCount)}),
                           style: const TextStyle(
-                              fontSize: 9.5,
+                              fontSize: 11,
                               fontWeight: FontWeight.w700,
                               color: _err)),
                     ),
@@ -903,7 +903,7 @@ class _EInvoicingPicposScreenState
                         ? '—'
                         : _stamp.format(r.lastCheckedAt!),
                     style: TextStyle(
-                        fontSize: 10.5,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: context.picposText),
                     overflow: TextOverflow.ellipsis,
@@ -913,7 +913,7 @@ class _EInvoicingPicposScreenState
                         ? tr('لم تُرسَل')
                         : _stamp.format(r.submittedAt!),
                     style: TextStyle(
-                        fontSize: 9.5,
+                        fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: context.picposMuted),
                     overflow: TextOverflow.ellipsis,
@@ -1265,7 +1265,7 @@ class _EInvoicingPicposScreenState
               if (r.retryCount > 0)
                 Text(tr('أُعيدت {p0} مرات', {'p0': _ar(r.retryCount)}),
                     style: TextStyle(
-                        fontSize: 10.5,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: context.picposMuted)),
             ],
@@ -1356,7 +1356,7 @@ class _EInvoicingPicposScreenState
           ),
           child: Text(label,
               style: TextStyle(
-                  fontSize: 10.5,
+                  fontSize: 11,
                   fontWeight: FontWeight.w800,
                   color: on ? context.picposBrandInk : context.picposMuted)),
         ),
@@ -1476,7 +1476,7 @@ class _EInvoicingPicposScreenState
                     '${who == 'system' ? 'النظام' : who}'
                     '${changedAt == null ? '' : ' · ${_stamp.format(changedAt)}'}',
                     style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: context.picposMuted),
                   ),
@@ -1528,7 +1528,7 @@ class _EInvoicingPicposScreenState
                       ),
                       child: Text(t.code,
                           style: TextStyle(
-                              fontSize: 10.5,
+                              fontSize: 11,
                               fontWeight: FontWeight.w800,
                               fontFamily: AppTypography.mono,
                               color: context.picposBrandInk)),
@@ -1554,7 +1554,7 @@ class _EInvoicingPicposScreenState
         ),
         child: Text(text,
             style: TextStyle(
-                fontSize: 10.5, fontWeight: FontWeight.w800, color: tint)),
+                fontSize: 11, fontWeight: FontWeight.w800, color: tint)),
       );
 
   // ═════════════════════════════════════════════════════════════════════════

@@ -60,6 +60,7 @@ import '../../picpos_shell/picpos_data_table.dart';
 import '../../picpos_shell/picpos_kpi_row.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../widgets/permission_guard.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 const _err = Color(0xFFEF4444);
 const _purple = Color(0xFF8B5CF6);
@@ -185,7 +186,7 @@ class _AssetCategoriesPicposScreenState
               label: tr('فئاتٌ بلا أصول'),
               value: _ar(cats.where((c) => (countByCat[c.id] ?? 0) == 0).length),
               icon: PhosphorIconsBold.folderOpen,
-              tint: AppColors.textMuted,
+              tint: context.picposMuted,
             ),
           ],
         ),
@@ -503,7 +504,7 @@ class _AssetCategoryPanelState extends State<AssetCategoryPanel> {
           //    ناقص».
            Text(
             tr('الحساباتُ المعروضة تفصيليّةٌ نشطةٌ وحدَها — والمحرّك يرفض الترحيل على حسابٍ رئيسيّ.'),
-            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 11, color: context.picposMuted),
           ),
           if (reason != null) ...[
             const SizedBox(height: 8),

@@ -247,7 +247,7 @@ class _PaymentDialogState extends State<_PaymentDialog> {
                     filled: true,
                     fillColor: AppColors.success.withValues(alpha: 0.05),
                     helperText: tr('يتم احتسابه تلقائياً عند تعديل الخانات الأخرى'),
-                    helperStyle: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                    helperStyle: TextStyle(fontSize: 11, color: context.picposMuted),
                   ),
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   onChanged: (_) => _recalculate(changedField: 'cash'),
@@ -482,7 +482,7 @@ class _SelectionCard extends StatelessWidget {
               : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
+            color: isSelected ? AppColors.primary : context.picposHairline,
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -490,14 +490,14 @@ class _SelectionCard extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isSelected ? AppColors.primary : AppColors.textMuted,
+              color: isSelected ? AppColors.primary : context.picposMuted,
             ),
             const SizedBox(height: 8),
             Text(
               label,
               style: TextStyle(
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? AppColors.primary : AppColors.textMuted,
+                color: isSelected ? AppColors.primary : context.picposMuted,
               ),
             ),
           ],
@@ -576,9 +576,9 @@ class _WeightInputDialogState extends State<_WeightInputDialog> {
                       ),
                       Text(
                         '${(_liveWeight * widget.pricePerUnit).toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
-                          color: AppColors.textMuted,
+                          color: context.picposMuted,
                         ),
                       ),
                     ],

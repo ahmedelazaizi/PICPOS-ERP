@@ -4,8 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/number_utils.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
+import '../../widgets/dialogs/product_form_helpers.dart';
 
 /// Quick-add product dialog shown when scanning an unknown barcode.
 /// Allows cashier to quickly add a product with minimal info without
@@ -44,14 +46,20 @@ class _QuickAddProductDialogState
 
   Future<void> _save() async {
     final name = _nameController.text.trim();
-    final price = double.tryParse(_priceController.text) ?? 0;
+    final parsedPrice = NumberUtils.tryParseLocale(_priceController.text);
 
     if (name.isEmpty) {
       AppToast.show(context, tr('يرجى إدخال اسم الصنف'), type: ToastType.warning);
       return;
     }
-    if (price <= 0) {
+    if (_priceController.text.trim().isEmpty || parsedPrice == null) {
       AppToast.show(context, tr('يرجى إدخال سعر صحيح'), type: ToastType.warning);
+      return;
+    }
+    final price = parsedPrice;
+    if (price < 0) {
+      AppToast.show(
+          context, tr('لا يمكن أن يكون السعر سالباً'), type: ToastType.warning);
       return;
     }
 
@@ -160,14 +168,17 @@ class _QuickAddProductDialogState
               // Sale price
               TextField(
                 controller: _priceController,
+                onChanged: (_) => setState(() {}),
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
                 inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                  FilteringTextInputFormatter.allow(RegExp(r'[-\d.]')),
                 ],
                 decoration:  InputDecoration(
                   labelText: tr('سعر البيع *'),
                   prefixIcon: const Icon(PhosphorIconsBold.currencyDollar),
+                  errorText: ProductFormHelpers.validateNonNegativePrice(
+                      _priceController.text),
                   border: const OutlineInputBorder(),
                 ),
               ),

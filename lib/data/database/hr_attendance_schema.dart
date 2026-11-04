@@ -240,7 +240,7 @@ extension HrAttendanceSchema on AppDatabase {
         for (final t in targets) {
           await into(rolePermissions).insert(
             RolePermissionsCompanion.insert(roleId: roleId, permissionId: t.id),
-            mode: InsertMode.insertOrIgnore,
+            onConflict: DoNothing(target: []),
           );
         }
       }

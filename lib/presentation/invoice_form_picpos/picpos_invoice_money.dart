@@ -101,7 +101,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
                       child:  Text(
                         tr('مسودة'),
                         style: const TextStyle(
-                          fontSize: 9.5,
+                          fontSize: 11,
                           fontWeight: FontWeight.w800,
                           color: AppColors.warning,
                         ),
@@ -212,7 +212,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
           children: [
             Text(k,
                 style: const TextStyle(
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFFB4C0D3))),
             const SizedBox(width: 6),
@@ -320,7 +320,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
                           children: [
                             Text(tr('المتبقي'),
                                 style: TextStyle(
-                                    fontSize: 9.5,
+                                    fontSize: 11,
                                     fontWeight: FontWeight.w800,
                                     color: muted)),
                             const SizedBox(height: 2),
@@ -404,7 +404,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
         children: [
           Text(label,
               style: TextStyle(
-                  fontSize: 9.5, fontWeight: FontWeight.w800, color: muted)),
+                  fontSize: 11, fontWeight: FontWeight.w800, color: muted)),
           const SizedBox(height: 2),
           child,
         ],
@@ -450,7 +450,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                  fontSize: 9.5, fontWeight: FontWeight.w800, color: muted)),
+                  fontSize: 11, fontWeight: FontWeight.w800, color: muted)),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -472,7 +472,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                    fontSize: 9.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: muted),
               ),
@@ -593,7 +593,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.end,
                     style: TextStyle(
-                        fontSize: 9.5,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: muted)),
               ),
@@ -910,7 +910,7 @@ class _PicPosMoneyPanel extends StatelessWidget {
                 ),
                 child: Text(shortcut,
                     style: TextStyle(
-                        fontSize: 9.5,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: Colors.white.withValues(alpha: .7))),
               ),

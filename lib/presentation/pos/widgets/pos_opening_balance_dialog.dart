@@ -1,12 +1,15 @@
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../../data/providers/providers.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// Dialog to prompt for opening balance when starting a new shift.
 /// Returns a double (the opening balance) or null if cancelled.
-class PosOpeningBalanceDialog extends StatefulWidget {
+class PosOpeningBalanceDialog extends ConsumerStatefulWidget {
   final String userName;
 
   /// سببُ ظهورِ الديالوج الآن، حين لا يكون فتحَ ورديّةٍ اعتياديّاً عند الدخول.
@@ -22,10 +25,10 @@ class PosOpeningBalanceDialog extends StatefulWidget {
   });
 
   @override
-  State<PosOpeningBalanceDialog> createState() => _PosOpeningBalanceDialogState();
+  ConsumerState<PosOpeningBalanceDialog> createState() => _PosOpeningBalanceDialogState();
 }
 
-class _PosOpeningBalanceDialogState extends State<PosOpeningBalanceDialog> {
+class _PosOpeningBalanceDialogState extends ConsumerState<PosOpeningBalanceDialog> {
   final _controller = TextEditingController(text: '0');
 
   @override
@@ -108,7 +111,7 @@ class _PosOpeningBalanceDialogState extends State<PosOpeningBalanceDialog> {
                 autofocus: true,
                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 decoration: InputDecoration(
-                  suffixText: 'JOD',
+                  suffixText: ref.watch(systemCurrencySettingProvider).asData?.value ?? '',
                   prefixIcon: const Icon(PhosphorIconsBold.money, color: AppColors.primary),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   focusedBorder: OutlineInputBorder(
@@ -121,7 +124,7 @@ class _PosOpeningBalanceDialogState extends State<PosOpeningBalanceDialog> {
               const SizedBox(height: 8),
                Text(
                 tr('يمكنك إدخال 0 إذا لم يكن هناك رصيد افتتاحي'),
-                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 11, color: context.picposMuted),
               ),
             ],
           ),

@@ -79,6 +79,10 @@ class TemplateCard {
   final List<TemplateBindingView> bindings;
   final TemplateThumbnail thumbnail;
 
+  /// القالبُ الفعّال للطباعة: يحسمه محلّلُ الطباعة نفسُه (روابط ثم الافتراضي)
+  /// لنوع مستندٍ واحدٍ على الأقلّ — لا مجرّدُ وجود رابطة.
+  final bool activeForPrint;
+
   const TemplateCard({
     required this.id,
     required this.name,
@@ -93,15 +97,21 @@ class TemplateCard {
     required this.isDefault,
     this.bindings = const [],
     this.thumbnail = TemplateThumbnail.empty,
+    this.activeForPrint = false,
   });
 
   bool get isThermal => paperWidthMm <= 80;
+
+  /// ملصقُ باركود — يُحرَّر بقماش الملصق لا بالنطاقات، ويُعرض في مرشّحه وحدَه.
+  bool get isLabel => category == 'barcode';
 
   /// مربوطٌ بمستندٍ واحدٍ على الأقلّ ⇒ حذفُه يُرفض.
   bool get isBound => bindings.isNotEmpty;
 
   /// «٣٠ عنصراً · ٩ أعمدة».
-  String get meta => '$elementCount عنصراً · $columnCount أعمدة';
+  String get meta => isLabel
+      ? '$elementCount عنصراً · $paperLabel مم'
+      : '$elementCount عنصراً · $columnCount أعمدة';
 }
 
 /// تسميةُ الورق من عرضه وارتفاعه.
@@ -121,12 +131,18 @@ enum TemplateFilter {
   a4('ورق A4/A5'),
   thermal('حراري'),
   statement('كشوف الحساب'),
-  report('تقارير');
+  report('تقارير'),
+
+  /// ملصقاتُ الباركود — مسارُ رسمٍ آخر (‏`template_barcode_labels`)، فلا
+  /// تختلط بالفواتير في «الكل» ولا في غيره: مرشّحُها وحدَه يعرضها.
+  barcode('ملصقات الباركود');
 
   const TemplateFilter(this.label);
   final String label;
 
   bool accepts(TemplateCard c) {
+    // الملصقُ في مرشّحه وحدَه — و«الكل» يبقى «كلَّ الفواتير» كما كان.
+    if (c.isLabel != (this == TemplateFilter.barcode)) return false;
     switch (this) {
       case TemplateFilter.all:
         return true;
@@ -140,6 +156,8 @@ enum TemplateFilter {
         return c.type == 'statement';
       case TemplateFilter.report:
         return c.type == 'report';
+      case TemplateFilter.barcode:
+        return true;
     }
   }
 }

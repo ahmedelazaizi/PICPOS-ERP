@@ -2,6 +2,7 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../theme/app_colors.dart';
+import '../theme/core_surface_colors.dart';
 
 /// A professional empty state widget with icon, title, description and optional action button.
 /// Use this across all screens when data lists are empty.
@@ -49,16 +50,16 @@ class AppEmptyState extends StatelessWidget {
               child: Icon(
                 icon,
                 size: iconSize,
-                color: AppColors.primary.withValues(alpha: 0.4),
+                color: context.coreSoftIcon(AppColors.primary, 0.4),
               ),
             ),
             const SizedBox(height: 20),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: context.coreTextPrimary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -66,9 +67,9 @@ class AppEmptyState extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 description!,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.textMuted,
+                  color: context.coreTextMuted,
                 ),
                 textAlign: TextAlign.center,
               ),

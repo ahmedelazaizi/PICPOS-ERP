@@ -30,6 +30,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/models/expense_allocation.dart';
 import '../../picpos_shell/picpos_dialog.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// مصروفٌ قابلٌ للتحميل — ما يحتاجه الحوار منه.
 typedef AllocatableExpense = ({
@@ -308,7 +309,7 @@ class _AllocateDialogState extends State<_AllocateDialog> {
               // ⚠️ **سالبٌ يعني تجاوزاً** — والتصميمُ يفترضه موجباً دائماً.
               label: over ? tr('تجاوزُ التحميل') : tr('غير محمَّل'),
               value: _money.format(plan.unallocated.abs()),
-              color: plan.isExact ? AppColors.textMuted : AppColors.error,
+              color: plan.isExact ? context.picposMuted : AppColors.error,
             ),
           ],
         ),

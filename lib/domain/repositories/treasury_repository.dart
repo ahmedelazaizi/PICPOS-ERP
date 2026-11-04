@@ -13,6 +13,12 @@ abstract class ITreasuryRepository {
   /// لم يصل بعد، فتعرض الشاشةُ «—» ولا تنهار.
   Future<String?> getVoucherNumberById(int id);
 
+  /// Open invoices eligible for voucher allocation, exposed without Drift rows.
+  Future<List<OpenInvoiceSnapshot>> getOpenInvoicesForParty({
+    required int partyId,
+    required bool forSupplier,
+  });
+
   // ═══════════════════════════════════════════════════════════════════════════
   // SAFE OPERATIONS
   // ═══════════════════════════════════════════════════════════════════════════
@@ -274,6 +280,24 @@ abstract class ITreasuryRepository {
 // ═══════════════════════════════════════════════════════════════════════════
 // DATA CLASSES
 // ═══════════════════════════════════════════════════════════════════════════
+
+class OpenInvoiceSnapshot {
+  final String invoiceType;
+  final int id;
+  final String number;
+  final DateTime date;
+  final double total;
+  final double paid;
+
+  const OpenInvoiceSnapshot({
+    required this.invoiceType,
+    required this.id,
+    required this.number,
+    required this.date,
+    required this.total,
+    required this.paid,
+  });
+}
 
 /// Safe data
 class SafeData {

@@ -43,6 +43,7 @@ import '../../picpos_shell/picpos_empty_state.dart';
 import '../../picpos_shell/picpos_kpi_row.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../widgets/permission_guard.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 final _money0 = NumberFormat('#,##0', 'en');
 
@@ -326,8 +327,8 @@ class _RenameLocationDialogState extends State<_RenameLocationDialog> {
           else
             Text(
               tr('سيُكتَب الاسمُ على {p0} أصلاً.', {'p0': _ar(plan.assetIds.length)}),
-              style: const TextStyle(
-                  fontSize: 12, color: AppColors.textMuted),
+              style: TextStyle(
+                  fontSize: 12, color: context.picposMuted),
             ),
       ],
       primaryAction: PicPosDialogAction(

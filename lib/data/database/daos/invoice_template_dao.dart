@@ -152,7 +152,6 @@ extension InvoiceTemplateDao on AppDatabase {
   // TEMPLATE SEEDING — See invoice_template_seeder_dao.dart
   // ═══════════════════════════════════════════════════════════════════════════
 
-
   // ═══════════════════════════════════════════════════════════════════════════
   // TEMPLATE ELEMENTS CRUD
   // ═══════════════════════════════════════════════════════════════════════════
@@ -329,10 +328,49 @@ extension InvoiceTemplateDao on AppDatabase {
         // وحدَه يعالج الحاضرَ لا المستقبل.
         // (‏بلاغُ تدقيق الطباعة 2026-08-30)
         paperHeight: Value(_inferPaperHeight(data)),
+        layoutVersion: Value(data['layoutVersion'] as int? ?? 1),
         isDefault: const Value(false),
       ),
     );
 
+    await _importTemplateContent(templateId, data);
+    return templateId;
+  }
+
+  /// يستبدل عناصرَ قالبٍ قائمٍ وإعداداتِ جدوله بمحتوى ملفِّ أصول —
+  /// **والصفُّ نفسُه يبقى**: المعرِّفُ والاسمُ والفئةُ والافتراضيّةُ وكلُّ
+  /// ربطٍ في `template_bindings` يشير إليه.
+  ///
+  /// ⚠️ لا يُنادى إلّا لقالبٍ مبذورٍ ثبت أنّ المستخدمَ لم يمسّه (بصمةُ
+  /// `ready_template_deployment.dart`) — فما يُمحى نسخةٌ تُعاد بالبذرة لا عمل.
+  Future<void> replaceTemplateContentFromJson(
+    int templateId,
+    String jsonString,
+  ) async {
+    final Map<String, dynamic> data = jsonDecode(jsonString);
+    await transaction(() async {
+      await (delete(
+        invoiceTableSettings,
+      )..where((s) => s.templateId.equals(templateId))).go();
+      await (delete(
+        invoiceTemplateElements,
+      )..where((e) => e.templateId.equals(templateId))).go();
+      await _importTemplateContent(templateId, data);
+      await updateTemplate(
+        templateId,
+        InvoiceTemplatesCompanion(
+          layoutVersion: Value(data['layoutVersion'] as int? ?? 1),
+          bandHeights: const Value(null),
+        ),
+      );
+    });
+  }
+
+  /// عناصرُ ملفِّ القالب وإعداداتُ جدوله ⇒ صفوفٌ لقالبٍ موجود.
+  Future<void> _importTemplateContent(
+    int templateId,
+    Map<String, dynamic> data,
+  ) async {
     // Import elements
     final elements = data['elements'] as List<dynamic>? ?? [];
     for (int i = 0; i < elements.length; i++) {
@@ -359,17 +397,24 @@ extension InvoiceTemplateDao on AppDatabase {
         ),
       );
       // Update fields not covered by .insert() companion
-      if (el['fontFamily'] != null || el['section'] != null || el['isVisible'] != null ||
-          el['backgroundColor'] != null || el['borderColor'] != null ||
-          (el['borderWidth'] as num?)?.toDouble() != null || el['formula'] != null) {
+      if (el['fontFamily'] != null ||
+          el['section'] != null ||
+          el['isVisible'] != null ||
+          el['backgroundColor'] != null ||
+          el['borderColor'] != null ||
+          (el['borderWidth'] as num?)?.toDouble() != null ||
+          el['formula'] != null) {
         // Get the element we just inserted (last one for this template with this sortOrder)
-        final inserted = await (select(invoiceTemplateElements)
-              ..where((e) => e.templateId.equals(templateId))
-              ..orderBy([(e) => OrderingTerm.desc(e.id)])
-              ..limit(1))
-            .getSingleOrNull();
+        final inserted =
+            await (select(invoiceTemplateElements)
+                  ..where((e) => e.templateId.equals(templateId))
+                  ..orderBy([(e) => OrderingTerm.desc(e.id)])
+                  ..limit(1))
+                .getSingleOrNull();
         if (inserted != null) {
-          await (update(invoiceTemplateElements)..where((e) => e.id.equals(inserted.id))).write(
+          await (update(
+            invoiceTemplateElements,
+          )..where((e) => e.id.equals(inserted.id))).write(
             InvoiceTemplateElementsCompanion(
               fontFamily: Value(el['fontFamily'] as String?),
               section: Value(el['section'] as String? ?? 'body'),
@@ -416,19 +461,24 @@ extension InvoiceTemplateDao on AppDatabase {
       // Update fields not covered by .insert() companion
       final insertedSettings = await getTableSettings(templateId);
       if (insertedSettings != null) {
-        await (update(invoiceTableSettings)..where((s) => s.templateId.equals(templateId))).write(
+        await (update(
+          invoiceTableSettings,
+        )..where((s) => s.templateId.equals(templateId))).write(
           InvoiceTableSettingsCompanion(
             columnWidths: Value(tableData['columnWidths'] as String?),
+            columnsJson: Value(tableData['columnsJson'] as String?),
             headerFontFamily: Value(tableData['headerFontFamily'] as String?),
-            headerBgColor: Value(tableData['headerBgColor'] as String? ?? '#333333'),
-            headerTextColor: Value(tableData['headerTextColor'] as String? ?? '#FFFFFF'),
+            headerBgColor: Value(
+              tableData['headerBgColor'] as String? ?? '#333333',
+            ),
+            headerTextColor: Value(
+              tableData['headerTextColor'] as String? ?? '#FFFFFF',
+            ),
             altRowBgColor: Value(tableData['altRowBgColor'] as String?),
           ),
         );
       }
     }
-
-    return templateId;
   }
 
   /// Export template to JSON string
@@ -506,8 +556,7 @@ extension InvoiceTemplateDao on AppDatabase {
   }
 
   /// ملفّاتُ القوالب الجاهزة — تفويضٌ إلى [kReadyTemplateFiles].
-  List<Map<String, String>> getAvailableTemplateFiles() =>
-      kReadyTemplateFiles;
+  List<Map<String, String>> getAvailableTemplateFiles() => kReadyTemplateFiles;
 }
 
 /// كلُّ ملفّات القوالب الجاهزة في `assets/invoice_templates/` — **مرجعٌ واحد**.
@@ -515,34 +564,115 @@ extension InvoiceTemplateDao on AppDatabase {
 /// ── لماذا قائمةٌ واحدةٌ لا اثنتان ────────────────────────────────────────
 /// كان في هذا الملفّ **دالّتان بنفس الاسم**: واحدةٌ على الـDAO بثمانيةِ
 /// ملفّاتٍ وأخرى على مستوى الملفّ بأربعة — والثانيةُ محجوبةٌ لا تُنادى.
-/// فمن التسعةَ عشرَ ملفاً في المستودع كان **أحدَ عشرَ لا يصلها مسارُ
-/// استيرادٍ إطلاقاً**، وفيها كلُّ الملفّات الجديدة التي بُني المحرّكُ لأجلها:
-/// الفاتورةُ الضريبيّةُ والمرتجعاتُ وكشفا الحساب والتقريرُ العامّ.
+/// أُصلح الانقسامُ سابقاً، وتُسجّل هنا الآن كلُّ الأصول الخمسة والعشرين،
+/// بما فيها القوالب الستة المضافة بقرار المالك.
 ///
 /// مكتوبةٌ في المستودع، ومقيسةٌ على المحرّك، ولا يراها المالكُ قطّ.
 ///
 /// ⚠️ ويحرسها `template_files_are_complete_test`: أيُّ ملفٍّ يُضاف إلى
 /// الأصول ولا يُدرَج هنا يُسقط الاختبار — فلا يتكرّر الغيابُ صامتاً.
 const kReadyTemplateFiles = <Map<String, String>>[
-  {'name': 'فاتورة حرارية كلاسيكية', 'file': 'thermal_classic.json', 'type': 'thermal'},
-  {'name': 'فاتورة حرارية عصرية', 'file': 'thermal_modern.json', 'type': 'thermal'},
-  {'name': 'فاتورة حرارية شاملة', 'file': 'thermal_comprehensive.json', 'type': 'thermal'},
-  {'name': 'بيع سريع حراري — 80mm', 'file': 'thermal80_quick_sale.json', 'type': 'thermal'},
-  {'name': 'بيع سريع حراري — 58mm', 'file': 'thermal58_quick_sale.json', 'type': 'thermal'},
-  {'name': 'مرتجع مبيعات حراري — 80mm', 'file': 'thermal80_sales_return.json', 'type': 'thermal'},
-  {'name': 'طلب مطبخ احترافي', 'file': 'kitchen_professional.json', 'type': 'kitchen'},
+  {
+    'name': 'فاتورة حرارية كلاسيكية',
+    'file': 'thermal_classic.json',
+    'type': 'thermal',
+  },
+  {
+    'name': 'فاتورة حرارية عصرية',
+    'file': 'thermal_modern.json',
+    'type': 'thermal',
+  },
+  {
+    'name': 'فاتورة حرارية شاملة',
+    'file': 'thermal_comprehensive.json',
+    'type': 'thermal',
+  },
+  {
+    'name': 'بيع سريع حراري — 80mm',
+    'file': 'thermal80_quick_sale.json',
+    'type': 'thermal',
+  },
+  {
+    'name': 'بيع سريع حراري — 58mm',
+    'file': 'thermal58_quick_sale.json',
+    'type': 'thermal',
+  },
+  {
+    'name': 'مرتجع مبيعات حراري — 80mm',
+    'file': 'thermal80_sales_return.json',
+    'type': 'thermal',
+  },
+  {
+    'name': 'مرتجع مبيعات حراري — 58mm',
+    'file': 'thermal58_sales_return.json',
+    'type': 'thermal',
+  },
+  {
+    'name': 'طلب مطبخ حراري — 58mm',
+    'file': 'thermal58_kitchen.json',
+    'type': 'kitchen',
+  },
+  {
+    'name': 'إغلاق الوردية حراري — 58mm',
+    'file': 'thermal58_shift_closing.json',
+    'type': 'shift_closing',
+  },
+  {
+    'name': 'فاتورة مشتريات حرارية — 58mm',
+    'file': 'thermal58_purchase_invoice.json',
+    'type': 'thermal',
+  },
+  {
+    'name': 'طلب مطبخ احترافي',
+    'file': 'kitchen_professional.json',
+    'type': 'kitchen',
+  },
   {'name': 'فاتورة A4 تجارية', 'file': 'a4_commercial.json', 'type': 'a4'},
   {'name': 'فاتورة A4 احترافية', 'file': 'a4_professional.json', 'type': 'a4'},
-  {'name': 'فاتورة مبيعات ضريبية — A4', 'file': 'a4_sales_tax_invoice.json', 'type': 'a4'},
-  {'name': 'فاتورة مبيعات ضريبية — A5', 'file': 'a5_sales_tax_invoice.json', 'type': 'a4'},
+  {
+    'name': 'فاتورة مبيعات ضريبية — A4',
+    'file': 'a4_sales_tax_invoice.json',
+    'type': 'a4',
+  },
+  {
+    'name': 'فاتورة مبيعات ضريبية — A5',
+    'file': 'a5_sales_tax_invoice.json',
+    'type': 'a4',
+  },
+  {'name': 'مرتجع مبيعات — A5', 'file': 'a5_sales_return.json', 'type': 'a4'},
+  {
+    'name': 'فاتورة مشتريات — A5',
+    'file': 'a5_purchase_invoice.json',
+    'type': 'a4',
+  },
   {'name': 'مرتجع مبيعات — A4', 'file': 'a4_sales_return.json', 'type': 'a4'},
   {'name': 'فاتورة مشتريات A4', 'file': 'a4_purchase.json', 'type': 'a4'},
-  {'name': 'فاتورة مشتريات — A4', 'file': 'a4_purchase_invoice.json', 'type': 'a4'},
-  {'name': 'مرتجع مشتريات — A4', 'file': 'a4_purchase_return.json', 'type': 'a4'},
+  {
+    'name': 'فاتورة مشتريات — A4',
+    'file': 'a4_purchase_invoice.json',
+    'type': 'a4',
+  },
+  {
+    'name': 'مرتجع مشتريات — A4',
+    'file': 'a4_purchase_return.json',
+    'type': 'a4',
+  },
   {'name': 'سند قبض / صرف', 'file': 'a4_receipt_voucher.json', 'type': 'a4'},
-  {'name': 'كشف حساب عميل — A4', 'file': 'a4_customer_statement.json', 'type': 'statement'},
-  {'name': 'كشف حساب مورد — A4', 'file': 'a4_supplier_statement.json', 'type': 'statement'},
-  {'name': 'نموذج تقرير عام — A4', 'file': 'a4_report_generic.json', 'type': 'report'},
+  {
+    'name': 'كشف حساب عميل — A4',
+    'file': 'a4_customer_statement.json',
+    'type': 'statement',
+  },
+  {
+    'name': 'كشف حساب مورد — A4',
+    'file': 'a4_supplier_statement.json',
+    'type': 'statement',
+  },
+  {
+    'name': 'نموذج تقرير عام — A4',
+    'file': 'a4_report_generic.json',
+    'type': 'report',
+  },
 ];
 
 /// Combined template data for printing

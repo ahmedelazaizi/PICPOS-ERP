@@ -336,7 +336,7 @@ class PicPosDataTable extends StatelessWidget {
                 Text(
                   c.count,
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: fg.withValues(alpha: .75),
                   ),
@@ -550,7 +550,7 @@ class PicPosDataTable extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         textAlign: end ? TextAlign.end : TextAlign.start,
                         style: TextStyle(
-                          fontSize: 10.5,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: context.picposMuted,
                         ),

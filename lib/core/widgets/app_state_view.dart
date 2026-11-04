@@ -24,6 +24,7 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../theme/app_colors.dart';
+import '../theme/core_surface_colors.dart';
 import 'app_empty_state.dart';
 import 'shimmer_loading.dart';
 
@@ -75,13 +76,14 @@ class AppErrorView extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    const Icon(PhosphorIconsBold.warningCircle,
-                        color: AppColors.error, size: 40),
+                    Icon(PhosphorIconsBold.warningCircle,
+                        color: context.coreStatusText(AppColors.error),
+                        size: 40),
                     const SizedBox(height: 12),
                     Text(
                       message,
-                      style: const TextStyle(
-                        color: AppColors.error,
+                      style: TextStyle(
+                        color: context.coreStatusText(AppColors.error),
                         fontSize: 14,
                       ),
                       textAlign: TextAlign.center,

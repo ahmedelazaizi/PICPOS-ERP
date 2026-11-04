@@ -1,6 +1,19 @@
 // Party statement-tab queries: aging invoices, payments, 3-way match, profile rates, papers; batch lookup + search.
 part of '../database.dart';
 
+/// قيمةُ عمودٍ رقميّ كما تصل من `customSelect`، أيّاً كان شكلُها.
+///
+/// ⚠️ **PostgreSQL قد يُعيد `numeric` (ومنه `AVG`) نصّاً لا `num`**، فـ`as num?`
+/// يرمي `type 'String' is not a subtype of type 'num?'` ويُسقط التبويب كلَّه.
+/// النصُّ الرقميُّ يُقرأ هنا رقماً، وكلُّ ما عدا ذلك يعود `null` بلا رمي.
+///
+/// عامّةٌ (بلا `_`) كي تختبرها `test/unit/party_profile_as_num_test.dart`.
+num? asNumOrNull(Object? value) {
+  if (value is num) return value;
+  if (value is String) return num.tryParse(value.trim());
+  return null;
+}
+
 extension PartyProfileDao on AppDatabase {
   // ═══════════════════════════════════════════════════════════════════════
   // كشفُ حساب الطرف — استعلاماتُ التبويبات (تصميمُ 2026-08-26)
@@ -61,19 +74,19 @@ extension PartyProfileDao on AppDatabase {
     ).get();
 
     DateTime at2(QueryRow r, String key) => DateTime.fromMillisecondsSinceEpoch(
-      ((r.data[key] as num?)?.toInt() ?? 0) * 1000,
+      (asNumOrNull(r.data[key])?.toInt() ?? 0) * 1000,
     );
 
     return rows
         .map(
           (r) => PartyOpenInvoiceRow(
-            invoiceId: (r.data['id'] as num?)?.toInt() ?? 0,
+            invoiceId: asNumOrNull(r.data['id'])?.toInt() ?? 0,
             invoiceNumber: r.data['invoice_number'] as String? ?? '',
             invoiceDate: at2(r, 'invoice_date'),
             dueDate: at2(r, 'due_at'),
-            total: (r.data['total'] as num?)?.toDouble() ?? 0,
-            paid: (r.data['paid'] as num?)?.toDouble() ?? 0,
-            daysLate: (r.data['days_late'] as num?)?.toInt() ?? 0,
+            total: asNumOrNull(r.data['total'])?.toDouble() ?? 0,
+            paid: asNumOrNull(r.data['paid'])?.toDouble() ?? 0,
+            daysLate: asNumOrNull(r.data['days_late'])?.toInt() ?? 0,
           ),
         )
         .toList();
@@ -113,15 +126,15 @@ extension PartyProfileDao on AppDatabase {
     return rows
         .map(
           (r) => PartyPaymentMatchRow(
-            paymentId: (r.data['id'] as num?)?.toInt() ?? 0,
+            paymentId: asNumOrNull(r.data['id'])?.toInt() ?? 0,
             paymentNumber: r.data['payment_number'] as String? ?? '',
             paymentDate: DateTime.fromMillisecondsSinceEpoch(
-              ((r.data['payment_date'] as num?)?.toInt() ?? 0) * 1000,
+              (asNumOrNull(r.data['payment_date'])?.toInt() ?? 0) * 1000,
             ),
-            amount: (r.data['amount'] as num?)?.toDouble() ?? 0,
-            allocated: (r.data['allocated'] as num?)?.toDouble() ?? 0,
+            amount: asNumOrNull(r.data['amount'])?.toDouble() ?? 0,
+            allocated: asNumOrNull(r.data['allocated'])?.toDouble() ?? 0,
             method: r.data['payment_method'] as String? ?? '',
-            invoiceCount: (r.data['invoice_count'] as num?)?.toInt() ?? 0,
+            invoiceCount: asNumOrNull(r.data['invoice_count'])?.toInt() ?? 0,
           ),
         )
         .toList();
@@ -172,19 +185,19 @@ extension PartyProfileDao on AppDatabase {
     ).get();
 
     DateTime? maybe(QueryRow r, String key) {
-      final v = (r.data[key] as num?)?.toInt();
+      final v = asNumOrNull(r.data[key])?.toInt();
       return v == null ? null : DateTime.fromMillisecondsSinceEpoch(v * 1000);
     }
 
     return rows
         .map(
           (r) => PoMatchRow(
-            orderId: (r.data['order_id'] as num?)?.toInt() ?? 0,
+            orderId: asNumOrNull(r.data['order_id'])?.toInt() ?? 0,
             orderNumber: r.data['order_number'] as String? ?? '',
             productName: r.data['product_name'] as String? ?? '',
-            ordered: (r.data['ordered'] as num?)?.toDouble() ?? 0,
-            received: (r.data['received'] as num?)?.toDouble() ?? 0,
-            invoiced: (r.data['invoiced'] as num?)?.toDouble() ?? 0,
+            ordered: asNumOrNull(r.data['ordered'])?.toDouble() ?? 0,
+            received: asNumOrNull(r.data['received'])?.toDouble() ?? 0,
+            invoiced: asNumOrNull(r.data['invoiced'])?.toDouble() ?? 0,
             orderDate: maybe(r, 'order_date') ?? DateTime(2020),
             expectedDate: maybe(r, 'expected_date'),
             receivedAt: maybe(r, 'received_at'),
@@ -253,14 +266,14 @@ extension PartyProfileDao on AppDatabase {
         variables: [Variable(partyId)],
         readsFrom: {purchaseOrders},
       ).getSingle();
-      received = (po.data['n'] as num?)?.toInt() ?? 0;
-      onTimeOrders = (po.data['on_time'] as num?)?.toInt() ?? 0;
+      received = asNumOrNull(po.data['n'])?.toInt() ?? 0;
+      onTimeOrders = asNumOrNull(po.data['on_time'])?.toInt() ?? 0;
     }
 
     return PartyProfileMetrics(
-      settledInvoices: (settle.data['n'] as num?)?.toInt() ?? 0,
-      avgSettlementDays: (settle.data['avg_days'] as num?)?.toDouble() ?? 0,
-      onTimeSettlements: (settle.data['on_time'] as num?)?.toInt() ?? 0,
+      settledInvoices: asNumOrNull(settle.data['n'])?.toInt() ?? 0,
+      avgSettlementDays: asNumOrNull(settle.data['avg_days'])?.toDouble() ?? 0,
+      onTimeSettlements: asNumOrNull(settle.data['on_time'])?.toInt() ?? 0,
       receivedOrders: received,
       onTimeOrders: onTimeOrders,
     );
@@ -331,24 +344,24 @@ extension PartyProfileDao on AppDatabase {
     ).get();
 
     DateTime at(QueryRow r, String key) => DateTime.fromMillisecondsSinceEpoch(
-      ((r.data[key] as num?)?.toInt() ?? 0) * 1000,
+      (asNumOrNull(r.data[key])?.toInt() ?? 0) * 1000,
     );
 
     return rows.map((r) {
-      final lastPaid = (r.data['last_paid_at'] as num?)?.toInt();
+      final lastPaid = asNumOrNull(r.data['last_paid_at'])?.toInt();
       return PartySettlementRow(
-        invoiceId: (r.data['id'] as num?)?.toInt() ?? 0,
+        invoiceId: asNumOrNull(r.data['id'])?.toInt() ?? 0,
         invoiceNumber: r.data['invoice_number'] as String? ?? '',
         invoiceDate: at(r, 'invoice_date'),
         dueDate: at(r, 'due_at'),
-        total: (r.data['total'] as num?)?.toDouble() ?? 0,
-        paid: (r.data['paid'] as num?)?.toDouble() ?? 0,
+        total: asNumOrNull(r.data['total'])?.toDouble() ?? 0,
+        paid: asNumOrNull(r.data['paid'])?.toDouble() ?? 0,
         // صفرٌ من `MAX` على مجموعةٍ فارغةٍ لا يقع (تعود `NULL`)، لكنّ صفراً
         // مخزَّناً يعني ١٩٧٠ — وهو ليس تاريخَ سدادٍ فيُقرأ «لم يُسدَّد».
         lastPaymentDate: (lastPaid == null || lastPaid <= 0)
             ? null
             : DateTime.fromMillisecondsSinceEpoch(lastPaid * 1000),
-        allocationCount: (r.data['alloc_count'] as num?)?.toInt() ?? 0,
+        allocationCount: asNumOrNull(r.data['alloc_count'])?.toInt() ?? 0,
       );
     }).toList();
   }

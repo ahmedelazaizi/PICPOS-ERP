@@ -172,20 +172,28 @@ extension PurchaseReturnReadsDao on AppDatabase {
     final rows = await customSelect(
       '''
       SELECT product_id,
-             COALESCE(SUM(ABS(quantity)), 0.0) AS qty
+             COALESCE(SUM(CASE
+               WHEN reference_type = 'purchase_return'
+                 AND movement_type = 'purchase_return' THEN ABS(quantity)
+               WHEN reference_type = 'purchase_return_reverse'
+                 AND movement_type = 'purchase_return_reverse' THEN -ABS(quantity)
+               ELSE 0 END), 0.0) AS qty
       FROM stock_movements
-      WHERE reference_type = 'purchase_return'
-        AND reference_id = ?
+      WHERE reference_id = ?
+        AND deleted_at IS NULL
+         AND reference_type IN ('purchase_return', 'purchase_return_reverse')
       GROUP BY product_id
       ''',
       variables: [Variable<int>(invoiceId)],
       readsFrom: {stockMovements},
     ).get();
-    return {
-      for (final row in rows)
-        row.data['product_id'] as int:
-            (row.data['qty'] as num?)?.toDouble() ?? 0.0,
-    };
+    final quantities = <int, double>{};
+    for (final row in rows) {
+      final netReturned = (row.data['qty'] as num?)?.toDouble() ?? 0.0;
+      quantities[row.data['product_id'] as int] =
+          netReturned > 0 ? netReturned : 0.0;
+    }
+    return quantities;
   }
 
   /// Get the ACTUAL returned items for a purchase return from stock_movements.

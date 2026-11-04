@@ -12,6 +12,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/models/picpos_booking_view.dart';
 import 'booking_permission_gates.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class BookingsDestinationTabs extends ConsumerWidget {
   const BookingsDestinationTabs({super.key});
@@ -78,13 +79,13 @@ class BookingsDestinationTabs extends ConsumerWidget {
                     ? Colors.white10
                     : const Color(0xFFF4F7FC),
                 hintText: tr('بحث سريع (اسم، هاتف، خدمة...)'),
-                hintStyle: const TextStyle(
+                hintStyle: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textMuted,
+                  color: context.picposMuted,
                 ),
-                prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass,
-                    size: 15, color: AppColors.textMuted),
+                prefixIcon: Icon(PhosphorIconsBold.magnifyingGlass,
+                    size: 15, color: context.picposMuted),
                 prefixIconConstraints:
                     const BoxConstraints(minWidth: 34, minHeight: 34),
                 border: OutlineInputBorder(
@@ -136,14 +137,14 @@ class _Tab extends StatelessWidget {
             children: [
               Icon(icon,
                   size: 14,
-                  color: selected ? Colors.white : AppColors.textMuted),
+                  color: selected ? Colors.white : context.picposMuted),
               const SizedBox(width: 6),
               Text(
                 tr(label),
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                  color: selected ? Colors.white : AppColors.textMuted,
+                  color: selected ? Colors.white : context.picposMuted,
                 ),
               ),
             ],

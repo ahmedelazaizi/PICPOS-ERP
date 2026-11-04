@@ -32,7 +32,7 @@ class SystemPartyBadge extends StatelessWidget {
         child: Text(
           tr('نظامي'),
           style: const TextStyle(
-            fontSize: 9,
+            fontSize: 11,
             fontWeight: FontWeight.w800,
             color: AppColors.info,
           ),

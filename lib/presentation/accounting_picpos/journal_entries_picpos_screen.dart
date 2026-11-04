@@ -762,13 +762,13 @@ class _Chip extends StatelessWidget {
           children: [
             Icon(icon,
                 size: 14,
-                color: active ? AppColors.primary : AppColors.textMuted),
+                color: active ? AppColors.primary : context.picposMuted),
             const SizedBox(width: 8),
             Text(label,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: active
                         ? AppColors.primary
-                        : AppColors.textSecondary)),
+                        : context.picposSecondary)),
           ],
         ),
       ),
@@ -895,7 +895,7 @@ class _TotalCard extends StatelessWidget {
               children: [
                 Text(label,
                     style: text.labelSmall
-                        ?.copyWith(color: AppColors.textMuted)),
+                        ?.copyWith(color: context.picposMuted)),
                 Text(value,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -995,7 +995,7 @@ class _EntryCard extends StatelessWidget {
                     width: 96,
                     child: Text(dateFormat.format(entry.entryDate),
                         style: text.labelMedium
-                            ?.copyWith(color: AppColors.textSecondary)),
+                            ?.copyWith(color: context.picposSecondary)),
                   ),
                   Expanded(
                     child: Text(
@@ -1020,12 +1020,12 @@ class _EntryCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   // ثلاثةُ أعمدةِ التصميم — من الاستعلام المُجمَّع.
-                  _NumCell(value: balance.debit, tint: AppColors.textPrimary),
-                  _NumCell(value: balance.credit, tint: AppColors.textPrimary),
+                  _NumCell(value: balance.debit, tint: context.picposText),
+                  _NumCell(value: balance.credit, tint: context.picposText),
                   _NumCell(
                     value: balance.difference,
                     tint: balance.isBalanced
-                        ? AppColors.textMuted
+                        ? context.picposMuted
                         : AppColors.error,
                     bold: !balance.isBalanced,
                   ),
@@ -1059,7 +1059,7 @@ class _EntryCard extends StatelessWidget {
                         ? PhosphorIconsBold.caretUp
                         : PhosphorIconsBold.caretDown,
                     size: 14,
-                    color: AppColors.textMuted,
+                    color: context.picposMuted,
                   ),
                 ],
               ),
@@ -1139,7 +1139,7 @@ class _EntryFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    const muted = AppColors.textMuted;
+    final muted = context.picposMuted;
     final target = resolveJournalSourceTarget(
       referenceType: entry.referenceType,
       referenceId: entry.referenceId,
@@ -1300,7 +1300,7 @@ class _LinesTable extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: (head ? text.labelSmall : text.labelMedium)?.copyWith(
-            color: head ? AppColors.textMuted : context.picposText,
+            color: head ? context.picposMuted : context.picposText,
             fontWeight: head ? FontWeight.w800 : FontWeight.w600,
           ),
         );
@@ -1373,7 +1373,7 @@ class _LinesTable extends StatelessWidget {
                 // بكم ولا في أيّ اتّجاه، فلا يُعرَف أهو ضجيجُ تقريبٍ أم
                 // سطرٌ ناقص. والرقمُ **بإشارته**: موجبٌ مدينٌ زائد.
                 Text(tr('الفرق'), style: text.labelSmall
-                    ?.copyWith(color: AppColors.textMuted)),
+                    ?.copyWith(color: context.picposMuted)),
                 const SizedBox(width: 5),
                 Text(
                   balance.difference

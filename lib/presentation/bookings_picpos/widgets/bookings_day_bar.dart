@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import '../screens/bookings_picpos_screen.dart'
     show bookingDayLabel, bookingTabularFigures;
 
@@ -91,7 +92,7 @@ class BookingsDayBar extends StatelessWidget {
               border: Border.all(color: theme.dividerColor),
               borderRadius: BorderRadius.circular(9),
             ),
-            child: Icon(icon, size: 13, color: AppColors.textMuted),
+            child: Icon(icon, size: 13, color: context.picposMuted),
           ),
         ),
       ),

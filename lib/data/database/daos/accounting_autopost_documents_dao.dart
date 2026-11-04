@@ -195,7 +195,7 @@ extension AccountingAutopostDocumentsDao on AppDatabase {
     }).toList();
     if (zeroCostTrackedCr.isNotEmpty) {
       final names = zeroCostTrackedCr.map((r) => r.data['name'] as String? ?? '#${r.data['product_id']}').join('، ');
-      final policy = (await getSettingValue('zero_cost_policy')) ?? 'warn';
+      final policy = (await getSettingValue('zero_cost_policy')) ?? kDefaultZeroCostPolicy;
       if (policy == 'block') {
         throw Exception(
           'تعذّر ترحيل الفاتورة ${sale.invoiceNumber}: '

@@ -229,25 +229,18 @@ extension FixedAssetsDao on AppDatabase {
         ),
       );
 
-      // ── Acquisition JE — UNCHANGED (Constitution I, behavior preservation)
-      //
-      // The per-asset sub-account above is created and linked but does NOT
-      // receive the acquisition entry in v1. The acquisition JE continues to
-      // debit the CATEGORY's asset account exactly as before so existing
-      // fixed-asset reports keep their numbers identical across the cohort
-      // boundary. Per-asset GL flows are deferred to a future spec.
-      Account? creditAccount;
-      if (contraAccountId != null) {
-        creditAccount = await accountingDao.getAccountById(contraAccountId);
-      }
-      creditAccount ??= await _assetGetAccountByCode('1111');
+      // Cash purchases without a contra use a linked safe; the category stays debited.
+      final assetBranchId = await _resolveBranchFromCostCenter(costCenterId);
+      final funding = await _resolveFixedAssetFunding(contraAccountId, assetBranchId);
+      final creditAccount = funding.account;
+      final acquisitionSafe = funding.safe;
 
       // v166 — العميلُ لا يُرحّل: `referenceId` هنا رقمُ الأصل **المحلّيّ**،
       // ومفتاحُ إزالة تكرار القيد `(referenceType, referenceId)`. فلو رحّل
       // الطرفان لصار للاقتناء الواحد قيدان لا يمسكهما شيءٌ لأنّ مفتاحَيهما
       // مختلفان — وأصلٌ يظهر في الأستاذ بضعف قيمته.
       if (creditAccount != null && !SyncInterceptor.isClientMode) {
-        await accountingDao.createJournalEntry(
+        final entryId = await accountingDao.createJournalEntry(
           date: purchaseDate,
           description: 'شراء أصل ثابت: $name',
           lines: [
@@ -268,8 +261,17 @@ extension FixedAssetsDao on AppDatabase {
           referenceId: assetId,
           isAutoPosted: true,
           costCenterId: costCenterId,
-          branchId: await _resolveBranchFromCostCenter(costCenterId),
+          branchId: assetBranchId,
         );
+        await _recordFixedAssetCashPayment((
+          entryId: entryId,
+          contraAccountId: contraAccountId,
+          account: creditAccount,
+          safe: acquisitionSafe,
+          assetId: assetId,
+          amount: purchasePrice,
+          costCenterId: costCenterId,
+        ));
       }
 
       return assetId;
