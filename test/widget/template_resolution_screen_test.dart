@@ -34,23 +34,22 @@ InvoiceTemplate _template(
   required String category,
   double width = 210,
   bool isDefault = false,
-}) =>
-    InvoiceTemplate(
-      id: id,
-      name: name,
-      type: type,
-      templateCategory: category,
-      isDefault: isDefault,
-      paperSize: width > 100 ? 'A4' : 'thermal',
-      paperWidth: width,
-      margins: '10,10,10,10',
-      defaultFont: 'Cairo',
-      defaultFontSize: 10,
-      isActive: true,
-      layoutVersion: 1,
-      createdAt: _t0,
-      updatedAt: _t0,
-    );
+}) => InvoiceTemplate(
+  id: id,
+  name: name,
+  type: type,
+  templateCategory: category,
+  isDefault: isDefault,
+  paperSize: width > 100 ? 'A4' : 'thermal',
+  paperWidth: width,
+  margins: '10,10,10,10',
+  defaultFont: 'Cairo',
+  defaultFontSize: 10,
+  isActive: true,
+  layoutVersion: 1,
+  createdAt: _t0,
+  updatedAt: _t0,
+);
 
 TemplateBinding _binding(
   int id, {
@@ -59,19 +58,18 @@ TemplateBinding _binding(
   int? branchId,
   String? locale,
   int copies = 1,
-}) =>
-    TemplateBinding(
-      id: id,
-      documentType: documentType,
-      templateId: templateId,
-      branchId: branchId,
-      locale: locale,
-      copies: copies,
-      directPrint: false,
-      priority: 0,
-      createdAt: _t0,
-      updatedAt: _t0,
-    );
+}) => TemplateBinding(
+  id: id,
+  documentType: documentType,
+  templateId: templateId,
+  branchId: branchId,
+  locale: locale,
+  copies: copies,
+  directPrint: false,
+  priority: 0,
+  createdAt: _t0,
+  updatedAt: _t0,
+);
 
 /// مستودعُ قوالبَ زائفٌ يخدم الثلاثَ التي تقرؤها الشاشة.
 ///
@@ -116,10 +114,16 @@ void main() {
   //   • `sales_receipt` ⇐ افتراضيُّ فئةٍ لا يتقاسمه أحد ⇒ «بالفئة»
   //   • ما عداهما بلا رابطةٍ ولا افتراضيّ            ⇒ «بلا قالب»
   final templates = [
-    _template(1, 'فاتورة مبيعات ضريبية — A4',
-        type: 'a4', category: 'invoice'),
-    _template(2, 'بيع سريع حراري — 80mm',
-        type: 'thermal', category: 'receipt', width: 80, isDefault: true),
+    _template(1, 'فاتورة مبيعات ضريبية — A4', type: 'a4', category: 'invoice'),
+    _template(3, 'قالب بعرض 58', type: 'a4', category: 'invoice', width: 58),
+    _template(
+      2,
+      'بيع سريع حراري — 80mm',
+      type: 'thermal',
+      category: 'receipt',
+      width: 80,
+      isDefault: true,
+    ),
   ];
 
   final bindings = [
@@ -127,23 +131,50 @@ void main() {
   ];
 
   const branches = [
-    Branche(id: 1, name: 'فرع المعادي', isActive: true,
-        isSystemDefault: true, rowVersion: 0),
-    Branche(id: 2, name: 'فرع مدينة نصر', isActive: true,
-        isSystemDefault: false, rowVersion: 0),
+    Branche(
+      id: 1,
+      name: 'فرع المعادي',
+      isActive: true,
+      isSystemDefault: true,
+      rowVersion: 0,
+    ),
+    Branche(
+      id: 2,
+      name: 'فرع مدينة نصر',
+      isActive: true,
+      isSystemDefault: false,
+      rowVersion: 0,
+    ),
   ];
 
-  Future<void> open(WidgetTester tester, Size size) async {
+  final printer80 = Printer(
+    id: 17,
+    name: 'طابعة 80',
+    printerType: 'thermal',
+    purpose: 'pos_receipt',
+    isActive: true,
+    paperWidthMm: 80,
+    createdAt: _t0,
+    rowVersion: 0,
+  );
+
+  Future<void> open(
+    WidgetTester tester,
+    Size size, {
+    List<Printer> printers = const [],
+  }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          invoiceTemplatesRepositoryProvider
-              .overrideWithValue(_FakeTemplatesRepo(templates, bindings)),
-          printersRepositoryProvider
-              .overrideWithValue(_FakePrintersRepo(const [])),
+          invoiceTemplatesRepositoryProvider.overrideWithValue(
+            _FakeTemplatesRepo(templates, bindings),
+          ),
+          printersRepositoryProvider.overrideWithValue(
+            _FakePrintersRepo(printers),
+          ),
           allBranchesProvider.overrideWith((ref) => Stream.value(branches)),
         ],
         child: const MaterialApp(home: TemplateResolutionPicposScreen()),
@@ -164,8 +195,11 @@ void main() {
     ]) {
       testWidgets('${e.$1} — بلا فيضٍ ولا انهيار', (tester) async {
         await open(tester, e.$2);
-        expect(tester.takeException(), isNull,
-            reason: 'انهيارُ تخطيطٍ عند العرض ${e.$2.width}');
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: 'انهيارُ تخطيطٍ عند العرض ${e.$2.width}',
+        );
 
         // ومحتوىً ظاهرٌ فعلاً — لا شجرةٌ فارغةٌ تمرّ خضراء.
         expect(find.text('حسم القوالب والطابعات'), findsOneWidget);
@@ -187,45 +221,61 @@ void main() {
   });
 
   group('الحالُ مشتقٌّ من القاعدة لا مكتوب', () {
-    testWidgets('رابطةٌ صريحةٌ ⇒ «مضبوط» · افتراضيُّ فئةٍ ⇒ «بالفئة»',
-        (tester) async {
+    testWidgets('رابطةٌ صريحةٌ ⇒ «مضبوط» · افتراضيُّ فئةٍ ⇒ «بالفئة»', (
+      tester,
+    ) async {
       await open(tester, const Size(1920, 1080));
 
       // `sales_invoice` أوّلُ صفٍّ فهو المحدَّد ابتداءً، فحالُه يظهر
       // **مرّتين**: شارةً في الجدول وعنواناً لصندوق الحكم في اللوحة.
-      expect(find.text('مضبوط'), findsNWidgets(2),
-          reason: 'رابطةُ `sales_invoice` وحدَها صريحة — شارةٌ وحكم');
-      expect(find.text('بالفئة'), findsOneWidget,
-          reason: 'افتراضيُّ (thermal, receipt) يخدم `sales_receipt` وحدَه، '
-              'وهو غيرُ محدَّدٍ فلا حكمَ له في اللوحة');
+      expect(
+        find.text('مضبوط'),
+        findsNWidgets(2),
+        reason: 'رابطةُ `sales_invoice` وحدَها صريحة — شارةٌ وحكم',
+      );
+      expect(
+        find.text('بالفئة'),
+        findsOneWidget,
+        reason:
+            'افتراضيُّ (thermal, receipt) يخدم `sales_receipt` وحدَه، '
+            'وهو غيرُ محدَّدٍ فلا حكمَ له في اللوحة',
+      );
 
       // والقالبُ المحسومُ يُقرأ باسمه من القاعدة.
       expect(find.text('فاتورة مبيعات ضريبية — A4'), findsWidgets);
       await teardownTree(tester);
     });
 
-    testWidgets('وما لا قالبَ له ⇒ «بلا قالب» — بعدد الأنواع الباقية',
-        (tester) async {
+    testWidgets('وما لا قالبَ له ⇒ «بلا قالب» — بعدد الأنواع الباقية', (
+      tester,
+    ) async {
       await open(tester, const Size(1920, 1080));
       // عشرةُ أنواعٍ، اثنان محسومان ⇒ ثمانيةٌ بلا قالب.
       expect(find.text('بلا قالب'), findsNWidgets(8));
       await teardownTree(tester);
     });
 
-    testWidgets('وعدّادُ الترويسة يعدّ ما تعرضه الشجرةُ نفسُها',
-        (tester) async {
+    testWidgets('وعدّادُ الترويسة يعدّ ما تعرضه الشجرةُ نفسُها', (
+      tester,
+    ) async {
       await open(tester, const Size(1920, 1080));
       expect(find.text('مسارات الطباعة'), findsWidgets);
       expect(find.text('حسم سليم'), findsOneWidget);
       expect(find.text('يحتاج معالجة'), findsOneWidget);
       // ثمانيةٌ «بلا قالب» — وهي الحمراءُ الوحيدةُ في هذه التجهيزة.
-      expect(find.text('8'), findsWidgets, reason: 'عدّادُ «يحتاج معالجة» ليس ٨');
+      expect(
+        find.text('8'),
+        findsWidgets,
+        reason: 'عدّادُ «يحتاج معالجة» ليس ٨',
+      );
       await teardownTree(tester);
     });
   });
 
   group('اللوحةُ تشرح السلسلةَ كاملةً', () {
-    testWidgets('المستوياتُ السبعةُ معروضةٌ وفائزٌ واحدٌ موسوم', (tester) async {
+    testWidgets('المستوياتُ السبعةُ معروضةٌ وفائزٌ واحدٌ موسوم', (
+      tester,
+    ) async {
       await open(tester, const Size(1920, 1080));
 
       expect(find.text('سلسلة السقوط'), findsOneWidget);
@@ -238,11 +288,18 @@ void main() {
         '٦ · الفئة (السلوك القائم)',
         '٧ · التصميم المدمج في الكود',
       ]) {
-        expect(find.text(level), findsOneWidget, reason: 'المستوى «$level» غائب');
+        expect(
+          find.text(level),
+          findsOneWidget,
+          reason: 'المستوى «$level» غائب',
+        );
       }
 
-      expect(find.text('المُطبَّق'), findsOneWidget,
-          reason: 'فائزان معروضان = سلسلةٌ تكذب');
+      expect(
+        find.text('المُطبَّق'),
+        findsOneWidget,
+        reason: 'فائزان معروضان = سلسلةٌ تكذب',
+      );
       await teardownTree(tester);
     });
 
@@ -256,9 +313,13 @@ void main() {
       await tester.tap(find.text('فرع مدينة نصر'));
       await tester.pumpAndSettle();
 
-      expect(find.text('sales_invoice · 2 · — · ar'), findsOneWidget,
-          reason: 'المفتاحُ لا يتبع المرشِّح — فالشاشةُ تصف حسماً غيرَ '
-              'المطلوب');
+      expect(
+        find.text('sales_invoice · 2 · — · ar'),
+        findsOneWidget,
+        reason:
+            'المفتاحُ لا يتبع المرشِّح — فالشاشةُ تصف حسماً غيرَ '
+            'المطلوب',
+      );
       expect(find.text('sales_invoice · 2 · * · ar'), findsOneWidget);
       await teardownTree(tester);
     });
@@ -274,6 +335,25 @@ void main() {
       ]) {
         expect(find.text(key), findsOneWidget, reason: 'المفتاحُ «$key»');
       }
+      await teardownTree(tester);
+    });
+
+    testWidgets('حوار الربط يعرض عروض الورق ويشرح القالب غير المتوافق', (
+      tester,
+    ) async {
+      await open(tester, const Size(1920, 1080), printers: [printer80]);
+      await tester.tap(find.text('ربط بطابعة').first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('ربط القالب بطابعة'), findsOneWidget);
+      expect(find.textContaining('طابعة 80'), findsOneWidget);
+      expect(find.textContaining('80.0 مم'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('binding-template-picker')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('سيُقصّ المطبوع'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text('إلغاء').last);
+      await tester.pumpAndSettle();
       await teardownTree(tester);
     });
 

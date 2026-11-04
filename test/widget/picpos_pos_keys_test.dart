@@ -1,5 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:picpos_erp/domain/models/quick_sale_policy.dart';
+import 'package:picpos_erp/presentation/pos_picpos/screens/picpos_pos_screen.dart'
+    show shouldKickDrawer;
 import 'package:picpos_erp/presentation/pos_picpos/widgets/picpos_pos_shortcuts.dart';
 
 /// Guards the PicPos POS key map (طلب ٤).
@@ -47,8 +50,15 @@ void main() {
       expect(label, contains('درج'));
     });
 
-    test('F2 stays a plain save — no print, no drawer', () {
+    test('F2 is a save without print; it opens the drawer on cash per policy',
+        () {
+      // Decision 2026-10-30: the label stays 'حفظ' (no print promise), but the
+      // drawer is decided by `shouldKickDrawer` (cash / mixed-with-cash only,
+      // gated by the `drawer` setting), independent of receipt printing.
       expect(picposShortcutLabels[LogicalKeyboardKey.f2], 'حفظ');
+      const onPolicy = QuickSalePolicyValues({'pos_open_drawer_on_print': 'true'});
+      expect(shouldKickDrawer(onPolicy, method: 'cash'), isTrue);
+      expect(shouldKickDrawer(onPolicy, method: 'card'), isFalse);
     });
 
     test('every key has a non-empty Arabic label', () {

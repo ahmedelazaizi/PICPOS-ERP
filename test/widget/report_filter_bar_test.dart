@@ -143,14 +143,13 @@ void main() {
       await tester.pumpWidget(_wrap(width: 800));
       await tester.pump();
 
-      final chip = find.widgetWithText(ChoiceChip, 'اليوم');
-      expect(chip, findsOneWidget,
-          reason: 'date preset chip must be in the widget tree');
-
-      // tester.tap might warn-if-hit-miss because the chip is inside scroll
-      // views, but we don't require it to fire here — finding is enough to
-      // prove the layer is reachable. Use warnIfMissed: false for safety.
-      await tester.tap(chip, warnIfMissed: false);
+      // PicPos intentionally renders date presets as styled InkWell labels,
+      // not Material ChoiceChip widgets; the user-visible contract is the
+      // preset's presence and callback when tapped.
+      final preset = find.text('اليوم');
+      expect(preset, findsOneWidget,
+          reason: 'date preset must be visible in the active brand bar');
+      await tester.tap(preset, warnIfMissed: false);
       await tester.pump();
 
       expect(chipTaps, greaterThan(0),

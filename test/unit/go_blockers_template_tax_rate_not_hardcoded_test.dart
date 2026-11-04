@@ -60,7 +60,7 @@ const _templates = <List<String>>[
   ['a4_commercial.json', 'a4', 'receipt', 'فاتورة A4 تجارية'],
   ['a4_sales_tax_invoice.json', 'a4', 'invoice', 'فاتورة مبيعات ضريبية — A4'],
   ['a5_sales_tax_invoice.json', 'a4', 'invoice', 'فاتورة مبيعات ضريبية — A5'],
-  ['a4_sales_return.json', 'a4', 'invoice', 'مرتجع مبيعات — A4'],
+  ['a4_sales_return.json', 'a4', 'sales_return', 'مرتجع مبيعات — A4'],
   ['a4_purchase_invoice.json', 'a4', 'purchase', 'فاتورة مشتريات — A4'],
   ['a4_purchase_return.json', 'a4', 'purchase', 'مرتجع مشتريات — A4'],
   ['thermal80_quick_sale.json', 'thermal', 'receipt', 'بيع سريع حراري — 80mm'],

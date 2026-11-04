@@ -1,8 +1,9 @@
-﻿// سيناريو (ي): فترة/سنة مالية مقفلة ترفض الترحيل بتاريخ فيها — وبلا أي أثر جانبي
+// سيناريو (ي): فترة/سنة مالية مقفلة ترفض الترحيل بتاريخ فيها — وبلا أي أثر جانبي
 // (لا مخزون ولا خزينة ولا قيد) لأن العملية تتراجع كاملة.
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:picpos_erp/data/providers/providers.dart';
+import 'package:picpos_erp/core/permissions/fiscal_permission_codes.dart';
 import 'package:picpos_erp/domain/repositories/purchases_repository.dart';
 
 import 'scenario_world.dart';
@@ -96,6 +97,7 @@ void main() {
             name: 'السنة المالية 2024',
             startDate: DateTime(2024, 1, 1),
             endDate: DateTime(2024, 12, 31)));
+    await w.grant(FiscalPermissionCodes.fiscalYearClose);
     await w.db.closeFiscalYear(yearId, w.userId);
     final entries = (await w.db
             .customSelect('select count(*) n from journal_entries')
@@ -123,6 +125,7 @@ void main() {
             name: 'السنة المالية 2023',
             startDate: DateTime(2023, 1, 1),
             endDate: DateTime(2023, 12, 31)));
+    await w.grant(FiscalPermissionCodes.fiscalYearClose);
     await w.db.closeFiscalYear(yearId, w.userId);
     await w.expectSaleRejected(
         w.sellRaw([w.line(product, 1, 100)], date: DateTime(2023, 3, 1)),

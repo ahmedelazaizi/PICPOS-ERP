@@ -27,6 +27,7 @@ void main() {
   late int defaultBankAccountId;
   late int defaultCashAccountId;
   late int chosenBankAccountId;
+  late int linkedCashAccountId;
   late int paperId;
 
   setUp(() async {
@@ -57,6 +58,14 @@ void main() {
     // clear to CASH, so the no-override / stale-override fallbacks land here.
     final defaultCash = await db.getAccountByCode('1111');
     defaultCashAccountId = defaultCash!.id;
+    final linkedCashSafe = await (db.select(db.safes)
+          ..where((safe) => safe.safeType.equals('cash') &
+              safe.isActive.equals(true) & safe.linkedAccountId.isNotNull())
+          ..orderBy([(safe) => OrderingTerm(
+              expression: safe.isDefault, mode: OrderingMode.desc)])
+          ..limit(1))
+        .getSingle();
+    linkedCashAccountId = linkedCashSafe.linkedAccountId!;
 
     // The user-chosen "غير الافتراضي" bank account — mirror what the
     // field operator would pick from the autocomplete.
@@ -106,6 +115,12 @@ void main() {
     );
   }
 
+  Future<void> clearCashSafeLinks() async {
+    await (db.update(db.safes)
+          ..where((safe) => safe.safeType.equals('cash')))
+        .write(const SafesCompanion(linkedAccountId: Value(null)));
+  }
+
   // Spec 136 (cf13866) redefined 'deposited' as an intermediate "برسم التحصيل"
   // state that posts NO JE/safe movement — the treasury account is hit ONCE at
   // 'cashed'. These tests therefore exercise the counterAccountId contract on
@@ -113,7 +128,11 @@ void main() {
   // collection (pending→cashed, no deposit) clears to CASH, so the no-override /
   // stale-override fallbacks land on the default CASH account (1111).
   test('cashed transition without counterAccountId falls back to default '
-      'cash purpose account (legacy behaviour preserved)', () async {
+      'cash purpose account when the safe has no linked account', () async {
+    // Before FS-05, an implicit cash collection always posted to purpose 1111
+    // (id 4). It now follows the receiving safe's linked GL account (id 181);
+    // preserve the old fallback specifically for an unlinked safe.
+    await clearCashSafeLinks();
     await db.changePaperStatus(
       paperId: paperId,
       newStatus: 'cashed',
@@ -150,6 +169,22 @@ void main() {
     expect(bankLeg.debit, 100);
   });
 
+  test('cashed transition without override posts to receiving safe GL account',
+      () async {
+    await db.changePaperStatus(
+      paperId: paperId,
+      newStatus: 'cashed',
+      changedBy: 0,
+    );
+
+    final cashLeg = await findBankLegFor(paperId);
+    expect(cashLeg, isNotNull);
+    expect(cashLeg!.accountId, linkedCashAccountId,
+        reason: 'FS-05 posts to the linked ledger account of the safe receiving the money; the numeric fixture is 181');
+    expect(cashLeg.accountId, isNot(defaultCashAccountId));
+    expect(cashLeg.debit, 100);
+  });
+
   test('cashed transition WITH counterAccountId posts on the chosen '
       'cash safe (not the default 1111)', () async {
     // Set up a non-default cash account the user might pick.
@@ -174,9 +209,11 @@ void main() {
     expect(cashLeg!.accountId, chosenCashId);
   });
 
-  test('stale counterAccountId silently falls back to default '
-      '(robust against deleted/synced-away accounts)', () async {
-    // Use an id that definitely does not exist in the local DB.
+  test('stale counterAccountId falls back to purpose account if safe unlinked',
+      () async {
+    // Keep the legacy missing-account fallback (1111/id 4); the explicit
+    // stale id is rejected and no linked safe exists to supply another target.
+    await clearCashSafeLinks();
     const ghostId = 999999;
 
     await db.changePaperStatus(

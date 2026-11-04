@@ -13,21 +13,28 @@ void main() {
       'lib/presentation/accounting_picpos/account_mapping_purposes.dart';
   const seederPath = 'lib/data/database/database_seeder_accounts.dart';
   const reportsDaoPath = 'lib/data/database/daos/accounting_reports_dao.dart';
+  const reportsAdjustmentsPath =
+      'lib/data/database/daos/accounting_reports_adjustments.dart';
 
   /// Purpose keys the classifier reads that are NOT user-mappable screens'
-  /// entries but are still resolved by the report DAO. Each must be read by
-  /// `accounting_reports_dao.dart` (asserted below).
+  /// entries but are still resolved by the reports DAO. The implementation
+  /// may live in its `accounting_reports_adjustments.dart` part, so both files
+  /// are checked below.
   const reportOnlyPurposes = {'depreciation_expense'};
 
   late String purposesSrc;
   late String seederSrc;
+  late String reportsAdjustmentsSrc;
 
   setUpAll(() {
-    for (final p in [purposesPath, seederPath, reportsDaoPath]) {
+    for (final p in [
+      purposesPath, seederPath, reportsDaoPath, reportsAdjustmentsPath,
+    ]) {
       expect(File(p).existsSync(), isTrue, reason: 'update the path: $p');
     }
     purposesSrc = File(purposesPath).readAsStringSync();
     seederSrc = File(seederPath).readAsStringSync();
+    reportsAdjustmentsSrc = File(reportsAdjustmentsPath).readAsStringSync();
   });
 
   Set<String> purposeKeys() => RegExp(r"AccountMappingPurpose\(\s*'([a-z0-9_]+)'")
@@ -52,12 +59,13 @@ void main() {
   });
 
   test('report-only purpose keys are still read by the reports DAO', () {
-    final dao = File(reportsDaoPath).readAsStringSync();
+    final daoAndParts =
+        '${File(reportsDaoPath).readAsStringSync()}\n$reportsAdjustmentsSrc';
     for (final key in reportOnlyPurposes) {
       expect(classifierPurposeKeys, contains(key),
           reason: '$key is no longer used by the classifier; drop it here');
-      expect(dao, contains("'$key'"),
-          reason: '$key is no longer resolved by the reports DAO');
+      expect(daoAndParts, contains("'$key'"),
+          reason: '$key is no longer resolved by the reports DAO or its part');
     }
   });
 

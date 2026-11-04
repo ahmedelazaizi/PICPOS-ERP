@@ -1,5 +1,5 @@
 # قالب «مرتجع مبيعات — A4»
-# نوع=a4 فئة=invoice ورق=210.0mm
+# نوع=a4 فئة=sales_return ورق=210.0mm
 # راسم=TemplatedInvoiceService
 PAGES 1
 PAGE 1 595.27x841.88

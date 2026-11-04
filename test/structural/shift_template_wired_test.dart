@@ -22,7 +22,8 @@ import 'package:flutter_test/flutter_test.dart';
 import '../helpers/library_source.dart';
 
 const _printPath = 'lib/services/printing/shift_closing_print.dart';
-const _servicePath = 'lib/services/templated_invoice_service.dart';
+// منذ refactor e505b10c صار محلّل القنوات في طبقة القيم domain، لا الخدمة.
+const _valuesPath = 'lib/domain/printing/print_values.dart';
 const _palettePath =
     'lib/presentation/screens/invoice_designer/invoice_designer_ui.dart';
 const _sectionPath =
@@ -50,7 +51,7 @@ void main() {
   // التقريرُ لا يجمع. وهذا يمتدّ لأيّ قناةٍ تُضاف لاحقاً.
   group('§٥-٢ — كلُّ قناةِ دفعٍ حاضرةٌ في الطبقات الأربع', () {
     const layers = <String, String>{
-      _servicePath: 'الحلُّ — بلاها ترجع `null` فيختفي العنصر',
+      _valuesPath: 'الحلُّ — بلاها ترجع `null` فيختفي العنصر',
       _palettePath: 'لوحةُ المصمّم — بلاها لا يملك المستخدمُ وضعَها',
       _sectionPath: 'محرِّرُ الأقسام — بلاها لا تظهر في التحرير السريع',
       _seederPath: 'القالبُ المبذور — بلاها لا يجمع المطبوعُ الافتراضيّ',

@@ -217,6 +217,8 @@ void main() {
       await fixture.db.setSetting('prices_include_tax', 'true');
       final invoice = await _postTaxSale(fixture, paid: 0, inclusive: true,
           lineDiscountPercent: 10, invoiceDiscountPercent: 10, deliveryFee: 2);
+      // FS-09 intentionally moves 7.60 of discounts from net-only 4121 to
+      // gross 4121 plus debit 4212; net revenue remains 27.93.
       await _expectTaxSale(fixture, invoice, total: 34.40, tax: 4.47,
           revenue: 27.93, paid: 0, deliveryFee: 2, discount: 7.60);
     });
@@ -433,7 +435,9 @@ Future<void> _expectTaxSale(_Fx fixture, SalesInvoiceData invoice, {
       .fold<double>(0, (sum, line) => sum + line.credit);
   expect(journalLines.fold<double>(0, (sum, line) => sum + line.debit),
       closeTo(journalLines.fold<double>(0, (sum, line) => sum + line.credit), 0.001));
-  expect(credit('4121'), revenue);
+  expect(credit('4121'), closeTo(revenue + discount, 0.001));
+  expect(debit('4212'), closeTo(discount, 0.001));
+  expect(credit('4121') - debit('4212'), closeTo(revenue, 0.001));
   expect(credit('2121'), tax);
   expect(paid > 0 ? debit('1111') : debit('1121'), total);
 }

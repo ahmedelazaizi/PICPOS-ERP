@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNotNull;
 import 'package:picpos_erp/data/database/database.dart';
 import 'package:picpos_erp/domain/entities/accounting_entities.dart';
+import 'package:picpos_erp/core/permissions/fiscal_permission_codes.dart';
 
 /// PIR Integration Test 4 — Fiscal Period Blocking
 ///
@@ -32,6 +33,11 @@ void main() {
       displayName: 'PIR Fiscal Tester',
       roleId: roleId,
     );
+    await db.syncAllPermissions();
+    final closePermission = await (db.select(db.permissions)
+      ..where((p) => p.code.equals(FiscalPermissionCodes.fiscalYearClose))
+      ..limit(1)).getSingle();
+    await db.addPermissionToRole(roleId, closePermission.id);
 
     final wh = await db.getDefaultWarehouse();
     warehouseId = wh!.id;

@@ -39,6 +39,7 @@
 
 import 'package:picpos_erp/data/database/database.dart';
 import 'package:picpos_erp/domain/entities/accounting_entities.dart';
+import 'package:picpos_erp/core/permissions/fiscal_permission_codes.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:flutter_test/flutter_test.dart';
 
@@ -70,6 +71,12 @@ void main() {
       displayName: 'E2E Tester',
       roleId: roleId,
     );
+    await db.syncAllPermissions();
+    for (final code in [FiscalPermissionCodes.fiscalPeriodClose, FiscalPermissionCodes.fiscalYearClose]) {
+      final permission = await (db.select(db.permissions)
+        ..where((p) => p.code.equals(code))..limit(1)).getSingle();
+      await db.addPermissionToRole(roleId, permission.id);
+    }
 
     // The forTesting() database seeds a default fiscal year + monthly
     // periods. Re-use them if present; create otherwise.
@@ -752,7 +759,7 @@ void main() {
             ..limit(1))
           .getSingle();
       await db.closeAccountingPeriod(m1.id, userId);
-      await db.reopenAccountingPeriod(m1.id);
+      await db.reopenAccountingPeriod(m1.id, userId);
 
       final id = await db.createJournalEntry(
         description: 'After reopen',

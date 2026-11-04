@@ -17,6 +17,7 @@ import 'package:picpos_erp/services/deployment/provisioning_record.dart';
 import 'package:picpos_erp/services/deployment/reconcile_result.dart';
 import 'package:picpos_erp/services/mirror_state.dart';
 import 'package:picpos_erp/services/network_service.dart';
+import 'package:picpos_erp/services/secure_token_store.dart';
 import 'package:picpos_erp/services/server_proxy.dart';
 
 ProvisioningRecord _record({
@@ -45,14 +46,17 @@ void main() {
 
   late AppDatabase db;
 
-  setUp(() {
+  setUp(() async {
     driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
     SharedPreferences.setMockInitialValues({});
     DiagnosticLogger.enableTestMode();
     NetworkService.instance.debugSetModeForTests(NetworkMode.standalone);
     NetworkService.instance.setServerAddress('', port: 8080);
     MirrorState.instance.debugSetForTests();
+    // setApiToken يطلق الحذف دون انتظار؛ SecureTokenStore يسلسل العمليات لكل
+    // مفتاح، فقراءةٌ واحدة تنتظر اكتمال الحذف قبل أن يزرع الاختبار رمزاً.
     ServerProxy.instance.setApiToken('');
+    await SecureTokenStore.instance.read(SecureTokenStore.apiToken);
     ProvisioningApplier.last = const AdoptReport();
     db = AppDatabase.forTesting();
   });

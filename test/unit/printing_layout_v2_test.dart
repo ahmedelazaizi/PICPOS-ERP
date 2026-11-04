@@ -16,6 +16,9 @@ import 'dart:typed_data';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/domain/entities/shift_closing_snapshot.dart';
+import 'package:picpos_erp/domain/printing/print_values.dart';
+import 'package:picpos_erp/services/printing/template_render_pipeline.dart';
 import 'package:picpos_erp/services/templated_invoice_service.dart';
 
 import '../helpers/pdf_probe.dart';
@@ -43,26 +46,39 @@ void main() {
 
       // إعادةُ رسمٍ ثانيةٍ بلا أيّ تغيير — نفسُ الورقة بالضبط.
       final again = probePdf(await _render(db, id));
-      expect(again.fingerprint(), v1.fingerprint(),
-          reason: 'المسارُ القديمُ صار غيرَ حتميّ — وهو أوّلُ ما يُفسد بصمة');
+      expect(
+        again.fingerprint(),
+        v1.fingerprint(),
+        reason: 'المسارُ القديمُ صار غيرَ حتميّ — وهو أوّلُ ما يُفسد بصمة',
+      );
     });
 
-    test('الترقيةُ إلى ٢ تُبدّل المطبوعَ فعلاً — البوّابةُ ليست زينة', () async {
-      final id = await _import(db, 'a4_sales_tax_invoice.json');
-      final v1 = probePdf(await _render(db, id));
+    test(
+      'الترقيةُ إلى ٢ تُبدّل المطبوعَ فعلاً — البوّابةُ ليست زينة',
+      () async {
+        final id = await _import(db, 'a4_sales_tax_invoice.json');
+        final v1 = probePdf(await _render(db, id));
 
-      await _setVersion(db, id, 2);
-      final v2 = probePdf(await _render(db, id));
+        await _setVersion(db, id, 2);
+        final v2 = probePdf(await _render(db, id));
 
-      expect(v2.fingerprint(), isNot(equals(v1.fingerprint())),
-          reason: 'بوّابةٌ لا تُغيّر شيئاً تعني أن المحرّكَ لم يُنادَ أصلاً');
-      expect(v2.allTexts, isNotEmpty,
-          reason: 'المسارُ الجديدُ أخرج ورقةً فارغة — أسوأُ من ألّا يُوصَل');
-    });
+        expect(
+          v2.fingerprint(),
+          isNot(equals(v1.fingerprint())),
+          reason: 'بوّابةٌ لا تُغيّر شيئاً تعني أن المحرّكَ لم يُنادَ أصلاً',
+        );
+        expect(
+          v2.allTexts,
+          isNotEmpty,
+          reason: 'المسارُ الجديدُ أخرج ورقةً فارغة — أسوأُ من ألّا يُوصَل',
+        );
+      },
+    );
 
     test('كلُّ ملفِّ أصولٍ يخرج بورقٍ فيه بياناتٌ تحت النسخة ٢', () async {
       final files = _assetFiles();
-      expect(files.length, 19);
+      // ٢٥ أصلًا الآن: العدد السابق ١٩ زاد بستة قوالب بقرار المالك.
+      expect(files.length, 25);
 
       final empty = <String>[];
       final missingNumber = <String>[];
@@ -78,14 +94,20 @@ void main() {
         // ورقةٌ فيها نصٌّ ليست ورقةً فيها **بيانات**: قالبٌ يطبع عناوينَه
         // الثابتةَ ويسقط كلَّ قيمةٍ يمرّ هذا الفحصَ لو اكتفينا بالعدّ.
         final all = probe.allTexts.map((r) => r.text).join(' ');
-        final carriesData = all.contains(kFixtureInvoiceNumber) ||
+        final carriesData =
+            all.contains(kFixtureInvoiceNumber) ||
             all.contains('626.76') ||
-            all.contains('14/3/2026');
+            all.contains('14/3/2026') ||
+            // A shift summary is not an invoice and must prove its own data.
+            (name == 'thermal58_shift_closing.json' && all.contains('4200.50'));
         if (!carriesData) missingNumber.add(name);
       }
 
-      expect(empty, isEmpty,
-          reason: 'هذه القوالبُ تخرج شبهَ فارغةٍ تحت المحرّك الجديد');
+      expect(
+        empty,
+        isEmpty,
+        reason: 'هذه القوالبُ تخرج شبهَ فارغةٍ تحت المحرّك الجديد',
+      );
 
       // ── ثلاثةٌ لا تحمل بيانَ فاتورةٍ **بحقّ** ─────────────────────────
       //
@@ -130,13 +152,19 @@ void main() {
 
       final before = probePdf(await _render(db, id));
       final y0 = _yOf(before, marker);
-      expect(y0, isNotNull,
-          reason: 'العنصرُ المزروعُ لم يصل الورقةَ — القياسُ على فراغ');
+      expect(
+        y0,
+        isNotNull,
+        reason: 'العنصرُ المزروعُ لم يصل الورقةَ — القياسُ على فراغ',
+      );
       // والشرطُ المسبقُ **مُعلَنٌ لا مضمَر**: يسقط الاختبارُ بسببه لا برقمٍ
       // لا معنى له، فيعرف من يقرؤه أنّ التجهيزةَ تحتاج فسحةً لا أنّ
       // الإحداثيَّ انكسر.
-      expect(before.pageCount, 1,
-          reason: 'التجهيزةُ تجاوزت الصفحةَ — القياسُ عبر انقسامٍ لا يعني شيئاً');
+      expect(
+        before.pageCount,
+        1,
+        reason: 'التجهيزةُ تجاوزت الصفحةَ — القياسُ عبر انقسامٍ لا يعني شيئاً',
+      );
 
       await db.updateTemplateElement(
         elId,
@@ -149,9 +177,13 @@ void main() {
       expect(after.pageCount, 1, reason: 'انقسمت الورقةُ بعد السحب');
 
       // أعلى على الورق = ‏y أكبر (أصلُ الـPDF أسفلَ اليسار).
-      expect(y1! - y0!, closeTo(_fiveMmPts, 0.3),
-          reason: 'الإحداثيُّ الرأسيُّ لا يصل الورقةَ — وهي عينُ الخطوة ٣ '
-              'من فحص القبول. المقيس: ${(y1 - y0).toStringAsFixed(2)} نقطة');
+      expect(
+        y1! - y0!,
+        closeTo(_fiveMmPts, 0.3),
+        reason:
+            'الإحداثيُّ الرأسيُّ لا يصل الورقةَ — وهي عينُ الخطوة ٣ '
+            'من فحص القبول. المقيس: ${(y1 - y0).toStringAsFixed(2)} نقطة',
+      );
     });
 
     test('إزاحةٌ أفقيّةٌ ٥ مم تصل الورقةَ كذلك', () async {
@@ -172,24 +204,37 @@ void main() {
       // المحرّكُ يقيس السيناتِ من حافّة **البداية**، واليمينُ هو البداية في
       // RTL — فزيادةُ `x_mm` تُزحزح العنصرَ يساراً على الورق. والمقيسُ
       // المقدارُ لا الاتّجاه.
-      expect((x1! - x0!).abs(), closeTo(_fiveMmPts, 0.3),
-          reason: 'المحورُ الأفقيُّ لا يصل الورقة');
+      expect(
+        (x1! - x0!).abs(),
+        closeTo(_fiveMmPts, 0.3),
+        reason: 'المحورُ الأفقيُّ لا يصل الورقة',
+      );
     });
-    test('عنصرٌ بلا إحداثيّاتٍ لا يُفرِغ الورقةَ — يُشتقّ من التدفّق', () async {
-      // القالبُ المرقَّى إلى ٢ قبل أن يكتب المحرّرُ إحداثيّاتِه: مستندٌ
-      // مشتقٌّ خيرٌ من ورقةٍ بيضاء.
-      final id = await _import(db, 'thermal_classic.json');
-      await _setVersion(db, id, 2);
+    test(
+      'عنصرٌ بلا إحداثيّاتٍ لا يُفرِغ الورقةَ — يُشتقّ من التدفّق',
+      () async {
+        // القالبُ المرقَّى إلى ٢ قبل أن يكتب المحرّرُ إحداثيّاتِه: مستندٌ
+        // مشتقٌّ خيرٌ من ورقةٍ بيضاء.
+        final id = await _import(db, 'thermal_classic.json');
+        await _setVersion(db, id, 2);
 
-      final els = await db.getTemplateElements(id);
-      expect(els.every((e) => e.bandId == null), isTrue,
-          reason: 'المقدّمةُ سقطت — الملفُّ صار يحمل إحداثيّاتٍ فالفحصُ يقيس '
-              'مساراً آخر');
+        final els = await db.getTemplateElements(id);
+        expect(
+          els.every((e) => e.bandId == null),
+          isTrue,
+          reason:
+              'المقدّمةُ سقطت — الملفُّ صار يحمل إحداثيّاتٍ فالفحصُ يقيس '
+              'مساراً آخر',
+        );
 
-      final probe = probePdf(await _render(db, id));
-      expect(probe.allTexts.length, greaterThan(10),
-          reason: 'الاشتقاقُ من التدفّق لم يعمل، والورقةُ خرجت فارغة');
-    });
+        final probe = probePdf(await _render(db, id));
+        expect(
+          probe.allTexts.length,
+          greaterThan(10),
+          reason: 'الاشتقاقُ من التدفّق لم يعمل، والورقةُ خرجت فارغة',
+        );
+      },
+    );
   });
 
   // ═════════════════════════════════════════════════════════════════════════
@@ -212,32 +257,41 @@ void main() {
     ];
 
     final id = await _import(db, 'a4_sales_tax_invoice.json');
-    final v1 = (await _renderProbe(db, id)).allTexts.map((r) => r.text).join(' ');
+    final v1 = (await _renderProbe(
+      db,
+      id,
+    )).allTexts.map((r) => r.text).join(' ');
 
     await _setVersion(db, id, 2);
-    final v2 = (await _renderProbe(db, id)).allTexts.map((r) => r.text).join(' ');
+    final v2 = (await _renderProbe(
+      db,
+      id,
+    )).allTexts.map((r) => r.text).join(' ');
 
     final lostInV2 = [
       for (final v in values)
-        if (v1.contains(v) && !v2.contains(v)) v
+        if (v1.contains(v) && !v2.contains(v)) v,
     ];
-    expect(lostInV2, isEmpty,
-        reason: 'قيمٌ تصل الورقةَ في المسار القديم وتسقط في الجديد');
+    expect(
+      lostInV2,
+      isEmpty,
+      reason: 'قيمٌ تصل الورقةَ في المسار القديم وتسقط في الجديد',
+    );
   });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
 
-List<File> _assetFiles() => Directory(_assetDir)
-    .listSync()
-    .whereType<File>()
-    .where((f) => f.path.endsWith('.json'))
-    .toList()
-  ..sort((a, b) => a.path.compareTo(b.path));
+List<File> _assetFiles() =>
+    Directory(_assetDir)
+        .listSync()
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.json'))
+        .toList()
+      ..sort((a, b) => a.path.compareTo(b.path));
 
 Future<int> _import(AppDatabase db, String file) async =>
-    db.importTemplateFromJson(
-        await File('$_assetDir/$file').readAsString());
+    db.importTemplateFromJson(await File('$_assetDir/$file').readAsString());
 
 /// يستورد القالبَ ويكتب له نطاقاتٍ وإحداثيّاتٍ — محاكاةً لما يفعله المحرّرُ
 /// عند أوّل فتحٍ (الهجرةُ الكسولة).
@@ -283,16 +337,45 @@ Future<int> _importPositioned(AppDatabase db, String file) async {
   return id;
 }
 
-Future<void> _setVersion(AppDatabase db, int id, int v) => db.updateTemplate(
-      id,
-      InvoiceTemplatesCompanion(layoutVersion: Value(v)),
-    );
+Future<void> _setVersion(AppDatabase db, int id, int v) =>
+    db.updateTemplate(id, InvoiceTemplatesCompanion(layoutVersion: Value(v)));
 
 Future<PdfProbe> _renderProbe(AppDatabase db, int id) async =>
     probePdf(await _render(db, id));
 
 Future<Uint8List> _render(AppDatabase db, int templateId) async {
   final t = (await db.getTemplateById(templateId))!;
+  if (t.type == 'shift_closing' || t.type == 'kitchen') {
+    final data = (await db.getTemplateWithData(templateId))!;
+    return TemplateRenderPipeline.render(
+      template: data.template,
+      orderedElements: TemplatedInvoiceService.orderElementsForPrint(
+        data.elements,
+      ),
+      tableSettings: data.tableSettings,
+      payload: PrintPayload(
+        invoiceNumber: kFixtureInvoiceNumber,
+        date: kFixtureDate,
+        companyName: kFixtureCompanyName,
+        companyAddress: kFixtureCompanyAddress,
+        companyPhone: kFixtureCompanyPhone,
+        customerName: kFixtureCustomerName,
+        customerPhone: kFixtureCustomerPhone,
+        adhocCustomerName: '5',
+        orderNumber: '17',
+        notes: kFixtureNotes,
+        subtotal: kFixtureSubtotal,
+        discount: kFixtureDiscount,
+        tax: kFixtureTax,
+        deliveryFee: kFixtureDeliveryFee,
+        total: kFixtureTotal,
+        paid: kFixturePaid,
+        remaining: kFixtureTotal - kFixturePaid,
+      ),
+      items: kFixtureItems,
+      shift: t.type == 'shift_closing' ? kFixtureShift : null,
+    );
+  }
   await db.setDefaultTemplate(templateId);
 
   return (await TemplatedInvoiceService.printWithTemplate(
@@ -322,6 +405,30 @@ Future<Uint8List> _render(AppDatabase db, int templateId) async {
     salesType: 'delivery',
     cashAmount: 300.0,
     bankAmount: 200.0,
+    shift: t.type == 'shift_closing'
+        ? ShiftClosingSnapshot(
+            invoiceCount: 17,
+            totalSales: 1234.5,
+            systemCash: 900.25,
+            systemCard: 200.75,
+            systemClick: 133.5,
+            actualCash: 890.25,
+            actualCard: 205.75,
+            actualClick: 133.5,
+            cashVariance: -10,
+            cardVariance: 5,
+            clickVariance: 0,
+            totalVariance: -5,
+            totalExpenses: 60,
+            cashRefunds: 25,
+            cashIncome: 40,
+            creditSales: 300,
+            creditSalesCount: 3,
+            openingBalance: 100,
+            employeeName: 'صبري',
+            closedAt: DateTime(2026, 11, 3),
+          )
+        : null,
   )).bytes;
 }
 

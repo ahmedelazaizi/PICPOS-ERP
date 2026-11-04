@@ -242,7 +242,7 @@ List<String> _legacyStandaloneCalls() => [
       'save:pos_default_tax_rate=0.16',
       'commit:standalone:8080',
       'cache:deployment_mode=standalone',
-      'fiscalYear:2026:2026-01-01T00:00:00.000:2026-12-31T00:00:00.000',
+      'fiscalYear:2026:2026-01-01T00:00:00.000:2026-12-31T23:59:59.999',
       'periods:5',
       'save:setup_completed=true',
       'save:setup_in_progress=',

@@ -105,17 +105,20 @@ void main() {
   test('التجهيزة: المحرّكُ يرحّل الاقتناءَ والاستبعادَ على حسابِ النقديّة',
       () async {
     await seedCashAssetFlows();
-    final cash = await db.getAccountByCode('1111');
-    expect(cash, isNotNull);
+    final defaultCash = await db.getAccountByCode('1111');
+    final safe = await db.getDefaultSafeByType('cash');
+    final cashAccountIds = <int>{
+      if (defaultCash != null) defaultCash.id,
+      if (safe?.linkedAccountId != null) safe!.linkedAccountId!,
+    };
+    expect(cashAccountIds, isNotEmpty);
 
-    // شرطٌ مسبق: لولا وجودُ رِجْلِ نقدٍ في القيدَين لما قاس الاختبارُ شيئاً
-    // — الترشيحان في التقرير **كلاهما** مقيَّدٌ بحسابات النقد/البنك، فقيدٌ
-    // بلا نقدٍ يُقرأ صفراً في الطرفَين ويمرّ الاختبارُ زوراً.
+    // Check cash legs on both the legacy fallback and the linked safe account.
     final cashLines = await db.customSelect(
       'SELECT je.reference_type AS rt, jel.debit AS d, jel.credit AS c '
       'FROM journal_entry_lines jel '
       'INNER JOIN journal_entries je ON je.id = jel.entry_id '
-      'WHERE jel.account_id = ${cash!.id}',
+      'WHERE jel.account_id IN (${cashAccountIds.join(',')})',
     ).get();
     final refTypes = cashLines.map((r) => r.data['rt'] as String).toSet();
     expect(refTypes.length, 2,

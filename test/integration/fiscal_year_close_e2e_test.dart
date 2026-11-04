@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/drift.dart' hide isNotNull;
 import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/core/permissions/fiscal_permission_codes.dart';
 
 /// E2E Test: Fiscal Year Close
 /// Create Fiscal Year → Close Year → Verify Status
@@ -20,6 +21,11 @@ void main() {
       displayName: 'Fiscal Tester',
       roleId: roleId,
     );
+    await db.syncAllPermissions();
+    final closePermission = await (db.select(db.permissions)
+      ..where((p) => p.code.equals(FiscalPermissionCodes.fiscalYearClose))
+      ..limit(1)).getSingle();
+    await db.addPermissionToRole(roleId, closePermission.id);
   });
 
   tearDown(() async => db.close());

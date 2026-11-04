@@ -151,6 +151,8 @@ class FleetDevice {
 
   // parked globals
   Map<String, Object> prefs = {};
+  /// This device's flutter_secure_storage contents (see [Fleet.bindEnvironment]).
+  final Map<String, String> keystore = {};
   String? deviceId;
   String? apiToken;
   NetworkMode mode = NetworkMode.standalone;
@@ -254,12 +256,41 @@ class Fleet {
 
   // ───────────────────────────── lifecycle ─────────────────────────────
 
+  /// In-memory flutter_secure_storage. It must really store: `SecureTokenStore`
+  /// keeps the API token ONLY there when a write "succeeds", so a stub that
+  /// discards writes made pairing lose the token ("server not open for pairing").
+  static Map<String, String> _secureStorage = {};
+  static final Map<String, String> _mainSecure = {};
+
   static void bindEnvironment() {
     TestWidgetsFlutterBinding.ensureInitialized();
+    _mainSecure.clear();
+    _secureStorage = _mainSecure;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
             const MethodChannel('plugins.it_nomads.com/flutter_secure_storage'),
-            (call) async => null);
+            (call) async {
+      final a = (call.arguments as Map?) ?? const {};
+      final key = a['key'] as String?;
+      switch (call.method) {
+        case 'write':
+          _secureStorage[key!] = a['value'] as String;
+          return null;
+        case 'read':
+          return _secureStorage[key];
+        case 'delete':
+          _secureStorage.remove(key);
+          return null;
+        case 'deleteAll':
+          _secureStorage.clear();
+          return null;
+        case 'containsKey':
+          return _secureStorage.containsKey(key);
+        case 'readAll':
+          return Map<String, String>.of(_secureStorage);
+      }
+      return null;
+    });
   }
 
   /// The main, provisioned like the first-run server path does (production
@@ -424,6 +455,7 @@ class Fleet {
     if (identical(_active, d)) return;
     await _park();
     _active = d;
+    _secureStorage = d.keystore; // each device has its own keystore
     SharedPreferences.setMockInitialValues(Map<String, Object>.from(d.prefs));
     DeviceIdentityService.instance.resetForTest();
     if (d.deviceId != null) {
@@ -459,6 +491,7 @@ class Fleet {
   Future<void> useMain() async {
     await _park();
     _active = null;
+    _secureStorage = _mainSecure;
     NetworkService.instance.debugSetModeForTests(NetworkMode.server);
     SyncInterceptor.instance = null;
     SyncInterceptor.currentUserId = null;

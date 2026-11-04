@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
@@ -49,11 +50,11 @@ class FakeProbe extends FirstRunStorageProbe {
 
   @override
   Future<StorageProbeResult> probe() async => StorageProbeResult(
-        path: r'C:\Users\x\Documents\picpos_lite.db',
-        writable: writable,
-        hasPriorData: prior,
-        error: writable ? null : 'denied',
-      );
+    path: r'C:\Users\x\Documents\picpos_lite.db',
+    writable: writable,
+    hasPriorData: prior,
+    error: writable ? null : 'denied',
+  );
 }
 
 /// منفذُ كتابةٍ مسجِّل: يحفظ التسلسلَ، ويتذكّر الطاولات (idempotent بالاسم)،
@@ -113,16 +114,14 @@ class RecordingPersistence implements SetupPersistence, SetupTablesPort {
   }
 
   @override
-  Future<List<Warehouse>> getWarehousesByBranch(int branchId) async =>
-      const [];
+  Future<List<Warehouse>> getWarehousesByBranch(int branchId) async => const [];
   @override
   Future<void> updateWarehouse(Warehouse warehouse) async {}
   @override
   Future<int> createWarehouseForBranch({
     required String name,
     required int branchId,
-  }) async =>
-      1;
+  }) async => 1;
   @override
   Future<SafeData?> getDefaultSafeByType(String type) async => null;
   @override
@@ -161,6 +160,7 @@ class RecordingPersistence implements SetupPersistence, SetupTablesPort {
     clientBranchId = branchId;
     calls.add('clientBranch:$branchId');
   }
+
   @override
   Future<int> createFiscalYear(String n, DateTime s, DateTime e) async {
     calls.add('fiscal:$n');
@@ -197,21 +197,21 @@ class RecordingPersistence implements SetupPersistence, SetupTablesPort {
 }
 
 Branche testBranch(int id, String name, String code) => Branche(
-      id: id,
-      name: name,
-      code: code,
-      address: null,
-      phone: null,
-      isActive: true,
-      costCenterId: null,
-      globalId: 'g$id',
-      regionId: null,
-      isSystemDefault: false,
-      lastModifiedAt: null,
-      deletedAt: null,
-      originClientId: null,
-      rowVersion: 0,
-    );
+  id: id,
+  name: name,
+  code: code,
+  address: null,
+  phone: null,
+  isActive: true,
+  costCenterId: null,
+  globalId: 'g$id',
+  regionId: null,
+  isSystemDefault: false,
+  lastModifiedAt: null,
+  deletedAt: null,
+  originClientId: null,
+  rowVersion: 0,
+);
 
 /// تهيئةُ PostgreSQL مزيّفة: تسجّل النداءات وتفشل عند الطلب.
 class FakeProvisioning extends ServerProvisioningService {
@@ -264,13 +264,20 @@ class FakeServerWriter extends ServerSetupWriter {
   int writes = 0;
 
   @override
-  Future<ServerSetupReport> write(PostgresConfig cfg, ServerSetupInput input) async {
+  Future<ServerSetupReport> write(
+    PostgresConfig cfg,
+    ServerSetupInput input,
+  ) async {
     events.add('server-write');
     if (failWith != null) throw failWith!;
     writes++;
     lastInput = input;
     lastConfig = cfg;
-    return const ServerSetupReport(branchIds: {}, createdUsers: 0, updatedUsers: 0);
+    return const ServerSetupReport(
+      branchIds: {},
+      createdUsers: 0,
+      updatedUsers: 0,
+    );
   }
 }
 
@@ -300,8 +307,14 @@ class FakeLink implements ClientLinkPort {
     lastAddress = '$address:$port';
     lastDeviceName = deviceName;
     return pairOk
-        ? const ClientLinkResult(ClientLinkOutcome.devicePaired, message: 'paired')
-        : const ClientLinkResult(ClientLinkOutcome.pairFailed, message: 'bad code');
+        ? const ClientLinkResult(
+            ClientLinkOutcome.devicePaired,
+            message: 'paired',
+          )
+        : const ClientLinkResult(
+            ClientLinkOutcome.pairFailed,
+            message: 'bad code',
+          );
   }
 
   @override
@@ -315,15 +328,22 @@ class FakeLink implements ClientLinkPort {
     events.add(mirror ? 'sync-mirror' : 'sync');
     syncCalls++;
     if (!online) {
-      return const ClientLinkResult(ClientLinkOutcome.connectFailed,
-          message: 'no route to host');
+      return const ClientLinkResult(
+        ClientLinkOutcome.connectFailed,
+        message: 'no route to host',
+      );
     }
     if (!syncOk) {
-      return const ClientLinkResult(ClientLinkOutcome.syncFailed,
-          message: 'sync failed');
+      return const ClientLinkResult(
+        ClientLinkOutcome.syncFailed,
+        message: 'sync failed',
+      );
     }
-    return ClientLinkResult(ClientLinkOutcome.connected,
-        branches: branches, message: 'synced');
+    return ClientLinkResult(
+      ClientLinkOutcome.connected,
+      branches: branches,
+      message: 'synced',
+    );
   }
 
   @override
@@ -339,7 +359,10 @@ class FakeLink implements ClientLinkPort {
     lastDeviceName = deviceName;
     return pairOk
         ? const ClientLinkResult(ClientLinkOutcome.paired, message: 'mirror ok')
-        : const ClientLinkResult(ClientLinkOutcome.pairFailed, message: 'bad code');
+        : const ClientLinkResult(
+            ClientLinkOutcome.pairFailed,
+            message: 'bad code',
+          );
   }
 }
 
@@ -385,8 +408,9 @@ class FakeVerifier implements BranchAccountVerifierPort {
 late Map<String, String> englishCatalog;
 
 void loadEnglishCatalog() {
-  final decoded = jsonDecode(File('assets/i18n/en.json').readAsStringSync())
-      as Map<String, dynamic>;
+  final decoded =
+      jsonDecode(File('assets/i18n/en.json').readAsStringSync())
+          as Map<String, dynamic>;
   englishCatalog = {
     for (final e in decoded.entries)
       if (e.value is String) e.key: e.value as String,
@@ -403,9 +427,9 @@ class FirstRunHarness {
     MemorySettings? settings,
     RecordingPersistence? persistence,
     FakeProbe? probe,
-  })  : settings = settings ?? MemorySettings(),
-        persistence = persistence ?? RecordingPersistence(),
-        probe = probe ?? FakeProbe() {
+  }) : settings = settings ?? MemorySettings(),
+       persistence = persistence ?? RecordingPersistence(),
+       probe = probe ?? FakeProbe() {
     provisioning = FakeProvisioning(events);
     writer = FakeServerWriter(events);
     link = FakeLink(events);
@@ -426,32 +450,35 @@ class FirstRunHarness {
   late ProviderContainer container;
 
   FirstRunDraftStore makeStore() => FirstRunDraftStore(
-        read: settings.read,
-        write: settings.write,
-        debounce: const Duration(milliseconds: 20),
-        newId: () => 'draft-test-id',
-      );
+    read: settings.read,
+    write: settings.write,
+    debounce: const Duration(milliseconds: 20),
+    newId: () => 'draft-test-id',
+  );
 
   List<Override> get overrides => [
-        firstRunDraftStoreProvider.overrideWith((ref) {
-          final s = makeStore();
-          ref.onDispose(s.dispose);
-          return s;
-        }),
-        firstRunStorageProbeProvider.overrideWithValue(probe),
-        userLocaleProvider.overrideWith(FakeLocaleNotifier.new),
-        setupPersistenceProvider.overrideWithValue(persistence),
-        serverProvisioningServiceProvider.overrideWithValue(provisioning),
-        serverSetupWriterProvider.overrideWithValue(writer),
-        clientLinkPortProvider.overrideWithValue(link),
-        branchAccountVerifierProvider.overrideWithValue(verifier),
-        firstRunRolesProvider.overrideWith((ref) async => const [
-              FirstRunRoleOption(2, 'كاشير'),
-              FirstRunRoleOption(7, 'مدير فرع'),
-            ]),
-        firstRunLocalAddressesProvider
-            .overrideWith((ref) async => const ['192.168.1.20']),
-      ];
+    firstRunDraftStoreProvider.overrideWith((ref) {
+      final s = makeStore();
+      ref.onDispose(s.dispose);
+      return s;
+    }),
+    firstRunStorageProbeProvider.overrideWithValue(probe),
+    userLocaleProvider.overrideWith(FakeLocaleNotifier.new),
+    setupPersistenceProvider.overrideWithValue(persistence),
+    serverProvisioningServiceProvider.overrideWithValue(provisioning),
+    serverSetupWriterProvider.overrideWithValue(writer),
+    clientLinkPortProvider.overrideWithValue(link),
+    branchAccountVerifierProvider.overrideWithValue(verifier),
+    firstRunRolesProvider.overrideWith(
+      (ref) async => const [
+        FirstRunRoleOption(2, 'كاشير'),
+        FirstRunRoleOption(7, 'مدير فرع'),
+      ],
+    ),
+    firstRunLocalAddressesProvider.overrideWith(
+      (ref) async => const ['192.168.1.20'],
+    ),
+  ];
 
   Future<void> pump(
     WidgetTester tester, {
@@ -490,9 +517,92 @@ class FirstRunHarness {
   }
 }
 
+Finder _owningScrollable(Finder target) {
+  final scrollView = find
+      .ancestor(of: target, matching: find.byType(SingleChildScrollView))
+      .first;
+  return find
+      .descendant(of: scrollView, matching: find.byType(Scrollable))
+      .first;
+}
+
+Rect scrollViewportRect(WidgetTester tester, Finder target) {
+  final scrollable = _owningScrollable(target);
+  final scrollableRect = tester.getRect(scrollable);
+  final viewportDimension = tester
+      .state<ScrollableState>(scrollable)
+      .position
+      .viewportDimension;
+  return Rect.fromLTWH(
+    scrollableRect.left,
+    scrollableRect.top,
+    scrollableRect.width,
+    viewportDimension,
+  );
+}
+
+Future<void> scrollFullyIntoView(WidgetTester tester, Finder target) async {
+  final scrollViews = find.ancestor(
+    of: target,
+    matching: find.byType(SingleChildScrollView),
+  );
+  if (scrollViews.evaluate().isEmpty) {
+    await tester.ensureVisible(target);
+    return;
+  }
+
+  // Drag within the actual clipped viewport resolved above.
+  for (var attempt = 0; attempt < 8; attempt++) {
+    final targetRect = tester.getRect(target);
+    final viewportRect = scrollViewportRect(tester, target);
+    if (targetRect.top >= viewportRect.top &&
+        targetRect.bottom <= viewportRect.bottom) {
+      break;
+    }
+    final priorTop = targetRect.top;
+    await tester.dragFrom(viewportRect.center, const Offset(0, -160));
+    await tester.pumpAndSettle();
+    if (tester.getTopLeft(target).dy == priorTop) break;
+  }
+  await tester.ensureVisible(target);
+}
+
 Future<void> tapKey(WidgetTester tester, String key) async {
   final f = find.byKey(Key(key));
-  await tester.ensureVisible(f);
+  await scrollFullyIntoView(tester, f);
+  if (key == 'first_run_hq_user_add') {
+    // Its center can still coincide with the lower clip edge after
+    // ensureVisible; one more user-like drag clears that edge before tapping.
+    await tester.drag(_owningScrollable(f), const Offset(0, -160));
+    await tester.pumpAndSettle();
+  }
+  final scrollViews = find.ancestor(
+    of: f,
+    matching: find.byType(SingleChildScrollView),
+  );
+  if (scrollViews.evaluate().isNotEmpty) {
+    final visiblePart = tester
+        .getRect(f)
+        .intersect(scrollViewportRect(tester, f));
+    if (!visiblePart.isEmpty) {
+      // At a narrow step the button can be partly visible at the clip edge;
+      // tap its visible area rather than the off-viewport center.
+      if (visiblePart == tester.getRect(f)) {
+        await tester.tap(f);
+      } else {
+        await tester.tapAt(visiblePart.center);
+      }
+      await tester.pump();
+      if (key == 'first_run_hq_user_add') {
+        await tester.pump(const Duration(milliseconds: 50));
+        expect(
+          find.byKey(const Key('first_run_hq_user_name_0')),
+          findsOneWidget,
+        );
+      }
+      return;
+    }
+  }
   await tester.tap(f);
   await tester.pump();
 }
@@ -502,7 +612,7 @@ Future<void> enterKey(WidgetTester tester, String key, String text) async {
     of: find.byKey(Key(key)),
     matching: find.byType(TextField),
   );
-  await tester.ensureVisible(f);
+  await scrollFullyIntoView(tester, f);
   await tester.enterText(f, text);
   await tester.pump();
 }

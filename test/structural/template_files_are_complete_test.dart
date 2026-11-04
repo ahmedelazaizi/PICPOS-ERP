@@ -5,9 +5,9 @@
 // قائمة «النماذج الجاهزة» ⇒ **لا يراه المالكُ قطّ**. لا رسالةَ خطأٍ ولا مدخلَ
 // معطَّل — غيابٌ تامّ.
 //
-// وقد وقع فعلاً: كان في الـDAO **دالّتان بنفس الاسم**، إحداهما بثمانيةِ
-// ملفّاتٍ والأخرى بأربعة والثانيةُ محجوبةٌ لا تُنادى. فمن تسعةَ عشرَ ملفاً
-// بقي أحدَ عشرَ بلا مسار — وفيها كلُّ ما بُني المحرّكُ الجديدُ لأجله.
+// وقد وقع فعلاً قبل إصلاح قائمة الـDAO: كانت بعضُ الأصول بلا مسار استيراد.
+// أُضيفت ستةُ قوالب أخرى بقرار المالك؛ لذلك يثبت اختبار العدد الحدَّ الحالي
+// (٢٥) مع بقاء فحص المطابقة الطرفيّ أدناه هو الحارسَ الفعليّ.
 //
 // والحارسُ يقيس **الطرفين**: لا ملفَّ بلا مدخل، ولا مدخلَ بلا ملفّ. فالأوّلُ
 // يُخفي عملاً مشحوناً، والثاني يعرض على المالك خياراً ينهار عند الضغط.
@@ -20,13 +20,14 @@ import 'package:picpos_erp/data/database/database.dart';
 
 const _dir = 'assets/invoice_templates';
 
-List<String> _assetFiles() => (Directory(_dir)
-        .listSync()
-        .whereType<File>()
-        .map((f) => f.uri.pathSegments.last)
-        .where((n) => n.endsWith('.json'))
-        .toList())
-  ..sort();
+List<String> _assetFiles() =>
+    (Directory(_dir)
+          .listSync()
+          .whereType<File>()
+          .map((f) => f.uri.pathSegments.last)
+          .where((n) => n.endsWith('.json'))
+          .toList())
+      ..sort();
 
 void main() {
   test('كلُّ ملفٍّ في الأصول له مدخلٌ في قائمة النماذج الجاهزة', () {
@@ -34,9 +35,13 @@ void main() {
     final listed = kReadyTemplateFiles.map((e) => e['file']!).toSet();
 
     final missing = onDisk.difference(listed).toList()..sort();
-    expect(missing, isEmpty,
-        reason: 'هذه الملفّاتُ مشحونةٌ ولا يصلها مسارُ استيراد — لا يراها '
-            'المالكُ قطّ:\n  ${missing.join('\n  ')}');
+    expect(
+      missing,
+      isEmpty,
+      reason:
+          'هذه الملفّاتُ مشحونةٌ ولا يصلها مسارُ استيراد — لا يراها '
+          'المالكُ قطّ:\n  ${missing.join('\n  ')}',
+    );
   });
 
   test('ولا مدخلَ يشير إلى ملفٍّ غيرِ موجود', () {
@@ -44,9 +49,13 @@ void main() {
     final listed = kReadyTemplateFiles.map((e) => e['file']!).toSet();
 
     final ghosts = listed.difference(onDisk).toList()..sort();
-    expect(ghosts, isEmpty,
-        reason: 'خيارٌ يُعرض على المالك وينهار عند الضغط:\n'
-            '  ${ghosts.join('\n  ')}');
+    expect(
+      ghosts,
+      isEmpty,
+      reason:
+          'خيارٌ يُعرض على المالك وينهار عند الضغط:\n'
+          '  ${ghosts.join('\n  ')}',
+    );
   });
 
   test('واسمُ المدخل ونوعُه يطابقان ما في الملفّ', () {
@@ -73,11 +82,18 @@ void main() {
 
   group('ضابط: الحارسُ يمسك ما يدّعي', () {
     test('يقرأ ملفّاتٍ فعلاً ومدخلاتٍ فعلاً', () {
-      // بلا هذا يمرّ كلُّ ما فوقه على مجموعتين فارغتين.
-      expect(_assetFiles().length, greaterThanOrEqualTo(19),
-          reason: 'عددُ ملفّات الأصول انهار — الحارسُ يقيس فراغاً');
-      expect(kReadyTemplateFiles.length, greaterThanOrEqualTo(19),
-          reason: 'القائمةُ انكمشت — والفرقُ هو عينُ ما يحرسه هذا الملفّ');
+      // ٢٥ = ١٩ أصلاً + القوالب الستة الجديدة؛ المطابقة بالطرفين أعلاه تمنع
+      // أن يصبح هذا الحدّ العددي بديلاً عن التحقق من أسماء الملفات.
+      expect(
+        _assetFiles().length,
+        greaterThanOrEqualTo(25),
+        reason: 'عددُ ملفّات الأصول انهار — الحارسُ يقيس فراغاً',
+      );
+      expect(
+        kReadyTemplateFiles.length,
+        greaterThanOrEqualTo(25),
+        reason: 'القائمةُ انكمشت — والفرقُ هو عينُ ما يحرسه هذا الملفّ',
+      );
     });
 
     test('كلُّ مدخلٍ يحمل المفاتيحَ الثلاثة', () {
@@ -90,8 +106,11 @@ void main() {
 
     test('لا ملفَّ مكرَّرٌ في القائمة', () {
       final files = kReadyTemplateFiles.map((e) => e['file']!).toList();
-      expect(files.toSet().length, files.length,
-          reason: 'ملفٌّ مذكورٌ مرّتين — يُعرض خياران متطابقان');
+      expect(
+        files.toSet().length,
+        files.length,
+        reason: 'ملفٌّ مذكورٌ مرّتين — يُعرض خياران متطابقان',
+      );
     });
   });
 }

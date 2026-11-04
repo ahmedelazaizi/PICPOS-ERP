@@ -119,7 +119,8 @@ void main() {
       await tester.pump();
 
       expect(find.text('ألبان'), findsOneWidget);
-      await tester.tap(find.byType(Tab).at(1));
+      // PicPos renders these as InkWell tabs in PicPosReportTabs, not Tab widgets.
+      await tester.tap(find.text('حسب نوع البيع (Classification)').first);
       await tester.pumpAndSettle();
       expect(find.textContaining('secondary query failed'), findsOneWidget);
     },
@@ -197,7 +198,8 @@ void main() {
     expect(find.text('Stale category'), findsNothing);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.byType(Tab).at(1));
+    // PicPos renders these as InkWell tabs in PicPosReportTabs, not Tab widgets.
+    await tester.tap(find.text('حسب نوع البيع (Classification)').first);
     await tester.pumpAndSettle();
     expect(find.text('latest-type'), findsOneWidget);
     expect(find.textContaining('stale secondary failure'), findsNothing);

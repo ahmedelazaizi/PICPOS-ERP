@@ -12,6 +12,7 @@
 // الفوركَين، وحذفُ المدخل منها يسحب الشاشةَ من الفورك الآخر أيضاً. فالطريقةُ
 // هي نفسُ عقدِ `kPicPosFoldedIntoAccountingHub` القائم: إخفاءٌ بالفهرس.
 import 'package:flutter_test/flutter_test.dart';
+import 'package:picpos_erp/core/config/brand.dart';
 import 'package:picpos_erp/core/navigation/screen_id.dart';
 import 'package:picpos_erp/core/navigation/screen_registry.dart';
 import 'package:picpos_erp/data/providers/auth_providers.dart';
@@ -128,11 +129,11 @@ void main() {
     });
 
     test('ولا تُسحب من الفورك الآخر — القائمةُ مشتركة', () {
-      // الاختبارُ يعمل على العلامة الافتراضيّة (‏ليست PicPos)، فالمداخلُ
-      // الثلاثةُ يجب أن تبقى مرئيّةً لها.
+      // The retired-index list is PicPos-specific: verify the fork boundary
+      // for whichever compile-time brand this test invocation targets.
       for (final label in retiredLabels) {
-        expect(navItemVisibleForBrand(_byLabel(label).index), isTrue,
-            reason: '«$label» اختفت من الفورك الآخر — والتقاعدُ لـPicPos وحدَه');
+        expect(navItemVisibleForBrand(_byLabel(label).index), !Brand.isPicPos,
+            reason: '«$label» visibility must follow the active brand');
       }
     });
   });

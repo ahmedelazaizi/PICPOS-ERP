@@ -18,6 +18,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:drift_postgres/drift_postgres.dart';
 import 'package:postgres/postgres.dart' as pg;
 import 'package:picpos_erp/data/database/connection_io.dart';
 import 'package:picpos_erp/data/database/database.dart';
@@ -107,6 +108,26 @@ AppDatabase openExtraPgConnection() => AppDatabase.withExecutor(
       openPostgresConnection(_readDsnFromEnv()),
       isPostgres: true,
     );
+
+/// Same schema, but on a raw `PgDatabase` WITHOUT `_PgCompatInterceptor`.
+/// Models what runs inside `beforeOpen` (drift hands it the bare executor):
+/// only the source-level overrides in `AppDatabase` can translate SQL there.
+AppDatabase openUninterceptedPgDatabase() {
+  final c = _readDsnFromEnv();
+  return AppDatabase.withExecutor(
+    PgDatabase(
+      endpoint: pg.Endpoint(
+        host: c.host,
+        port: c.port,
+        database: c.database,
+        username: c.username,
+        password: c.password,
+      ),
+      settings: const pg.ConnectionSettings(sslMode: pg.SslMode.disable),
+    ),
+    isPostgres: true,
+  );
+}
 
 /// Open an [AppDatabase] connected to the test Postgres. Drift's migration
 /// runs on the first `db.<table>` access — for explicit warm-up the caller

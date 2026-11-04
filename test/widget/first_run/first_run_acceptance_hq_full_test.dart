@@ -3,6 +3,8 @@
 // التشغيل الآن» ومعلومات اتصال الفروع. بلا exit(0) قبل صفحة النجاح.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:picpos_erp/domain/models/first_run/first_run_draft.dart';
+import 'package:picpos_erp/domain/models/first_run/first_run_packs.dart';
 import 'package:picpos_erp/domain/models/first_run/first_run_path.dart';
 import 'package:picpos_erp/presentation/screens/first_run/first_run_controller.dart';
 
@@ -13,7 +15,48 @@ void main() {
   setUpAll(loadEnglishCatalog);
   tearDown(() => useLocale(english: false));
 
-  testWidgets('رئيسي كامل: الترتيب والمدخلات والنجاح وإعادة التشغيل', (tester) async {
+  testWidgets('زر إضافة المستخدم يصل إلى viewport بعد تمرير خطوة المقر', (
+    tester,
+  ) async {
+    useLocale(english: false);
+    final h = FirstRunHarness();
+    await h.pump(tester, size: const Size(1280, 720));
+    final controller = h.container.read(firstRunControllerProvider.notifier);
+    controller.selectPathTo(FirstRunPath.hq);
+    controller.update(
+      (draft) => draft.copyWith(
+        step: 3,
+        maxStep: 5,
+        pack: FirstRunPack.full,
+        branches: const [FirstRunBranchRow(code: 'BR-01', name: 'فرع')],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final button = find.byKey(const Key('first_run_hq_user_add'));
+
+    // The helper drags the clipped Viewport until the whole target—not only
+    // its center—lies within bounds, then applies ensureVisible as well.
+    await scrollFullyIntoView(tester, button);
+    var buttonRect = tester.getRect(button);
+    var viewport = scrollViewportRect(tester, button);
+    expect(buttonRect.top, greaterThanOrEqualTo(viewport.top));
+    expect(buttonRect.bottom, lessThanOrEqualTo(viewport.bottom));
+
+    await tester.ensureVisible(button);
+    buttonRect = tester.getRect(button);
+    viewport = scrollViewportRect(tester, button);
+    expect(buttonRect.top, greaterThanOrEqualTo(viewport.top));
+    expect(buttonRect.bottom, lessThanOrEqualTo(viewport.bottom));
+    await tester.tap(button);
+    await tester.pump();
+    expect(find.byKey(const Key('first_run_hq_user_name_0')), findsOneWidget);
+    await h.teardown(tester);
+  });
+
+  testWidgets('رئيسي كامل: الترتيب والمدخلات والنجاح وإعادة التشغيل', (
+    tester,
+  ) async {
     useLocale(english: false);
     final h = FirstRunHarness();
     await h.pump(tester);
@@ -62,66 +105,70 @@ void main() {
     await h.teardown(tester);
   });
 
-  testWidgets('فشل كتابة الخادم يبقى على المراجعة بلا تسليح ولا setup_completed',
-      (tester) async {
-    useLocale(english: false);
-    final h = FirstRunHarness();
-    h.writer.failWith = StateError('disk full');
-    await h.pump(tester);
-    await fillHqUntilReview(tester);
-    await tapKey(tester, 'first_run_finish');
-    await tester.pump(const Duration(milliseconds: 50));
+  testWidgets(
+    'فشل كتابة الخادم يبقى على المراجعة بلا تسليح ولا setup_completed',
+    (tester) async {
+      useLocale(english: false);
+      final h = FirstRunHarness();
+      h.writer.failWith = StateError('disk full');
+      await h.pump(tester);
+      await fillHqUntilReview(tester);
+      await tapKey(tester, 'first_run_finish');
+      await tester.pump(const Duration(milliseconds: 50));
 
-    expect(find.byKey(const Key('first_run_failure')), findsOneWidget);
-    expect(h.provisioning.armed, 0);
-    expect(h.events, isNot(contains('save:setup_completed')));
-    expect(h.events, isNot(contains('mode:server')));
+      expect(find.byKey(const Key('first_run_failure')), findsOneWidget);
+      expect(h.provisioning.armed, 0);
+      expect(h.events, isNot(contains('save:setup_completed')));
+      expect(h.events, isNot(contains('mode:server')));
 
-    // إعادة المحاولة بعد زوال العطل تنجح.
-    h.writer.failWith = null;
-    await tapKey(tester, 'first_run_finish');
-    await tester.pump(const Duration(milliseconds: 50));
-    expect(find.byKey(const Key('first_run_success_title')), findsOneWidget);
-    expect(h.provisioning.armed, 1);
-    await h.teardown(tester);
-  });
+      // إعادة المحاولة بعد زوال العطل تنجح.
+      h.writer.failWith = null;
+      await tapKey(tester, 'first_run_finish');
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.byKey(const Key('first_run_success_title')), findsOneWidget);
+      expect(h.provisioning.armed, 1);
+      await h.teardown(tester);
+    },
+  );
 
-  testWidgets('لا تقدّم من التخزين قبل نجاح تهيئة PostgreSQL، وتعديل الحقل يبطلها',
-      (tester) async {
-    useLocale(english: false);
-    final h = FirstRunHarness();
-    h.provisioning.provisionError = 'password authentication failed';
-    await h.pump(tester);
-    await tapKey(tester, 'first_run_path_hq');
-    await tapKey(tester, 'first_run_next');
-    await tapKey(tester, 'first_run_pack_pos');
-    await enterKey(tester, 'first_run_company_name', 'شركة');
-    await tapKey(tester, 'first_run_currency_EGP');
-    await tapKey(tester, 'first_run_next'); // storage
-    expect(find.byKey(const Key('first_run_pg_host')), findsOneWidget);
+  testWidgets(
+    'لا تقدّم من التخزين قبل نجاح تهيئة PostgreSQL، وتعديل الحقل يبطلها',
+    (tester) async {
+      useLocale(english: false);
+      final h = FirstRunHarness();
+      h.provisioning.provisionError = 'password authentication failed';
+      await h.pump(tester);
+      await tapKey(tester, 'first_run_path_hq');
+      await tapKey(tester, 'first_run_next');
+      await tapKey(tester, 'first_run_pack_pos');
+      await enterKey(tester, 'first_run_company_name', 'شركة');
+      await tapKey(tester, 'first_run_currency_EGP');
+      await tapKey(tester, 'first_run_next'); // storage
+      expect(find.byKey(const Key('first_run_pg_host')), findsOneWidget);
 
-    // بلا تهيئة: «التالي» معطّل.
-    FilledButton next() =>
-        tester.widget<FilledButton>(find.byKey(const Key('first_run_next')));
-    expect(next().onPressed, isNull);
+      // بلا تهيئة: «التالي» معطّل.
+      FilledButton next() =>
+          tester.widget<FilledButton>(find.byKey(const Key('first_run_next')));
+      expect(next().onPressed, isNull);
 
-    await tapKey(tester, 'first_run_pg_provision');
-    await tester.pump(const Duration(milliseconds: 50));
-    expect(find.byKey(const Key('first_run_pg_error')), findsOneWidget);
-    expect(next().onPressed, isNull);
+      await tapKey(tester, 'first_run_pg_provision');
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.byKey(const Key('first_run_pg_error')), findsOneWidget);
+      expect(next().onPressed, isNull);
 
-    // نجاح ⇒ يُفتح، ثم تعديل المضيف ⇒ يُغلق من جديد.
-    h.provisioning.provisionError = null;
-    await tapKey(tester, 'first_run_pg_provision');
-    await tester.pump(const Duration(milliseconds: 50));
-    expect(next().onPressed, isNotNull);
-    await enterKey(tester, 'first_run_pg_host', '10.0.0.5');
-    expect(next().onPressed, isNull);
-    final c = h.container.read(firstRunControllerProvider);
-    expect(c.draft.checks.provisioned, isFalse);
-    expect(c.draft.path, FirstRunPath.hq);
-    await h.teardown(tester);
-  });
+      // نجاح ⇒ يُفتح، ثم تعديل المضيف ⇒ يُغلق من جديد.
+      h.provisioning.provisionError = null;
+      await tapKey(tester, 'first_run_pg_provision');
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(next().onPressed, isNotNull);
+      await enterKey(tester, 'first_run_pg_host', '10.0.0.5');
+      expect(next().onPressed, isNull);
+      final c = h.container.read(firstRunControllerProvider);
+      expect(c.draft.checks.provisioned, isFalse);
+      expect(c.draft.path, FirstRunPath.hq);
+      await h.teardown(tester);
+    },
+  );
 
   testWidgets('كلمة مستخدم قصيرة أو مكررة تمنع التقدّم برسالة', (tester) async {
     useLocale(english: false);

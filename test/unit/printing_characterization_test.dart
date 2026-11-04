@@ -11,9 +11,9 @@
 //
 // ── مجموعتان لا واحدة — مقيسٌ لا مفترَض ──────────────────────────────────
 // ‏`seedDefaultTemplates` تبذر **١٣** قالباً (‏٧ غيرَ باركود)، بينما
-// `assets/invoice_templates/` فيه **١٩** ملفَّ JSON لا تُبذر بل تُستورد.
+// `assets/invoice_templates/` فيه **٢٥** ملفَّ JSON تُستورد ولا تُبذر؛ العدد السابق ١٩ زاد بستة قوالب بقرار المالك.
 // ولا تلتقي المجموعتان: القوالبُ المبذورةُ مكتوبةٌ في Dart، والملفّاتُ
-// التسعةَ عشرَ تدخل القاعدةَ عبر `importTemplateFromJson` وحدَها.
+// الخمسةُ والعشرون تدخل القاعدةَ عبر `importTemplateFromJson` وحدَها.
 //
 // فلو حَرَسنا المبذورةَ وحدَها لخرج أحدَ عشرَ ملفاً جديداً — وهي عينُ ما بُني
 // المحرّكُ الجديدُ لأجله — بلا شبكةِ أمانٍ إطلاقاً.
@@ -21,6 +21,10 @@
 // ── كيف تُحدَّث الملفّاتُ الذهبيّة ────────────────────────────────────────
 //     flutter test test/unit/printing_characterization_test.dart --update-goldens
 // ولا تُحدَّث إلّا بعد أن **تنظر** إلى الفرق وتُقرّ أنه مقصود.
+// 2026-11-03 F: أُعيد تثبيت بصمات قوالب 80mm التي رُقّيت إلى v2 بعد
+// إصلاح الأعمدة؛ تغيّر موضع العناصر/الجدول مقصود، بينما بقية المقاسات ثابتة.
+// 2026-11-03: تغيّر سطر metadata فقط لقالبَي sales_return بعد تصحيح
+// templateCategory في JSON؛ لم يتغيّر الرسم أو MediaBox.
 //
 // ⚠️ ولا يُقاس المطبوعُ ببصمةِ بايتات: الحزمةُ تكتب مُعرِّفَ وثيقةٍ مشتقّاً
 // من الوقت، فنداءان لنفس المدخل يعطيان بايتاتٍ مختلفة. المقيسُ المحتوى
@@ -86,7 +90,8 @@ void main() {
     test('تكبيرُ خطِّ عنصرٍ يظهر في البصمة — بحجمه وبإزاحة ما بعده', () async {
       await db.seedDefaultTemplates();
       final t = (await db.getAllTemplates()).firstWhere(
-          (t) => t.type == 'thermal' && t.templateCategory == 'receipt');
+        (t) => t.type == 'thermal' && t.templateCategory == 'receipt',
+      );
 
       final before = probePdf(await _renderViaService(db, t.id));
 
@@ -94,20 +99,23 @@ void main() {
       final target = els.firstWhere((e) => e.elementType == 'variable');
       await db.updateTemplateElement(
         target.id,
-        InvoiceTemplateElementsCompanion(
-          fontSize: Value(target.fontSize + 4),
-        ),
+        InvoiceTemplateElementsCompanion(fontSize: Value(target.fontSize + 4)),
       );
 
       final after = probePdf(await _renderViaService(db, t.id));
 
-      expect(after.fingerprint(), isNot(equals(before.fingerprint())),
-          reason: 'بصمةٌ عمياءُ عن تكبيرِ خطٍّ لا تحرس شيئاً');
+      expect(
+        after.fingerprint(),
+        isNot(equals(before.fingerprint())),
+        reason: 'بصمةٌ عمياءُ عن تكبيرِ خطٍّ لا تحرس شيئاً',
+      );
 
       // ١ — الحجمُ الجديدُ نفسُه مقروءٌ من الورقة، لا مجرّدُ «تغيّرٍ ما».
-      expect(after.allTexts.map((r) => r.size),
-          contains(closeTo(target.fontSize + 4, 0.01)),
-          reason: 'الحجمُ الجديدُ لم يصل الورقةَ — أو لم يصل القارئ');
+      expect(
+        after.allTexts.map((r) => r.size),
+        contains(closeTo(target.fontSize + 4, 0.01)),
+        reason: 'الحجمُ الجديدُ لم يصل الورقةَ — أو لم يصل القارئ',
+      );
 
       // ٢ — والهندسةُ تحرّكت: نصٌّ على الأقلّ غيّر ارتفاعَه.
       final beforeY = {for (final r in before.allTexts) r.text: r.y};
@@ -115,14 +123,18 @@ void main() {
           .where((r) => beforeY.containsKey(r.text))
           .where((r) => (beforeY[r.text]! - r.y).abs() > 0.5)
           .length;
-      expect(shifted, greaterThan(0),
-          reason: 'البصمةُ ترى النصَّ ولا ترى موضعَه — نصفُ حارس');
+      expect(
+        shifted,
+        greaterThan(0),
+        reason: 'البصمةُ ترى النصَّ ولا ترى موضعَه — نصفُ حارس',
+      );
     });
 
     test('تغييرُ عرضِ عنصرٍ يزحزحه أفقياً في البصمة', () async {
       await db.seedDefaultTemplates();
       final t = (await db.getAllTemplates()).firstWhere(
-          (t) => t.type == 'thermal' && t.templateCategory == 'receipt');
+        (t) => t.type == 'thermal' && t.templateCategory == 'receipt',
+      );
 
       final before = probePdf(await _renderViaService(db, t.id));
 
@@ -142,31 +154,50 @@ void main() {
           .where((r) => beforeX.containsKey(r.text))
           .where((r) => (beforeX[r.text]! - r.x).abs() > 0.5)
           .length;
-      expect(moved, greaterThan(0),
-          reason: 'البصمةُ لا تقيس المحورَ الأفقيّ — عمودٌ ينزلق ولا تشكو');
+      expect(
+        moved,
+        greaterThan(0),
+        reason: 'البصمةُ لا تقيس المحورَ الأفقيّ — عمودٌ ينزلق ولا تشكو',
+      );
     });
 
     test('البصمةُ تقرأ نصّاً ووجهاً وحجماً — لا صفراً في كلِّ حقل', () async {
       await db.seedDefaultTemplates();
       final t = (await db.getAllTemplates()).firstWhere(
-          (t) => t.type == 'thermal' && t.templateCategory == 'receipt');
+        (t) => t.type == 'thermal' && t.templateCategory == 'receipt',
+      );
       final probe = probePdf(await _renderViaService(db, t.id));
 
-      expect(probe.allTexts.length, greaterThan(20),
-          reason: 'إيصالٌ بعشرين نصّاً فأقلَّ يعني أن القارئ لم يقرأ');
-      expect(probe.allTexts.where((r) => r.x != 0 || r.y != 0).length,
-          greaterThan(20),
-          reason: 'نصوصٌ كلُّها عند (٠،٠) ⇒ المعاملاتُ لا تصل — عطبٌ حدث فعلاً');
-      expect(probe.allTexts.every((r) => r.size > 0), isTrue,
-          reason: 'حجمُ خطٍّ صفريٌّ ⇒ `Tf` لا يُقرأ');
-      expect(probe.allTexts.map((r) => r.font).toSet(),
-          contains(startsWith('Noto')),
-          reason: 'وجهُ الخطّ لم يُحلّ من موارد الصفحة');
-      expect(probe.allTexts.any((r) => r.text.contains('\u{FFFD}')), isFalse,
-          reason: 'مُعرِّفُ رسمٍ بلا جدول `ToUnicode` ⇒ نصٌّ لا يُقرأ');
-      expect(probe.allTexts.map((r) => r.text).join(),
-          contains(kFixtureInvoiceNumber),
-          reason: 'رقمُ الفاتورة لم يصل الورقة — أو لم يصل القارئ');
+      expect(
+        probe.allTexts.length,
+        greaterThan(20),
+        reason: 'إيصالٌ بعشرين نصّاً فأقلَّ يعني أن القارئ لم يقرأ',
+      );
+      expect(
+        probe.allTexts.where((r) => r.x != 0 || r.y != 0).length,
+        greaterThan(20),
+        reason: 'نصوصٌ كلُّها عند (٠،٠) ⇒ المعاملاتُ لا تصل — عطبٌ حدث فعلاً',
+      );
+      expect(
+        probe.allTexts.every((r) => r.size > 0),
+        isTrue,
+        reason: 'حجمُ خطٍّ صفريٌّ ⇒ `Tf` لا يُقرأ',
+      );
+      expect(
+        probe.allTexts.map((r) => r.font).toSet(),
+        contains(startsWith('Noto')),
+        reason: 'وجهُ الخطّ لم يُحلّ من موارد الصفحة',
+      );
+      expect(
+        probe.allTexts.any((r) => r.text.contains('\u{FFFD}')),
+        isFalse,
+        reason: 'مُعرِّفُ رسمٍ بلا جدول `ToUnicode` ⇒ نصٌّ لا يُقرأ',
+      );
+      expect(
+        probe.allTexts.map((r) => r.text).join(),
+        contains(kFixtureInvoiceNumber),
+        reason: 'رقمُ الفاتورة لم يصل الورقة — أو لم يصل القارئ',
+      );
     });
   });
 
@@ -175,32 +206,41 @@ void main() {
   // ═════════════════════════════════════════════════════════════════════════
   test('كلُّ قالبٍ مبذورٍ له بصمةٌ ذهبيّةٌ مثبّتة', () async {
     await db.seedDefaultTemplates();
-    final templates = (await db.getAllTemplates())
-        .where((t) => !_skippedCategories.contains(t.templateCategory))
-        .toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
+    final templates =
+        (await db.getAllTemplates())
+            .where((t) => !_skippedCategories.contains(t.templateCategory))
+            .toList()
+          ..sort((a, b) => a.name.compareTo(b.name));
 
-    expect(templates.length, 7,
-        reason: 'عددُ القوالب المبذورة غيرِ الباركود تغيّر — لو بقصدٍ فحدّث '
-            'الرقمَ والملفّاتِ الذهبيّة معاً');
+    expect(
+      templates.length,
+      7,
+      reason:
+          'عددُ القوالب المبذورة غيرِ الباركود تغيّر — لو بقصدٍ فحدّث '
+          'الرقمَ والملفّاتِ الذهبيّة معاً',
+    );
 
     await _pinAll(db, templates, prefix: 'seeded');
   });
 
   // ═════════════════════════════════════════════════════════════════════════
-  // ملفّاتُ الأصول التسعةَ عشر
+  // ملفّاتُ الأصول الخمسةُ والعشرون
   // ═════════════════════════════════════════════════════════════════════════
   test('كلُّ ملفِّ قالبٍ في الأصول له بصمةٌ ذهبيّةٌ مثبّتة', () async {
-    final files = Directory(_assetDir)
-        .listSync()
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.json'))
-        .toList()
-      ..sort((a, b) => a.path.compareTo(b.path));
+    final files =
+        Directory(_assetDir)
+            .listSync()
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.json'))
+            .toList()
+          ..sort((a, b) => a.path.compareTo(b.path));
 
-    expect(files.length, 19,
-        reason:
-            'عددُ ملفّات القوالب تغيّر — ملفٌّ جديدٌ بلا بصمةٍ يعبر بلا حراسة');
+    expect(
+      files.length,
+      25,
+      reason:
+          'عددُ ملفّات القوالب تغيّر — ملفٌّ جديدٌ بلا بصمةٍ يعبر بلا حراسة',
+    );
 
     // اسمُ الملفّ هو المُعرِّف، لا اسمُ القالب: ‏`a4_purchase.json` و
     // `a4_purchase_invoice.json` يحملان «فاتورة مشتريات A4» و«فاتورة
@@ -213,8 +253,12 @@ void main() {
       imported[base] = (await db.getTemplateById(id))!;
     }
 
-    await _pinAll(db, imported.values.toList(),
-        prefix: 'asset', names: imported.keys.toList());
+    await _pinAll(
+      db,
+      imported.values.toList(),
+      prefix: 'asset',
+      names: imported.keys.toList(),
+    );
   });
 
   // ═════════════════════════════════════════════════════════════════════════
@@ -224,13 +268,19 @@ void main() {
     // `TemplatePdfRenderer` مسارٌ حيٌّ مستقلّ: `invoice_generator:74` وحدَه
     // يناديه، ولـ`(thermal, receipt)` وحدَها. فبصمتُه تُثبَّت على حدة.
     await db.seedDefaultTemplates();
-    final templates = (await db.getAllTemplates())
-        .where((t) => t.type == 'thermal' && t.templateCategory == 'receipt')
-        .toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
+    final templates =
+        (await db.getAllTemplates())
+            .where(
+              (t) => t.type == 'thermal' && t.templateCategory == 'receipt',
+            )
+            .toList()
+          ..sort((a, b) => a.name.compareTo(b.name));
 
-    expect(templates, isNotEmpty,
-        reason: 'لا قالبَ إيصالٍ حراريٍّ مبذور ⇒ المسارُ الثاني بلا حراسة');
+    expect(
+      templates,
+      isNotEmpty,
+      reason: 'لا قالبَ إيصالٍ حراريٍّ مبذور ⇒ المسارُ الثاني بلا حراسة',
+    );
 
     final failures = <String>[];
     for (final t in templates) {
@@ -239,15 +289,22 @@ void main() {
         templateData: data!,
         invoiceData: kFixtureRendererData,
       );
-      final actual = probePdf(bytes).fingerprint(
-          header: '# قالب «${t.name}»\n# راسم=TemplatePdfRenderer');
+      final actual = probePdf(
+        bytes,
+      ).fingerprint(header: '# قالب «${t.name}»\n# راسم=TemplatePdfRenderer');
       final slug = 'renderer2_${_slug(t.name)}';
-      final mismatch =
-          await _compareGolden(File('$_goldenDir/$slug.txt'), actual);
+      final mismatch = await _compareGolden(
+        File('$_goldenDir/$slug.txt'),
+        actual,
+      );
       if (mismatch != null) failures.add('«${t.name}» → $mismatch');
     }
 
-    expect(failures, isEmpty, reason: 'المطبوعُ تغيّر:\n${failures.join('\n')}');
+    expect(
+      failures,
+      isEmpty,
+      reason: 'المطبوعُ تغيّر:\n${failures.join('\n')}',
+    );
   });
 }
 
@@ -270,22 +327,32 @@ Future<void> _pinAll(
         ? names[i]
         : '${t.type}_${t.templateCategory}_${t.name}';
     final slug = '${prefix}_${_slug(id)}';
-    expect(seen.add(slug), isTrue,
-        reason: 'قالبان بنفس اسم الملفّ «$slug» — أحدُهما يدهس بصمةَ الآخر');
+    expect(
+      seen.add(slug),
+      isTrue,
+      reason: 'قالبان بنفس اسم الملفّ «$slug» — أحدُهما يدهس بصمةَ الآخر',
+    );
 
     final bytes = await _renderViaService(db, t.id);
     final actual = probePdf(bytes).fingerprint(
-      header: '# قالب «${t.name}»\n'
+      header:
+          '# قالب «${t.name}»\n'
           '# نوع=${t.type} فئة=${t.templateCategory} ورق=${t.paperWidth}mm\n'
           '# راسم=TemplatedInvoiceService',
     );
 
-    final mismatch = await _compareGolden(File('$_goldenDir/$slug.txt'), actual);
+    final mismatch = await _compareGolden(
+      File('$_goldenDir/$slug.txt'),
+      actual,
+    );
     if (mismatch != null) failures.add('«${t.name}» → $mismatch');
   }
 
-  expect(failures, isEmpty,
-      reason: 'المطبوعُ تغيّر في هذه القوالب:\n${failures.join('\n\n')}');
+  expect(
+    failures,
+    isEmpty,
+    reason: 'المطبوعُ تغيّر في هذه القوالب:\n${failures.join('\n\n')}',
+  );
 }
 
 /// يجعل القالبَ افتراضياً لفئته ثمّ يرسمه عبر مسار الإنتاج نفسِه.
@@ -295,13 +362,26 @@ Future<void> _pinAll(
 /// الإنتاج، فيدخل حلُّ الفئة في المقيس.
 Future<Uint8List> _renderViaService(AppDatabase db, int templateId) async {
   final t = (await db.getTemplateById(templateId))!;
-  await db.setDefaultTemplate(templateId);
+  final isKitchen = t.type == 'kitchen' && t.templateCategory == 'kitchen';
+  if (isKitchen) {
+    await db.activateBinding(
+      documentType: 'kitchen_order',
+      templateId: templateId,
+      branchId: 1,
+      locale: 'ar',
+      printerWidthMm: t.paperWidth <= 58 ? 72 : 80,
+    );
+  } else {
+    await db.setDefaultTemplate(templateId);
+  }
 
   return (await TemplatedInvoiceService.printWithTemplate(
     db: db,
     debugBuildOnly: true,
     type: t.type,
     category: t.templateCategory,
+    documentType: isKitchen ? 'kitchen_order' : null,
+    branchId: isKitchen ? 1 : null,
     invoiceNumber: kFixtureInvoiceNumber,
     date: kFixtureDate,
     customerName: kFixtureCustomerName,

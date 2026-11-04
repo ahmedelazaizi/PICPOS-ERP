@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:picpos_erp/core/theme/app_theme.dart';
 import 'package:picpos_erp/data/providers/providers.dart';
@@ -353,6 +354,39 @@ void main() {
       expect(fake.code, isNull, reason: 'لا يبقى الرمز بعد التأكيد');
       expect(fake.audits, contains('db_recovery_code_acknowledged'));
       expect(find.byKey(const Key('dbenc_code_pending')), findsNothing);
+    });
+
+    testWidgets('زر X يسأل أولاً قبل التأكيد: «لا» يُبقيه و«نعم» يغلقه',
+        (tester) async {
+      fake.code = 'ABCD-EFGH-IJKL-MNOP';
+      fake.st = _st(DbEncryptionState.pendingConfirm);
+      await pump(tester);
+      final x = find.byIcon(PhosphorIconsBold.x);
+
+      await tester.tap(x);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('dbenc_code_close_confirm')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('dbenc_code_close_no')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('dbenc_code_dialog')), findsOneWidget);
+
+      await tester.tap(x);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('dbenc_code_close_yes')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('dbenc_code_dialog')), findsNothing);
+    });
+
+    testWidgets('زر X يغلق مباشرة بعد تأكيد الحفظ', (tester) async {
+      fake.code = 'ABCD-EFGH-IJKL-MNOP';
+      fake.st = _st(DbEncryptionState.pendingConfirm);
+      await pump(tester);
+      await tester.tap(find.byKey(const Key('dbenc_code_saved')));
+      await tester.pump();
+      await tester.tap(find.byIcon(PhosphorIconsBold.x));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('dbenc_code_close_confirm')), findsNothing);
+      expect(find.byKey(const Key('dbenc_code_dialog')), findsNothing);
     });
 
     testWidgets('لا حوار إن لم يكن ثمّة رمزٌ معلَّق', (tester) async {

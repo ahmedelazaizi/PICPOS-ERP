@@ -17,6 +17,8 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:picpos_erp/data/database/database.dart';
 
+var _m6Seq = 0;
+
 void main() {
   late AppDatabase db;
   late int warehouseId;
@@ -57,7 +59,10 @@ void main() {
     String? notes,
   }) =>
       db.into(db.salesInvoices).insert(SalesInvoicesCompanion.insert(
-            invoiceNumber: 'M6-${DateTime.now().microsecondsSinceEpoch}',
+            // Unique per call: the unique invoice_number index rejects the
+            // same-microsecond collisions this loop used to produce.
+            invoiceNumber:
+                'M6-${DateTime.now().microsecondsSinceEpoch}-${_m6Seq++}',
             warehouseId: whId ?? warehouseId,
             userId: userId,
             invoiceDate: date,

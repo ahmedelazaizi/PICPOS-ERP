@@ -6,6 +6,76 @@ import 'package:picpos_erp/presentation/pos_picpos/widgets/picpos_one_time_custo
 import 'package:picpos_erp/presentation/pos_picpos/widgets/picpos_payment_panel.dart';
 
 void main() {
+  for (final showReturn in [true, false]) {
+    for (final showExchange in [true, false]) {
+      testWidgets(
+        'return button $showReturn / exchange button $showExchange follow settings',
+        (tester) async {
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [
+                showAddCustomerInPOSProvider.overrideWith((ref) async => true),
+                showOrderTypeInPOSProvider.overrideWith((ref) async => true),
+                posDefaultTaxRateProvider.overrideWith((ref) async => 0.16),
+                posBottomPanelScaleProvider.overrideWith((ref) async => 1.0),
+                posButtonHeightProvider.overrideWith((ref) async => 32.0),
+                posButtonFontSizeProvider.overrideWith((ref) async => 12.0),
+                showSubtotalInPOSProvider.overrideWith((ref) async => true),
+                showTaxButtonInPOSProvider.overrideWith((ref) async => true),
+                showDiscountButtonInPOSProvider
+                    .overrideWith((ref) async => true),
+                showDrawerButtonInPOSProvider.overrideWith((ref) async => true),
+                showExpenseButtonInPOSProvider
+                    .overrideWith((ref) async => true),
+                showSaveOnlyInPOSProvider.overrideWith((ref) async => true),
+                showHoldButtonInPOSProvider.overrideWith((ref) async => true),
+                showReturnButtonInPOSProvider
+                    .overrideWith((ref) async => showReturn),
+                showExchangeButtonInPOSProvider
+                    .overrideWith((ref) async => showExchange),
+                branchCashSafesProvider.overrideWith((ref) async => []),
+                branchBankSafesProvider.overrideWith((ref) async => []),
+                posCashCustomerIdProvider.overrideWith((ref) async => null),
+              ],
+              child: MaterialApp(
+                home: Scaffold(
+                  body: Align(
+                    alignment: Alignment.topLeft,
+                    child: SizedBox(
+                      width: 662,
+                      child: PicPosPaymentPanel(
+                        onCheckout: () {},
+                        onSave: () {},
+                        onLastInvoice: () {},
+                        onEditDiscount: () {},
+                        onPickCustomer: () {},
+                        onPreviousInvoices: () {},
+                        onOpenDrawer: () {},
+                        onExpense: () {},
+                        onHold: () {},
+                        onHeldOrders: () {},
+                        onQuickReturn: () {},
+                        onExchange: () {},
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+          await tester.pump();
+          await tester.pump();
+
+          expect(find.text('مرتجع سريع'),
+              showReturn ? findsOneWidget : findsNothing);
+          expect(find.text('استبدال'),
+              showExchange ? findsOneWidget : findsNothing);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
+  }
+
   for (final showCustomer in [true, false]) {
     for (final showOrderType in [true, false]) {
       testWidgets(

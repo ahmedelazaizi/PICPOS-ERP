@@ -143,10 +143,8 @@ void main() {
 
       expect(p1.categoryId, catGeneral);
       expect(p2.categoryId, catGeneral);
-      // Inactive products are intentionally NOT migrated — they're off the
-      // UI already, and migrating them would inflate the destination's
-      // visible count without benefit.
-      expect(p3.categoryId, catA);
+      // بند 10: غير النشطة تُنقل أيضاً — وإلا بقيت مربوطةً بتصنيفٍ محذوف.
+      expect(p3.categoryId, catGeneral);
 
       final deletedCat = await (db.select(db.categories)
             ..where((c) => c.id.equals(catA)))

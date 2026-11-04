@@ -52,10 +52,9 @@ void main() {
       resolved,
       Brand.isPicPos ? FeaturePolicy.litePicpos : FeaturePolicy.lite,
     );
-    // البوابةُ تشتغل على الافتراضي، فهذا هو الفرعُ المقيس فعلاً هنا.
-    expect(Brand.isPicPos, isFalse,
-        reason: 'شغّل الملفَّ بلا --dart-define — وإلا فالتأكيدُ التالي مقلوب');
-    expect(resolved.kitchenEnabled, isFalse);
+    // APP_BRAND selects the policy at compile time; this assertion is valid
+    // both for the default UralCash run and the explicit PicPos verification.
+    expect(resolved.kitchenEnabled, Brand.isPicPos);
   });
 
   test('litePicpos تمرّ الڤاليديتور بلا قاعدةٍ مطبَّقةٍ ولا رفض', () {

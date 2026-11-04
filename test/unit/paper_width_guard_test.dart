@@ -52,9 +52,26 @@ void main() {
     test('٥٨ على طابعةِ ٨٠', () {
       final v = checkPaperFit(templateWidthMm: 58, printerWidthMm: 80);
       expect(v.isWarning, isTrue);
-      expect(v.isRejected, isFalse,
-          reason: 'الطباعةُ صحيحةٌ بهامشٍ أبيض — المنعُ هنا يعطّل استعمالاً مشروعاً');
+      expect(
+        v.isRejected,
+        isFalse,
+        reason:
+            'الطباعةُ صحيحةٌ بهامشٍ أبيض — المنعُ هنا يعطّل استعمالاً مشروعاً',
+      );
       expect(v.reason, isNotEmpty);
+    });
+
+    test('قالبا ٥٨ و٨٠ على طابعة A4 يصرّحان بعرضي الورق في التحذير', () {
+      for (final templateWidth in [58.0, 80.0]) {
+        final verdict = checkPaperFit(
+          templateWidthMm: templateWidth,
+          printerWidthMm: 210,
+        );
+        expect(verdict.isWarning, isTrue);
+        expect(verdict.reason, contains('${templateWidth.toInt()}'));
+        expect(verdict.reason, contains('210'));
+        expect(verdict.reason, contains('أصغرُ من عرض الطابعة'));
+      }
     });
   });
 
@@ -62,8 +79,10 @@ void main() {
     test('null يمرّ', () {
       // طابعةٌ لم يُسجَّل عرضُها ليست طابعةً غيرَ متوافقة. المنعُ على
       // المجهول يقفل الربطَ على كلِّ طابعةٍ لم تُعرَّف بعد.
-      expect(checkPaperFit(templateWidthMm: 210, printerWidthMm: null).isOk,
-          isTrue);
+      expect(
+        checkPaperFit(templateWidthMm: 210, printerWidthMm: null).isOk,
+        isTrue,
+      );
     });
 
     test('وصفرٌ يمرّ كذلك', () {

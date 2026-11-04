@@ -7,6 +7,7 @@
 //   * the manager can send a submitted count back (`recount`): the passes are
 //     retired (never posted), the task stays open, and the retired counters do
 //     not count it again.
+import 'package:drift/drift.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:picpos_erp/data/database/database.dart';
@@ -99,6 +100,87 @@ void main() {
       expect((await count(t1, h.clerk, 'doc-t1-0001', {rice: '10'})).status, 200);
       expect((await count(t3, h.clerk2, 'doc-t3-0001', {milk: '5'})).status, 200);
       expect((await approve(t3, h.supervisor)).status, 200);
+    });
+  });
+
+  group('desktop generation guard', () {
+    Future<void> releaseInitialTasks() async {
+      await (h.db.update(h.db.cycleCountTasks)
+            ..where((t) => t.id.isIn([t1, t2])))
+          .write(const CycleCountTasksCompanion(status: Value('completed')));
+    }
+
+    test('skips reserved products before applying the products-per-task limit', () async {
+      await (h.db.update(h.db.cycleCountTasks)..where((t) => t.id.equals(t2)))
+          .write(const CycleCountTasksCompanion(status: Value('completed')));
+      final generated = await h.db.generateCycleCountTask(
+        planId: plan, warehouseId: h.a1, productsPerTask: 2,
+      );
+      expect(generated, greaterThan(0));
+      expect((await h.db.getCycleCountItems(generated)).map((i) => i.productId),
+          [milk]);
+    });
+
+    test('a later task receives a disjoint product instead of repeating a reservation', () async {
+      await releaseInitialTasks();
+      final first = await h.db.generateCycleCountTask(
+        planId: plan, warehouseId: h.a1, productsPerTask: 1,
+      );
+      final second = await h.db.generateCycleCountTask(
+        planId: plan, warehouseId: h.a1, productsPerTask: 1,
+      );
+      expect((await h.db.getCycleCountItems(first)).single.productId, rice);
+      expect((await h.db.getCycleCountItems(second)).single.productId, milk);
+    });
+
+    test('keeps reservations isolated by warehouse', () async {
+      await h.db.adjustStock(
+        productId: rice, warehouseId: h.a2, quantity: 10,
+        type: 'purchase', unitCost: 10,
+      );
+      final planB = await h.db.into(h.db.cycleCountPlans).insert(
+          CycleCountPlansCompanion.insert(name: 'B', warehouseId: h.a2));
+      final generated = await h.db.generateCycleCountTask(
+        planId: planB, warehouseId: h.a2, productsPerTask: 1,
+      );
+      expect((await h.db.getCycleCountItems(generated)).single.productId, rice);
+    });
+
+    test('completed, cancelled, and deleted tasks release their products', () async {
+      await releaseInitialTasks();
+      for (final status in ['completed', 'cancelled']) {
+        final task = await h.db.generateCycleCountTask(
+          planId: plan, warehouseId: h.a1, productsPerTask: 1,
+        );
+        expect(task, greaterThan(0));
+        await (h.db.update(h.db.cycleCountTasks)..where((t) => t.id.equals(task)))
+            .write(CycleCountTasksCompanion(status: Value(status)));
+      }
+      final deleted = await h.db.generateCycleCountTask(
+        planId: plan, warehouseId: h.a1, productsPerTask: 1,
+      );
+      await (h.db.update(h.db.cycleCountTasks)..where((t) => t.id.equals(deleted)))
+          .write(CycleCountTasksCompanion(deletedAt: Value(DateTime.now())));
+      final afterDeleted = await h.db.generateCycleCountTask(
+        planId: plan, warehouseId: h.a1, productsPerTask: 1,
+      );
+      expect(afterDeleted, greaterThan(0));
+    });
+
+    test('reports exhaustion separately when all positive stock is reserved', () async {
+      await releaseInitialTasks();
+      final first = await h.db.generateCycleCountTask(
+        planId: plan, warehouseId: h.a1, productsPerTask: 2,
+      );
+      expect(first, greaterThan(0));
+      await expectLater(
+        h.db.generateCycleCountTask(
+          planId: plan, warehouseId: h.a1, productsPerTask: 1,
+        ),
+        throwsA(isA<CycleCountGenerationException>().having(
+          (e) => e.code, 'code', 'all_reserved',
+        )),
+      );
     });
   });
 

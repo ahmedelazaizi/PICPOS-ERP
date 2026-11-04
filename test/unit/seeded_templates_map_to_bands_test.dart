@@ -2,8 +2,8 @@
 //
 // ── لماذا على الملفّات نفسِها ─────────────────────────────────────────────
 // اختباراتُ المحرّك السابقةُ تبني قوالبَ بيدها، فتقيس المحرّكَ على ما تخيّلتُه
-// عنه. وهذا يقيسه على **ما في المستودع فعلاً**: تسعةَ عشرَ ملفَّ JSON، ثمانيةٌ
-// منها قديمةٌ مبذورةٌ وأحدَ عشرَ جديدة.
+// عنه. وهذا يقيسه على **ما في المستودع فعلاً**: خمسةٌ وعشرون ملفَّ JSON، ثمانيةٌ
+// منها قديمةٌ مبذورةٌ وسبعةَ عشرَ إضافية.
 //
 // وقيمةُ ذلك أنّ فئةَ العطب هنا «قالبٌ يفلت من الاشتقاق»: مقطعٌ لم يخطر
 // بالبال، أو نوعُ عنصرٍ غيرُ معروف، أو نطاقٌ يخرج فارغاً فيسقط نصفُ الفاتورة
@@ -19,7 +19,7 @@ import 'package:picpos_erp/services/printing/layout_engine.dart';
 
 const _dir = 'assets/invoice_templates';
 
-/// الأحدَ عشرَ الجديدةُ — مكتوبةٌ أصلاً بالبنية الصحيحة وبمفاتيحَ سليمة.
+/// الأصولُ الإضافيّةُ — تشمل القوالبَ الستّةَ المضافةَ في قرار المالك.
 const _newOnes = <String>[
   'a4_sales_tax_invoice.json',
   'a5_sales_tax_invoice.json',
@@ -32,35 +32,42 @@ const _newOnes = <String>[
   'a4_customer_statement.json',
   'a4_supplier_statement.json',
   'a4_report_generic.json',
+  'thermal58_sales_return.json',
+  'thermal58_kitchen.json',
+  'thermal58_shift_closing.json',
+  'thermal58_purchase_invoice.json',
+  'a5_sales_return.json',
+  'a5_purchase_invoice.json',
 ];
 
-List<File> _files() => Directory(_dir)
-    .listSync()
-    .whereType<File>()
-    .where((f) => f.path.endsWith('.json'))
-    .toList()
-  ..sort((a, b) => a.path.compareTo(b.path));
+List<File> _files() =>
+    Directory(_dir)
+        .listSync()
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.json'))
+        .toList()
+      ..sort((a, b) => a.path.compareTo(b.path));
 
 Map<String, dynamic> _json(File f) =>
     jsonDecode(f.readAsStringSync()) as Map<String, dynamic>;
 
 /// يبني عناصرَ المحرّك من الصيغة المخزَّنة — نفسُ ما يفعله الـDAO.
 List<LegacyElement> _elements(Map<String, dynamic> data) => [
-      for (final raw in (data['elements'] as List<dynamic>? ?? []))
-        LegacyElement(
-          elementType: (raw as Map<String, dynamic>)['type'] as String? ?? 'text',
-          content: raw['content'] as String?,
-          section: raw['section'] as String? ?? 'body',
-          sortOrder: raw['sortOrder'] as int? ?? 0,
-          flexWidth: (raw['flexWidth'] as num?)?.toDouble() ?? 100,
-          fontSize: (raw['fontSize'] as num?)?.toDouble() ?? 12,
-          isBold: raw['isBold'] as bool? ?? false,
-          isVisible: raw['isVisible'] as bool? ?? true,
-          labelAr: raw['labelAr'] as String?,
-          labelEn: raw['labelEn'] as String?,
-          textAlign: raw['textAlign'] as String? ?? 'center',
-        ),
-    ];
+  for (final raw in (data['elements'] as List<dynamic>? ?? []))
+    LegacyElement(
+      elementType: (raw as Map<String, dynamic>)['type'] as String? ?? 'text',
+      content: raw['content'] as String?,
+      section: raw['section'] as String? ?? 'body',
+      sortOrder: raw['sortOrder'] as int? ?? 0,
+      flexWidth: (raw['flexWidth'] as num?)?.toDouble() ?? 100,
+      fontSize: (raw['fontSize'] as num?)?.toDouble() ?? 12,
+      isBold: raw['isBold'] as bool? ?? false,
+      isVisible: raw['isVisible'] as bool? ?? true,
+      labelAr: raw['labelAr'] as String?,
+      labelEn: raw['labelEn'] as String?,
+      textAlign: raw['textAlign'] as String? ?? 'center',
+    ),
+];
 
 PaperSpec _paper(Map<String, dynamic> data) {
   final w = (data['paperWidth'] as num?)?.toDouble() ?? 80;
@@ -74,7 +81,8 @@ PaperSpec _paper(Map<String, dynamic> data) {
 void main() {
   test('الملفّاتُ كلُّها موجودةٌ ومعها الأحدَ عشرَ الجديدة', () {
     final names = _files().map((f) => f.uri.pathSegments.last).toSet();
-    expect(names.length, greaterThanOrEqualTo(19));
+    // ٢٥ ملفاً حالياً: ١٩ سابقاً + ستة قوالب بقرار المالك.
+    expect(names.length, greaterThanOrEqualTo(25));
     for (final n in _newOnes) {
       expect(names, contains(n), reason: 'القالبُ الجديد $n لم يُنسخ');
     }
@@ -104,15 +112,20 @@ void main() {
       });
 
       test('كلُّ عنصرٍ وصل نطاقاً — لا شيءَ يسقط في الاشتقاق', () {
-        final placed =
-            doc.bands.fold<int>(0, (s, b) => s + b.elements.length);
-        expect(placed, _elements(data).length,
-            reason: 'عنصرٌ ضاع بين الصيغة المخزَّنة والنطاقات');
+        final placed = doc.bands.fold<int>(0, (s, b) => s + b.elements.length);
+        expect(
+          placed,
+          _elements(data).length,
+          reason: 'عنصرٌ ضاع بين الصيغة المخزَّنة والنطاقات',
+        );
       });
 
       test('النطاقاتُ الستّةُ كلُّها معرَّفة', () {
-        expect(doc.bands.map((b) => b.id).toSet(), BandId.values.toSet(),
-            reason: 'نطاقٌ غائبٌ يعني مكانَ إفلاتٍ مفقوداً في المحرّر');
+        expect(
+          doc.bands.map((b) => b.id).toSet(),
+          BandId.values.toSet(),
+          reason: 'نطاقٌ غائبٌ يعني مكانَ إفلاتٍ مفقوداً في المحرّر',
+        );
       });
 
       test('details وحدَه يتمدّد', () {
@@ -125,8 +138,11 @@ void main() {
         final max = doc.paper.contentWidthMm;
         for (final b in doc.bands) {
           for (final e in b.elements) {
-            expect(e.xMm + e.wMm, lessThanOrEqualTo(max + 0.001),
-                reason: '${e.contentKey} في ${b.id.name} يفيض عن الورق');
+            expect(
+              e.xMm + e.wMm,
+              lessThanOrEqualTo(max + 0.001),
+              reason: '${e.contentKey} في ${b.id.name} يفيض عن الورق',
+            );
           }
         }
       });
@@ -157,9 +173,13 @@ void main() {
           if (c.isEmpty) missing.add(type);
         }
 
-        expect(missing, isEmpty,
-            reason: 'عنصرٌ نصّيٌّ بلا content يظهر مُطفأً في المحرّر رغم أنّه '
-                'على الورق — وهو عطبُ القوالب الثمانيةِ القديمة');
+        expect(
+          missing,
+          isEmpty,
+          reason:
+              'عنصرٌ نصّيٌّ بلا content يظهر مُطفأً في المحرّر رغم أنّه '
+              'على الورق — وهو عطبُ القوالب الثمانيةِ القديمة',
+        );
       });
     }
   });

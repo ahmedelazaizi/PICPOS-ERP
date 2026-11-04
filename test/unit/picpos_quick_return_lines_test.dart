@@ -84,43 +84,82 @@ void main() {
       expect(picpos.computeIsFullReturn(mode), isFalse);
     });
 
-    test(
-        'صنفٌ على سطرين (مفتاحُ alreadyReturnedQty مزدوج) — لا تُختم '
-        '«كاملاً» أبداً ولو طُلِب كلُّ المتاح الظاهر', () {
-      // إعادةُ إنتاج قياس المراجع بالحرف: صنفٌ واحدٌ على سطرين (٥ و٤)،
-      // ومرتجعٌ سابقٌ حقيقيٌّ ٣ بمفتاح productId (لا بمفتاح أيّ سطرٍ بعينه) —
-      // فـ`_showQuickReturn` تنسبه لكلّ سطرٍ مستقلاً (راجع تعليقها):
-      //   سطر١: sold=5, alreadyReturned=3 (مكرَّر) ⇒ available=2
-      //   سطر٢: sold=4, alreadyReturned=3 (مكرَّر) ⇒ available=1
-      // «تحديد الكلّ» تطلب مجموع المتاح الظاهر=3 (2+1)، بينما الباقي
-      // الحقيقيّ = (5+4)-3 = 6. ختمُ هذه الحالة `true` كان يفقد 3 وحداتٍ
-      // حقيقيّةً للأبد (`processSalesReturn` تختم 'returned' نهائياً).
+    test('صنفٌ على سطرين يُكمل المرتجع عند طلب المتاح الموزّع', () {
       const splitLine1 = ReturnableLine(
         invoiceItemId: 11, productId: 99, productName: 'سكر',
         soldQty: 5, alreadyReturnedQty: 3, unitPrice: 10,
       );
       const splitLine2 = ReturnableLine(
-        invoiceItemId: 12, productId: 99 /* نفسُ الصنف */,
-        productName: 'سكر', soldQty: 4, alreadyReturnedQty: 3,
-        unitPrice: 10,
+        invoiceItemId: 12, productId: 99, productName: 'سكر',
+        soldQty: 4, alreadyReturnedQty: 0, unitPrice: 10,
       );
       final mode = PosReturnMode.fromLines(
         invoiceId: 1,
         lines: [splitLine1, splitLine2],
       );
-      // «تحديد الكلّ»: كلُّ سطرٍ يطلب متاحه الظاهر بالضبط.
-      mode.setQty(splitLine1.invoiceItemId, splitLine1.availableQty); // 2
-      mode.setQty(splitLine2.invoiceItemId, splitLine2.availableQty); // 1
+      mode.setQty(splitLine1.invoiceItemId, splitLine1.availableQty);
+      mode.setQty(splitLine2.invoiceItemId, splitLine2.availableQty);
+      expect(mode.requestedQty.values.fold<double>(0, (sum, qty) => sum + qty),
+          6.0);
+      expect(picpos.computeIsFullReturn(mode), isTrue);
+    });
 
-      final requestedTotal = mode.requestedQty.values
-          .fold<double>(0, (sum, q) => sum + q);
-      expect(requestedTotal, 3.0,
-          reason: 'تأكيدُ أرقام قياس المراجع بالحرف قبل فحص السلوك');
+    test('المرتجع السابق 3 على الصنف 5+4 يوزّع الباقي الحقيقي ويمنع ختم الجزئي', () {
+      final returnedSaleQtyByLine =
+          picpos.distributeReturnedBaseQtyToSaleLines(
+        invoiceLines: const [
+          (
+            invoiceItemId: 11,
+            productId: 99,
+            saleQuantity: 5.0,
+            quantityInBase: 1.0,
+          ),
+          (
+            invoiceItemId: 12,
+            productId: 99,
+            saleQuantity: 4.0,
+            quantityInBase: 1.0,
+          ),
+        ],
+        returnedBaseByProduct: const {99: 3.0},
+      );
+      expect(returnedSaleQtyByLine, {11: 3.0, 12: 0.0});
 
-      expect(picpos.computeIsFullReturn(mode), isFalse,
-          reason: 'صنفٌ مكرَّرٌ على سطرين ⇒ alreadyReturnedQty غيرُ موثوقة '
-              '⇒ لا يجوز الختمُ true إطلاقاً، حتى لو بلغ كلُّ سطرٍ متاحه '
-              'الظاهر');
+      final lines = [
+        ReturnableLine(
+          invoiceItemId: 11,
+          productId: 99,
+          productName: 'سكر',
+          soldQty: 5,
+          alreadyReturnedQty: returnedSaleQtyByLine[11]!,
+          unitPrice: 10,
+        ),
+        ReturnableLine(
+          invoiceItemId: 12,
+          productId: 99,
+          productName: 'سكر',
+          soldQty: 4,
+          alreadyReturnedQty: returnedSaleQtyByLine[12]!,
+          unitPrice: 10,
+        ),
+      ];
+      final fullMode = PosReturnMode.fromLines(invoiceId: 1, lines: lines);
+      for (final line in lines) {
+        fullMode.setQty(line.invoiceItemId, line.availableQty);
+      }
+      expect(
+        fullMode.requestedQty.values.fold<double>(0, (sum, qty) => sum + qty),
+        6.0,
+      );
+      expect(picpos.computeIsFullReturn(fullMode), isTrue);
+
+      final partialMode = PosReturnMode.fromLines(invoiceId: 1, lines: lines);
+      partialMode.setQty(12, 3);
+      expect(
+        partialMode.requestedQty.values.fold<double>(0, (sum, qty) => sum + qty),
+        3.0,
+      );
+      expect(picpos.computeIsFullReturn(partialMode), isFalse);
     });
   });
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:picpos_erp/core/config/brand.dart';
 import 'package:picpos_erp/core/navigation/screen_registry.dart';
 import 'package:picpos_erp/core/navigation/screen_id.dart';
 import 'package:picpos_erp/core/config/business_profile.dart';
@@ -13,8 +14,10 @@ void main() {
   test('litePicpos يضمّ scalePlu بينما lite لا يضمّه، والافتراضي (uralcash) لا يضمّه', () {
     expect(ScreenRegistry.litePicpos, contains(ScreenId.scalePlu));
     expect(ScreenRegistry.lite, isNot(contains(ScreenId.scalePlu)));
-    // default test brand = uralcash → forProfile(lite) returns the 19-screen lite
-    expect(ScreenRegistry.forProfile(BusinessProfile.lite), equals(ScreenRegistry.lite));
-    expect(ScreenRegistry.forProfile(BusinessProfile.lite), isNot(contains(ScreenId.scalePlu)));
+    // forProfile selects the brand-specific scope, then applies feature
+    // additions (such as quotations), so compare the invariant under test
+    // rather than requiring equality with the unmodified base scope.
+    final resolved = ScreenRegistry.forProfile(BusinessProfile.lite);
+    expect(resolved.contains(ScreenId.scalePlu), Brand.isPicPos);
   });
 }

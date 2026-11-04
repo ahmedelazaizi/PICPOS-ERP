@@ -408,6 +408,10 @@ void main() {
 
     test('المرتجعُ السريع بورديّةٍ مفتوحة ⇒ يمضي', () async {
       await db.openShift(userId, 0);
+      // الحارس يشترط صافي بيع سابقاً؛ نسجّل بيعةً فعلية بالكمية نفسها داخل
+      // هذه الوردية كي يظل الاختبار يقيس مسار الوردية لا رفض كمية غير مبيعة.
+      await sell(qty: 1, paid: 100, number: 'INV-QUICK-RETURN');
+      // خط الأساس بعد التحصيل: المرتجع وحده ينبغي أن يخصم 100 من الخزنة.
       final before = await cashSafeBalance(1);
 
       await orchestrator.createSalesInvoice(
@@ -577,6 +581,10 @@ void main() {
     });
 
     test('مرتجعٌ نقديٌّ بهذا المسار يخصم من الخزنة فعلاً', () async {
+      await db.openShift(userId, 0);
+      // نهيّئ صافي الكمية ببيعة حقيقية في الوردية نفسها؛ البيع يضيف 100
+      // للخزنة، لذلك نلتقط خط الأساس بعده لعزل خصم المرتجع البالغ 100.
+      await sell(qty: 1, paid: 100, number: 'INV-SERVER-RETURN');
       final before = await cashSafeBalance(1);
 
       await db.createSalesInvoice(

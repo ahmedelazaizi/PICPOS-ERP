@@ -21,6 +21,8 @@ import 'package:picpos_erp/data/providers/quick_sale_policy_providers.dart';
 import 'package:picpos_erp/domain/entities/cart_item_entity.dart';
 import 'package:picpos_erp/domain/models/quick_sale_policy.dart';
 import 'package:picpos_erp/domain/usecases/sales/hold_order_usecase.dart';
+import 'package:picpos_erp/presentation/pos_picpos/screens/picpos_pos_screen.dart'
+    as picpos;
 import 'package:picpos_erp/presentation/pos_picpos/widgets/picpos_payment_methods.dart';
 
 void main() {
@@ -252,22 +254,43 @@ void main() {
 
     test('drawer — مطفأٌ فالدرجُ لا يُفتح ولو كان الدفعُ نقديّاً', () async {
       final policy = await save({'pos_open_drawer_on_print': 'false'});
-      // نفسُ التعبير في `picpos_pos_operations.dart:1774`.
-      bool opens(String method) =>
-          policy.isOn(kQuickSaleRows.firstWhere((r) => r.id == 'drawer')) &&
-          method == 'cash';
-      expect(opens('cash'), isFalse);
-      expect(opens('card'), isFalse);
+      expect(picpos.shouldKickDrawer(policy, method: 'cash'), isFalse);
+      expect(picpos.shouldKickDrawer(policy, method: 'card'), isFalse);
+      expect(
+          picpos.shouldKickDrawer(policy, method: 'mixed', cashAmount: 50),
+          isFalse);
     });
 
     test('drawer — مضاءٌ فنقديٌّ يفتح وبطاقةٌ لا', () async {
       final policy = await save({'pos_open_drawer_on_print': 'true'});
-      bool opens(String method) =>
-          policy.isOn(kQuickSaleRows.firstWhere((r) => r.id == 'drawer')) &&
-          method == 'cash';
-      expect(opens('cash'), isTrue);
-      expect(opens('card'), isFalse,
+      expect(picpos.shouldKickDrawer(policy, method: 'cash'), isTrue);
+      expect(picpos.shouldKickDrawer(policy, method: 'card'), isFalse,
           reason: 'بيعةُ بطاقةٍ لا نقدَ فيها — فتحُ الدرج يعرّض النقدَ بلا سبب');
+      expect(picpos.shouldKickDrawer(policy, method: 'credit'), isFalse);
+    });
+
+    test('drawer — الدفعُ المختلط يفتح فقط إن كان جزؤه النقديّ > 0', () async {
+      final policy = await save({'pos_open_drawer_on_print': 'true'});
+      expect(
+          picpos.shouldKickDrawer(policy, method: 'mixed', cashAmount: 30),
+          isTrue);
+      expect(
+          picpos.shouldKickDrawer(policy, method: 'mixed', cashAmount: 0),
+          isFalse);
+      expect(picpos.shouldKickDrawer(policy, method: 'mixed'), isFalse);
+    });
+
+    test('drawer — القرارُ لا يعتمد على الطباعة التلقائية (مسار الحفظ F2)',
+        () async {
+      // autoprint مطفأ + drawer مضاء + نقدي ⇒ يُفتح الدرج.
+      final policy = await save({
+        'pos_open_drawer_on_print': 'true',
+        'auto_print_receipt': 'false',
+      });
+      expect(
+          policy.isOn(kQuickSaleRows.firstWhere((r) => r.id == 'autoprint')),
+          isFalse);
+      expect(picpos.shouldKickDrawer(policy, method: 'cash'), isTrue);
     });
 
     test('after — الخياراتُ الثلاثةُ تُترجَم إلى وجهاتٍ مختلفة', () async {

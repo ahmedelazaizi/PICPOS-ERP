@@ -1,0 +1,73 @@
+# قالب «إغلاق الوردية حراري — 58mm»
+# نوع=shift_closing فئة=shift_closing ورق=58.0mm
+# راسم=TemplatedInvoiceService
+PAGES 1
+PAGE 1 141.73x323.85
+  TXT 88.40,298.98 NotoNaskhArabic-Bold 10.00 «ﺗﻘﺮﻳﺮ»
+  TXT 66.84,298.98 NotoNaskhArabic-Bold 10.00 «ﺇﻏﻼﻕ»
+  TXT 35.76,298.98 NotoNaskhArabic-Bold 10.00 «ﺍﻟﻮﺭﺩﻳﺔ:»
+  TXT 13.89,298.98 NotoNaskhArabic-Bold 10.00 «ﺗﻘﺮﻳﺮ»
+  TXT 85.69,284.29 NotoNaskhArabic-Regular 8.00 «ﺍﻟﻮﺭﺩﻳﺔ»
+  TXT 80.59,284.29 NotoNaskhArabic-Regular 8.00 «/»
+  TXT 55.56,284.29 NotoNaskhArabic-Regular 8.00 «ﺍﻟﻤﻮﻇﻒ:»
+  TXT 40.69,284.29 NotoNaskhArabic-Regular 8.00 «ﺳﺎﻟﻢ»
+  TXT 24.89,284.29 NotoNaskhArabic-Regular 8.00 «ﺑﺪﺭﻱ»
+  TXT 14.09,284.29 NotoNaskhArabic-Regular 8.00 «—»
+  TXT 93.08,270.25 NotoNaskhArabic-Regular 8.00 «ﺍﻟﻨﻘﺪ»
+  TXT 82.48,270.25 NotoNaskhArabic-Regular 8.00 «—»
+  TXT 65.42,270.25 NotoNaskhArabic-Regular 8.00 «ﺭﺻﻴﺪ»
+  TXT 45.27,270.25 NotoNaskhArabic-Regular 8.00 «ﺍﻟﻨﻈﺎﻡ:»
+  TXT 15.00,270.25 NotoNaskhArabic-Regular 8.00 «3120.50»
+  TXT 92.61,256.22 NotoNaskhArabic-Regular 8.00 «ﺍﻟﻨﻘﺪ»
+  TXT 82.01,256.22 NotoNaskhArabic-Regular 8.00 «—»
+  TXT 66.33,256.22 NotoNaskhArabic-Regular 8.00 «ﺍﻟﻤﺒﻠﻎ»
+  TXT 45.27,256.22 NotoNaskhArabic-Regular 8.00 «ﺍﻟﻔﻌﻠﻲ:»
+  TXT 15.00,256.22 NotoNaskhArabic-Regular 8.00 «3100.00»
+  TXT 68.88,242.18 NotoNaskhArabic-Regular 8.00 «ﺍﻟﻨﻘﺪ»
+  TXT 58.28,242.18 NotoNaskhArabic-Regular 8.00 «—»
+  TXT 38.81,242.18 NotoNaskhArabic-Regular 8.00 «ﺍﻟﻔﺎﺭﻕ:»
+  TXT 14.86,242.18 NotoNaskhArabic-Regular 8.00 «20.50-»
+  TXT 88.88,228.14 NotoNaskhArabic-Regular 8.00 «ﺍﻟﺒﻄﺎﻗﺔ»
+  TXT 78.01,228.14 NotoNaskhArabic-Regular 8.00 «—»
+  TXT 60.95,228.14 NotoNaskhArabic-Regular 8.00 «ﺭﺻﻴﺪ»
+  TXT 40.80,228.14 NotoNaskhArabic-Regular 8.00 «ﺍﻟﻨﻈﺎﻡ:»
+  TXT 14.94,228.14 NotoNaskhArabic-Regular 8.00 «900.00»
+  TXT 88.41,214.11 NotoNaskhArabic-Regular 8.00 «ﺍﻟﺒﻄﺎﻗﺔ»
+  TXT 77.53,214.11 NotoNaskhArabic-Regular 8.00 «—»
+  TXT 61.85,214.11 NotoNaskhArabic-Regular 8.00 «ﺍﻟﻤﺒﻠﻎ»
+  TXT 40.80,214.11 NotoNaskhArabic-Regular 8.00 «ﺍﻟﻔﻌﻠﻲ:»
+  TXT 14.94,214.11 NotoNaskhArabic-Regular 8.00 «900.00»
+  TXT 62.20,200.07 NotoNaskhArabic-Regular 8.00 «ﺍﻟﺒﻄﺎﻗﺔ»
+  TXT 51.33,200.07 NotoNaskhArabic-Regular 8.00 «—»
+  TXT 31.85,200.07 NotoNaskhArabic-Regular 8.00 «ﺍﻟﻔﺎﺭﻕ:»
+  TXT 14.89,200.07 NotoNaskhArabic-Regular 8.00 «0.00»
+  TXT 88.54,186.04 NotoNaskhArabic-Regular 8.00 «ﻛﻠﻴﻚ»
+  TXT 78.01,186.04 NotoNaskhArabic-Regular 8.00 «—»
+  TXT 60.95,186.04 NotoNaskhArabic-Regular 8.00 «ﺭﺻﻴﺪ»
+  TXT 40.80,186.04 NotoNaskhArabic-Regular 8.00 «ﺍﻟﻨﻈﺎﻡ:»
+  TXT 15.06,186.04 NotoNaskhArabic-Regular 8.00 «180.00»
+  TXT 88.07,172.00 NotoNaskhArabic-Regular 8.00 «ﻛﻠﻴﻚ»
+  TXT 77.53,172.00 NotoNaskhArabic-Regular 8.00 «—»
+  TXT 61.85,172.00 NotoNaskhArabic-Regular 8.00 «ﺍﻟﻤﺒﻠﻎ»
+  TXT 40.80,172.00 NotoNaskhArabic-Regular 8.00 «ﺍﻟﻔﻌﻠﻲ:»
+  TXT 15.06,172.00 NotoNaskhArabic-Regular 8.00 «180.00»
+  TXT 61.86,157.97 NotoNaskhArabic-Regular 8.00 «ﻛﻠﻴﻚ»
+  TXT 51.33,157.97 NotoNaskhArabic-Regular 8.00 «—»
+  TXT 31.85,157.97 NotoNaskhArabic-Regular 8.00 «ﺍﻟﻔﺎﺭﻕ:»
+  TXT 14.89,157.97 NotoNaskhArabic-Regular 8.00 «0.00»
+  TXT 94.84,142.86 NotoNaskhArabic-Bold 9.00 «ﺇﺟﻤﺎﻟﻲ»
+  TXT 74.29,142.86 NotoNaskhArabic-Bold 9.00 «ﺭﺻﻴﺪ»
+  TXT 49.62,142.86 NotoNaskhArabic-Bold 9.00 «ﺍﻟﻨﻈﺎﻡ:»
+  TXT 14.60,142.86 NotoNaskhArabic-Bold 9.00 «4200.50»
+  TXT 94.10,127.43 NotoNaskhArabic-Bold 9.00 «ﺇﺟﻤﺎﻟﻲ»
+  TXT 74.82,127.43 NotoNaskhArabic-Bold 9.00 «ﺍﻟﻤﺒﻠﻎ»
+  TXT 49.62,127.43 NotoNaskhArabic-Bold 9.00 «ﺍﻟﻔﻌﻠﻲ:»
+  TXT 14.60,127.43 NotoNaskhArabic-Bold 9.00 «4180.00»
+  TXT 88.72,111.99 NotoNaskhArabic-Bold 9.00 «ﺣﺎﻟﺔ»
+  TXT 60.92,111.99 NotoNaskhArabic-Bold 9.00 «ﺍﻟﻮﺭﺩﻳﺔ:»
+  TXT 42.05,111.99 NotoNaskhArabic-Bold 9.00 «ﻋﺠﺰ:»
+  TXT 14.71,111.99 NotoNaskhArabic-Bold 9.00 «20.50-»
+  TXT 82.42,16.49 NotoNaskhArabic-Regular 7.00 «ﻧﻬﺎﻳﺔ»
+  TXT 67.25,16.49 NotoNaskhArabic-Regular 7.00 «ﺗﻘﺮﻳﺮ»
+  TXT 49.11,16.49 NotoNaskhArabic-Regular 7.00 «ﺍﻟﻮﺭﺩﻳﺔ»
+  REC 0.00,0.00 141.73x323.85

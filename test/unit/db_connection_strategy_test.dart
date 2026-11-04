@@ -3,6 +3,7 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:picpos_erp/core/config/brand.dart';
 import 'package:picpos_erp/data/database/database.dart';
 import 'package:picpos_erp/data/database/db_connection_strategy.dart';
 import 'package:picpos_erp/data/database/pg_config.dart';
@@ -117,7 +118,9 @@ void main() {
       final cfg = PostgresConfig.fromJson({});
       expect(cfg.host, 'localhost');
       expect(cfg.port, 5432);
-      expect(cfg.database, 'uralcash');
+      // Missing fields use the active brand's identifier; PicPos and UralCash
+      // intentionally receive different defaults.
+      expect(cfg.database, Brand.pgIdentifier);
       expect(cfg.useSsl, isFalse);
     });
 
