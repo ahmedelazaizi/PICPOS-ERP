@@ -6780,6 +6780,17 @@ class $PrintersTable extends Printers with TableInfo<$PrintersTable, Printer> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _paperWidthMmMeta = const VerificationMeta(
+    'paperWidthMm',
+  );
+  @override
+  late final GeneratedColumn<double> paperWidthMm = GeneratedColumn<double>(
+    'paper_width_mm',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -6861,6 +6872,7 @@ class $PrintersTable extends Printers with TableInfo<$PrintersTable, Printer> {
     purpose,
     isActive,
     description,
+    paperWidthMm,
     createdAt,
     globalId,
     lastModifiedAt,
@@ -6936,6 +6948,15 @@ class $PrintersTable extends Printers with TableInfo<$PrintersTable, Printer> {
         description.isAcceptableOrUnknown(
           data['description']!,
           _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('paper_width_mm')) {
+      context.handle(
+        _paperWidthMmMeta,
+        paperWidthMm.isAcceptableOrUnknown(
+          data['paper_width_mm']!,
+          _paperWidthMmMeta,
         ),
       );
     }
@@ -7026,6 +7047,10 @@ class $PrintersTable extends Printers with TableInfo<$PrintersTable, Printer> {
         DriftSqlType.string,
         data['${effectivePrefix}description'],
       ),
+      paperWidthMm: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}paper_width_mm'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -7069,6 +7094,9 @@ class Printer extends DataClass implements Insertable<Printer> {
   final String purpose;
   final bool isActive;
   final String? description;
+
+  /// عرضُ الورق الاسميّ بالمليمتر؛ null للطابعات التي لم يُحدَّد عرضُها.
+  final double? paperWidthMm;
   final DateTime createdAt;
   final String? globalId;
   final DateTime? lastModifiedAt;
@@ -7085,6 +7113,7 @@ class Printer extends DataClass implements Insertable<Printer> {
     required this.purpose,
     required this.isActive,
     this.description,
+    this.paperWidthMm,
     required this.createdAt,
     this.globalId,
     this.lastModifiedAt,
@@ -7111,6 +7140,9 @@ class Printer extends DataClass implements Insertable<Printer> {
     map['is_active'] = Variable<bool>(isActive);
     if (!nullToAbsent || description != null) {
       map['description'] = Variable<String>(description);
+    }
+    if (!nullToAbsent || paperWidthMm != null) {
+      map['paper_width_mm'] = Variable<double>(paperWidthMm);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     if (!nullToAbsent || globalId != null) {
@@ -7146,6 +7178,9 @@ class Printer extends DataClass implements Insertable<Printer> {
       description: description == null && nullToAbsent
           ? const Value.absent()
           : Value(description),
+      paperWidthMm: paperWidthMm == null && nullToAbsent
+          ? const Value.absent()
+          : Value(paperWidthMm),
       createdAt: Value(createdAt),
       globalId: globalId == null && nullToAbsent
           ? const Value.absent()
@@ -7178,6 +7213,7 @@ class Printer extends DataClass implements Insertable<Printer> {
       purpose: serializer.fromJson<String>(json['purpose']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       description: serializer.fromJson<String?>(json['description']),
+      paperWidthMm: serializer.fromJson<double?>(json['paperWidthMm']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       globalId: serializer.fromJson<String?>(json['globalId']),
       lastModifiedAt: serializer.fromJson<DateTime?>(json['lastModifiedAt']),
@@ -7199,6 +7235,7 @@ class Printer extends DataClass implements Insertable<Printer> {
       'purpose': serializer.toJson<String>(purpose),
       'isActive': serializer.toJson<bool>(isActive),
       'description': serializer.toJson<String?>(description),
+      'paperWidthMm': serializer.toJson<double?>(paperWidthMm),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'globalId': serializer.toJson<String?>(globalId),
       'lastModifiedAt': serializer.toJson<DateTime?>(lastModifiedAt),
@@ -7218,6 +7255,7 @@ class Printer extends DataClass implements Insertable<Printer> {
     String? purpose,
     bool? isActive,
     Value<String?> description = const Value.absent(),
+    Value<double?> paperWidthMm = const Value.absent(),
     DateTime? createdAt,
     Value<String?> globalId = const Value.absent(),
     Value<DateTime?> lastModifiedAt = const Value.absent(),
@@ -7234,6 +7272,7 @@ class Printer extends DataClass implements Insertable<Printer> {
     purpose: purpose ?? this.purpose,
     isActive: isActive ?? this.isActive,
     description: description.present ? description.value : this.description,
+    paperWidthMm: paperWidthMm.present ? paperWidthMm.value : this.paperWidthMm,
     createdAt: createdAt ?? this.createdAt,
     globalId: globalId.present ? globalId.value : this.globalId,
     lastModifiedAt: lastModifiedAt.present
@@ -7262,6 +7301,9 @@ class Printer extends DataClass implements Insertable<Printer> {
       description: data.description.present
           ? data.description.value
           : this.description,
+      paperWidthMm: data.paperWidthMm.present
+          ? data.paperWidthMm.value
+          : this.paperWidthMm,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       globalId: data.globalId.present ? data.globalId.value : this.globalId,
       lastModifiedAt: data.lastModifiedAt.present
@@ -7289,6 +7331,7 @@ class Printer extends DataClass implements Insertable<Printer> {
           ..write('purpose: $purpose, ')
           ..write('isActive: $isActive, ')
           ..write('description: $description, ')
+          ..write('paperWidthMm: $paperWidthMm, ')
           ..write('createdAt: $createdAt, ')
           ..write('globalId: $globalId, ')
           ..write('lastModifiedAt: $lastModifiedAt, ')
@@ -7310,6 +7353,7 @@ class Printer extends DataClass implements Insertable<Printer> {
     purpose,
     isActive,
     description,
+    paperWidthMm,
     createdAt,
     globalId,
     lastModifiedAt,
@@ -7330,6 +7374,7 @@ class Printer extends DataClass implements Insertable<Printer> {
           other.purpose == this.purpose &&
           other.isActive == this.isActive &&
           other.description == this.description &&
+          other.paperWidthMm == this.paperWidthMm &&
           other.createdAt == this.createdAt &&
           other.globalId == this.globalId &&
           other.lastModifiedAt == this.lastModifiedAt &&
@@ -7348,6 +7393,7 @@ class PrintersCompanion extends UpdateCompanion<Printer> {
   final Value<String> purpose;
   final Value<bool> isActive;
   final Value<String?> description;
+  final Value<double?> paperWidthMm;
   final Value<DateTime> createdAt;
   final Value<String?> globalId;
   final Value<DateTime?> lastModifiedAt;
@@ -7364,6 +7410,7 @@ class PrintersCompanion extends UpdateCompanion<Printer> {
     this.purpose = const Value.absent(),
     this.isActive = const Value.absent(),
     this.description = const Value.absent(),
+    this.paperWidthMm = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.globalId = const Value.absent(),
     this.lastModifiedAt = const Value.absent(),
@@ -7381,6 +7428,7 @@ class PrintersCompanion extends UpdateCompanion<Printer> {
     this.purpose = const Value.absent(),
     this.isActive = const Value.absent(),
     this.description = const Value.absent(),
+    this.paperWidthMm = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.globalId = const Value.absent(),
     this.lastModifiedAt = const Value.absent(),
@@ -7398,6 +7446,7 @@ class PrintersCompanion extends UpdateCompanion<Printer> {
     Expression<String>? purpose,
     Expression<bool>? isActive,
     Expression<String>? description,
+    Expression<double>? paperWidthMm,
     Expression<DateTime>? createdAt,
     Expression<String>? globalId,
     Expression<DateTime>? lastModifiedAt,
@@ -7415,6 +7464,7 @@ class PrintersCompanion extends UpdateCompanion<Printer> {
       if (purpose != null) 'purpose': purpose,
       if (isActive != null) 'is_active': isActive,
       if (description != null) 'description': description,
+      if (paperWidthMm != null) 'paper_width_mm': paperWidthMm,
       if (createdAt != null) 'created_at': createdAt,
       if (globalId != null) 'global_id': globalId,
       if (lastModifiedAt != null) 'last_modified_at': lastModifiedAt,
@@ -7434,6 +7484,7 @@ class PrintersCompanion extends UpdateCompanion<Printer> {
     Value<String>? purpose,
     Value<bool>? isActive,
     Value<String?>? description,
+    Value<double?>? paperWidthMm,
     Value<DateTime>? createdAt,
     Value<String?>? globalId,
     Value<DateTime?>? lastModifiedAt,
@@ -7451,6 +7502,7 @@ class PrintersCompanion extends UpdateCompanion<Printer> {
       purpose: purpose ?? this.purpose,
       isActive: isActive ?? this.isActive,
       description: description ?? this.description,
+      paperWidthMm: paperWidthMm ?? this.paperWidthMm,
       createdAt: createdAt ?? this.createdAt,
       globalId: globalId ?? this.globalId,
       lastModifiedAt: lastModifiedAt ?? this.lastModifiedAt,
@@ -7490,6 +7542,9 @@ class PrintersCompanion extends UpdateCompanion<Printer> {
     if (description.present) {
       map['description'] = Variable<String>(description.value);
     }
+    if (paperWidthMm.present) {
+      map['paper_width_mm'] = Variable<double>(paperWidthMm.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -7523,6 +7578,7 @@ class PrintersCompanion extends UpdateCompanion<Printer> {
           ..write('purpose: $purpose, ')
           ..write('isActive: $isActive, ')
           ..write('description: $description, ')
+          ..write('paperWidthMm: $paperWidthMm, ')
           ..write('createdAt: $createdAt, ')
           ..write('globalId: $globalId, ')
           ..write('lastModifiedAt: $lastModifiedAt, ')
@@ -152139,6 +152195,7 @@ typedef $$PrintersTableCreateCompanionBuilder =
       Value<String> purpose,
       Value<bool> isActive,
       Value<String?> description,
+      Value<double?> paperWidthMm,
       Value<DateTime> createdAt,
       Value<String?> globalId,
       Value<DateTime?> lastModifiedAt,
@@ -152157,6 +152214,7 @@ typedef $$PrintersTableUpdateCompanionBuilder =
       Value<String> purpose,
       Value<bool> isActive,
       Value<String?> description,
+      Value<double?> paperWidthMm,
       Value<DateTime> createdAt,
       Value<String?> globalId,
       Value<DateTime?> lastModifiedAt,
@@ -152239,6 +152297,11 @@ class $$PrintersTableFilterComposer
 
   ColumnFilters<String> get description => $composableBuilder(
     column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get paperWidthMm => $composableBuilder(
+    column: $table.paperWidthMm,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -152352,6 +152415,11 @@ class $$PrintersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get paperWidthMm => $composableBuilder(
+    column: $table.paperWidthMm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -152422,6 +152490,11 @@ class $$PrintersTableAnnotationComposer
 
   GeneratedColumn<String> get description => $composableBuilder(
     column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get paperWidthMm => $composableBuilder(
+    column: $table.paperWidthMm,
     builder: (column) => column,
   );
 
@@ -152512,6 +152585,7 @@ class $$PrintersTableTableManager
                 Value<String> purpose = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<String?> description = const Value.absent(),
+                Value<double?> paperWidthMm = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
                 Value<DateTime?> lastModifiedAt = const Value.absent(),
@@ -152528,6 +152602,7 @@ class $$PrintersTableTableManager
                 purpose: purpose,
                 isActive: isActive,
                 description: description,
+                paperWidthMm: paperWidthMm,
                 createdAt: createdAt,
                 globalId: globalId,
                 lastModifiedAt: lastModifiedAt,
@@ -152546,6 +152621,7 @@ class $$PrintersTableTableManager
                 Value<String> purpose = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<String?> description = const Value.absent(),
+                Value<double?> paperWidthMm = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<String?> globalId = const Value.absent(),
                 Value<DateTime?> lastModifiedAt = const Value.absent(),
@@ -152562,6 +152638,7 @@ class $$PrintersTableTableManager
                 purpose: purpose,
                 isActive: isActive,
                 description: description,
+                paperWidthMm: paperWidthMm,
                 createdAt: createdAt,
                 globalId: globalId,
                 lastModifiedAt: lastModifiedAt,
