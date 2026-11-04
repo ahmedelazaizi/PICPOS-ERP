@@ -13,6 +13,7 @@ import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
 import '../../../services/invoice_generator.dart';
 import '../../../domain/entities/quotation_entity.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class QuotationsTab extends ConsumerStatefulWidget {
   final void Function(QuotationEntity)? onEditQuotation;
@@ -465,7 +466,7 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
                               child: Text(
                                 isConverted ? tr('محول') : tr('مسودة'),
                                 style: TextStyle(
-                                  fontSize: 10,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                   color: isConverted
                                       ? AppColors.success
@@ -481,10 +482,10 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   PhosphorIconsBold.user,
                                   size: 14,
-                                  color: AppColors.textMuted,
+                                  color: context.picposMuted,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -492,10 +493,10 @@ class _QuotationsTabState extends ConsumerState<QuotationsTab> {
                                   style: const TextStyle(fontSize: 12),
                                 ),
                                 const SizedBox(width: 16),
-                                const Icon(
+                                Icon(
                                   PhosphorIconsBold.calendar,
                                   size: 14,
-                                  color: AppColors.textMuted,
+                                  color: context.picposMuted,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(

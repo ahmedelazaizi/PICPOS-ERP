@@ -14,11 +14,11 @@ mixin _PurchaseReturnDetailsPanelMixin on ConsumerState<PurchaseReturnsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(PhosphorIconsBold.receipt, size: 80, color: AppColors.textMuted.withValues(alpha: 0.3)),
+            Icon(PhosphorIconsBold.receipt, size: 80, color: context.picposMuted.withValues(alpha: 0.3)),
             const SizedBox(height: 24),
              Text(
               tr('اختر فاتورة مشتريات لعرض تفاصيل الارتجاع'),
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 16),
+              style: TextStyle(color: context.picposMuted, fontSize: 16),
             ),
           ],
         ),
@@ -79,7 +79,7 @@ mixin _PurchaseReturnDetailsPanelMixin on ConsumerState<PurchaseReturnsScreen> {
                   ),
                   Text(
                     tr('التاريخ: {p0}/{p1}/{p2} • الإجمالي: {p3} {p4}', {'p0': invoice.invoiceDate.day, 'p1': invoice.invoiceDate.month, 'p2': invoice.invoiceDate.year, 'p3': invoice.total.toStringAsFixed(AppConstants.decimalPlaces), 'p4': AppConstants.currencySymbolAr}),
-                    style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                    style: TextStyle(color: context.picposMuted, fontSize: 13),
                   ),
                 ],
               ),
@@ -116,7 +116,7 @@ mixin _PurchaseReturnDetailsPanelMixin on ConsumerState<PurchaseReturnsScreen> {
                       Text(item.product.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                       Text(
                         tr('الكمية: {p0} • السعر: {p1}', {'p0': maxQty.toStringAsFixed(0), 'p1': item.item.unitCost.toStringAsFixed(AppConstants.decimalPlaces)}),
-                        style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                        style: TextStyle(fontSize: 12, color: context.picposMuted),
                       ),
                       // Per-line tax indicator from the original purchase
                       // invoice row — one invoice may mix taxable and
@@ -130,7 +130,7 @@ mixin _PurchaseReturnDetailsPanelMixin on ConsumerState<PurchaseReturnsScreen> {
                             size: 11,
                             color: item.item.taxAmount > 0
                                 ? AppColors.primary
-                                : AppColors.textMuted,
+                                : context.picposMuted,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -141,7 +141,7 @@ mixin _PurchaseReturnDetailsPanelMixin on ConsumerState<PurchaseReturnsScreen> {
                               fontSize: 11,
                               color: item.item.taxAmount > 0
                                   ? AppColors.primary
-                                  : AppColors.textMuted,
+                                  : context.picposMuted,
                             ),
                           ),
                         ],
@@ -211,7 +211,7 @@ mixin _PurchaseReturnDetailsPanelMixin on ConsumerState<PurchaseReturnsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -272,7 +272,7 @@ mixin _PurchaseReturnDetailsPanelMixin on ConsumerState<PurchaseReturnsScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                 Text(tr('إجمالي المرتجع'), style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                 Text(tr('إجمالي المرتجع'), style: TextStyle(fontSize: 12, color: context.picposMuted)),
                 Text(
                   '${total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.error),

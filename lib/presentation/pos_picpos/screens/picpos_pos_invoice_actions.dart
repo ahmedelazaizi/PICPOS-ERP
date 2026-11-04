@@ -41,6 +41,8 @@ extension _PicPosInvoiceActionsOps on _PicPosOperations {
 
     final items = ref.read(cartControllerProvider).items;
     if (items.isEmpty) {
+      // ESC على سلّةٍ فارغة يُطفئ وضعَ إدخال المرتجع إن كان مشتعلاً.
+      ref.read(posReturnEntryModeProvider.notifier).state = false;
       _refocusScanner();
       return;
     }
@@ -61,6 +63,7 @@ extension _PicPosInvoiceActionsOps on _PicPosOperations {
     }
     if (!mounted) return;
     ref.read(cartControllerProvider.notifier).clearCart();
+    ref.read(posReturnEntryModeProvider.notifier).state = false;
     setState(() => selectedIndex = null);
     barcodeController.clear();
     _refocusScanner();
@@ -118,6 +121,17 @@ extension _PicPosInvoiceActionsOps on _PicPosOperations {
     if (items.isEmpty) {
       showPosToast(context, ref, tr('الفاتورة فارغة'),
           type: PosNotificationType.info);
+      return;
+    }
+    // سطرُ مرتجعٍ بلا فاتورة لا يُعلَّق: التعليقُ لا يحفظ نوعَ السطر فيعود
+    // بيعاً عند الاسترجاع (بند ٤).
+    if (ref.read(cartControllerProvider).hasReturnLines) {
+      showPosToast(
+        context,
+        ref,
+        tr('لا يمكن تعليق فاتورة فيها مرتجع بلا فاتورة — احفظها أو امسح سطور المرتجع'),
+        type: PosNotificationType.warning,
+      );
       return;
     }
     // `pos_hold_order` كان محروساً في `pos/widgets/pos_header.dart` وحدَه —
@@ -194,7 +208,13 @@ extension _PicPosInvoiceActionsOps on _PicPosOperations {
     if (!mounted) return;
     await showDialog<void>(
       context: context,
-      builder: (_) => PosPreviousInvoicesDialog(
+      builder: (dialogCtx) => PosPreviousInvoicesDialog(
+        // بند ٧: «مرتجع» من صفّ الفاتورة — يُغلق القائمةَ أوّلاً ثم يفتح محرّرَ
+        // الأسطر مباشرةً (حارسُ عدم الاستبدال الصامت في `_showQuickReturn`).
+        onReturn: (inv) {
+          Navigator.pop(dialogCtx);
+          _showQuickReturn(preselected: inv);
+        },
         // ⚠️ بابٌ ثانٍ لإعادة الطباعة: زرُّ إعادة الطباعة في حوار «آخر
         // فاتورة» محروسٌ بـ`pos_print` (`picpos_last_invoice_dialog.dart:125`)
         // وهذا المسارُ كان يطبع بلا فحص. والطباعةُ التلقائيةُ بعد البيع

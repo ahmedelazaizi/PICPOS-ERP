@@ -1,3 +1,4 @@
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:picpos_erp/core/constants/app_constants.dart';
 import 'package:flutter/material.dart';
@@ -338,13 +339,13 @@ class _EmployeeContractCard extends StatelessWidget {
                     '${contractTypes[activeContract.contractType] ?? activeContract.contractType}'
                     '${activeContract.endDate != null ? ' — ينتهي ${activeContract.endDate!.day}/${activeContract.endDate!.month}/${activeContract.endDate!.year}' : ' — دائم'}',
                     style: GoogleFonts.cairo(
-                        fontSize: 11, color: AppColors.textMuted),
+                        fontSize: 11, color: context.picposMuted),
                   )
                 : Text(tr('بدون عقد نشط'),
                     style: GoogleFonts.cairo(
-                        fontSize: 11, color: AppColors.textMuted)),
+                        fontSize: 11, color: context.picposMuted)),
             children: contracts.map((c) {
-              final color = statusColors[c.status] ?? AppColors.textMuted;
+              final color = statusColors[c.status] ?? context.picposMuted;
               return ListTile(
                 dense: true,
                 title: Text(
@@ -354,7 +355,7 @@ class _EmployeeContractCard extends StatelessWidget {
                 subtitle: Text(
                   '${c.startDate.day}/${c.startDate.month}/${c.startDate.year}'
                   '${c.endDate != null ? ' → ${c.endDate!.day}/${c.endDate!.month}/${c.endDate!.year}' : ' → مفتوح'}',
-                  style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted),
+                  style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
                 ),
                 trailing: Container(
                   padding:
@@ -365,7 +366,7 @@ class _EmployeeContractCard extends StatelessWidget {
                   ),
                   child: Text(statusLabels[c.status] ?? c.status,
                       style: GoogleFonts.cairo(
-                          fontSize: 10,
+                          fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: color)),
                 ),

@@ -24,6 +24,7 @@ import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/feature_settings_providers.dart';
 import '../../../services/api/table_bill_token.dart';
 import '../widgets/settings_blocks.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// ضبطُ رمز حساب الطاولة — التشغيل، وطلبُ الضيف، والنشرُ على دومين.
 class TableBillSettingsCard extends ConsumerWidget {
@@ -169,7 +170,7 @@ class _PublicBaseUrlRowState extends ConsumerState<_PublicBaseUrlRow> {
             style: TextStyle(
               fontSize: 11,
               color: widget.current == null
-                  ? AppColors.textMuted
+                  ? context.picposMuted
                   : AppColors.warning,
             ),
           ),
@@ -263,7 +264,7 @@ class _WhatsAppSettingsCardState extends ConsumerState<WhatsAppSettingsCard> {
               // سوق، وافتراضُ دولةٍ يُشوِّه أرقامَ السوق الآخر كلَّها بصمت.
                Text(
                 tr('يُضاف إلى الأرقام المحلّيّة قبل فتح واتساب. بدونه لا يُبنى رابطٌ أصلاً — لأنّ رابطاً برقمٍ ناقصٍ يفتح «الرقم غير صالح» فيُظنّ أنّ العميل ليس على واتساب.'),
-                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 11, color: context.picposMuted),
               ),
             ],
           ),

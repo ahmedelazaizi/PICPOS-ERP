@@ -993,7 +993,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
               const SizedBox(height: 4),
               Text(
                 tr('IAS 16.31 — نموذج إعادة التقييم'),
-                style: GoogleFonts.cairo(fontSize: 10, color: Colors.grey),
+                style: GoogleFonts.cairo(fontSize: 11, color: Colors.grey),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -1237,7 +1237,7 @@ extension _FixedAssetsDialogs on _FixedAssetsScreenState {
                       subtitle: Text(
                         tr('متراكم: {p0} | دفتري: {p1}', {'p0': _currencyFormat.format(e.accumulatedDepreciation), 'p1': _currencyFormat.format(e.bookValue)}),
                         style: GoogleFonts.cairo(
-                            fontSize: 10, color: Colors.grey),
+                            fontSize: 11, color: Colors.grey),
                       ),
                     );
                   },

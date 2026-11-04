@@ -422,7 +422,7 @@ extension CommercialPapersDialogs on _CommercialPapersScreenState {
                       ),
                       subtitle: Text(
                         _dateFormat.format(h.changedAt),
-                        style: GoogleFonts.cairo(fontSize: 10),
+                        style: GoogleFonts.cairo(fontSize: 11),
                       ),
                       trailing: h.notes != null
                           ? Tooltip(

@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../data/database/database.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../data/providers/report_providers.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// AR/AP Aging Report screen.
 /// PIR P1-01: Refactored to use arAgingReportProvider — no direct DB access.
@@ -68,7 +69,7 @@ class _ArAgingReportScreenState extends ConsumerState<ArAgingReportScreen>
       child: Scaffold(
         backgroundColor: const Color(0xFFF1F5F9),
         appBar: AppBar(
-          backgroundColor: AppColors.surface,
+          backgroundColor: context.picposField,
           title:  Text(
             tr('تقرير تقادم الذمم'),
             style: const TextStyle(fontWeight: FontWeight.bold),
@@ -137,7 +138,7 @@ class _ArAgingReportScreenState extends ConsumerState<ArAgingReportScreen>
           ),
           Text(
             tr('بتاريخ {p0}', {'p0': _dateFmt.format(_asOfDate)}),
-            style: const TextStyle(color: AppColors.textSecondary),
+            style: TextStyle(color: context.picposSecondary),
           ),
         ],
       ),
@@ -154,10 +155,10 @@ class _ArAgingReportScreenState extends ConsumerState<ArAgingReportScreen>
       tBal += r.outstandingTotal;
     }
 
-    const headerStyle = TextStyle(
+    final headerStyle = TextStyle(
       fontWeight: FontWeight.bold,
       fontSize: 12,
-      color: AppColors.textSecondary,
+      color: context.picposSecondary,
     );
     const totalStyle =
         TextStyle(fontWeight: FontWeight.bold, fontSize: 12);
@@ -179,7 +180,7 @@ class _ArAgingReportScreenState extends ConsumerState<ArAgingReportScreen>
           ),
         ),
         Container(
-          color: AppColors.surface,
+          color: context.picposField,
           child: Row(
             children: [
               _headerCell(tr('اسم الطرف'), flex: 3, style: headerStyle),
@@ -204,7 +205,7 @@ class _ArAgingReportScreenState extends ConsumerState<ArAgingReportScreen>
                     ? const Color(0xFFFFEBEB)
                     : (i.isOdd
                         ? const Color(0xFFF0F4F8)
-                        : AppColors.surface),
+                        : context.picposField),
                 child: Row(
                   children: [
                     _dataCell(row.partyName, flex: 3, bold: true),
@@ -232,7 +233,7 @@ class _ArAgingReportScreenState extends ConsumerState<ArAgingReportScreen>
         ),
         const Divider(height: 1, thickness: 2),
         Container(
-          color: AppColors.surface,
+          color: context.picposField,
           child: Row(
             children: [
               _dataCell(tr('الإجمالي ({p0} طرف)', {'p0': rows.length}),
@@ -263,7 +264,7 @@ class _ArAgingReportScreenState extends ConsumerState<ArAgingReportScreen>
           children: [
             Text(label,
                 style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 11,
                     color: color,
                     fontWeight: FontWeight.bold)),
             Text(_fmt(value),

@@ -10,6 +10,7 @@ import '../../data/providers/providers.dart';
 import 'role_management/data/permission_categories.dart';
 import 'role_management/widgets/role_list_panel.dart';
 import 'role_management/widgets/permissions_panel.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Enhanced Role Management Screen - Refactored version
 class EnhancedRoleManagementScreen extends ConsumerStatefulWidget {
@@ -107,20 +108,20 @@ class _EnhancedRoleManagementScreenState
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             PhosphorIconsBold.shieldCheck,
             size: 80,
-            color: AppColors.textMuted,
+            color: context.picposMuted,
           ),
           const SizedBox(height: 16),
           Text(
             tr('اختر دوراً لتعديل صلاحياته'),
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 18),
+            style: TextStyle(color: context.picposMuted, fontSize: 18),
           ),
           const SizedBox(height: 8),
           Text(
             tr('يمكنك تحديد الصلاحيات التفصيلية لكل دور'),
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+            style: TextStyle(color: context.picposMuted, fontSize: 14),
           ),
         ],
       ),

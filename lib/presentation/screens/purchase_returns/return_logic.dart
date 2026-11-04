@@ -333,9 +333,9 @@ mixin _PurchaseReturnLogicMixin on ConsumerState<PurchaseReturnsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(PhosphorIconsBold.receipt, size: 48, color: AppColors.textMuted),
+                        Icon(PhosphorIconsBold.receipt, size: 48, color: context.picposMuted),
                         const SizedBox(height: 16),
-                        Text(tr('لا توجد مرتجعات في آخر 30 يوم'), style: const TextStyle(color: AppColors.textMuted)),
+                        Text(tr('لا توجد مرتجعات في آخر 30 يوم'), style: TextStyle(color: context.picposMuted)),
                       ],
                     ),
                   );

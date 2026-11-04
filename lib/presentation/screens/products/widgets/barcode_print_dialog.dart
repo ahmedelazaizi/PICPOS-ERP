@@ -1,112 +1,99 @@
-import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/widgets/app_toast.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../data/providers/providers.dart';
 import '../../../../domain/entities/product_entity.dart';
-import '../../../../services/invoice_generator.dart';
+import '../../../../services/printing/barcode_label_printer.dart';
+import '../../../../services/printing/barcode_label_spec.dart';
+import '../../../../services/printing/label_default_copies.dart';
+import '../../../../services/printing/label_item_sample.dart';
+import '../../../../services/templated_invoice_service.dart';
+import '../../../pos/services/scale_barcode_config.dart';
+import 'barcode_label_batch_dialog.dart';
 
-class BarcodePrintDialog extends StatefulWidget {
-  final ProductEntity product;
+/// طباعة ملصقات صنف واحد: يفتح حوار الطباعة الدفعي بصنف واحد، ونسخه
+/// الافتراضية من كمية آخر استلام (أو 1).
+class BarcodePrintDialog {
+  const BarcodePrintDialog._();
 
-  const BarcodePrintDialog({super.key, required this.product});
+  static Future<void> show(BuildContext context, ProductEntity product) async {
+    final container = ProviderScope.containerOf(context);
+    final db = container.read(databaseProvider);
+    final settings = <String, String>{};
+    // كلُّ مفاتيح إعداد الميزان (منها `scale_weight_enabled` والمفاتيح
+    // القديمة) — كانت ثلاثة فقط، فلا يعرف الحوار إن كان الإعداد مفعّلاً.
+    // تُقرأ عند كل فتح ⇒ تفعيلُ الإعداد يظهر في القائمة بإعادة فتح النافذة.
+    for (final key in ScaleBarcodeConfig.readKeys) {
+      final value = await db.getSettingValue(key);
+      if (value != null) settings[key] = value;
+    }
+    final templates =
+        (await container
+                .read(invoiceTemplatesRepositoryProvider)
+                .getAllTemplates())
+            .where((template) => template.templateCategory == 'barcode')
+            .toList();
+    final scaleTemplate = templates
+        .where((t) => t.name == 'ملصق ميزان')
+        .firstOrNull;
+    final defaultTemplate = templates.where((t) => t.isDefault).firstOrNull;
+    // عناصرُ كلِّ قالبٍ للمعاينة — بنفس قارئ المحرّر والراسم (‏`loadLabelDesign`).
+    // بلاها كانت المعاينةُ ترسم خلايا باسم الصنف وحده والورقةُ تحمل السعرَ
+    // والباركود.
+    final repo = container.read(invoiceTemplatesRepositoryProvider);
+    final designs = {
+      for (final t in templates) t.id: await repo.getLabelDesign(t.id),
+    };
+    if (!context.mounted) return;
 
-  static Future<void> show(BuildContext context, ProductEntity product) {
-    return showDialog(
-      context: context,
-      builder: (context) => BarcodePrintDialog(product: product),
-    );
-  }
-
-  @override
-  State<BarcodePrintDialog> createState() => _BarcodePrintDialogState();
-}
-
-class _BarcodePrintDialogState extends State<BarcodePrintDialog> {
-  final copiesController = TextEditingController(text: '1');
-
-  @override
-  void dispose() {
-    copiesController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: AlertDialog(
-        title:  Row(
-          children: [
-            const Icon(PhosphorIconsBold.barcode, color: AppColors.warning),
-            const SizedBox(width: 8),
-            Text(tr('طباعة باركود')),
-          ],
+    return BarcodeLabelBatchDialog.show(
+      context,
+      [
+        BarcodeLabelItem(
+          name: product.name,
+          barcode: product.barcode ?? product.code,
+          price: product.salePrice,
+          productId: product.id,
+          scalePluNumber: product.scalePluNumber ?? int.tryParse(product.code),
+          isSoldByWeight: product.isSoldByWeight,
         ),
-        content: SizedBox(
-          width: 300,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                tr('المنتج: {p0}', {'p0': widget.product.name}),
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              if (widget.product.barcode != null &&
-                  widget.product.barcode!.isNotEmpty)
-                Text(
-                  tr('الباركود: {p0}', {'p0': widget.product.barcode}),
-                  style: const TextStyle(color: AppColors.textSecondary),
-                ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: copiesController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: tr('عدد النسخ'),
-                  prefixIcon: const Icon(PhosphorIconsBold.copy, size: 18),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ],
+      ],
+      scaleSettings: settings,
+      scaleTemplateId: scaleTemplate?.id,
+      templates: [
+        for (final template in templates)
+          BarcodeLabelTemplateOption(
+            id: template.id,
+            name: template.name,
+            widthMm: template.paperWidth,
+            heightMm: template.paperHeight ?? 25,
+            design: designs[template.id],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child:  Text(tr('إلغاء')),
-          ),
-          ElevatedButton.icon(
-            onPressed: () async {
-              final copies = int.tryParse(copiesController.text) ?? 1;
-              Navigator.pop(context);
-
-              // Print barcode
-              final printed = await InvoiceGenerator.printBarcodeLabel(
-                productName: widget.product.name,
-                barcodeValue: widget.product.barcode ?? widget.product.code,
-                price: widget.product.salePrice,
-                copies: copies,
+      ],
+      defaultTemplateId: defaultTemplate?.id,
+      onPrintTemplate: (items, spec, selectedTemplateId) async {
+        for (final item in items) {
+          // نفسُ العيّنة التي ترسمها المعاينة — المعاينة = الخرج.
+          final s = labelSampleForItem(item);
+          final printed =
+              await TemplatedInvoiceService.printBarcodeWithTemplate(
+                db: db,
+                templateId: selectedTemplateId,
+                barcodeValue: s.barcodeValue,
+                productName: s.productName,
+                productCode: s.productCode,
+                price: s.price,
+                weight: s.weight,
+                total: s.total,
+                packDate: s.packDate,
+                copies: item.copies,
+                directPrint: false,
               );
-
-              if (context.mounted) {
-                AppToast.show(
-                  context,
-                  printed
-                      ? tr('تمت طباعة {copies} نسخة من الباركود', {'copies': copies})
-                      : tr('أُلغيت طباعة الباركود'),
-                  type: printed ? ToastType.success : ToastType.warning,
-                );
-              }
-            },
-            icon: const Icon(PhosphorIconsBold.printer, size: 16),
-            label:  Text(tr('طباعة')),
-          ),
-        ],
-      ),
+          if (!printed) return false;
+        }
+        return true;
+      },
+      onPrint: (items, spec) => BarcodeLabelPrinter.print(items, spec: spec),
+      loadDefaults: (items) => withLastReceiptCopies(db, items),
     );
   }
 }

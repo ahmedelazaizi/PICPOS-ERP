@@ -11,6 +11,7 @@
 library;
 
 import '../../../core/config/business_profile.dart';
+import '../../../core/config/feature_key.dart';
 import '../../../core/i18n/tr.dart';
 import '../../../domain/models/first_run/first_run_draft.dart';
 import '../../../domain/models/first_run/first_run_currency.dart';
@@ -80,6 +81,25 @@ ServerSetupInput buildServerSetupInput(FirstRunDraft d, FirstRunSecrets s) {
   );
 }
 
+/// المقرّ فقط: نسخةُ الإقلاع المحلّيّة لمفاتيح الباقة/الأنشطة التي يكتبها
+/// `ServerSetupWriter` في الخادم وحده (أعلامُ `feature.*` ونوعُ النشاط وإظهارُ
+/// منصّتَي الفوترة). لا تُكتب في الفرع/المرآة: تُزامَن من الخادم فيطمسها الافتراضيّ.
+Future<void> writeHqLocalBootSettings(
+    SetupPersistence p, ServerSetupInput i) async {
+  await p.saveSetting('business_type', i.businessType);
+  await p.saveSetting(
+      'show_jofotara_einvoice', i.eInvoice == 'jordan' ? 'true' : 'false');
+  await p.saveSetting('show_eta_einvoice', i.eInvoice == 'egypt' ? 'true' : 'false');
+  if (i.tablesEnabled != null) {
+    await p.saveCachedSetting(
+        FeatureKey.posTables.settingKey, i.tablesEnabled.toString());
+  }
+  if (i.deliveryEnabled != null) {
+    await p.saveCachedSetting(
+        FeatureKey.posDelivery.settingKey, i.deliveryEnabled.toString());
+  }
+}
+
 /// A1: the network mode a path COMMITS - one explicit mapping, so the mode the
 /// owner chose in the first step is the mode that is committed (never client
 /// for a mirror, as the old wizard's logs showed).
@@ -113,13 +133,18 @@ FirstRunFinisher serverBoundFinisher({
         case FirstRunPath.hq:
           enter(SetupRunStage.serverData);
           final cfg = pgConfigOf(draft, secrets);
-          await writer.write(cfg, buildServerSetupInput(draft, secrets));
+          final input = buildServerSetupInput(draft, secrets);
+          await writer.write(cfg, input);
           await provisioning.armPostgresMode(cfg);
           enter(SetupRunStage.settings);
-          // نسخةُ الإقلاع المحلّيّة: اسمُ الشركة فقط (‏يقرأ التطبيقُ من الخادم بعد الإعادة).
+          // نسخةُ الإقلاع المحلّيّة: اسمُ الشركة وملفُّ النشاط (‏يقرأ التطبيقُ من
+          // الخادم بعد الإعادة، لكنّه يرجع إلى SQLite المحلية إن تعذّر PG —
+          // main.dart — فبلا `business_profile` هنا يسقط «شامل» إلى الافتراضيّ).
           if (draft.companyName.trim().isNotEmpty) {
             await p.saveSetting('company_name', draft.companyName.trim());
           }
+          await p.saveCachedSetting('business_profile', draft.pack.profileName);
+          await writeHqLocalBootSettings(p, input);
           return runFinishTail(
             p: p,
             mode: networkModeForPath(draft.path),

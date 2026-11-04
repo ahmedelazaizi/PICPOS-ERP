@@ -12,6 +12,7 @@ import '../../data/providers/providers.dart';
 import '../widgets/activity_timeline.dart';
 import '../widgets/enhanced_components.dart';
 import '../widgets/field_audit_history_widget.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 // ── Part files (mixin-based extraction) ─────────────────────────────────
 part 'activity_log/activity_log_filters.dart';

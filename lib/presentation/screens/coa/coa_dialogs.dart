@@ -9,6 +9,7 @@ import '../../../data/providers/providers.dart';
 import '../../../domain/repositories/accounting_repository.dart';
 import '../../../services/network_service.dart';
 import 'coa_shared.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // COA DIALOGS — Add, Edit, Delete, Ledger
@@ -81,7 +82,7 @@ void showAddAccountDialog(
                                 style: GoogleFonts.cairo(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
+                                  color: context.picposText,
                                 ),
                               ),
                             ],
@@ -254,7 +255,7 @@ void showEditAccountDialog(
                 SwitchListTile(
                   title:  Text(tr('إخفاء من سندات القيد')),
                   subtitle: Text(tr('لن يظهر الحساب عند إنشاء قيود يدوية'),
-                      style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+                      style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
                   value: isHiddenFromEntries,
                   onChanged: (v) => setDialogState(() => isHiddenFromEntries = v),
                   contentPadding: EdgeInsets.zero,
@@ -387,7 +388,7 @@ void showAccountLedger(
                 const Divider(),
                 Row(
                   children: [
-                    const Icon(PhosphorIconsBold.calendarBlank, size: 18, color: AppColors.textMuted),
+                    Icon(PhosphorIconsBold.calendarBlank, size: 18, color: context.picposMuted),
                     const SizedBox(width: 8),
                     InkWell(
                       onTap: () async {
@@ -408,7 +409,7 @@ void showAccountLedger(
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.border),
+                          border: Border.all(color: context.picposHairline),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -435,10 +436,10 @@ void showAccountLedger(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(PhosphorIconsBold.bookOpen, size: 48, color: AppColors.textMuted),
+                              Icon(PhosphorIconsBold.bookOpen, size: 48, color: context.picposMuted),
                               const SizedBox(height: 8),
                               Text(tr('لا توجد حركات في هذه الفترة'),
-                                  style: GoogleFonts.cairo(color: AppColors.textMuted)),
+                                  style: GoogleFonts.cairo(color: context.picposMuted)),
                             ],
                           ),
                         );
@@ -452,16 +453,16 @@ void showAccountLedger(
                             3: FixedColumnWidth(80),
                             4: FixedColumnWidth(90),
                           },
-                          border: TableBorder.all(color: AppColors.border, width: 0.5),
+                          border: TableBorder.all(color: context.picposHairline, width: 0.5),
                           children: [
                             TableRow(
                               decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.06)),
                               children: [
-                                _ledgerCell(tr('التاريخ'), isHeader: true),
-                                _ledgerCell(tr('البيان'), isHeader: true),
-                                _ledgerCell(tr('مدين'), isHeader: true),
-                                _ledgerCell(tr('دائن'), isHeader: true),
-                                _ledgerCell(tr('الرصيد'), isHeader: true),
+                                _ledgerCell(context, tr('التاريخ'), isHeader: true),
+                                _ledgerCell(context, tr('البيان'), isHeader: true),
+                                _ledgerCell(context, tr('مدين'), isHeader: true),
+                                _ledgerCell(context, tr('دائن'), isHeader: true),
+                                _ledgerCell(context, tr('الرصيد'), isHeader: true),
                               ],
                             ),
                             ...ledger.map((row) {
@@ -472,17 +473,17 @@ void showAccountLedger(
                                     ? BoxDecoration(color: AppColors.info.withValues(alpha: 0.05))
                                     : null,
                                 children: [
-                                  _ledgerCell(isOpening ? '' : '${date.day}/${date.month}'),
-                                  _ledgerCell(
+                                  _ledgerCell(context, isOpening ? '' : '${date.day}/${date.month}'),
+                                  _ledgerCell(context, 
                                     isOpening ? tr('رصيد أول المدة') : '${row['description'] ?? ''}',
                                   ),
-                                  _ledgerCell(
+                                  _ledgerCell(context, 
                                     isOpening ? '' : formatAccountAmount(row['debit'] as double),
                                   ),
-                                  _ledgerCell(
+                                  _ledgerCell(context, 
                                     isOpening ? '' : formatAccountAmount(row['credit'] as double),
                                   ),
-                                  _ledgerCell(
+                                  _ledgerCell(context, 
                                     formatAccountAmount(row['balance'] as double),
                                     isBold: true,
                                   ),
@@ -504,7 +505,7 @@ void showAccountLedger(
   );
 }
 
-Widget _ledgerCell(String text, {bool isHeader = false, bool isBold = false}) {
+Widget _ledgerCell(BuildContext context, String text, {bool isHeader = false, bool isBold = false}) {
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
     child: Text(
@@ -512,7 +513,7 @@ Widget _ledgerCell(String text, {bool isHeader = false, bool isBold = false}) {
       style: GoogleFonts.cairo(
         fontSize: isHeader ? 11 : 12,
         fontWeight: isHeader || isBold ? FontWeight.w700 : FontWeight.normal,
-        color: isHeader ? AppColors.primary : AppColors.textPrimary,
+        color: isHeader ? AppColors.primary : context.picposText,
       ),
       textAlign: TextAlign.center,
     ),

@@ -90,13 +90,13 @@ class PicPosLastInvoiceDialog extends ConsumerWidget {
                   ),
                   child: Row(
                     children: [
-                      const Icon(PhosphorIconsBold.clock,
-                          size: 14, color: AppColors.textMuted),
+                      Icon(PhosphorIconsBold.clock,
+                          size: 14, color: context.picposMuted),
                       const SizedBox(width: 4),
                       Text(time, style: PicPosText.v(context, 12)),
                       const SizedBox(width: 12),
-                      const Icon(PhosphorIconsBold.wallet,
-                          size: 14, color: AppColors.textMuted),
+                      Icon(PhosphorIconsBold.wallet,
+                          size: 14, color: context.picposMuted),
                       const SizedBox(width: 4),
                       Text(
                         PaymentMethods.label(invoice.paymentMethod),
@@ -104,8 +104,8 @@ class PicPosLastInvoiceDialog extends ConsumerWidget {
                       ),
                       if (invoice.orderNumber != null) ...[
                         const SizedBox(width: 12),
-                        const Icon(PhosphorIconsBold.hash,
-                            size: 14, color: AppColors.textMuted),
+                        Icon(PhosphorIconsBold.hash,
+                            size: 14, color: context.picposMuted),
                         const SizedBox(width: 4),
                         Text(tr('طلب {p0}', {'p0': invoice.orderNumber}),
                             style: PicPosText.v(context, 12)),
@@ -141,7 +141,7 @@ class PicPosLastInvoiceDialog extends ConsumerWidget {
   Widget _empty(BuildContext context) => AlertDialog(
         title: Row(
           children: [
-            const Icon(PhosphorIconsBold.receiptX, color: AppColors.textMuted),
+            Icon(PhosphorIconsBold.receiptX, color: context.picposMuted),
             const SizedBox(width: 8),
             Text(tr('الفاتورة السابقة'), style: PicPosText.v(context, 16)),
           ],

@@ -176,16 +176,16 @@ class SalesInvoicesTable extends ConsumerWidget {
                    Text(
                     tr('لا فروعَ مُسنَدةٌ لحسابك'),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textMuted,
+                      color: context.picposMuted,
                     ),
                   ),
                   const SizedBox(height: 8),
                    Text(
                     tr('الفواتيرُ المرتبطةُ بفرعٍ مخفيّةٌ عنك حتى يُسنِد لك مديرُ النظام فرعاً واحداً على الأقل. وهذا ليس عطباً في البيانات — الفواتيرُ موجودةٌ ومحجوبة.'),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                    style: TextStyle(fontSize: 12, color: context.picposMuted),
                   ),
                 ],
               ),
@@ -204,14 +204,14 @@ class SalesInvoicesTable extends ConsumerWidget {
                     ? PhosphorIconsBold.funnelSimple
                     : PhosphorIconsBold.receipt,
                 size: 64,
-                color: AppColors.textMuted.withValues(alpha: 0.3),
+                color: context.picposMuted.withValues(alpha: 0.3),
               ),
               const SizedBox(height: 16),
               Text(
                 hasFilters
                     ? tr('لا نتائج تطابق الفلاتر الحالية')
                     : tr('لا توجد فواتير مبيعات'),
-                style: const TextStyle(color: AppColors.textMuted),
+                style: TextStyle(color: context.picposMuted),
               ),
               if (hasFilters) ...[
                 const SizedBox(height: 12),
@@ -513,7 +513,7 @@ class _InvoiceCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: muted,
                   ),
@@ -586,7 +586,7 @@ class _InvoiceCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: muted,
                   ),
@@ -791,7 +791,7 @@ class _CollectionCell extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.end,
                 style: TextStyle(
-                  fontSize: 10.5,
+                  fontSize: 11,
                   fontWeight: FontWeight.w700,
                   color: remainingColor,
                   fontFeatures: const [ui.FontFeature.tabularFigures()],
@@ -879,7 +879,7 @@ class _ReturnBadge extends StatelessWidget {
             Text(
               full ? tr('مُرتجعة') : tr('مُرتجعة جزئياً'),
               style: TextStyle(
-                fontSize: 9.5,
+                fontSize: 11,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),

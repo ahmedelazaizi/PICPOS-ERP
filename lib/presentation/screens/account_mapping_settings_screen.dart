@@ -380,7 +380,7 @@ class _AccountMappingSettingsScreenState
                     ),
                     Text(
                       item.description,
-                      style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted),
+                      style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
                     ),
                   ],
                 ),
@@ -423,9 +423,9 @@ class _AccountMappingSettingsScreenState
       ),
       child: Row(
         children: [
-          const Icon(PhosphorIconsBold.globe, size: 14, color: AppColors.textMuted),
+          Icon(PhosphorIconsBold.globe, size: 14, color: context.picposMuted),
           const SizedBox(width: 6),
-          Text(tr('افتراضي'), style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted, fontWeight: FontWeight.w600)),
+          Text(tr('افتراضي'), style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted, fontWeight: FontWeight.w600)),
           const SizedBox(width: 10),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
@@ -441,7 +441,7 @@ class _AccountMappingSettingsScreenState
           const SizedBox(width: 8),
           Text(
             defaultAccount?.name ?? item.label,
-            style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textMuted),
+            style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w500, color: context.picposMuted),
           ),
         ],
       ),
@@ -485,7 +485,7 @@ class _AccountMappingSettingsScreenState
                 Text(
                   isGlobal ? tr('عالمي') : costCenter?.name ?? tr('؟'),
                   style: GoogleFonts.cairo(
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: isGlobal ? Colors.blue : Colors.orange[700],
                   ),
@@ -575,7 +575,7 @@ class _AccountMappingSettingsScreenState
                   // Cost center selector
                   Row(
                     children: [
-                      const Icon(PhosphorIconsBold.buildings, size: 16, color: AppColors.textMuted),
+                      Icon(PhosphorIconsBold.buildings, size: 16, color: context.picposMuted),
                       const SizedBox(width: 8),
                       Text(tr('مركز التكلفة:'), style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600)),
                       const SizedBox(width: 8),
@@ -708,7 +708,7 @@ class _AccountMappingSettingsScreenState
                   // Cost center selector
                   Row(
                     children: [
-                      const Icon(PhosphorIconsBold.buildings, size: 16, color: AppColors.textMuted),
+                      Icon(PhosphorIconsBold.buildings, size: 16, color: context.picposMuted),
                       const SizedBox(width: 8),
                       Text(tr('مركز التكلفة:'), style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600)),
                       const SizedBox(width: 8),

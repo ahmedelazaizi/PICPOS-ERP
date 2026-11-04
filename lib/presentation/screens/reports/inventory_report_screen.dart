@@ -621,7 +621,7 @@ class _InventoryReportScreenState extends ConsumerState<InventoryReportScreen> {
             ),
             Text(
               tr('{p0}% من إجمالي القيمة', {'p0': pct.toStringAsFixed(1)}),
-              style: GoogleFonts.cairo(fontSize: 10, color: color),
+              style: GoogleFonts.cairo(fontSize: 11, color: color),
             ),
           ],
         ),

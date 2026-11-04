@@ -16,6 +16,7 @@ import '../../core/config/brand.dart';
 import '../widgets/user_language_selector.dart';
 import '../../core/logging/diagnostic_logger.dart';
 import '../../core/theme/app_colors.dart';
+import '../picpos_shell/picpos_surface.dart';
 
 import '../../core/design_system/typography.dart';
 import '../../core/permissions/permission_codes.dart';
@@ -303,7 +304,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Directionality(
       textDirection: Directionality.of(context),
       child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.picposField,
         body: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -1055,12 +1056,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
              Text(
               tr('نظام الكاشير المتكامل'),
-              style: const TextStyle(color: AppColors.textMuted),
+              style: TextStyle(color: context.picposMuted),
             ),
             const SizedBox(height: 8),
              Text(
               tr('الإصدار 1.0.0'),
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+              style: TextStyle(color: context.picposMuted, fontSize: 12),
             ),
             // Vendor block — values from `Brand`. A brand that declares no
             // vendor info renders nothing here; printing another product's
@@ -1125,9 +1126,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ],
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 '© 2026 ${Brand.vendorName}',
-                style: TextStyle(color: AppColors.textMuted, fontSize: 10),
+                style: TextStyle(color: context.picposMuted, fontSize: 11),
               ),
             ],
           ],
@@ -1298,9 +1299,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1309,7 +1310,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 11, color: context.picposMuted),
           ),
         ],
       ),

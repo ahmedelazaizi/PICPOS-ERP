@@ -98,11 +98,11 @@ class _ExpensesTab extends ConsumerWidget {
                         children: [
                           Icon(PhosphorIconsBold.receipt,
                               size: 64,
-                              color: AppColors.textMuted.withValues(alpha: 0.3)),
+                              color: context.picposMuted.withValues(alpha: 0.3)),
                           const SizedBox(height: 16),
                            Text(tr('لا توجد مصروفات في هذه الفترة'),
-                              style: const TextStyle(
-                                  color: AppColors.textMuted, fontSize: 16)),
+                              style: TextStyle(
+                                  color: context.picposMuted, fontSize: 16)),
                         ],
                       ),
                     );
@@ -205,10 +205,10 @@ class _ExpensesTab extends ConsumerWidget {
                                                 fontSize: 13)),
                                         if (notes.isNotEmpty)
                                           Text(notes,
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                   fontSize: 11,
                                                   color:
-                                                      AppColors.textMuted)),
+                                                      context.picposMuted)),
                                       ],
                                     ),
                                   ),
@@ -224,9 +224,9 @@ class _ExpensesTab extends ConsumerWidget {
                                             color: Colors.orange),
                                       ),
                                       Text(catType,
-                                          style: const TextStyle(
-                                              fontSize: 10,
-                                              color: AppColors.textMuted)),
+                                          style: TextStyle(
+                                              fontSize: 11,
+                                              color: context.picposMuted)),
                                     ],
                                   ),
                                   IconButton(

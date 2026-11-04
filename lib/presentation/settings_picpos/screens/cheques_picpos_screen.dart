@@ -366,8 +366,8 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
             padding: const EdgeInsetsDirectional.fromSTEB(16, 8, 16, 0),
             child: Row(
               children: [
-                const Icon(PhosphorIconsBold.funnel,
-                    size: 14, color: AppColors.textMuted),
+                Icon(PhosphorIconsBold.funnel,
+                    size: 14, color: context.picposMuted),
                 const SizedBox(width: 8),
                 SegmentedButton<String>(
                   showSelectedIcon: false,
@@ -501,7 +501,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
         PicPosTextCell(p.amount.toStringAsFixed(0)),
         PicPosPillCell(
           _statusLabels[p.status]?.$1 ?? p.status,
-          _statusLabels[p.status]?.$2 ?? AppColors.textMuted,
+          _statusLabels[p.status]?.$2 ?? context.picposMuted,
         ),
         _actionCell(p, parties),
       ];
@@ -536,7 +536,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
     PicPosCell view() => PicPosButtonCell(
           tr('عرض'),
           icon: PhosphorIconsBold.eye,
-          tint: AppColors.textMuted,
+          tint: context.picposMuted,
           onPressed: () => _showHistoryOf(p.id),
         );
 
@@ -907,7 +907,7 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
                   PicPosTextCell(p.amount.toStringAsFixed(0)),
                   PicPosPillCell(
                     _statusLabels[p.status]?.$1 ?? p.status,
-                    _statusLabels[p.status]?.$2 ?? AppColors.textMuted,
+                    _statusLabels[p.status]?.$2 ?? context.picposMuted,
                   ),
                 ],
               ),
@@ -1019,11 +1019,11 @@ class _ChequesPicposScreenState extends ConsumerState<ChequesPicposScreen>
                 cells: [
                   PicPosPillCell(
                     _statusLabels[h.fromStatus]?.$1 ?? h.fromStatus,
-                    _statusLabels[h.fromStatus]?.$2 ?? AppColors.textMuted,
+                    _statusLabels[h.fromStatus]?.$2 ?? context.picposMuted,
                   ),
                   PicPosPillCell(
                     _statusLabels[h.toStatus]?.$1 ?? h.toStatus,
-                    _statusLabels[h.toStatus]?.$2 ?? AppColors.textMuted,
+                    _statusLabels[h.toStatus]?.$2 ?? context.picposMuted,
                   ),
                   PicPosTextCell(_d(h.changedAt)),
                   PicPosTextCell(h.notes ?? '—'),
@@ -1098,7 +1098,7 @@ class _SelectionBar extends ConsumerWidget {
       child: Row(
         children: [
           Text(tr('الشيك'),
-              style: text.labelSmall?.copyWith(color: AppColors.textMuted)),
+              style: text.labelSmall?.copyWith(color: context.picposMuted)),
           const SizedBox(width: 8),
           Text(paper.paperNumber,
               style: text.labelLarge?.copyWith(fontWeight: FontWeight.w800)),
@@ -1107,12 +1107,12 @@ class _SelectionBar extends ConsumerWidget {
           const SizedBox(width: 18),
           Text(
             paper.direction == 'issued' ? tr('سند الصرف') : tr('سند القبض'),
-            style: text.labelSmall?.copyWith(color: AppColors.textMuted),
+            style: text.labelSmall?.copyWith(color: context.picposMuted),
           ),
           const SizedBox(width: 8),
           if (voucherId == null)
             Text('—',
-                style: text.labelLarge?.copyWith(color: AppColors.textMuted))
+                style: text.labelLarge?.copyWith(color: context.picposMuted))
           else
             FutureBuilder<String?>(
               future: ref

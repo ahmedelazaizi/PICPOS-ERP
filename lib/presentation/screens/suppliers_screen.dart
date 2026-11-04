@@ -15,6 +15,7 @@ import 'party_statement_screen.dart';
 import '../../core/constants/app_constants.dart';
 import '../widgets/dialogs/app_confirm_dialog.dart';
 import 'widgets/dialogs/party_edit_dialog.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Suppliers management screen
 class SuppliersScreen extends ConsumerStatefulWidget {
@@ -402,32 +403,32 @@ class _SupplierListTileState extends State<_SupplierListTile> {
                   const SizedBox(height: 2),
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         PhosphorIconsBold.phone,
                         size: 12,
-                        color: AppColors.textMuted,
+                        color: context.picposMuted,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         s.phone ?? tr('لا يوجد رقم'),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textSecondary,
+                          color: context.picposSecondary,
                         ),
                       ),
                       if (s.taxId != null && s.taxId!.isNotEmpty) ...[
                         const SizedBox(width: 12),
-                        const Icon(
+                        Icon(
                           PhosphorIconsBold.receipt,
                           size: 12,
-                          color: AppColors.textMuted,
+                          color: context.picposMuted,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           s.taxId!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: AppColors.textMuted,
+                            color: context.picposMuted,
                           ),
                         ),
                       ],

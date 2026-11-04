@@ -90,7 +90,7 @@ extension _ReportsPicposCards on _ReportsPicposScreenState {
                       child: Text(
                         g,
                         style: TextStyle(
-                          fontSize: 10.5,
+                          fontSize: 11,
                           fontWeight: FontWeight.w800,
                           letterSpacing: .4,
                           color: context.picposMuted,
@@ -157,7 +157,7 @@ extension _ReportsPicposCards on _ReportsPicposScreenState {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 10.5,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: context.picposMuted,
                         ),
@@ -169,7 +169,7 @@ extension _ReportsPicposCards on _ReportsPicposScreenState {
                 Text(
                   '${cat.mainReports.length}',
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: on ? cat.color : context.picposMuted,
                   ),
@@ -220,7 +220,7 @@ extension _ReportsPicposCards on _ReportsPicposScreenState {
                 Text(
                   tr('كلُّ تقريرٍ يُحسَب لحظةَ فتحه'),
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: context.picposMuted,
                   ),
@@ -280,14 +280,14 @@ extension _ReportsPicposCards on _ReportsPicposScreenState {
       ),
       data: (k) {
         final cards = <Widget>[
-          _kpiCard(PhosphorIconsBold.currencyCircleDollar, tr('مبيعات اليوم'),
+          _kpiCard(PhosphorIconsBold.currencyCircleDollar, tr('صافي مبيعات اليوم (بعد المرتجعات)'),
               _money(k.revenue.today), AppConstants.currencySymbolEn, k.revenue, AppColors.success),
           _kpiCard(PhosphorIconsBold.trendUp, tr('صافي الربح'),
               _money(k.netProfit.today), AppConstants.currencySymbolEn, k.netProfit, AppColors.primary),
           _kpiCard(PhosphorIconsBold.receipt, tr('عدد الفواتير'),
               k.invoices.today.toStringAsFixed(0), tr('فاتورة'), k.invoices,
               AppColors.info),
-          _kpiCard(PhosphorIconsBold.arrowUUpLeft, tr('المرتجعات'),
+          _kpiCard(PhosphorIconsBold.arrowUUpLeft, tr('المرتجعات (للعلم فقط — مطروحة بالفعل)'),
               _money(k.salesReturns.today), AppConstants.currencySymbolEn, k.salesReturns,
               AppColors.error,
               upIsGood: false),
@@ -634,7 +634,7 @@ extension _ReportsPicposCards on _ReportsPicposScreenState {
                           child: Text(
                             s.title,
                             style: TextStyle(
-                              fontSize: 10.5,
+                              fontSize: 11,
                               fontWeight: FontWeight.w700,
                               color: context.picposMuted,
                             ),
@@ -644,7 +644,7 @@ extension _ReportsPicposCards on _ReportsPicposScreenState {
                         Text(
                           '+$rest',
                           style: TextStyle(
-                            fontSize: 10.5,
+                            fontSize: 11,
                             fontWeight: FontWeight.w800,
                             color: context.picposBrandInk,
                           ),

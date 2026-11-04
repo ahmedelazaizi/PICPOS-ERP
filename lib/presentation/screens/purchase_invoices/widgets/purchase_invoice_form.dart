@@ -13,6 +13,7 @@ import 'package:picpos_erp/data/database/database.dart' as db;
 import 'package:picpos_erp/data/providers/providers.dart';
 import 'package:picpos_erp/presentation/widgets/dialogs/add_product_dialog.dart';
 import 'package:picpos_erp/presentation/screens/purchase_invoices/widgets/purchase_invoice_items_table.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class PurchaseInvoiceForm extends ConsumerStatefulWidget {
   final db.PurchaseInvoiceData? editInvoice;
@@ -142,8 +143,7 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
     // ومراكزُ التكلفة بالنشط وحدَه. لكنّ فاتورةً **قائمةً** قد تحمل مخزنَ فرعٍ
     // آخرَ (تُحرَّر على جهاز عميل) أو مركزَ تكلفةٍ أُوقف بعد إصدارها. حينئذٍ
     // تخرج قيمتُها من `items` فيُطلق `DropdownButtonFormField` توكيدَه في
-    // debug ويرسم حقلاً فارغاً في release — ثم يُعاد الحفظُ بقيمةٍ أخرى صامتاً،
-    // وهو بعينه الخطرُ الذي يحذّر منه `BranchRepository.getScopedWarehouses`.
+    // debug ويرسم حقلاً فارغاً في release (الخطرُ الذي يحذّر منه `BranchRepository.getScopedWarehouses`).
     //
     // والضمُّ **بالمعرّف** لا برفع الحصر: صفٌّ واحدٌ هو صفُّ الفاتورة، فمسارُ
     // الإنشاء الجديد يبقى محصوراً كما هو.
@@ -507,7 +507,7 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
 
   Widget _buildSummarySection() {
     return Card(
-      color: AppColors.surface,
+      color: context.picposField,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -610,7 +610,7 @@ class _PurchaseInvoiceFormState extends ConsumerState<PurchaseInvoiceForm> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: AppColors.textMuted)),
+          Text(label, style: TextStyle(color: context.picposMuted)),
           Text('${value.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}'),
         ],
       ),

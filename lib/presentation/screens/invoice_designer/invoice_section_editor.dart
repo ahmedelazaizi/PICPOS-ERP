@@ -9,7 +9,7 @@ import '../../../core/utils/template_json_flags.dart';
 import '../../../data/database/database.dart';
 import '../../../domain/models/invoice_template_layout.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════
 // SECTION-BASED INVOICE EDITOR v3
 // Professional section-based editor with:
 // - Drag-to-reorder fields & sections
@@ -20,7 +20,7 @@ import '../../../domain/models/invoice_template_layout.dart';
 // - Interactive table with additions/options rows
 // - Decimal precision for table numbers
 // - Delivery section
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════
 
 /// Represents alignment of an element
 enum FieldAlignment { right, center, left }
@@ -618,7 +618,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12)),
             child: Text('${_sections.where((s) => s.isVisible).length} أقسام',
-                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary)),
           ),
         ],
       ),
@@ -676,7 +676,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(section.title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: section.color)),
-                        Text(tr('{visibleFields}/{totalFields} مفعل', {'visibleFields': visibleFields, 'totalFields': totalFields}), style: TextStyle(fontSize: 9, color: Colors.grey.shade500)),
+                        Text(tr('{visibleFields}/{totalFields} مفعل', {'visibleFields': visibleFields, 'totalFields': totalFields}), style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
                       ],
                     ),
                   ),
@@ -797,7 +797,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
                   if (field.fontSize > 0)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 1),
-                      child: Text('${field.fontSize.toInt()}', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: section.color)),
+                      child: Text('${field.fontSize.toInt()}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: section.color)),
                     ),
                   _buildMiniButton(
                     icon: PhosphorIconsBold.plus,
@@ -832,7 +832,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
               padding: const EdgeInsets.only(right: 32, left: 16, bottom: 6),
               child: Row(
                 children: [
-                  Text(tr('الحجم:'), style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+                  Text(tr('الحجم:'), style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
                   Expanded(
                     child: SliderTheme(
                       data: SliderThemeData(overlayShape: SliderComponentShape.noOverlay, thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6)),
@@ -848,7 +848,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
                       ),
                     ),
                   ),
-                  Text('${(field.sizePercent * 100).toInt()}%', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: section.color)),
+                  Text('${(field.sizePercent * 100).toInt()}%', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: section.color)),
                 ],
               ),
             ),
@@ -981,7 +981,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
           ),
           const SizedBox(height: 8),
           // Column toggles
-          Text(tr('الأعمدة:'), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade600)),
+          Text(tr('الأعمدة:'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey.shade600)),
           const SizedBox(height: 4),
           if (ts != null) ...[
             Wrap(spacing: 4, runSpacing: 4, children: [
@@ -1002,7 +1002,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
             _colChip(tr('عنوان الجدول'), _getJsonBool(ts, '_showHeader', true), (v) => _setJsonBool(ts, '_showHeader', v)),
             const SizedBox(height: 8),
             // Extra rows: additions & options
-            Text(tr('صفوف إضافية:'), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey.shade600)),
+            Text(tr('صفوف إضافية:'), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey.shade600)),
             const SizedBox(height: 4),
             Wrap(spacing: 4, runSpacing: 4, children: [
               _colChip(tr('إضافات الصنف'), _showAdditions, (v) => setState(() => _showAdditions = v)),
@@ -1012,7 +1012,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
             // Header font size
             Row(
               children: [
-                Text(tr('خط العنوان:'), style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+                Text(tr('خط العنوان:'), style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
                 Expanded(
                   child: SliderTheme(
                     data: SliderThemeData(overlayShape: SliderComponentShape.noOverlay, thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6)),
@@ -1024,7 +1024,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
                     ),
                   ),
                 ),
-                Text('${ts.headerFontSize.toStringAsFixed(0)}pt', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: sectionColor)),
+                Text('${ts.headerFontSize.toStringAsFixed(0)}pt', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: sectionColor)),
               ],
             ),
             // Header bold toggle
@@ -1033,7 +1033,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
             // Body font size
             Row(
               children: [
-                Text(tr('خط البيانات:'), style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+                Text(tr('خط البيانات:'), style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
                 Expanded(
                   child: SliderTheme(
                     data: SliderThemeData(overlayShape: SliderComponentShape.noOverlay, thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6)),
@@ -1045,7 +1045,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
                     ),
                   ),
                 ),
-                Text('${ts.fontSize.toStringAsFixed(0)}pt', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: sectionColor)),
+                Text('${ts.fontSize.toStringAsFixed(0)}pt', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: sectionColor)),
               ],
             ),
             // Body bold toggle
@@ -1054,7 +1054,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
             // Decimal precision
             Row(
               children: [
-                Text(tr('العلامة العشرية:'), style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+                Text(tr('العلامة العشرية:'), style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
                 const SizedBox(width: 8),
                 ...List.generate(4, (i) {
                   final isActive = _decimalPlaces == i;
@@ -1074,7 +1074,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
                           border: Border.all(color: isActive ? sectionColor : Colors.grey.shade300),
                         ),
                         child: Text(i == 0 ? '0' : (1.0).toStringAsFixed(i),
-                            style: TextStyle(fontSize: 10, fontWeight: isActive ? FontWeight.bold : FontWeight.normal, color: isActive ? sectionColor : Colors.grey.shade600)),
+                            style: TextStyle(fontSize: 11, fontWeight: isActive ? FontWeight.bold : FontWeight.normal, color: isActive ? sectionColor : Colors.grey.shade600)),
                       ),
                     ),
                   );
@@ -1108,7 +1108,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
               ],
             ),
           ] else
-            Text(tr('سيتم إنشاء إعدادات الجدول تلقائياً عند الحفظ'), style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
+            Text(tr('سيتم إنشاء إعدادات الجدول تلقائياً عند الحفظ'), style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
         ],
       ),
     );
@@ -1186,7 +1186,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
             color: isActive ? color : Colors.grey.shade400,
           ),
           const SizedBox(width: 4),
-          Text(label, style: TextStyle(fontSize: 10, color: isActive ? color : Colors.grey.shade600)),
+          Text(label, style: TextStyle(fontSize: 11, color: isActive ? color : Colors.grey.shade600)),
         ],
       ),
     );
@@ -1229,7 +1229,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
         children: [
           SizedBox(
             width: 60,
-            child: Text(defaultLabel, style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+            child: Text(defaultLabel, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
           ),
           const SizedBox(width: 4),
           const Icon(Icons.arrow_forward, size: 12, color: Colors.grey),
@@ -1241,13 +1241,13 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
                 initialValue: currentLabel == defaultLabel ? '' : currentLabel,
                 decoration: InputDecoration(
                   hintText: defaultLabel,
-                  hintStyle: TextStyle(fontSize: 10, color: Colors.grey.shade400),
+                  hintStyle: TextStyle(fontSize: 11, color: Colors.grey.shade400),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: Colors.grey.shade300)),
                   focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: color)),
                   isDense: true,
                 ),
-                style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
                 onChanged: (val) => _setHeaderLabel(ts, columnKey, val.trim(), defaultLabel),
               ),
             ),
@@ -1273,7 +1273,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
           children: [
             Icon(active ? PhosphorIconsBold.checkCircle : PhosphorIconsBold.circle, size: 12, color: active ? purple : Colors.grey.shade400),
             const SizedBox(width: 3),
-            Text(label, style: TextStyle(fontSize: 10, fontWeight: active ? FontWeight.w600 : FontWeight.normal, color: active ? purple : Colors.grey.shade600)),
+            Text(label, style: TextStyle(fontSize: 11, fontWeight: active ? FontWeight.w600 : FontWeight.normal, color: active ? purple : Colors.grey.shade600)),
           ],
         ),
       ),
@@ -1308,7 +1308,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12)),
                   child: Text(isThermal ? '🧾 ${widget.paperWidth.toInt()}mm' : '📄 A4',
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600)),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
                 ),
               ],
             ),
@@ -1433,7 +1433,7 @@ class _InvoiceSectionEditorState extends State<InvoiceSectionEditor> {
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             const Icon(PhosphorIconsBold.image, color: Colors.grey, size: 14),
             const SizedBox(width: 4),
-            Text('LOGO', style: TextStyle(color: Colors.grey.shade500, fontSize: 9)),
+            Text('LOGO', style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
           ]),
         ),
       ),

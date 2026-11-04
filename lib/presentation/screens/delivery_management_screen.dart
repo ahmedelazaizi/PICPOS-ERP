@@ -10,6 +10,7 @@ import '../../core/theme/app_colors.dart';
 import '../../data/providers/providers.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../picpos_shell/picpos_body_handle.dart';
+import '../picpos_shell/picpos_surface.dart';
 import '../widgets/permission_guard.dart';
 import 'party_statement_screen.dart';
 
@@ -95,8 +96,7 @@ class _DeliveryManagementScreenState extends State<DeliveryManagementScreen>
 ///
 /// ⚠️ **الـ`TabController` تملكه القشرةُ لا الجسم** — وذلك مقصود: لو انتقل
 /// إلى الجسم لوجب أن ينتقل معه الـ`TabBar`، فيخرج من ذيلِ `AppBar` الأزرقِ
-/// في UralCash ويفقد بياضَه — أي تبدُّلٌ في شاشةِ UralCash، وهو ما يمنعه
-/// شرطُ الاستخراج. فكلُّ قشرةٍ ترسم `TabBar`ها في موضعها وتشتركان في المتحكّم.
+/// في UralCash ويفقد بياضَه — أي تبدُّلٌ في شاشةِ UralCash، وهو ما يمنعه شرطُ الاستخراج.
 ///
 /// [addCourierHandle] يسجّل الجسمُ فيه «إضافة مندوب» **فقط** حين يكون تبويبُ
 /// المناديب هو النشط — فيتبع زرُّ القشرة التبويبَ من غير أن تعرف القشرةُ
@@ -230,7 +230,7 @@ class _DeliveryManagementBodyState
                           ? AppColors.error
                           : balance < 0
                               ? AppColors.success
-                              : AppColors.textMuted;
+                              : context.picposMuted;
                       final balLabel = balance > 0
                           ? tr('مستحَق علينا')
                           : balance < 0
@@ -278,7 +278,7 @@ class _DeliveryManagementBodyState
                                   balLabel,
                                   style: TextStyle(
                                     color: balColor,
-                                    fontSize: 10,
+                                    fontSize: 11,
                                   ),
                                 ),
                               ],

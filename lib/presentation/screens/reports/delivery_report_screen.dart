@@ -21,6 +21,7 @@ import '../../widgets/branch_warehouse_filter.dart';
 import '../../widgets/report_components.dart' show DateRangeFilter;
 import '../../widgets/report_filter_bar.dart';
 import 'report_export_guard.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class DeliveryReportScreen extends ConsumerStatefulWidget {
   const DeliveryReportScreen({super.key});
@@ -316,7 +317,7 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
         const SizedBox(height: 8),
         Text(
           label,
-          style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+          style: TextStyle(fontSize: 12, color: context.picposMuted),
         ),
         Text(
           value,
@@ -572,7 +573,7 @@ class _DeliveryReportScreenState extends ConsumerState<DeliveryReportScreen>
         label,
         style: TextStyle(
           color: color,
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: FontWeight.bold,
         ),
       ),

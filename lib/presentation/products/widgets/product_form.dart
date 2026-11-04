@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
+import '../../widgets/dialogs/product_form_helpers.dart';
 
 /// Product form widget for add/edit dialogs
 class ProductForm extends StatefulWidget {
@@ -174,8 +176,18 @@ class ProductFormState extends State<ProductForm> {
   }
 
   bool validate() {
+    final prices = [
+      salePriceController,
+      costPriceController,
+      priceTalabatController,
+      priceCareemController,
+      priceAshyaeController,
+      pricePerUnitController,
+    ];
     return nameController.text.isNotEmpty &&
         salePriceController.text.isNotEmpty &&
+        prices.every((controller) =>
+            ProductFormHelpers.validateNonNegativePrice(controller.text) == null) &&
         (widget.isEdit || selectedCategoryId != null);
   }
 
@@ -202,7 +214,7 @@ class ProductFormState extends State<ProductForm> {
             padding: const EdgeInsetsDirectional.only(start: 12, top: 4, bottom: 8),
             child: Text(
               tr('كود الصنف الداخلي — يُستخدم في باركود الميزان. أدخل نفس الكود المبرمج على الميزان.'),
-              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 11, color: context.picposMuted),
             ),
           ),
 
@@ -214,6 +226,7 @@ class ProductFormState extends State<ProductForm> {
                   salePriceController,
                   tr('سعر البيع *'),
                   isNumber: true,
+                  nonNegativePrice: true,
                 ),
               ),
               const SizedBox(width: 12),
@@ -222,6 +235,7 @@ class ProductFormState extends State<ProductForm> {
                   costPriceController,
                   tr('سعر التكلفة'),
                   isNumber: true,
+                  nonNegativePrice: true,
                 ),
               ),
             ],
@@ -241,6 +255,7 @@ class ProductFormState extends State<ProductForm> {
                   priceTalabatController,
                   tr('سعر طلبات'),
                   isNumber: true,
+                  nonNegativePrice: true,
                 ),
               ),
               const SizedBox(width: 8),
@@ -249,6 +264,7 @@ class ProductFormState extends State<ProductForm> {
                   priceCareemController,
                   tr('سعر كريم'),
                   isNumber: true,
+                  nonNegativePrice: true,
                 ),
               ),
               const SizedBox(width: 8),
@@ -257,6 +273,7 @@ class ProductFormState extends State<ProductForm> {
                   priceAshyaeController,
                   tr('سعر أشيائي'),
                   isNumber: true,
+                  nonNegativePrice: true,
                 ),
               ),
             ],
@@ -354,7 +371,7 @@ class ProductFormState extends State<ProductForm> {
               padding: const EdgeInsetsDirectional.only(start: 12, top: 4, bottom: 4),
               child: Text(
                 tr('الرقم المخزن على الميزان لهذا الصنف — يُستخدم لتصدير الأصناف للميزان'),
-                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 11, color: context.picposMuted),
               ),
             ),
             const SizedBox(height: 8),
@@ -366,6 +383,7 @@ class ProductFormState extends State<ProductForm> {
               pricePerUnitController,
               tr('سعر الكيلو'),
               isNumber: true,
+              nonNegativePrice: true,
             ),
 
           const SizedBox(height: 16),
@@ -441,12 +459,17 @@ class ProductFormState extends State<ProductForm> {
     String label, {
     IconData? icon,
     bool isNumber = false,
+    bool nonNegativePrice = false,
   }) {
     return TextField(
       controller: controller,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+      onChanged: (_) => setState(() {}),
       decoration: InputDecoration(
         labelText: label,
+        errorText: nonNegativePrice
+            ? ProductFormHelpers.validateNonNegativePrice(controller.text)
+            : null,
         prefixIcon: icon != null ? Icon(icon, size: 18) : null,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         isDense: true,
@@ -461,19 +484,19 @@ class ProductFormState extends State<ProductForm> {
           width: 100,
           height: 100,
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.picposField,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: context.picposHairline),
           ),
           child: selectedImage != null
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.memory(selectedImage!, fit: BoxFit.cover),
                 )
-              : const Icon(
+              : Icon(
                   PhosphorIconsBold.image,
                   size: 40,
-                  color: AppColors.textMuted,
+                  color: context.picposMuted,
                 ),
         ),
         const SizedBox(height: 8),

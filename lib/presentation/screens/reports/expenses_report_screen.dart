@@ -21,6 +21,7 @@ import '../../../services/generators/base_generator.dart';
 import '../../widgets/common/common.dart';
 import '../../widgets/report_components.dart' show DateRangeFilter;
 import '../../widgets/report_filter_bar.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// Expenses Report Screen — تقرير المصروفات التشغيلية
 /// تصميم موحّد مع باقي شاشات النظام: AppBar بهوية النظام،
@@ -42,10 +43,9 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
 
   int? _selectedBranchId;
   int? _selectedUserId;
-  // Spec 079b (B1): region filter — `_regionBranchIds` is null when no region
-  // is selected (means "all branches"). When set, it's the resolved set of
-  // branch ids in the region. Empty set => region has no branches (we still
-  // apply the filter so the result is empty; FILTER-WARN fires once).
+  // Spec 079b (B1): region filter — `_regionBranchIds` null = no region
+  // (all branches); else the region's branch ids. Empty set => no branches
+  // (filter still applies, result empty; FILTER-WARN fires once).
   int? _selectedRegionId;
   Set<int>? _regionBranchIds;
   bool _isLoading = false;
@@ -347,8 +347,8 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
           pw.SizedBox(height: 4),
           pw.TableHelper.fromTextArray(
             headerStyle: pw.TextStyle(
-                font: font, fontSize: 10, fontWeight: pw.FontWeight.bold),
-            cellStyle: pw.TextStyle(font: font, fontSize: 10),
+                font: font, fontSize: 11, fontWeight: pw.FontWeight.bold),
+            cellStyle: pw.TextStyle(font: font, fontSize: 11),
             headerDecoration:
                 const pw.BoxDecoration(color: PdfColors.grey200),
             cellAlignment: pw.AlignmentDirectional.centerStart,
@@ -370,8 +370,8 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
           pw.SizedBox(height: 4),
           pw.TableHelper.fromTextArray(
             headerStyle: pw.TextStyle(
-                font: font, fontSize: 9, fontWeight: pw.FontWeight.bold),
-            cellStyle: pw.TextStyle(font: font, fontSize: 9),
+                font: font, fontSize: 11, fontWeight: pw.FontWeight.bold),
+            cellStyle: pw.TextStyle(font: font, fontSize: 11),
             headerDecoration:
                 const pw.BoxDecoration(color: PdfColors.grey200),
             cellAlignment: pw.AlignmentDirectional.centerStart,
@@ -435,7 +435,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
     return Directionality(
       textDirection: ui.TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.picposField,
         appBar: AppBar(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
@@ -750,7 +750,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
                     title: pct >= 5 ? '${pct.toStringAsFixed(0)}%' : '',
                     titleStyle: const TextStyle(
                       color: Colors.white,
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
                   );
@@ -870,7 +870,7 @@ class _ExpensesReportScreenState extends ConsumerState<ExpensesReportScreen> {
                     (s) => s['name'] == categoryName);
                 final color = catIdx >= 0
                     ? _categoryPalette[catIdx % _categoryPalette.length]
-                    : AppColors.textMuted;
+                    : context.picposMuted;
 
                 return DataRow(cells: [
                   DataCell(Text(dateStr,

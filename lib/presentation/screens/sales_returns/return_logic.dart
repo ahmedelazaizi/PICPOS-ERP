@@ -363,15 +363,15 @@ mixin _ReturnLogicMixin on ConsumerState<SalesReturnsScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(
+                          Icon(
                             PhosphorIconsBold.arrowUDownLeft,
                             size: 48,
-                            color: AppColors.textMuted,
+                            color: context.picposMuted,
                           ),
                           const SizedBox(height: 16),
                           Text(
                             tr('لا توجد مرتجعات خلال آخر سنة'),
-                            style: const TextStyle(color: AppColors.textMuted),
+                            style: TextStyle(color: context.picposMuted),
                           ),
                         ],
                       ),

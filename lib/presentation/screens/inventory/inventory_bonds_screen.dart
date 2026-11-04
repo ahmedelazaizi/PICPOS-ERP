@@ -4,6 +4,7 @@ import 'package:picpos_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 import '../../../domain/entities/product_entity.dart';
 
@@ -257,7 +258,7 @@ class _InventoryBondsScreenState extends ConsumerState<InventoryBondsScreen> {
             // Items Table
             Expanded(
               child: Container(
-                color: AppColors.surface,
+                color: context.picposField,
                 child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [

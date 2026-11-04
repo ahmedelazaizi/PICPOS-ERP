@@ -24,13 +24,13 @@ class _CategoriesTab extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(PhosphorIconsBold.folder,
-                      size: 64, color: AppColors.textMuted.withValues(alpha: 0.3)),
+                      size: 64, color: context.picposMuted.withValues(alpha: 0.3)),
                   const SizedBox(height: 16),
                    Text(tr('لا توجد فئات مصروفات بعد'),
-                      style: const TextStyle(color: AppColors.textMuted, fontSize: 16)),
+                      style: TextStyle(color: context.picposMuted, fontSize: 16)),
                   const SizedBox(height: 8),
                    Text(tr('أضف فئات مثل: إيجار، رواتب، كهرباء، صيانة'),
-                      style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                      style: TextStyle(color: context.picposMuted, fontSize: 13)),
                 ],
               ),
             );
@@ -155,7 +155,7 @@ class _CategoryCard extends ConsumerWidget {
               parent?._showCategoryDialog(context, ref, existing: category);
             },
             icon: const Icon(PhosphorIconsBold.pencil, size: 18),
-            color: AppColors.textMuted,
+            color: context.picposMuted,
           ),
           IconButton(
             onPressed: () => _confirmDelete(context, ref),
@@ -215,7 +215,7 @@ class _CategoryCard extends ConsumerWidget {
       ),
       child: Text(text,
           style:
-              TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600)),
+              TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
     );
   }
 }

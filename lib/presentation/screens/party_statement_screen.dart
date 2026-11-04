@@ -10,6 +10,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:excel/excel.dart' hide Border;
 import '../../core/theme/app_colors.dart';
+import '../picpos_shell/picpos_surface.dart';
 import '../../core/widgets/shimmer_loading.dart';
 
 import '../../data/providers/providers.dart';
@@ -180,7 +181,7 @@ class _PartyStatementScreenState extends ConsumerState<PartyStatementScreen>
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.picposField,
         appBar: AppBar(
           title: Text(tr('كشف حساب: {p0}', {'p0': selectedName.isEmpty ? partyLabel : selectedName})),
           backgroundColor: widget.isSupplier ? AppColors.warning : AppColors.primary,
@@ -241,18 +242,18 @@ class _PartyStatementScreenState extends ConsumerState<PartyStatementScreen>
                               const SizedBox(height: 16),
                               Text(
                                 tr('تعذّر تحميل بيانات هذا ال{partyLabel}', {'partyLabel': partyLabel}),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 18,
-                                  color: AppColors.textMuted,
+                                  color: context.picposMuted,
                                 ),
                               ),
                               const SizedBox(height: 8),
                                Text(
                                 tr('قد يكون الحساب محذوفاً أو غير متاح من هذا الجهاز. جرّب المزامنة أو افتح كشف حساب طرف آخر.'),
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
-                                  color: AppColors.textMuted,
+                                  color: context.picposMuted,
                                 ),
                               ),
                             ],
@@ -268,14 +269,14 @@ class _PartyStatementScreenState extends ConsumerState<PartyStatementScreen>
                               Icon(
                                 PhosphorIconsBold.userList,
                                 size: 64,
-                                color: AppColors.textMuted.withValues(alpha: 0.3),
+                                color: context.picposMuted.withValues(alpha: 0.3),
                               ),
                               const SizedBox(height: 16),
                               Text(
                                 tr('اختر {partyLabel} لعرض كشف حسابه', {'partyLabel': partyLabel}),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 18,
-                                  color: AppColors.textMuted,
+                                  color: context.picposMuted,
                                 ),
                               ),
                             ],
@@ -296,7 +297,7 @@ class _PartyStatementScreenState extends ConsumerState<PartyStatementScreen>
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.3)),
+        border: Border.all(color: context.picposHairline.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [

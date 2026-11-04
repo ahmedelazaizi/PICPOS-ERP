@@ -21,6 +21,7 @@ import '../../../services/invoice_generator.dart';
 import '../../../../../../core/constants/app_constants.dart';
 import '../../../data/providers/manufacturing_providers.dart';
 import '../../widgets/branch_warehouse_filter.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class PurchasesReportScreen extends ConsumerStatefulWidget {
   const PurchasesReportScreen({super.key});
@@ -416,7 +417,7 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
                             decoration: BoxDecoration(
                               color: Theme.of(context).cardColor,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.border),
+                              border: Border.all(color: context.picposHairline),
                             ),
                             child: TextField(
                               controller: _searchController,
@@ -452,7 +453,7 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
-                              side: const BorderSide(color: AppColors.border),
+                              side: BorderSide(color: context.picposHairline),
                             ),
                             child: SizedBox(
                               width: double.infinity,
@@ -540,7 +541,7 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
     );
   }
 
-  // ── Supplier Analysis ──────────────────────────────────────
+  // ── Supplier Analysis ──────────────
   List<Widget> _buildSupplierAnalysis() {
     final totalAll = _supplierAnalysis.fold<double>(
         0, (s, e) => s + ((e['totalPurchases'] as num?)?.toDouble() ?? 0));
@@ -553,7 +554,7 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.border),
+          side: BorderSide(color: context.picposHairline),
         ),
         child: SizedBox(
           width: double.infinity,
@@ -598,7 +599,7 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
     ];
   }
 
-  // ── Monthly Purchase Trends ───────────────────────────────
+  // ── Monthly Purchase Trends ──────────────
   List<Widget> _buildMonthlyTrends() {
     // Group invoices by month
     final Map<String, double> monthlyTotals = {};
@@ -624,7 +625,7 @@ class _PurchasesReportScreenState extends ConsumerState<PurchasesReportScreen> {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.border),
+          side: BorderSide(color: context.picposHairline),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),

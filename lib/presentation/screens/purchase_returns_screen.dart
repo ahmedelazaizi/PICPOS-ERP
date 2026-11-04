@@ -1,3 +1,4 @@
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -138,12 +139,12 @@ class _PurchaseReturnsScreenState extends ConsumerState<PurchaseReturnsScreen>
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                       decoration: BoxDecoration(
-                                        border: Border.all(color: AppColors.textMuted.withValues(alpha: 0.3)),
+                                        border: Border.all(color: context.picposMuted.withValues(alpha: 0.3)),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Row(
                                         children: [
-                                          const Icon(PhosphorIconsBold.calendar, size: 16, color: AppColors.textMuted),
+                                          Icon(PhosphorIconsBold.calendar, size: 16, color: context.picposMuted),
                                           const SizedBox(width: 8),
                                           Text(tr('من: {p0}/{p1}/{p2}', {'p0': state.fromDate.day, 'p1': state.fromDate.month, 'p2': state.fromDate.year}), style: const TextStyle(fontSize: 13)),
                                         ],
@@ -158,12 +159,12 @@ class _PurchaseReturnsScreenState extends ConsumerState<PurchaseReturnsScreen>
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                                       decoration: BoxDecoration(
-                                        border: Border.all(color: AppColors.textMuted.withValues(alpha: 0.3)),
+                                        border: Border.all(color: context.picposMuted.withValues(alpha: 0.3)),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Row(
                                         children: [
-                                          const Icon(PhosphorIconsBold.calendar, size: 16, color: AppColors.textMuted),
+                                          Icon(PhosphorIconsBold.calendar, size: 16, color: context.picposMuted),
                                           const SizedBox(width: 8),
                                           Text(tr('إلى: {p0}/{p1}/{p2}', {'p0': state.toDate.day, 'p1': state.toDate.month, 'p2': state.toDate.year}), style: const TextStyle(fontSize: 13)),
                                         ],
@@ -243,7 +244,7 @@ class _PurchaseReturnsScreenState extends ConsumerState<PurchaseReturnsScreen>
           initialValue: selected,
           isExpanded: true,
           isDense: true,
-          style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+          style: TextStyle(fontSize: 13, color: context.picposText),
           decoration: InputDecoration(
             hintText: tr('المورد'),
             prefixIcon: const Icon(PhosphorIconsBold.truck, size: 16),
@@ -282,7 +283,7 @@ class _PurchaseReturnsScreenState extends ConsumerState<PurchaseReturnsScreen>
         initialValue: selected,
         isExpanded: true,
         isDense: true,
-        style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+        style: TextStyle(fontSize: 13, color: context.picposText),
         decoration: InputDecoration(
           hintText: tr('الصنف'),
           prefixIcon: const Icon(PhosphorIconsBold.package, size: 16),

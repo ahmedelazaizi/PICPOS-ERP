@@ -10,6 +10,7 @@ import '../../../core/permissions/permission_codes.dart';
 import '../../../data/database/database.dart';
 import '../../../data/providers/report_providers.dart';
 import '../../widgets/permission_guard.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// GAP-P2-FIX-11: VAT Reconciliation — compares invoice-level tax totals
 /// with GL journal entry lines on output_vat / input_vat accounts.
@@ -65,7 +66,7 @@ class _VatReconciliationScreenState
       child: Scaffold(
         backgroundColor: const Color(0xFFF1F5F9),
         appBar: AppBar(
-          backgroundColor: AppColors.surface,
+          backgroundColor: context.picposField,
           title:  Text(tr('تسوية ضريبة القيمة المضافة'),
               style: const TextStyle(fontWeight: FontWeight.bold)),
           actions: [
@@ -105,7 +106,7 @@ class _VatReconciliationScreenState
 
   Widget _buildMonthPicker() {
     return Container(
-      color: AppColors.surface,
+      color: context.picposField,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [

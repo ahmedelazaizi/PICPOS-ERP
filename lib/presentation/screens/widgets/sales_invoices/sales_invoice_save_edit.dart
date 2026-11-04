@@ -1,8 +1,8 @@
 // ignore_for_file: library_private_types_in_public_api
-// =======================================================================
+// ==============
 // SALES INVOICE SAVE, EDIT & DELETE
 // Extracted from sales_invoice_dialogs.dart - Sprint 13 God File Splitting
-// =======================================================================
+// ==============
 part of '../../sales_invoices_screen.dart';
 
 extension SalesInvoiceSaveEditExt on _SalesInvoicesScreenState {
@@ -351,9 +351,9 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesScreenState {
     }
   }
 
-  // ══════════════════════════════════════════════════════
+  // ══════════════
   // EDIT INVOICE (Payment Update)
-  // ══════════════════════════════════════════════════════
+  // ══════════════
 
   void _editInvoice(InvoiceEntity invoice) async {
     // Cluster 034 / Issue 2 pattern — capture a ProviderContainer instead
@@ -679,7 +679,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesScreenState {
                                             children: [
                                               Text(
                                                 (item['selectedUnitName'] as String?) ?? tr('قطعة'),
-                                                style: const TextStyle(color: AppColors.info, fontWeight: FontWeight.bold, fontSize: 10),
+                                                style: const TextStyle(color: AppColors.info, fontWeight: FontWeight.bold, fontSize: 11),
                                               ),
                                               const Icon(PhosphorIconsBold.caretDown, size: 8, color: AppColors.info),
                                             ],
@@ -743,9 +743,9 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesScreenState {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: context.picposField,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.border),
+                          border: Border.all(color: context.picposHairline),
                         ),
                         child: Column(
                           children: [
@@ -871,9 +871,9 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesScreenState {
     );
   }
 
-  // ══════════════════════════════════════════════════════
+  // ══════════════
   // DELETE INVOICE
-  // ══════════════════════════════════════════════════════
+  // ══════════════
 
   void _deleteInvoice(InvoiceEntity invoice) async {
     final passwordController = TextEditingController();

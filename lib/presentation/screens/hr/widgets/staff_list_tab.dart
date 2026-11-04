@@ -1,3 +1,4 @@
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -128,7 +129,7 @@ class _EmployeeCard extends ConsumerWidget {
                       ),
                       Text(
                         '${_roleName(employee.role)} — ${employee.salary} ${AppConstants.currencySymbolEn}',
-                        style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                        style: TextStyle(color: context.picposMuted, fontSize: 13),
                       ),
                     ],
                   ),

@@ -338,7 +338,7 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                   const SizedBox(height: 4),
                    Text(
                     tr('مثال: [subtotal] - [discount]'),
-                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
                   ),
                   const SizedBox(height: 4),
                   _buildTextField(
@@ -1171,7 +1171,7 @@ class _InvoiceDesignerPropertiesState extends State<InvoiceDesignerProperties> {
                 ),
                 Text(
                   variable.key,
-                  style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                 ),
               ],
             ),

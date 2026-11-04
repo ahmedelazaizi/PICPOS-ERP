@@ -127,7 +127,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
                   if (items.isEmpty)
                      Text(
                       tr('لا توجد أصناف'),
-                      style: const TextStyle(color: AppColors.textMuted),
+                      style: TextStyle(color: context.picposMuted),
                     )
                   else
                     SalesInvoiceItemsTable(items: [for (final i in items) InvoiceItemRow(name: i.displayName, unit: i.item.unitName, quantity: i.item.quantity, unitPrice: i.item.unitPrice, total: i.item.total)]),
@@ -165,11 +165,10 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesScreenState {
 
   void _printInvoice(InvoiceEntity invoice) async {
     try {
-      // Use PrintingService.printReceipt — the same unified path as POS.
-      // This ensures the user's custom thermal/receipt template is applied
-      // (falls back to default layout if no template exists).
+      // قالبُ `sales_invoice` المربوطُ بالطابعة، وإلّا الإيصالُ كما كان —
+      // `printReceipt` وحدَها كانت تتخطّى الرابطة (الجولة 2026-11-04).
       final printingService = ref.read(printingServiceProvider);
-      await printingService.printReceipt(invoice.id!);
+      await printingService.printSalesInvoiceDocument(invoice.id!);
     } catch (e) {
       if (mounted) {
         AppToast.show(context, tr('خطأ في الطباعة: {e}', {'e': e}), type: ToastType.error);

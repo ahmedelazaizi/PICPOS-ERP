@@ -13,6 +13,7 @@ import 'coa/coa_rollup.dart';
 import 'coa/coa_tree_node.dart';
 import '../../data/providers/providers.dart';
 import '../../services/coa_management_service.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Chart of Accounts — Hierarchical tree-structured account management screen
 /// Standards: IFRS (IAS 1), Egyptian Accounting Standards
@@ -76,7 +77,7 @@ class _ChartOfAccountsScreenState
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.picposField,
         body: Column(
           children: [
             _buildHeader(context),
@@ -319,7 +320,7 @@ class _ChartOfAccountsScreenState
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: AppColors.border),
+            borderSide: BorderSide(color: context.picposHairline),
           ),
         ),
       ),
@@ -396,7 +397,7 @@ class _ChartOfAccountsScreenState
                           tr('{p0} حساب', {'p0': accounts.length}),
                           style: GoogleFonts.cairo(
                             fontSize: 11,
-                            color: AppColors.textMuted,
+                            color: context.picposMuted,
                           ),
                         ),
                       ],

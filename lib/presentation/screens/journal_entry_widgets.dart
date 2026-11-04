@@ -86,10 +86,10 @@ class _AccountAutocompleteFieldState extends State<AccountAutocompleteField> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: context.picposHairline),
           borderRadius: BorderRadius.circular(6),
         ),
-        child: Text(tr('تحميل الحسابات...'), style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+        child: Text(tr('تحميل الحسابات...'), style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
       );
     }
 
@@ -141,7 +141,7 @@ class _AccountAutocompleteFieldState extends State<AccountAutocompleteField> {
               focusNode: focusNode,
               decoration: InputDecoration(
                 hintText: tr('اكتب اسم أو رمز الحساب...'),
-                hintStyle: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
+                hintStyle: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
                 isDense: true,
                 prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 14, color: AppColors.primary),
                 prefixIconConstraints: const BoxConstraints(minWidth: 32),
@@ -201,7 +201,7 @@ class _AccountAutocompleteFieldState extends State<AccountAutocompleteField> {
                               : isSelected
                                   ? AppColors.primary.withValues(alpha: 0.06)
                                   : null,
-                          border: Border(bottom: BorderSide(color: AppColors.border.withValues(alpha: 0.3))),
+                          border: Border(bottom: BorderSide(color: context.picposHairline.withValues(alpha: 0.3))),
                         ),
                         child: Row(
                           children: [
@@ -216,7 +216,7 @@ class _AccountAutocompleteFieldState extends State<AccountAutocompleteField> {
                               child: Text(
                                 a.code,
                                 style: GoogleFonts.jetBrainsMono(
-                                  fontSize: 9,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                   color: AppColors.primary,
                                 ),
@@ -229,7 +229,7 @@ class _AccountAutocompleteFieldState extends State<AccountAutocompleteField> {
                                 style: GoogleFonts.cairo(
                                   fontSize: 11,
                                   fontWeight: (isSelected || isHighlighted) ? FontWeight.w700 : FontWeight.w500,
-                                  color: (isSelected || isHighlighted) ? AppColors.primary : AppColors.textPrimary,
+                                  color: (isSelected || isHighlighted) ? AppColors.primary : context.picposText,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -301,9 +301,9 @@ class _CostCenterPickerState extends State<CostCenterPicker> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       ),
-      style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textPrimary),
+      style: GoogleFonts.cairo(fontSize: 11, color: context.picposText),
       items: [
-        DropdownMenuItem<int?>(value: null, child: Text(tr('بدون'), style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted))),
+        DropdownMenuItem<int?>(value: null, child: Text(tr('بدون'), style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted))),
         ..._centers!.map((c) => DropdownMenuItem<int?>(value: c.id, child: Text('${c.code} - ${c.name}', style: GoogleFonts.cairo(fontSize: 11)))),
       ],
       onChanged: widget.onChanged,

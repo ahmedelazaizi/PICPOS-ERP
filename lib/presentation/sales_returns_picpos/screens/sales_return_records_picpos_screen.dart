@@ -208,6 +208,7 @@ class _SalesReturnRecordsPicPosScreenState
             onPrint: () => reprintPostedReturn(
               originalInvoiceNumber: r.originalInvoiceNumber ?? '',
               returnTotal: r.total,
+              originalInvoiceId: r.originalInvoiceId,
             ),
           ),
           if (e.originalInvoice != null)

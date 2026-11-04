@@ -107,8 +107,6 @@ class _SheetPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final fill = Paint()..style = PaintingStyle.fill;
-
     for (final op in ops) {
       final rect = Rect.fromLTWH(
         op.leftMm * scale,
@@ -119,11 +117,19 @@ class _SheetPainter extends CustomPainter {
 
       switch (op.kind) {
         case PaintKind.line:
-          fill.color = _ink;
-          canvas.drawRect(
-            Rect.fromLTWH(rect.left, rect.top, rect.width,
-                rect.height < 1 ? 1 : rect.height),
-            fill,
+          // Match PdfPainter's centered 0.5pt rule, independent of the
+          // element's layout height. Convert points to preview pixels.
+          final color = _lineColorOf(op);
+          const strokeWidth = 0.5 * 0.3528 * previewPixelsPerMm;
+          final linePaint = Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = strokeWidth
+            ..color = color;
+          final y = rect.top + rect.height / 2;
+          canvas.drawLine(
+            Offset(rect.left, y),
+            Offset(rect.right, y),
+            linePaint,
           );
 
         case PaintKind.rect:
@@ -207,7 +213,7 @@ class _SheetPainter extends CustomPainter {
       text: TextSpan(
         text: text,
         style: const TextStyle(
-            fontSize: 8, fontWeight: FontWeight.w700, color: _sub),
+            fontSize: 11, fontWeight: FontWeight.w700, color: _sub),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
@@ -217,6 +223,15 @@ class _SheetPainter extends CustomPainter {
       Offset(rect.left + (rect.width - painter.width) / 2,
           rect.top + (rect.height - painter.height) / 2),
     );
+  }
+
+  Color _lineColorOf(PaintOp op) {
+    final hex = op.colorHex;
+    if (hex != null && hex.length >= 6) {
+      final value = int.tryParse(hex.replaceFirst('#', ''), radix: 16);
+      if (value != null) return Color(0xFF000000 | value);
+    }
+    return Colors.black;
   }
 
   Color _colorOf(PaintOp op) {

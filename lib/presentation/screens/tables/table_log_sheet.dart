@@ -1,5 +1,6 @@
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
@@ -59,7 +60,7 @@ class _TableLogSheetState extends ConsumerState<TableLogSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.border,
+                color: context.picposHairline,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -67,9 +68,9 @@ class _TableLogSheetState extends ConsumerState<TableLogSheet> {
               padding: const EdgeInsetsDirectional.fromSTEB(8, 12, 16, 8),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     PhosphorIconsBold.clockCounterClockwise,
-                    color: AppColors.textMuted,
+                    color: context.picposMuted,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -121,7 +122,7 @@ class _TableLogSheetState extends ConsumerState<TableLogSheet> {
           return  Center(
             child: Text(
               tr('لا يوجد سجلٌّ لهذه الطاولة بعد'),
-              style: const TextStyle(color: AppColors.textMuted),
+              style: TextStyle(color: context.picposMuted),
             ),
           );
         }
@@ -155,14 +156,14 @@ class _TableLogRow extends StatelessWidget {
 
     final time =
         '${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
-    final color = _colorForAction(action);
+    final color = _colorForAction(context, action);
 
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -175,10 +176,10 @@ class _TableLogRow extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   time,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textMuted,
+                    color: context.picposMuted,
                   ),
                 ),
               ],
@@ -200,26 +201,26 @@ class _TableLogRow extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     '${oldValue ?? "—"} ← ${newValue ?? "—"}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: AppColors.textMuted,
+                      color: context.picposMuted,
                     ),
                   ),
                 ],
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       PhosphorIconsBold.user,
                       size: 12,
-                      color: AppColors.textMuted,
+                      color: context.picposMuted,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       userName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.textMuted,
+                        color: context.picposMuted,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -268,7 +269,7 @@ class _TableLogRow extends StatelessWidget {
     }
   }
 
-  Color _colorForAction(String action) {
+  Color _colorForAction(BuildContext context, String action) {
     switch (action) {
       case 'table_open':
         return AppColors.success;
@@ -287,7 +288,7 @@ class _TableLogRow extends StatelessWidget {
       case 'table_tax':
         return const Color(0xFF8B5CF6);
       default:
-        return AppColors.textMuted;
+        return context.picposMuted;
     }
   }
 }

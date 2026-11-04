@@ -11,6 +11,7 @@ import 'package:picpos_erp/core/widgets/app_toast.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/providers/providers.dart';
 import '../../services/stock_shortage_policy_service.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Feature 009 / T028b — POS terminals management screen.
 ///
@@ -138,8 +139,8 @@ class _PosTerminalsBodyState extends ConsumerState<PosTerminalsBody> {
           return Center(
             child: Text(
               tr('لا توجد نقطة بيع تطابق «{p0}»', {'p0': widget.searchQuery.trim()}),
-              style: const TextStyle(
-                  fontSize: 14, color: AppColors.textMuted),
+              style: TextStyle(
+                  fontSize: 14, color: context.picposMuted),
             ),
           );
         }
@@ -193,7 +194,7 @@ class _PosTerminalsBodyState extends ConsumerState<PosTerminalsBody> {
                   t.isActive
                       ? PhosphorIconsBold.cashRegister
                       : PhosphorIconsBold.prohibit,
-                  color: t.isActive ? AppColors.primary : AppColors.textMuted,
+                  color: t.isActive ? AppColors.primary : context.picposMuted,
                   size: 28,
                 ),
                 const SizedBox(width: 12),
@@ -208,8 +209,8 @@ class _PosTerminalsBodyState extends ConsumerState<PosTerminalsBody> {
                       ),
                       Text(
                         tr('الفرع: {branchName}', {'branchName': branchName}),
-                        style: const TextStyle(
-                            fontSize: 12, color: AppColors.textMuted),
+                        style: TextStyle(
+                            fontSize: 12, color: context.picposMuted),
                       ),
                     ],
                   ),
@@ -223,15 +224,15 @@ class _PosTerminalsBodyState extends ConsumerState<PosTerminalsBody> {
             const Divider(height: 16),
             Row(
               children: [
-                const Icon(PhosphorIconsBold.fingerprint,
-                    size: 14, color: AppColors.textMuted),
+                Icon(PhosphorIconsBold.fingerprint,
+                    size: 14, color: context.picposMuted),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     'device_id: ${t.deviceId}',
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.textMuted,
+                        color: context.picposMuted,
                         fontFamily: AppTypography.mono),
                   ),
                 ),

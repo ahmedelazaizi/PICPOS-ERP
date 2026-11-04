@@ -14,6 +14,7 @@ import '../../../services/table_checkout_coordinator.dart';
 import '../../pos/providers/cart_controller.dart';
 import '../../pos/providers/checkout_controller.dart';
 import '../../pos/widgets/payment_sheet.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// نتيجةُ محاولة بناء خطّةٍ حيّةً أثناء الكتابة — إمّا خطّةٌ صالحة أو رسالةُ
 /// الرفض من [SplitPlanException] نفسِها، لا نسخةٌ مُعاد صياغتُها هنا.
@@ -35,8 +36,7 @@ const List<SplitMode> _tabModes = [
 ///
 /// الفرقُ الجوهريّ الذي يجب أن يراه الكاشير قبل التأكيد: التقسيمُ بالأصناف
 /// وحدَه يُصدر فاتورةً مستقلّةً لكلّ دافع (`producesSeparateInvoices`)؛
-/// بالتساوي وبمبلغ تبقى الفاتورةُ واحدةً لكلّ الأصناف، ولكلّ دافعٍ إيصالُ
-/// حصّته فقط — فلا تُصدَر كميّاتٌ كسريّةٌ على فاتورة زبون.
+/// بالتساوي وبمبلغ تبقى الفاتورةُ واحدةً ولكلّ دافعٍ إيصالُ حصّته فقط.
 class SplitTableDialog extends ConsumerStatefulWidget {
   /// الطاولةُ صاحبةُ الفاتورة المرادُ تقسيمُها.
   final RestaurantTable sourceTable;
@@ -568,7 +568,7 @@ class _SplitTableDialogState extends ConsumerState<SplitTableDialog>
         const Spacer(),
         Text(
           tr('الإجماليُّ: {p0} {p1}', {'p0': _total.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}),
-          style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+          style: TextStyle(color: context.picposMuted, fontSize: 12),
         ),
       ],
     );

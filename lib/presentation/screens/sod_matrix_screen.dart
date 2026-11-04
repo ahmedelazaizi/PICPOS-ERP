@@ -1,6 +1,7 @@
 import 'package:picpos_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
+import '../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -24,7 +25,7 @@ class _SodMatrixScreenState extends ConsumerState<SodMatrixScreen> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.picposField,
         body: Column(
           children: [
             _buildHeader(context),
@@ -91,7 +92,7 @@ class _SodMatrixScreenState extends ConsumerState<SodMatrixScreen> {
 
   Widget _buildTabBar() {
     return Container(
-      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.border))),
+      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: context.picposHairline))),
       child: Row(
         children: [
           _tab(tr('قواعد التعارض'), PhosphorIconsBold.table, 0),
@@ -112,9 +113,9 @@ class _SodMatrixScreenState extends ConsumerState<SodMatrixScreen> {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 16, color: isActive ? AppColors.primary : AppColors.textMuted),
+            Icon(icon, size: 16, color: isActive ? AppColors.primary : context.picposMuted),
             const SizedBox(width: 8),
-            Text(label, style: GoogleFonts.cairo(fontSize: 13, fontWeight: isActive ? FontWeight.w700 : FontWeight.w500, color: isActive ? AppColors.primary : AppColors.textMuted)),
+            Text(label, style: GoogleFonts.cairo(fontSize: 13, fontWeight: isActive ? FontWeight.w700 : FontWeight.w500, color: isActive ? AppColors.primary : context.picposMuted)),
           ],
         ),
       ),
@@ -135,12 +136,12 @@ class _SodMatrixScreenState extends ConsumerState<SodMatrixScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(PhosphorIconsBold.shieldCheck, size: 64, color: AppColors.textMuted),
+                Icon(PhosphorIconsBold.shieldCheck, size: 64, color: context.picposMuted),
                 const SizedBox(height: 16),
-                Text(tr('لا توجد قواعد تعارض'), style: GoogleFonts.cairo(fontSize: 16, color: AppColors.textMuted)),
+                Text(tr('لا توجد قواعد تعارض'), style: GoogleFonts.cairo(fontSize: 16, color: context.picposMuted)),
                 const SizedBox(height: 8),
                 Text(tr('اضغط "تحميل القواعد الافتراضية" لإنشاء 7 قواعد ISA 315'),
-                    style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted)),
+                    style: GoogleFonts.cairo(fontSize: 12, color: context.picposMuted)),
               ],
             ),
           );
@@ -200,14 +201,14 @@ class _SodMatrixScreenState extends ConsumerState<SodMatrixScreen> {
                         ),
                         child: Text(
                           isHard ? tr('منع إلزامي') : tr('تحذير'),
-                          style: GoogleFonts.cairo(fontSize: 9, fontWeight: FontWeight.w700,
+                          style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w700,
                               color: isHard ? AppColors.error : AppColors.warning),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(conflict.description, style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted)),
+                  Text(conflict.description, style: GoogleFonts.cairo(fontSize: 12, color: context.picposMuted)),
                 ],
               ),
             ),
@@ -224,7 +225,7 @@ class _SodMatrixScreenState extends ConsumerState<SodMatrixScreen> {
         color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(perm, style: GoogleFonts.cairo(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.primary)),
+      child: Text(perm, style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary)),
     );
   }
 
@@ -250,7 +251,7 @@ class _SodMatrixScreenState extends ConsumerState<SodMatrixScreen> {
                 const SizedBox(height: 16),
                 Text(tr('لا توجد مخالفات SOD'), style: GoogleFonts.cairo(fontSize: 18, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
-                Text(tr('النظام متوافق مع متطلبات فصل المهام'), style: GoogleFonts.cairo(fontSize: 13, color: AppColors.textMuted)),
+                Text(tr('النظام متوافق مع متطلبات فصل المهام'), style: GoogleFonts.cairo(fontSize: 13, color: context.picposMuted)),
               ],
             ),
           );
@@ -277,7 +278,7 @@ class _SodMatrixScreenState extends ConsumerState<SodMatrixScreen> {
                   ),
                   child: Text(
                     v.wasBlocked ? tr('تم المنع') : tr('تحذير فقط'),
-                    style: GoogleFonts.cairo(fontSize: 10, color: v.wasBlocked ? AppColors.error : AppColors.warning, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.cairo(fontSize: 11, color: v.wasBlocked ? AppColors.error : AppColors.warning, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),

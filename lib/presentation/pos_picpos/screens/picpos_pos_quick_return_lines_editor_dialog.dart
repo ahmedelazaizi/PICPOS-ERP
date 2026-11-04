@@ -302,8 +302,8 @@ class _QuickReturnLinesEditorDialogState
                 // ١: المباع، المرتجعُ سابقاً، المتاح، السعر — الأربعةُ معاً.
                 Text(
                   tr('مباع {p0} · مرتجعٌ سابقاً {p1} · متاح {p2} · السعر {p3}', {'p0': line.soldQty.toStringAsFixed(2), 'p1': line.alreadyReturnedQty.toStringAsFixed(2), 'p2': line.availableQty.toStringAsFixed(2), 'p3': _mode.unitPriceOf(line.invoiceItemId).toStringAsFixed(2)}),
-                  style: const TextStyle(
-                      fontSize: 11, color: AppColors.textMuted),
+                  style: TextStyle(
+                      fontSize: 11, color: context.picposMuted),
                 ),
               ],
             ),

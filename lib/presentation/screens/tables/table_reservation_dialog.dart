@@ -128,7 +128,7 @@ void showTableReservationDialog(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: context.picposField,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(

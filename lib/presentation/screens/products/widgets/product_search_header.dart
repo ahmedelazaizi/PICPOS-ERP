@@ -18,6 +18,7 @@ import '../../../widgets/dialogs/add_product_dialog.dart';
 import '../../../../services/label_scale_service.dart';
 import '../../../../data/providers/providers.dart';
 import '../../units_management_screen.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class ProductSearchHeader extends ConsumerWidget {
   final TextEditingController searchController;
@@ -39,10 +40,10 @@ class ProductSearchHeader extends ConsumerWidget {
           children: [
              Text(
               tr('إدارة الأصناف'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                color: context.picposText,
               ),
             ),
             const Spacer(),
@@ -523,7 +524,7 @@ class _CategoryFilterButtonState extends ConsumerState<_CategoryFilterButton> {
             border: Border.all(
               color: widget.errorMessage != null && widget.categories.isEmpty
                   ? AppColors.error
-                  : AppColors.textMuted,
+                  : context.picposMuted,
             ),
             borderRadius: BorderRadius.circular(12),
             color: Theme.of(context).cardColor,
@@ -538,16 +539,16 @@ class _CategoryFilterButtonState extends ConsumerState<_CategoryFilterButton> {
                   child: CircularProgressIndicator(strokeWidth: 1.5),
                 )
               else
-                const Icon(PhosphorIconsBold.squaresFour,
-                    size: 18, color: AppColors.textMuted),
+                Icon(PhosphorIconsBold.squaresFour,
+                    size: 18, color: context.picposMuted),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: const TextStyle(fontSize: 14),
               ),
               const SizedBox(width: 12),
-              const Icon(PhosphorIconsBold.caretDown,
-                  size: 14, color: AppColors.textMuted),
+              Icon(PhosphorIconsBold.caretDown,
+                  size: 14, color: context.picposMuted),
             ],
           ),
         ),
@@ -637,7 +638,7 @@ class _CategorySearchDialogState extends State<_CategorySearchDialog> {
                         leading: Icon(
                           PhosphorIconsBold.listBullets,
                           color:
-                              isSelected ? AppColors.primary : AppColors.textMuted,
+                              isSelected ? AppColors.primary : context.picposMuted,
                         ),
                         title: Text(
                           tr('كل التصنيفات'),

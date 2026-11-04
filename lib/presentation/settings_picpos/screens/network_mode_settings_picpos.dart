@@ -111,7 +111,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
       avatar: Icon(
         icon,
         size: 18,
-        color: isSelected ? Colors.white : AppColors.textMuted,
+        color: isSelected ? Colors.white : context.picposMuted,
       ),
       label: Text(
         label,
@@ -180,7 +180,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                           color: syncRepo.isServerRunning
                               ? AppColors.success
                               : AppColors.error,
-                          fontSize: 10,
+                          fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -255,10 +255,10 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
           decoration: BoxDecoration(
             color: syncRepo.isServerRunning
                 ? AppColors.success.withValues(alpha: 0.1)
-                : AppColors.surface,
+                : context.picposField,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: syncRepo.isServerRunning ? AppColors.success : AppColors.border,
+              color: syncRepo.isServerRunning ? AppColors.success : context.picposHairline,
             ),
           ),
           child: Row(
@@ -291,9 +291,9 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                       ),
                       Text(
                         tr('العملاء المتصلين: {p0}', {'p0': syncRepo.connectedClientCount}),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textMuted,
+                          color: context.picposMuted,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -403,7 +403,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
       decoration: BoxDecoration(
         color: context.picposField,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -437,13 +437,13 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
             syncRepo.tlsCertPath == null
                 ? tr('لم يُحدَّد ملف شهادة')
                 : tr('شهادة: {p0}', {'p0': syncRepo.tlsCertPath}),
-            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 11, color: context.picposMuted),
           ),
           Text(
             syncRepo.tlsKeyPath == null
                 ? tr('لم يُحدَّد ملف مفتاح')
                 : tr('مفتاح: {p0}', {'p0': syncRepo.tlsKeyPath}),
-            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 11, color: context.picposMuted),
           ),
           const SizedBox(height: 8),
           Row(
@@ -479,7 +479,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
           const SizedBox(height: 8),
            Text(
             tr('لتوليد شهادة ذاتية: scripts/generate_self_signed_cert.ps1 — راجع docs/DEPLOYMENT.md'),
-            style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 11, color: context.picposMuted),
           ),
         ],
       ),
@@ -543,7 +543,7 @@ class _NetworkModeSettingsState extends ConsumerState<_NetworkModeSettings> {
                   style: TextStyle(
                     fontSize: 11,
                     color: enabled
-                        ? AppColors.textMuted
+                        ? context.picposMuted
                         : Colors.grey.withValues(alpha: 0.5),
                     fontFamily: AppTypography.mono,
                   ),

@@ -32,7 +32,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
       return;
     }
 
-    // Cluster 034 / Issue 2 pattern — capture a ProviderContainer up-front
+    // Capture a ProviderContainer up-front
     // so this async chain survives State disposal (e.g. the parent screen
     // unmounts while a dialog stays visible). Using `this.ref` directly
     // would throw "Bad state: Using 'ref' when a widget is about to or
@@ -389,7 +389,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
   // ══════════════════════════════════════════════════════
 
   void _editInvoice(InvoiceEntity invoice) async {
-    // Cluster 034 / Issue 2 pattern — capture a ProviderContainer instead
+    // Capture a ProviderContainer instead
     // of using `this.ref` so subsequent async work (DB reads, dialog
     // builders that fire after navigations) doesn't trip the "ref after
     // unmount" assertion. The edit flow opens its own modal dialog and
@@ -743,7 +743,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
                                             children: [
                                               Text(
                                                 (item['selectedUnitName'] as String?) ?? tr('قطعة'),
-                                                style: const TextStyle(color: AppColors.info, fontWeight: FontWeight.bold, fontSize: 10),
+                                                style: const TextStyle(color: AppColors.info, fontWeight: FontWeight.bold, fontSize: 11),
                                               ),
                                               const Icon(PhosphorIconsBold.caretDown, size: 8, color: AppColors.info),
                                             ],
@@ -809,7 +809,7 @@ extension SalesInvoiceSaveEditExt on _SalesInvoicesPicposScreenState {
                         decoration: BoxDecoration(
                           color: context.picposField,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.border),
+                          border: Border.all(color: context.picposHairline),
                         ),
                         child: Column(
                           children: [

@@ -43,6 +43,7 @@ import '../../widgets/report_components.dart';
 import '../../widgets/report_filter_bar.dart';
 import 'report_export_guard.dart';
 import 'report_scaffold.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// ما يُكتب حيث لا مقياس — على الشاشة وفي Excel معاً، من ثابتٍ واحدٍ فلا
 /// يفترق الملفُّ عمّا رآه المستخدم.
@@ -512,11 +513,11 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
         child:  Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(PhosphorIconsBold.table, size: 44, color: AppColors.textMuted),
+            Icon(PhosphorIconsBold.table, size: 44, color: context.picposMuted),
             const SizedBox(height: 12),
             Text(
               tr('لا توجد طلباتُ طاولاتٍ في هذا المدى بهذه الفلاتر'),
-              style: const TextStyle(color: AppColors.textMuted),
+              style: TextStyle(color: context.picposMuted),
             ),
           ],
         ),
@@ -526,7 +527,7 @@ class _TablesReportScreenState extends ConsumerState<TablesReportScreen> {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.border),
+          side: BorderSide(color: context.picposHairline),
         ),
         clipBehavior: Clip.antiAlias,
         child: SingleChildScrollView(

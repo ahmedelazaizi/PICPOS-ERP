@@ -542,7 +542,7 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
                   Text(
                     '${table.capacity}',
                     style: GoogleFonts.cairo(
-                      fontSize: 10,
+                      fontSize: 11,
                       color: color.withValues(alpha: 0.6),
                       fontWeight: FontWeight.w600,
                     ),
@@ -565,7 +565,7 @@ class _FloorPlanDesignerState extends ConsumerState<FloorPlanDesigner> {
                     Text(
                       statusInfo.label,
                       style: GoogleFonts.cairo(
-                        fontSize: 8,
+                        fontSize: 11,
                         color: color,
                         fontWeight: FontWeight.w700,
                       ),

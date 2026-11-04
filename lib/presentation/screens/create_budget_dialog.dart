@@ -11,6 +11,7 @@ import '../../core/theme/app_colors.dart';
 import '../../data/providers/providers.dart';
 import '../../domain/repositories/accounting_repository.dart';
 import '../../core/widgets/app_toast.dart';
+import '../picpos_shell/picpos_surface.dart';
 
 class CreateBudgetDialog extends ConsumerStatefulWidget {
   const CreateBudgetDialog({super.key});
@@ -236,7 +237,7 @@ class _CreateBudgetDialogState extends ConsumerState<CreateBudgetDialog> {
                   )
                 ] else ...[
                   const SizedBox(height: 12),
-                  Text(tr('سيتم إضافة 12 بنداً بقيمة صفرية لتعديلها يدوياً من واجهة التفاصيل.'), style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+                  Text(tr('سيتم إضافة 12 بنداً بقيمة صفرية لتعديلها يدوياً من واجهة التفاصيل.'), style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
                 ],
               ],
             ),
@@ -311,8 +312,8 @@ class _AccountAutocompleteState extends State<_AccountAutocomplete> {
     if (_allAccounts == null) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        decoration: BoxDecoration(border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(6)),
-        child: Text(tr('تحميل الحسابات...'), style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+        decoration: BoxDecoration(border: Border.all(color: context.picposHairline), borderRadius: BorderRadius.circular(6)),
+        child: Text(tr('تحميل الحسابات...'), style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
       );
     }
 
@@ -346,7 +347,7 @@ class _AccountAutocompleteState extends State<_AccountAutocomplete> {
               focusNode: focusNode,
               decoration: InputDecoration(
                 hintText: tr('اكتب اسم أو رمز الحساب...'),
-                hintStyle: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
+                hintStyle: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
                 isDense: true,
                 prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 14, color: AppColors.primary),
                 prefixIconConstraints: const BoxConstraints(minWidth: 32),
@@ -393,17 +394,17 @@ class _AccountAutocompleteState extends State<_AccountAutocomplete> {
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                         decoration: BoxDecoration(
                           color: isHighlighted ? AppColors.primary.withValues(alpha: 0.12) : isSelected ? AppColors.primary.withValues(alpha: 0.06) : null,
-                          border: Border(bottom: BorderSide(color: AppColors.border.withValues(alpha: 0.3))),
+                          border: Border(bottom: BorderSide(color: context.picposHairline.withValues(alpha: 0.3))),
                         ),
                         child: Row(
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                               decoration: BoxDecoration(color: isHighlighted ? AppColors.primary.withValues(alpha: 0.18) : AppColors.primary.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(3)),
-                              child: Text(a.code, style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                              child: Text(a.code, style: GoogleFonts.jetBrainsMono(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary)),
                             ),
                             const SizedBox(width: 8),
-                            Expanded(child: Text(trData(a.name), style: GoogleFonts.cairo(fontSize: 12, fontWeight: (isSelected || isHighlighted) ? FontWeight.w700 : FontWeight.w500, color: (isSelected || isHighlighted) ? AppColors.primary : AppColors.textPrimary), overflow: TextOverflow.ellipsis)),
+                            Expanded(child: Text(trData(a.name), style: GoogleFonts.cairo(fontSize: 12, fontWeight: (isSelected || isHighlighted) ? FontWeight.w700 : FontWeight.w500, color: (isSelected || isHighlighted) ? AppColors.primary : context.picposText), overflow: TextOverflow.ellipsis)),
                             if (isHighlighted) const Icon(PhosphorIconsBold.caretLeft, size: 12, color: AppColors.primary),
                           ],
                         ),
@@ -458,9 +459,9 @@ class _CostCenterPickerState extends State<_CostCenterPicker> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       ),
-      style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textPrimary),
+      style: GoogleFonts.cairo(fontSize: 12, color: context.picposText),
       items: [
-        DropdownMenuItem<int?>(value: null, child: Text(tr('بدون (عام)'), style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted))),
+        DropdownMenuItem<int?>(value: null, child: Text(tr('بدون (عام)'), style: GoogleFonts.cairo(fontSize: 12, color: context.picposMuted))),
         ..._centers!.map((c) => DropdownMenuItem<int?>(value: c.id, child: Text('${c.code} - ${c.name}', style: GoogleFonts.cairo(fontSize: 12)))),
       ],
       onChanged: widget.onChanged,

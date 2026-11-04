@@ -295,7 +295,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                     child: Text(
                       statusInfo.label,
                       style: GoogleFonts.cairo(
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: statusInfo.color,
                       ),
@@ -350,7 +350,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                   Text(
                     tr('شراء: {p0}', {'p0': _dateFormat.format(asset.purchaseDate)}),
                     style: GoogleFonts.cairo(
-                        fontSize: 10, color: Colors.grey.shade600),
+                        fontSize: 11, color: Colors.grey.shade600),
                   ),
                   const SizedBox(width: 12),
                   Icon(PhosphorIconsBold.clock,
@@ -359,7 +359,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                   Text(
                     tr('{p0} سنة', {'p0': asset.usefulLifeYears}),
                     style: GoogleFonts.cairo(
-                        fontSize: 10, color: Colors.grey.shade600),
+                        fontSize: 11, color: Colors.grey.shade600),
                   ),
                   if (asset.location != null) ...[
                     const SizedBox(width: 12),
@@ -369,7 +369,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                     Text(
                       asset.location!,
                       style: GoogleFonts.cairo(
-                          fontSize: 10, color: Colors.grey.shade600),
+                          fontSize: 11, color: Colors.grey.shade600),
                     ),
                   ],
                 ],
@@ -390,7 +390,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                             size: 14, color: Colors.indigo),
                         label: Text(tr('تعديل'),
                             style: GoogleFonts.cairo(
-                                fontSize: 10, color: Colors.indigo)),
+                                fontSize: 11, color: Colors.indigo)),
                         backgroundColor: Colors.indigo.withValues(alpha: 0.08),
                         side: BorderSide(
                             color: Colors.indigo.withValues(alpha: 0.2)),
@@ -415,7 +415,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                             size: 14, color: Colors.teal),
                         label: Text(tr('إعادة تقييم'),
                             style: GoogleFonts.cairo(
-                                fontSize: 10, color: Colors.teal)),
+                                fontSize: 11, color: Colors.teal)),
                         backgroundColor: Colors.teal.withValues(alpha: 0.08),
                         side: BorderSide(
                             color: Colors.teal.withValues(alpha: 0.2)),
@@ -430,7 +430,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                           size: 14, color: Colors.blue),
                       label: Text(tr('سجل الإهلاك'),
                           style: GoogleFonts.cairo(
-                              fontSize: 10, color: Colors.blue)),
+                              fontSize: 11, color: Colors.blue)),
                       backgroundColor: Colors.blue.withValues(alpha: 0.08),
                       side: BorderSide(
                           color: Colors.blue.withValues(alpha: 0.2)),
@@ -451,7 +451,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                             size: 14, color: AppColors.error),
                         label: Text(tr('استبعاد'),
                             style: GoogleFonts.cairo(
-                                fontSize: 10, color: AppColors.error)),
+                                fontSize: 11, color: AppColors.error)),
                         backgroundColor: AppColors.error.withValues(alpha: 0.08),
                         side: BorderSide(
                             color: AppColors.error.withValues(alpha: 0.2)),
@@ -482,7 +482,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
           children: [
             Text(label,
                 style: GoogleFonts.cairo(
-                    fontSize: 9, color: Colors.grey.shade600)),
+                    fontSize: 11, color: Colors.grey.shade600)),
             Text(value,
                 style: GoogleFonts.jetBrainsMono(
                     fontSize: 12,
@@ -624,7 +624,7 @@ class _FixedAssetsScreenState extends ConsumerState<FixedAssetsScreen>
                         subtitle: Text(
                           tr('{p0} | ق.د: {p1}', {'p0': _dateFormat.format(entry.periodDate), 'p1': _currencyFormat.format(entry.bookValue)}),
                           style: GoogleFonts.cairo(
-                              fontSize: 10, color: Colors.grey),
+                              fontSize: 11, color: Colors.grey),
                         ),
                         trailing: Text(
                           '-${_currencyFormat.format(entry.depreciationAmount)}',

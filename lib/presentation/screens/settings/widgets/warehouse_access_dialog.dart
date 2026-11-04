@@ -9,6 +9,7 @@ import '../../../widgets/dialogs/app_form_dialog.dart';
 import '../../../picpos_shell/picpos_dialog.dart';
 import '../../../picpos_shell/picpos_panel_groups.dart';
 import 'package:picpos_erp/l10n/app_localizations.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class WarehouseAccessDialog extends AppFormDialog<bool> {
   final User user;
@@ -135,7 +136,7 @@ class _WarehouseAccessDialogState extends AppFormDialogState<bool, WarehouseAcce
               subtitle: wh.location != null ? Text(wh.location!) : null,
               secondary: Icon(
                 wh.isDefault ? PhosphorIconsBold.star : PhosphorIconsLight.warehouse,
-                color: wh.isDefault ? AppColors.warning : AppColors.textMuted,
+                color: wh.isDefault ? AppColors.warning : context.picposMuted,
                 size: 20,
               ),
               value: selected.contains(wh.id),

@@ -10,6 +10,7 @@ import 'package:picpos_erp/core/utils/financial_utils.dart';
 // If they show as undefined, it is because build_runner is still generating code.
 import 'package:picpos_erp/data/providers/providers.dart';
 import 'package:picpos_erp/presentation/widgets/searchable_unit_selection_dialog.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class PurchaseInvoiceItemsTable extends ConsumerWidget {
   final List<Map<String, dynamic>> items;
@@ -31,13 +32,13 @@ class PurchaseInvoiceItemsTable extends ConsumerWidget {
       return Container(
         height: 100,
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: context.picposHairline),
           borderRadius: BorderRadius.circular(8),
         ),
         child:  Center(
           child: Text(
             tr('لم يتم إضافة أصناف بعد'),
-            style: const TextStyle(color: AppColors.textMuted),
+            style: TextStyle(color: context.picposMuted),
           ),
         ),
       );

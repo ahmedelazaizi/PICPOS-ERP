@@ -80,12 +80,12 @@ class SalesInvoicesTable extends ConsumerWidget {
               Icon(
                 hasFilters ? PhosphorIconsBold.funnelSimple : PhosphorIconsBold.receipt,
                 size: 64,
-                color: AppColors.textMuted.withValues(alpha: 0.3),
+                color: context.picposMuted.withValues(alpha: 0.3),
               ),
               const SizedBox(height: 16),
               Text(
                 hasFilters ? tr('لا نتائج تطابق الفلاتر الحالية') : tr('لا توجد فواتير مبيعات'),
-                style: const TextStyle(color: AppColors.textMuted),
+                style: TextStyle(color: context.picposMuted),
               ),
               if (hasFilters) ...[
                 const SizedBox(height: 12),
@@ -174,7 +174,7 @@ class SalesInvoicesTable extends ConsumerWidget {
                                 ),
                                 TextSpan(
                                   text: ' — ${warehouseNames[invoice.warehouseId] ?? 'WH#${invoice.warehouseId ?? 0}'}',
-                                  style: TextStyle(fontSize: 11, color: warehouseNames.containsKey(invoice.warehouseId) ? AppColors.info : AppColors.textMuted),
+                                  style: TextStyle(fontSize: 11, color: warehouseNames.containsKey(invoice.warehouseId) ? AppColors.info : context.picposMuted),
                                 ),
                               ],
                             ),
@@ -319,7 +319,7 @@ class SalesInvoicesTable extends ConsumerWidget {
                           // قبلاً: "م.ت #6" كان يُربك المستخدم. الآن: "—".
                           ? (costCenterNames[invoice.costCenterId] ?? '—')
                           : '—',
-                      style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                      style: TextStyle(fontSize: 12, color: context.picposMuted),
                     ),
                   ),
                   DataCell(
@@ -403,7 +403,7 @@ class _ReturnBadge extends StatelessWidget {
             Text(
               full ? tr('مُرتجعة') : tr('مُرتجعة جزئياً'),
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),

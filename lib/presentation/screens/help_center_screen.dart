@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// B7 — Built-in Help Center widget.
 /// Displays common questions and guides for the ERP system.
@@ -250,10 +251,10 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                     ),
                     child: Text(
                       item.answer,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 12.5,
                           height: 1.6,
-                          color: AppColors.textSecondary),
+                          color: context.picposSecondary),
                     ),
                   ),
                 if (entry.key < section.items.length - 1)

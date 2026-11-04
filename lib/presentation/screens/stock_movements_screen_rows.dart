@@ -31,7 +31,7 @@ extension _StockMovementsScreenRows on _StockMovementsScreenState {
                 Text(
                   _timeFormat.format(m.createdAt),
                   style: GoogleFonts.cairo(
-                    fontSize: 10,
+                    fontSize: 11,
                     color: context.picposMuted,
                   ),
                 ),
@@ -56,7 +56,7 @@ extension _StockMovementsScreenRows on _StockMovementsScreenState {
                     child: Text(
                       typeInfo.label,
                       style: GoogleFonts.cairo(
-                        fontSize: 10,
+                        fontSize: 11,
                         color: typeInfo.color,
                         fontWeight: FontWeight.w700,
                       ),
@@ -136,7 +136,7 @@ extension _StockMovementsScreenRows on _StockMovementsScreenState {
                   Text(
                     _translateReference(m.referenceType!, m.referenceId),
                     style: GoogleFonts.cairo(
-                      fontSize: 10,
+                      fontSize: 11,
                       color: AppColors.info,
                       fontWeight: FontWeight.w600,
                     ),
@@ -145,7 +145,7 @@ extension _StockMovementsScreenRows on _StockMovementsScreenState {
                   Text(
                     m.notes!,
                     style: GoogleFonts.cairo(
-                      fontSize: 10,
+                      fontSize: 11,
                       color: context.picposMuted,
                     ),
                     overflow: TextOverflow.ellipsis,

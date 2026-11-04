@@ -61,7 +61,7 @@ class _OperationalExpensesScreenState
           bottom: TabBar(
             controller: _tabController,
             labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.textMuted,
+            unselectedLabelColor: context.picposMuted,
             indicatorColor: AppColors.primary,
             tabs:  [
               Tab(

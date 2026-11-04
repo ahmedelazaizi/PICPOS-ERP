@@ -90,7 +90,7 @@ class PicPosTopBar extends ConsumerWidget {
           // widgets قياسية مباشرة (زي `_closeShiftChip`) مش كلاس خاص —
           // نفس السبب الموضّح تحت عند `PermissionGuard`.
           _switchUserChip(
-            label: user?.displayName ?? tr('مستخدم'),
+            label: user == null ? tr('مستخدم') : trData(user.displayName),
             onPressed: onSwitchUser,
           ),
           const SizedBox(width: 8),
@@ -405,7 +405,8 @@ Widget _closeShiftChip(VoidCallback onPressed) {
     child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: AppColors.error,
+        // أحمر أغمق من `AppColors.error` ليبلغ نصُّه الأبيض ٤٫٥:١ (كان ٣٫٧٦).
+        color: const Color(0xFFDC2626),
         borderRadius: BorderRadius.circular(8),
       ),
       child:  Row(

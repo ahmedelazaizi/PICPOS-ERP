@@ -134,7 +134,7 @@ mixin _PluScaleUploadMixin on ConsumerState<PluManagerScreen> {
               const Icon(PhosphorIconsBold.scales, color: Colors.teal, size: 24),
               const SizedBox(width: 8),
                Expanded(child: Text(tr('اختر الميزان للترحيل'))),
-              Text(tr('{itemCount} صنف', {'itemCount': itemCount}), style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+              Text(tr('{itemCount} صنف', {'itemCount': itemCount}), style: TextStyle(fontSize: 12, color: context.picposMuted)),
             ]),
             content: SizedBox(
               width: 500,
@@ -163,7 +163,7 @@ mixin _PluScaleUploadMixin on ConsumerState<PluManagerScreen> {
                             decoration: BoxDecoration(
                               color: isSelected ? Colors.teal.withValues(alpha: 0.1) : null,
                               border: Border.all(
-                                color: isSelected ? Colors.teal : AppColors.border.withValues(alpha: 0.3),
+                                color: isSelected ? Colors.teal : context.picposHairline.withValues(alpha: 0.3),
                                 width: isSelected ? 2 : 1,
                               ),
                               borderRadius: BorderRadius.circular(8),
@@ -192,15 +192,15 @@ mixin _PluScaleUploadMixin on ConsumerState<PluManagerScreen> {
                                         ),
                                         child: Text(
                                           LabelScaleService.brandNames[brand] ?? brand.name,
-                                          style: const TextStyle(fontSize: 10),
+                                          style: const TextStyle(fontSize: 11),
                                         ),
                                       ),
                                       if (!scale.isActive) ...[
                                         const SizedBox(width: 8),
-                                         Text(tr('(غير نشط)'), style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                                         Text(tr('(غير نشط)'), style: TextStyle(fontSize: 11, color: context.picposMuted)),
                                       ],
                                     ]),
-                                    Text(conn, style: const TextStyle(fontSize: 11, color: AppColors.textMuted, fontFamily: AppTypography.mono)),
+                                    Text(conn, style: TextStyle(fontSize: 11, color: context.picposMuted, fontFamily: AppTypography.mono)),
                                   ],
                                 ),
                               ),

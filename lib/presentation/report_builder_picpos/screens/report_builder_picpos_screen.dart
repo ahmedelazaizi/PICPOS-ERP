@@ -332,7 +332,7 @@ class _ReportBuilderPicposScreenState
                           ? r.description!
                           : (meta?.label ?? r.sourceEntity),
                       style: TextStyle(
-                          fontSize: 10.5,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: context.picposMuted),
                       overflow: TextOverflow.ellipsis,

@@ -5,6 +5,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/providers/providers.dart';
 import 'widgets/dialogs/region_edit_dialog.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Region Management Screen — إدارة المناطق
 class RegionManagementScreen extends ConsumerWidget {
@@ -36,15 +37,15 @@ class RegionManagementScreen extends ConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       PhosphorIconsBold.mapPin,
                       size: 64,
-                      color: AppColors.textMuted,
+                      color: context.picposMuted,
                     ),
                     const SizedBox(height: 16),
                      Text(
                       tr('لا توجد مناطق مضافة بعد'),
-                      style: const TextStyle(color: AppColors.textSecondary),
+                      style: TextStyle(color: context.picposSecondary),
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
@@ -121,16 +122,16 @@ class _RegionCard extends ConsumerWidget {
             if (region.address != null)
               Text(
                 region.address!,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textSecondary,
+                  color: context.picposSecondary,
                 ),
               ),
             Text(
               tr('{branchCount} فرع', {'branchCount': branchCount}),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
-                color: AppColors.textMuted,
+                color: context.picposMuted,
               ),
             ),
           ],
@@ -163,7 +164,7 @@ class _RegionCard extends ConsumerWidget {
                   padding: const EdgeInsets.all(16),
                   child: Text(
                     tr('لا توجد فروع مرتبطة بهذه المنطقة'),
-                    style: const TextStyle(color: AppColors.textMuted),
+                    style: TextStyle(color: context.picposMuted),
                   ),
                 );
               }

@@ -53,6 +53,7 @@ import '../../pos/widgets/pos_previous_expenses_dialog.dart';
 import '../../pos/widgets/pos_previous_invoices_dialog.dart';
 import '../../pos/widgets/pos_product_selection_panel.dart';
 import '../../shift_close_picpos/widgets/picpos_cashier_closing_dialog.dart';
+import '../widgets/picpos_cost_required_dialog.dart';
 import '../widgets/picpos_display_settings.dart';
 import '../widgets/picpos_payment_panel.dart';
 import '../widgets/picpos_invoice_header.dart';
@@ -63,10 +64,14 @@ import '../widgets/picpos_cart_permissions.dart';
 import '../widgets/picpos_pos_shortcuts.dart';
 import '../widgets/picpos_pos_text.dart';
 import '../widgets/picpos_return_mode_banner.dart';
+import '../widgets/picpos_quick_return_lines_table.dart';
 import '../widgets/picpos_switch_user_dialog.dart';
 import '../widgets/picpos_top_bar.dart';
 import '../providers/pos_return_mode_provider.dart';
 import '../providers/pos_exchange_mode_provider.dart';
+import '../providers/pos_return_entry_provider.dart';
+import '../../../domain/models/no_invoice_return_policy.dart';
+import '../../../domain/usecases/sales/cart_settlement_plan.dart';
 import '../state/pos_return_mode.dart';
 import '../state/pos_exchange_mode.dart';
 import '../widgets/picpos_exchange_mode_banner.dart';
@@ -92,6 +97,9 @@ part 'picpos_pos_exchange.dart';
 part 'picpos_pos_drawer.dart';
 part 'picpos_pos_quick_return_invoice_picker_dialog.dart';
 part 'picpos_pos_quick_return_lines_editor_dialog.dart';
+part 'picpos_pos_quick_return_cart.dart';
+part 'picpos_pos_clear_cart.dart';
+part 'picpos_pos_no_invoice_return.dart';
 
 /// PicPos point-of-sale screen.
 ///
@@ -125,6 +133,7 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
   final FocusNode barcodeFocus = FocusNode();
 
   final FocusNode _keyboardFocus = FocusNode();
+  late final VoidCallback _clearOnExit;
 
   @override
   int? selectedIndex;
@@ -132,6 +141,7 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
   @override
   void initState() {
     super.initState();
+    _clearOnExit = createQuickReturnModeExitReset(ref);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       barcodeFocus.requestFocus();
       unawaited(DiagnosticLogger.log('PICPOS-POS', 'screen mounted'));
@@ -146,6 +156,7 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
 
   @override
   void dispose() {
+    _clearOnExit();
     barcodeController.dispose();
     barcodeFocus.dispose();
     _keyboardFocus.dispose();
@@ -214,12 +225,13 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
   /// وهو شايف النتيجة، فدلالتها بقت اللي هو قصده.
   double _invoiceRatio = 0.4;
 
-
   double get invoiceRatio {
     final locked = ref.watch(posCartRatioLockedProvider).value ?? false;
     if (locked) {
-      return (ref.watch(posCartRatioValueProvider).value ?? 0.4)
-          .clamp(0.25, 0.65);
+      return (ref.watch(posCartRatioValueProvider).value ?? 0.4).clamp(
+        0.25,
+        0.65,
+      );
     }
     return _invoiceRatio;
   }
@@ -249,15 +261,17 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
     // يمرّان به. (‏بلاغُ اختبارات الوظائف 2026-08-30 · D1)
     ref.watch(preventItemStackingProvider);
 
-    final isProcessing =
-        ref.watch(posControllerProvider.select((s) => s.isProcessing));
+    final isProcessing = ref.watch(
+      posControllerProvider.select((s) => s.isProcessing),
+    );
     // وضعُ المرتجع (جولةُ إصلاح ٢ — مانعٌ ١): تعطيلُ زرّ «الفواتير المعلّقة»
     // في الشريط العلويّ بصرياً، فوق حراسة `_showHeldOrders` نفسِها. راجع
     // تعليقَ `PicPosTopBar.onHeldOrders`.
     // ووضعُ الاستبدال يعطّله كذلك: `_showHeldOrders` **يحذف الطلبَ المعلَّق
     // من القاعدة** عند استرجاعه، فتركُه مفتوحاً أثناء استبدالٍ قائمٍ يُبيد
     // طلباً معلَّقاً نهائياً مقابل سلّةٍ لن تُحفَظ بيعاً عاديّاً.
-    final returnModeActive = ref.watch(posReturnModeProvider) != null ||
+    final returnModeActive =
+        ref.watch(posReturnModeProvider) != null ||
         ref.watch(posExchangeModeProvider) != null;
 
     return Directionality(
@@ -287,16 +301,18 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
                     // Task 10B — يسدّ فجوة إن كاشير PicPos ما عندوش أي طريقة
                     // يقفل الوردية. الفعل نفسه (10C يبدّله للمعاد تصميمه)؛
                     // حارس الصلاحية يعيش داخل `PicPosTopBar` نفسها.
-                    onCloseShift: () => PicposCashierClosingDialog.show(context),
+                    onCloseShift: () =>
+                        PicposCashierClosingDialog.show(context),
                     onSwitchUser: _switchUser,
                     // ⚠️ **مشروطٌ بنطاق الملفّ لا معروضٌ دائماً**: تنصيبةُ
                     // سوبرماركت لا تحجز مواعيد، وزرٌّ يفتح شاشةً خارجَ
                     // نطاقها يقود إلى فراغ. والنطاقُ هو نفسُ المصدر الذي
                     // تُبنى منه القائمةُ الجانبيّة، فلا يفترق الاثنان.
-                    onBookings: ref
-                            .watch(userAllowedScreensProvider)
-                            .value
-                            ?.contains(ScreenId.bookings.navigationIndex) ??
+                    onBookings:
+                        ref
+                                .watch(userAllowedScreensProvider)
+                                .value
+                                ?.contains(ScreenId.bookings.navigationIndex) ??
                             false
                         ? _openBookings
                         : null,
@@ -358,8 +374,11 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
       ),
       child: Row(
         children: [
-          const Icon(PhosphorIconsBold.arrowsHorizontal,
-              size: 13, color: AppColors.textMuted),
+          Icon(
+            PhosphorIconsBold.arrowsHorizontal,
+            size: 13,
+            color: context.picposMuted,
+          ),
           const SizedBox(width: 5),
           if (locked)
             Expanded(
@@ -381,6 +400,8 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
           // السماح من نفس السؤال اللحظي — الشارة هي اللي بتخلّي الكاشير عارف
           // إنه لسه مفتوح، عشان ما ينساهوش شغّال على فاتورة مش محتاجاه.
           const _OversellBadge(),
+          // مرتجعٌ بلا فاتورة (بند ٤): وضعُ إدخالٍ يحوّل المسحَ إلى سطر مرتجع.
+          _ReturnEntryToggle(onToggle: _toggleReturnEntryMode),
           // الترس: نفس حوار «إعدادات عرض السلة» بتاع UralCash — خمس سلايدرات
           // بتكتب على نفس مفاتيح الإعدادات، فتحكم دائم مش لحظي.
           const PicPosDisplaySettingsButton(),
@@ -424,9 +445,12 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
               color: context.picposHairline,
               borderRadius: BorderRadius.circular(999),
             ),
-            child: const Center(
-              child: Icon(PhosphorIconsBold.dotsSixVertical,
-                  size: 11, color: AppColors.textMuted),
+            child: Center(
+              child: Icon(
+                PhosphorIconsBold.dotsSixVertical,
+                size: 11,
+                color: context.picposMuted,
+              ),
             ),
           ),
         ),
@@ -471,20 +495,23 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
     // `previewSettlement` — **لا يُشتقّ هنا بطرح**، وإلّا صار حاسبٌ ثانٍ
     // يفترق عن المنفَّذ عند أوّل تقريب.
     final exchangeMode = ref.watch(posExchangeModeProvider);
-    final replacementTotal =
-        ref.watch(cartControllerProvider.select((s) => s.total));
+    final replacementTotal = ref.watch(
+      cartControllerProvider.select((s) => s.total),
+    );
 
     return Column(
       children: [
         if (returnMode != null)
           PicPosReturnModeBanner(
             invoiceNumber: _returnInvoiceNumber ?? '#${returnMode.invoiceId}',
+            onCancel: _cancelInvoice,
           ),
         if (exchangeMode != null)
           Builder(
             builder: (_) {
               final preview = exchangeMode.previewSettlement(
-                  replacementTotal: replacementTotal);
+                replacementTotal: replacementTotal,
+              );
               return PicPosExchangeModeBanner(
                 invoiceNumber:
                     _exchangeInvoiceNumber ?? '#${exchangeMode.invoiceId}',
@@ -502,16 +529,19 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
         const SizedBox(height: 4),
         _buildSizeControls(),
         const SizedBox(height: 4),
+        // وضعُ المرتجع: لوحةُ أسطره بدل سلّة البيع الفارغة (‏quick_return_cart).
         Expanded(
-          child: PicPosItemsTable(
-            selectedIndex: selectedIndex,
-            onSelect: (i) => setState(() => selectedIndex = i),
-            onRemove: _removeAt,
-            // الكيبورد الرقمي ديالوج، وقفله بيسيب الفوكس معلّق. الباركود سكانر
-            // جهاز كيبورد، فبدون الرجوع ده أول مسحة بعد تعديل كمية كانت تروح
-            // في العدم.
-            onEditComplete: _refocusScanner,
-          ),
+          child: returnMode != null
+              ? _buildQuickReturnTable(returnMode)
+              : PicPosItemsTable(
+                  selectedIndex: selectedIndex,
+                  onSelect: (i) => setState(() => selectedIndex = i),
+                  onRemove: _removeAt,
+                  // الكيبورد الرقمي ديالوج، وقفله بيسيب الفوكس معلّق. الباركود سكانر
+                  // جهاز كيبورد، فبدون الرجوع ده أول مسحة بعد تعديل كمية كانت تروح
+                  // في العدم.
+                  onEditComplete: _refocusScanner,
+                ),
         ),
         const SizedBox(height: 6),
         // المجاميع + طرق الدفع + أزرار الأفعال — نسخة PicPos من لوحة UralCash،
@@ -541,7 +571,7 @@ class _PicPosPosScreenState extends ConsumerState<PicPosPosScreen>
     return Positioned.fill(
       child: ColoredBox(
         color: Colors.black.withValues(alpha: 0.35),
-        child:  Center(
+        child: Center(
           child: Card(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -576,14 +606,17 @@ class _OversellBadge extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final allowed = ref
-        .watch(cartControllerProvider.select((s) => s.allowOversell));
+    final allowed = ref.watch(
+      cartControllerProvider.select((s) => s.allowOversell),
+    );
     if (!allowed) return const SizedBox.shrink();
 
     return Padding(
       padding: const EdgeInsetsDirectional.only(end: 5),
       child: Tooltip(
-        message: tr('مسموح بيع أصناف غير متوفرة في هذه الفاتورة — اضغط للإلغاء'),
+        message: tr(
+          'مسموح بيع أصناف غير متوفرة في هذه الفاتورة — اضغط للإلغاء',
+        ),
         child: InkWell(
           onTap: () =>
               ref.read(cartControllerProvider.notifier).setAllowOversell(false),
@@ -593,20 +626,29 @@ class _OversellBadge extends ConsumerWidget {
             decoration: BoxDecoration(
               color: AppColors.warning.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(6),
-              border:
-                  Border.all(color: AppColors.warning.withValues(alpha: 0.45)),
+              border: Border.all(
+                color: AppColors.warning.withValues(alpha: 0.45),
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(PhosphorIconsBold.warningDiamond,
-                    size: 12, color: AppColors.warning),
+                const Icon(
+                  PhosphorIconsBold.warningDiamond,
+                  size: 12,
+                  color: AppColors.warning,
+                ),
                 const SizedBox(width: 4),
-                Text(tr('بيع بالسالب'),
-                    style: PicPosText.v(context, 10, color: AppColors.warning)),
+                Text(
+                  tr('بيع بالسالب'),
+                  style: PicPosText.v(context, 10, color: AppColors.warning),
+                ),
                 const SizedBox(width: 3),
-                const Icon(PhosphorIconsBold.x,
-                    size: 9, color: AppColors.warning),
+                const Icon(
+                  PhosphorIconsBold.x,
+                  size: 9,
+                  color: AppColors.warning,
+                ),
               ],
             ),
           ),
@@ -650,47 +692,6 @@ class _MiniToggle extends StatelessWidget {
             style: active
                 ? PicPosText.v(context, 10, color: Colors.white)
                 : PicPosText.l(context, 10),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// «مسح الكل» أعلى السلة — بيتعطّل لما السلة فاضية بدل ما يفتح تأكيد
-/// على مفيش حاجة.
-class _ClearCartButton extends ConsumerWidget {
-  final VoidCallback onClear;
-
-  const _ClearCartButton({required this.onClear});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isEmpty =
-        ref.watch(cartControllerProvider.select((s) => s.items.isEmpty));
-    return Opacity(
-      opacity: isEmpty ? 0.35 : 1,
-      child: InkWell(
-        onTap: isEmpty ? null : onClear,
-        borderRadius: BorderRadius.circular(6),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-          decoration: BoxDecoration(
-            color: AppColors.error.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: AppColors.error.withValues(alpha: 0.25)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                  PhosphorIconsBold.trash, size: 13, color: AppColors.error),
-              const SizedBox(width: 4),
-              Text(
-                tr('مسح الكل'),
-                style: PicPosText.v(context, 10, color: AppColors.error),
-              ),
-            ],
           ),
         ),
       ),

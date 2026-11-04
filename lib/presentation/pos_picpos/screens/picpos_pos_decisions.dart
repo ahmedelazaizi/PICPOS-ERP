@@ -74,42 +74,42 @@ bool canEditCartQuantity(List<String> permissions) =>
 // خالصةٌ عمداً — بلا `BuildContext` ولا `WidgetRef` — كي تُختبر بلا شجرة
 // ودجت ولا `ProviderContainer`، نفسُ نمط `canOpenPosWeightDialog` أعلاه.
 
-/// «مرتجعٌ كامل» فقط حين استُنفد المتاحُ الحاليّ (‏`ReturnableLine.
-/// availableQty`، القيمةُ نفسُها التي يسقُف بها `PosReturnMode.setQty`) على
-/// **كلّ** سطرٍ في [mode]، **و**لا صنفَ مكرَّراً على أكثرَ من سطرٍ في نفس
-/// الفاتورة. سطرٌ لم يُطلَب منه شيءٌ ومتاحُه > 0 يمنع الوصفَ «كامل» — قد يكون
-/// الكاشيرُ استبعده عمداً بـ`clearQty` لا أنه نسِيَه.
+/// «مرتجعٌ كامل» فقط حين استُنفد المتاحُ الحاليّ (`ReturnableLine.availableQty`)
+/// على كلّ سطرٍ في [mode]؛ السطرُ المستبعَدُ عمداً يبقي الفاتورةَ جزئيةً.
 ///
-/// ⚠️ **تصحيحٌ (جولةُ إصلاح ٢) لتعليقٍ سابقٍ زعم اتجاهَ أمانٍ مقلوباً:**
-/// `ReturnableLine.alreadyReturnedQty` (‏`_showQuickReturn`) يأتي من استعلامٍ
-/// بمفتاح `productId` بينما `soldQty` بمفتاح **السطر**. فاتورةٌ فيها نفسُ
-/// الصنف على أكثرَ من سطرٍ (مثلاً ٥ + ٤) ومرتجعٌ سابقٌ ٣ (بمفتاح المنتَج، لا
-/// بمفتاح أيّ سطر) تُنسِب الـ٣ لِـ**كلّ** سطرٍ منفصلاً — فقياسٌ فعليّ
-/// (‏`requestedTotal=3, trueRemaining=6`) أثبت أن مقارنةً ساذجةً بين
-/// `requestedQty` الظاهرة ومتاحِ كلّ سطرٍ **تُبالغ**، لا تُقلّل: «تحديد الكلّ»
-/// كانت تُرجع `true` بينما ٣ وحداتٍ حقيقيّةً لم تُطلَب أصلاً، فتُختم
-/// الفاتورةُ `'returned'` نهائياً (`processSalesReturn`) وتفقد الثلاثةَ
-/// للأبد (`getInvoicesForReturn` تستبعد المرتجَعةَ بالكامل أبداً). المشكلةُ
-/// الحقيقيّةُ ليست «تحفّظاً» بل **مقارنةً بين مفتاحَين مختلفَين لا يجوز
-/// مقارنتُهما إطلاقاً**. فالحمايةُ الوحيدةُ الصحيحة: **رفضُ الختم `true`
-/// كلّياً** كلَّما تكرَّر `productId` على أكثرَ من سطرٍ في نفس الفاتورة — لا
-/// محاولةَ حسابٍ «أدقّ» فوق مفتاحَين متعارضَين. الإصلاحُ الجذريّ (استعلامٌ
-/// بمفتاح السطر) يحتاج تعديلَ طبقة المستودع (‏`returns_repository_impl.
-/// dart:109`) — خارج ملفّات هذه المهمّة، فلم يُصلَح هنا.
 @visibleForTesting
-bool computeIsFullReturn(PosReturnMode mode) {
-  final linesPerProduct = <int, int>{};
-  for (final line in mode.linesByItemId.values) {
-    linesPerProduct[line.productId] = (linesPerProduct[line.productId] ?? 0) + 1;
-  }
-  // صنفٌ على أكثرَ من سطرٍ ⇒ `alreadyReturnedQty` غيرُ موثوقةٍ لأيٍّ منها
-  // (مفتاحٌ مختلفٌ عن `soldQty`) ⇒ لا يجوز الختمُ `true` إطلاقاً.
-  if (linesPerProduct.values.any((count) => count > 1)) return false;
+bool computeIsFullReturn(PosReturnMode mode) =>
+    mode.linesByItemId.values.every((line) {
+      final requested = mode.requestedQty[line.invoiceItemId] ?? 0;
+      return (requested - line.availableQty).abs() < 0.001;
+    });
 
-  return mode.linesByItemId.values.every((line) {
-    final requested = mode.requestedQty[line.invoiceItemId] ?? 0;
-    return (requested - line.availableQty).abs() < 0.001;
-  });
+/// Distributes product-level base-unit returns in invoice order so duplicate
+/// product lines do not each subtract the full historical return.
+Map<int, double> distributeReturnedBaseQtyToSaleLines({
+  required Iterable<({
+    int invoiceItemId,
+    int productId,
+    double saleQuantity,
+    double quantityInBase,
+  })> invoiceLines,
+  required Map<int, double> returnedBaseByProduct,
+}) {
+  final remainingBaseByProduct = Map<int, double>.from(returnedBaseByProduct);
+  final returnedSaleQtyByLine = <int, double>{};
+  for (final line in invoiceLines) {
+    final factor = line.quantityInBase > 0 ? line.quantityInBase : 1.0;
+    final soldBaseQuantity = line.saleQuantity * factor;
+    final returnedBaseQuantity =
+        (remainingBaseByProduct[line.productId] ?? 0)
+            .clamp(0.0, soldBaseQuantity)
+            .toDouble();
+    returnedSaleQtyByLine[line.invoiceItemId] =
+        returnedBaseQuantity / factor;
+    remainingBaseByProduct[line.productId] =
+        (remainingBaseByProduct[line.productId] ?? 0) - returnedBaseQuantity;
+  }
+  return returnedSaleQtyByLine;
 }
 
 /// يبحث عن أوّل سطرٍ في [mode] يخصّ [productId] ولا يزال له متاحٌ فوق ما
@@ -164,6 +164,25 @@ double? nextIncrementedQty(
 /// الشرط تُسقِط اختبارَ الثلاثة، لا واحداً ينساه إعادةُ كتابةٍ لاحقة.
 @visibleForTesting
 bool blocksCartMutation(PosReturnMode? mode) => mode != null;
+
+/// ── فتحُ الدرج عند قبض النقد (قرار 2026-10-30) ───────────────────────────
+///
+/// القرارُ تابعٌ لـ«قبض نقدٍ» لا لـ«طُبع إيصال»: أمرُ الدرج مهمّةٌ خامٌّ مستقلّة
+/// تُرسَل للطابعة الموصول بها الدرج، فيصحّ في الحفظ F2 وفي إطفاء الطباعة.
+/// يُفتح عند الإعداد `drawer` مضاءً **و**: دفعٍ نقديٍّ، أو مختلطٍ (`mixed`)
+/// جزؤه النقديّ أكبر من صفر. بطاقةٌ/آجلٌ/تحويلٌ خالصٌ لا يفتحه.
+@visibleForTesting
+bool shouldKickDrawer(
+  QuickSalePolicyValues policy, {
+  required String method,
+  double? cashAmount,
+}) {
+  if (!policy.isOn(kQuickSaleRows.firstWhere((r) => r.id == 'drawer'))) {
+    return false;
+  }
+  if (method == 'cash') return true;
+  return method == 'mixed' && (cashAmount ?? 0) > 0;
+}
 
 /// ── الإضافةُ السريعة لصنفٍ غير مسجَّل ─────────────────────────────────────
 ///

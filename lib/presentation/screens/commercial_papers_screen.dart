@@ -473,7 +473,7 @@ class _CommercialPapersScreenState
                       child: Text(
                         tr('متأخر'),
                         style: GoogleFonts.cairo(
-                          fontSize: 9,
+                          fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: AppColors.error,
                         ),
@@ -494,7 +494,7 @@ class _CommercialPapersScreenState
                       child: Text(
                         tr('قريب الاستحقاق'),
                         style: GoogleFonts.cairo(
-                          fontSize: 9,
+                          fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: Colors.orange.shade700,
                         ),
@@ -639,7 +639,7 @@ class _CommercialPapersScreenState
       avatar: Icon(icon, size: 14, color: color),
       label: Text(
         label,
-        style: GoogleFonts.cairo(fontSize: 10, color: color),
+        style: GoogleFonts.cairo(fontSize: 11, color: color),
       ),
       backgroundColor: color.withValues(alpha: 0.08),
       side: BorderSide(color: color.withValues(alpha: 0.2)),

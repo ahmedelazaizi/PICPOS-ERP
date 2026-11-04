@@ -5,7 +5,7 @@ extension _PicPosCheckoutOps on _PicPosOperations {
   /// `دفع F4` — حفظ + طباعة + فتح الدرج (طلب ١).
   Future<void> _handleCheckout() => _processPaymentAndSave(printAfter: true);
 
-  /// `حفظ F2` — حفظ فقط: بلا طباعة وبلا درج.
+  /// `حفظ F2` — حفظ بلا طباعة؛ يفتح الدرج عند قبض نقد (بحسب إعداد `drawer`).
   Future<void> _saveOnly() => _processPaymentAndSave(printAfter: false);
 
   /// المسار الوحيد اللي أي فاتورة بيع بتخرج منه من شاشة PicPos.
@@ -25,8 +25,10 @@ extension _PicPosCheckoutOps on _PicPosOperations {
   /// • هنا فيه تحقّق فترة مالية قبل الدفع — UralCash مالهاش.
   /// • هنا فيه توست تسوية التقريب — UralCash مالهاش.
   /// • مفيش `printKitchenOrders` — مفيش موديول مطبخ في lite.
-  /// • `حفظ` هنا **ما بيفتحش الدرج**؛ في UralCash بيفتحه. الزرين لازم يفرقوا،
-  ///   ودرج بيفتح بلا فلوس بيدرّب الكاشير إنه يتجاهل الركلة.
+  /// • `حفظ` **بيفتح الدرج عند قبض نقد** (نقدي أو مختلط فيه جزء نقدي) زي F4،
+  ///   حتى لو الطباعة التلقائية موقوفة (قرار المالك 2026-10-30، بدّل القرار
+  ///   السابق «الحفظ ما بيفتحش الدرج»): أمر الدرج مهمة مستقلة للطابعة
+  ///   والدرج موصول بيها. بطاقة/آجل ما بيفتحوش، وكذلك فشل الحفظ.
   Future<void> _processPaymentAndSave({required bool printAfter}) async {
     // وضعُ المرتجع (المهمّة ٧): يأخذ المسارَ **كلَّه** — لا فحصَ سلّةٍ فارغة
     // (فاتورةُ المرتجع ليست سلّةَ بيع)، ولا فترةً ماليّةً هنا (`processSalesReturn`
@@ -52,6 +54,11 @@ extension _PicPosCheckoutOps on _PicPosOperations {
     if (cartState.items.isEmpty) {
       showPosToast(context, ref, tr('الفاتورة فارغة'),
           type: PosNotificationType.info);
+      return;
+    }
+    // سلّةٌ فيها سطرُ مرتجعٍ بلا فاتورة (بند ٤): مسارٌ خاصٌّ بصافي النقد.
+    if (cartState.hasReturnLines) {
+      await _processNoInvoiceReturnSave(cartState, printAfter: printAfter);
       return;
     }
     if (!await _validateCartBeforeCheckout(cartState)) return;
@@ -294,26 +301,44 @@ extension _PicPosCheckoutOps on _PicPosOperations {
     // ويُصيب هذا مديرَ النظام تحديداً: `_ensureShiftOpen` يتخطّاه عمداً
     // (Spec 135 NOTE 2) فيصل إلى هنا بلا ورديّة.
     bool success = false;
+    var costCancelled = false;
     final outcome = await runWithOpenShiftPrompt(
       context: context,
       ref: ref,
       subtitleBuilder: (amount) =>
           tr('البيعة تُدخل {p0} نقداً إلى الدرج.', {'p0': amount.toStringAsFixed(2)}),
-      attempt: () async => success = await ref
-          .read(checkoutControllerProvider.notifier)
-          .processPayment(
-            method: method,
-            // المقرَّبُ — هو ما دخل الدرجَ فعلاً، فيتطابق الدفترُ مع العدّ.
-            total: collectTotal,
-            cashAmount: collectCash,
-            bankAmount: bankAmount,
-            clickAmount: clickAmount,
-            bankSafeId: bankSafeId,
-            customerId: resultCustomerId ?? cartState.selectedCustomerId,
-          ),
+      attempt: () async {
+        // صنفٌ بلا تكلفةٍ معروفة: نسأل عن تكلفته ونعيد الحفظ بها (السلّةُ
+        // لا تُمَسّ عند الفشل أو الإلغاء).
+        final r = await saveWithCostRetry(
+          attempt: (costs) => ref
+              .read(checkoutControllerProvider.notifier)
+              .processPayment(
+                method: method,
+                // المقرَّبُ — هو ما دخل الدرجَ فعلاً، فيتطابق الدفترُ مع العدّ.
+                total: collectTotal,
+                cashAmount: collectCash,
+                bankAmount: bankAmount,
+                clickAmount: clickAmount,
+                bankSafeId: bankSafeId,
+                customerId: resultCustomerId ?? cartState.selectedCustomerId,
+                provisionalCosts: costs,
+              ),
+          pendingCost: () => ref.read(checkoutControllerProvider).costRequired,
+          askCost: (e) => _askProvisionalCost(e, cartState.items),
+        );
+        success = r == CostRetryResult.saved;
+        costCancelled = r == CostRetryResult.cancelled;
+      },
     );
 
     if (!mounted) return;
+    if (outcome == ShiftPromptOutcome.completed && costCancelled) {
+      showPosToast(context, ref, tr('أُلغيت البيعة — الأصناف ما زالت في السلة'),
+          type: PosNotificationType.warning);
+      _refocusScanner();
+      return;
+    }
     if (outcome != ShiftPromptOutcome.completed) {
       showPosToast(
         context,
@@ -365,17 +390,16 @@ extension _PicPosCheckoutOps on _PicPosOperations {
     final autoPrint = printPolicy
         .isOn(kQuickSaleRows.firstWhere((r) => r.id == 'autoprint'));
 
+    // §٤ `drawer` — قرارُ فتح الدرج مستقلٌّ عن الطباعة (قرار 2026-10-30):
+    // يُحسَب مرّةً واحدةً هنا، وكلُّ فرعٍ أدناه يفتحه **مرّةً واحدة** على الأكثر.
+    // بيعةُ بطاقةٍ لا نقدَ فيها لا تُدخِل نقداً ففتحُه يعرّضه بلا سبب.
+    // وبلغنا هنا بعد نجاح الحفظ فقط (الفشلُ يعود قبل هذه النقطة).
+    final openDrawer =
+        shouldKickDrawer(printPolicy, method: method, cashAmount: collectCash);
+
     if (printAfter && autoPrint) {
       // الدرج بيتركل **بالتوازي** مع الطباعة مش بعدها: الركلة بتروح للطابعة
       // على نفس المنفذ، وتسلسلهم كان بيضيف زمن ميت على مسار حرج.
-      //
-      // §٤ `drawer` — ويضيّق التوصيلُ سلوكاً كان أوسع: الدرجُ كان يُركَل
-      // في **كلّ** بيعةٍ مطبوعة، والتصميمُ يقول «يفتح في الدفع النقدي
-      // فقط». وهو الصواب: بيعةُ بطاقةٍ لا نقدَ فيها تُدخِله، ففتحُ الدرج
-      // يعرّض النقدَ بلا سبب. و`null` تُبقي السلوكَ القائم.
-      final openDrawer = printPolicy
-              .isOn(kQuickSaleRows.firstWhere((r) => r.id == 'drawer')) &&
-          method == 'cash';
       final drawerFuture =
           openDrawer ? _openCashDrawerQuietly() : Future<void>.value();
 
@@ -403,10 +427,39 @@ extension _PicPosCheckoutOps on _PicPosOperations {
         );
       }
     } else {
+      // حفظٌ بلا طباعة (F2 أو `autoprint` مطفأ): النقدُ دخل الدرجَ فيُفتح،
+      // والأمرُ مهمّةٌ مستقلّةٌ للطابعة فلا يلزمه إيصال. صامتٌ عند الفشل.
+      if (openDrawer) await _openCashDrawerQuietly();
+      if (!mounted) return;
       showPosToast(context, ref, tr('تم حفظ الفاتورة'),
           type: PosNotificationType.success);
     }
 
     await _applyAfterInvoiceAction(printPolicy);
+  }
+
+  /// تكلفةُ صنفٍ مجهولة التكلفة لإكمال البيع (لوحدة الأساس) أو `null` للإلغاء.
+  ///
+  /// الصلاحية: `products_edit` — التكلفةُ المُدخلة تُسجَّل على بطاقة الصنف؛
+  /// فمن لا يملكها يطلب موافقةَ مسؤولٍ يملكها (`requestManagerApproval`).
+  Future<double?> _askProvisionalCost(
+    CostRequiredException e,
+    List<CartItemEntity> items,
+  ) async {
+    if (!await _userHasPermissionFresh(PermissionCodes.productsEdit)) {
+      if (!mounted) return null;
+      final approved = await requestManagerApproval(
+        context,
+        actionName:
+            tr('تحديد تكلفة الصنف {p0}', {'p0': e.productName}),
+        permission: PermissionCodes.productsEdit,
+      );
+      if (!approved) return null;
+    }
+    if (!mounted) return null;
+    final entered =
+        await showCostRequiredDialog(context, productName: e.productName);
+    if (entered == null) return null;
+    return provisionalCostPerBase(items, e.productId, entered);
   }
 }

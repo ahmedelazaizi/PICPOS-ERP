@@ -1,23 +1,12 @@
 import 'package:picpos_erp/core/i18n/tr.dart';
-// جدولُ الأصناف بهويّة PicPos — **فوركٌ مقصودٌ بقرار المالك 2026-08-22**:
-// «العملُ على UralCash موقوف، فإذا أردتَ أن تعمل بشيءٍ على PicPos فانسخه إلى
-// PicPos ولا تشارك تعديلاتِ PicPos على UralCash».
-//
-// المصدر: `lib/presentation/screens/products/widgets/products_table.dart`،
-// وهو يبقى **كما هو** لشاشة UralCash. ما تغيّر هنا: عمقُ الاستيراد النسبيّ،
-// أسماءُ الأصناف العامّة، وطبقةُ العرض (رأسٌ وصفوفٌ على تصميم `isProducts`).
-// ولا منطقَ تغيّر: الانتقاءُ والإجراءاتُ الجماعيّةُ وحرّاسُ الصلاحيات وتتبّعُ
-// الأداء كلُّها منقولةٌ حرفيّاً.
-//
-// ⚠️ **وتعليقُ «مصيدة النسخ §٥.٨»** الذي كان يقول «أصلح في المصدر ثمّ patch»
-// لا ينطبق بعد اليوم على هذا الملفّ — النقلُ لم يعد هدفاً.
-//
-// والحواراتُ (`ProductEditDialog` · `ProductDeleteDialog` ·
-// `BarcodePrintDialog`) **تُستورَد ولا تُنسَخ**: لم يطلب التصميمُ تغييرَها،
-// ونسخُها كان سيضاعف ثلاثةَ ملفّاتٍ بلا سبب.
+// جدولُ الأصناف بهويّة PicPos — فوركٌ مقصودٌ بقرار المالك 2026-08-22 (لا تُشارَك
+// تعديلاتُ PicPos على UralCash). المصدر `screens/products/widgets/products_table.dart`
+// يبقى كما هو؛ هنا تغيّر الاستيرادُ والأسماءُ العامّة وطبقةُ العرض فقط والمنطقُ حرفيّ.
+// الحواراتُ (`ProductEditDialog`/`ProductDeleteDialog`/`BarcodePrintDialog`) تُستورَد.
 import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/diagnostics/perf_trace.dart';
@@ -62,13 +51,8 @@ const double _kActionsColWidth = 160;
 
 // ─── عمودان يضيفهما تصميمُ PicPos ────────────────────────────────────────
 //
-// ⚠️ **يُضافان ولا يُبدلان شيئاً.** التصميمُ يرسم عشرةَ أعمدةٍ والجدولُ يحمل
-// ثلاثةَ عشر، فمطابقتُه حرفيّاً كانت تعني حذفَ **الباركود ونوعِ الصنف
-// والمخزنِ ومتوسّطِ التكلفة وعمودِ الإجراءات** — وفيها زرّا التعديل والحذف
-// وطباعةُ الباركود. حذفُ قدرةٍ قائمةٍ لمطابقةِ مخطّطٍ ليس إعادةَ تصميم.
-//
-// فالمأخوذُ من التصميم لغتُه البصريّة (صفوفٌ مضغوطةٌ وشاراتٌ دائريّة) وعمودان
-// جديدان حقيقيّان، والباقي على حاله.
+// يُضافان ولا يُبدلان شيئاً: مطابقةُ التصميم (10 أعمدة) حرفيّاً تحذف الباركود
+// والنوعَ والمخزنَ ومتوسّطَ التكلفة والإجراءات (تعديل/حذف/باركود).
 const double _kUnitColWidth = 62;
 const double _kMarginColWidth = 74;
 
@@ -207,14 +191,17 @@ Widget buildProductStockCell({
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Align(
           alignment: AlignmentDirectional.centerEnd,
-          child: Text(
-            currentStock.toStringAsFixed(0),
-            style: TextStyle(
-              color: currentStock <= minStock
-                  ? AppColors.error
-                  : AppColors.textPrimary,
-              fontWeight:
-                  currentStock <= minStock ? FontWeight.bold : FontWeight.normal,
+          child: Builder(
+            builder: (context) => Text(
+              currentStock.toStringAsFixed(0),
+              style: TextStyle(
+                color: currentStock <= minStock
+                    ? AppColors.error
+                    : context.picposText,
+                fontWeight: currentStock <= minStock
+                    ? FontWeight.bold
+                    : FontWeight.normal,
+              ),
             ),
           ),
         ),
@@ -238,26 +225,31 @@ Widget buildProductLockButton({
     allowManagerOverride: true,
     actionName: isLocked ? tr('إلغاء استثناء الصنف') : tr('استثناء الصنف من قفل التصنيف'),
     onGranted: onToggle,
-    child: IconButton(
-      icon: Icon(
-        isLocked ? PhosphorIconsBold.lockOpen : PhosphorIconsBold.lock,
+    child: Builder(
+      builder: (context) => IconButton(
+        icon: Icon(
+          isLocked ? PhosphorIconsBold.lockOpen : PhosphorIconsBold.lock,
+        ),
+        iconSize: 18,
+        color: isLocked ? AppColors.success : context.picposSecondary,
+        tooltip:
+            isLocked ? tr('إلغاء الاستثناء') : tr('استثناء من قفل التصنيف'),
+        padding: const EdgeInsets.all(4),
+        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+        onPressed: onToggle,
       ),
-      iconSize: 18,
-      color: isLocked ? AppColors.success : AppColors.textSecondary,
-      tooltip: isLocked ? tr('إلغاء الاستثناء') : tr('استثناء من قفل التصنيف'),
-      padding: const EdgeInsets.all(4),
-      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-      onPressed: onToggle,
     ),
   );
 }
 
 /// بديل الخلية المحجوبة — نفس العرض بالظبط عشان الأعمدة تفضل تحت عناوينها.
-Widget _maskedCell(double width, {bool alignEnd = false}) => _gridTextCell(
-      '••••',
-      width,
-      alignEnd: alignEnd,
-      color: AppColors.textMuted,
+Widget _maskedCell(double width, {bool alignEnd = false}) => Builder(
+      builder: (context) => _gridTextCell(
+        '••••',
+        width,
+        alignEnd: alignEnd,
+        color: context.picposMuted,
+      ),
     );
 
 Widget _gridTextCell(
@@ -379,16 +371,16 @@ class _ProductsTableState extends ConsumerState<ProductsTablePicpos> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(PhosphorIconsBold.package,
-                  size: 48, color: AppColors.textMuted.withValues(alpha: 0.5)),
+                  size: 48, color: context.picposMuted.withValues(alpha: 0.5)),
               const SizedBox(height: 12),
                Text(
                 tr('لا توجد أصناف بعد'),
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 16),
+                style: TextStyle(color: context.picposMuted, fontSize: 16),
               ),
               const SizedBox(height: 8),
                Text(
                 tr('اضغط "إضافة صنف" لإنشاء أول صنف'),
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                style: TextStyle(color: context.picposMuted, fontSize: 13),
               ),
             ],
           ),
@@ -582,8 +574,8 @@ class _ProductsTableHeader extends StatelessWidget {
       height: _kHeaderHeight,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        border: const Border(
-          bottom: BorderSide(color: AppColors.border, width: 1),
+        border: Border(
+          bottom: BorderSide(color: context.picposHairline, width: 1),
         ),
       ),
       child: Row(
@@ -711,9 +703,9 @@ class _ProductRow extends ConsumerWidget {
             .toggleSelection(product.id),
         child: Container(
           height: _kRowHeight,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(
-              bottom: BorderSide(color: AppColors.border, width: 0.5),
+              bottom: BorderSide(color: context.picposHairline, width: 0.5),
             ),
           ),
           child: Row(
@@ -875,7 +867,7 @@ class _MarginBadge extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
-          fontSize: 10.5,
+          fontSize: 11,
           fontWeight: FontWeight.w800,
           color: color,
         ),
@@ -972,7 +964,7 @@ class _ProductTypeBadge extends StatelessWidget {
       'raw_material' => AppColors.warning,
       'finished_goods' => AppColors.success,
       'service' => AppColors.info,
-      _ => AppColors.textSecondary,
+      _ => context.picposSecondary,
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1009,7 +1001,7 @@ class _AvgCostCell extends StatelessWidget {
       );
     }
     if (value == null) {
-      return const Text('-', style: TextStyle(color: AppColors.textMuted));
+      return Text('-', style: TextStyle(color: context.picposMuted));
     }
     final diff = product.costPrice > 0
         ? ((value! - product.costPrice) / product.costPrice * 100)
@@ -1020,7 +1012,7 @@ class _AvgCostCell extends StatelessWidget {
         '${value!.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
         style: TextStyle(
           fontSize: 12,
-          color: diff.abs() > 10 ? AppColors.warning : AppColors.textPrimary,
+          color: diff.abs() > 10 ? AppColors.warning : context.picposText,
           fontWeight: diff.abs() > 10 ? FontWeight.bold : FontWeight.normal,
         ),
       ),

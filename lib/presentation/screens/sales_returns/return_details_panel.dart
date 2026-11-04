@@ -64,7 +64,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                       ),
                       Text(
                         tr('{p0} أصناف', {'p0': items.length}),
-                        style: const TextStyle(color: AppColors.textMuted),
+                        style: TextStyle(color: context.picposMuted),
                       ),
                     ],
                   ),
@@ -100,7 +100,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                           border: Border.all(
                             color: state.isFullReturn
                                 ? AppColors.primary
-                                : AppColors.textMuted.withValues(alpha: 0.3),
+                                : context.picposMuted.withValues(alpha: 0.3),
                             width: state.isFullReturn ? 2 : 1,
                           ),
                           borderRadius: BorderRadius.circular(6),
@@ -114,7 +114,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                                   : PhosphorIconsBold.circle,
                               color: state.isFullReturn
                                   ? AppColors.primary
-                                  : AppColors.textMuted,
+                                  : context.picposMuted,
                               size: 16,
                             ),
                             const SizedBox(width: 6),
@@ -146,7 +146,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                           border: Border.all(
                             color: !state.isFullReturn
                                 ? AppColors.primary
-                                : AppColors.textMuted.withValues(alpha: 0.3),
+                                : context.picposMuted.withValues(alpha: 0.3),
                             width: !state.isFullReturn ? 2 : 1,
                           ),
                           borderRadius: BorderRadius.circular(6),
@@ -160,7 +160,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                                   : PhosphorIconsBold.circle,
                               color: !state.isFullReturn
                                   ? AppColors.primary
-                                  : AppColors.textMuted,
+                                  : context.picposMuted,
                               size: 16,
                             ),
                             const SizedBox(width: 6),
@@ -261,7 +261,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                                             ? tr('مرتجع بالكامل')
                                             : tr('تم إرجاع {p0}', {'p0': previouslyReturned.toStringAsFixed(0)}),
                                         style: TextStyle(
-                                          fontSize: 10,
+                                          fontSize: 11,
                                           fontWeight: FontWeight.bold,
                                           color: isFullyReturned
                                               ? Colors.grey
@@ -274,9 +274,9 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                               const SizedBox(height: 4),
                               Text(
                                 tr('{p0} × {p1} = {p2} د.أ', {'p0': item.quantity.toStringAsFixed(0), 'p1': item.unitPrice.toStringAsFixed(AppConstants.decimalPlaces), 'p2': item.total.toStringAsFixed(AppConstants.decimalPlaces)}),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
-                                  color: AppColors.textMuted,
+                                  color: context.picposMuted,
                                 ),
                               ),
                               // Per-line tax indicator: show the rate + amount
@@ -292,7 +292,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                                     size: 11,
                                     color: item.taxAmount > 0
                                         ? AppColors.primary
-                                        : AppColors.textMuted,
+                                        : context.picposMuted,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
@@ -303,7 +303,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                                       fontSize: 11,
                                       color: item.taxAmount > 0
                                           ? AppColors.primary
-                                          : AppColors.textMuted,
+                                          : context.picposMuted,
                                     ),
                                   ),
                                 ],
@@ -330,7 +330,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                                     const Icon(PhosphorIconsBold.minusCircle),
                                 color: returnQty > 0
                                     ? AppColors.error
-                                    : AppColors.textMuted,
+                                    : context.picposMuted,
                                 onPressed: returnQty > 0
                                     ? () => notifier.updateReturnQuantity(
                                         item.id,
@@ -366,7 +366,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                                     const Icon(PhosphorIconsBold.plusCircle),
                                 color: returnQty < availableToReturn
                                     ? AppColors.success
-                                    : AppColors.textMuted,
+                                    : context.picposMuted,
                                 onPressed: returnQty < availableToReturn
                                     ? () => notifier.updateReturnQuantity(
                                         item.id,
@@ -406,7 +406,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                               fontWeight: FontWeight.bold,
                               color: returnQty > 0
                                   ? AppColors.warning
-                                  : AppColors.textMuted,
+                                  : context.picposMuted,
                             ),
                           ),
                         ),
@@ -430,12 +430,12 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                     decoration: BoxDecoration(
                       color: state.isDamaged
                         ? AppColors.error.withValues(alpha: 0.1)
-                        : AppColors.textMuted.withValues(alpha: 0.1),
+                        : context.picposMuted.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       PhosphorIconsBold.trash,
-                      color: state.isDamaged ? AppColors.error : AppColors.textMuted,
+                      color: state.isDamaged ? AppColors.error : context.picposMuted,
                       size: 20,
                     ),
                   ),
@@ -453,9 +453,9 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                         ),
                         Text(
                           tr('لن تتم إضافة الأصناف المرتجعة إلى المخزون المتاح للاستخدام'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: AppColors.textMuted,
+                            color: context.picposMuted,
                           ),
                         ),
                       ],
@@ -533,8 +533,8 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                     children: [
                        Text(
                         tr('إجمالي المرتجع:'),
-                        style: const TextStyle(
-                          color: AppColors.textMuted,
+                        style: TextStyle(
+                          color: context.picposMuted,
                           fontSize: 11,
                         ),
                       ),
@@ -672,7 +672,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                           border: Border.all(
                             color: state.exchangeProduct != null
                                 ? AppColors.info
-                                : AppColors.textMuted
+                                : context.picposMuted
                                     .withValues(alpha: 0.3),
                           ),
                           borderRadius: BorderRadius.circular(8),
@@ -689,7 +689,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                                   : PhosphorIconsBold.plus,
                               color: state.exchangeProduct != null
                                   ? AppColors.info
-                                  : AppColors.textMuted,
+                                  : context.picposMuted,
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -702,7 +702,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                                         : null,
                                 color: state.exchangeProduct != null
                                     ? AppColors.info
-                                    : AppColors.textMuted,
+                                    : context.picposMuted,
                               ),
                             ),
                             if (state.exchangeProduct != null) ...[
@@ -727,7 +727,7 @@ mixin _ReturnDetailsPanelMixin on ConsumerState<SalesReturnsScreen> {
                           icon: const Icon(PhosphorIconsBold.minusCircle),
                           color: state.exchangeQuantity > 1
                               ? AppColors.info
-                              : AppColors.textMuted,
+                              : context.picposMuted,
                           onPressed: state.exchangeQuantity > 1
                               ? () => notifier.updateExchangeQuantity(
                                   state.exchangeQuantity - 1,

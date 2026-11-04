@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
+import '../picpos_shell/picpos_surface.dart';
 import '../../data/providers/providers.dart';
 import '../../core/constants/app_constants.dart';
 import '../widgets/branch_chip.dart';
@@ -142,8 +143,8 @@ class _BranchPerformanceScreenState
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
-                border: const Border(
-                    bottom: BorderSide(color: AppColors.border, width: 1)),
+                border: Border(
+                    bottom: BorderSide(color: context.picposHairline, width: 1)),
               ),
               child: Row(
                 children: [
@@ -176,7 +177,7 @@ class _BranchPerformanceScreenState
                               fontSize: 18, fontWeight: FontWeight.bold)),
                       Text(tr('تحليل ومقارنة الأداء عبر جميع الفروع'),
                           style:
-                              const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                              TextStyle(color: context.picposMuted, fontSize: 13)),
                     ],
                   ),
                   const Spacer(),
@@ -198,7 +199,7 @@ class _BranchPerformanceScreenState
                       side: BorderSide(
                           color: _period == 'custom'
                               ? AppColors.primary
-                              : AppColors.border),
+                              : context.picposHairline),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -262,7 +263,7 @@ class _BranchPerformanceScreenState
                               const SizedBox(height: 12),
                                Text(tr('لا توجد فروع'),
                                   style:
-                                      const TextStyle(color: AppColors.textMuted)),
+                                      TextStyle(color: context.picposMuted)),
                             ],
                           ),
                         )
@@ -293,12 +294,12 @@ class _BranchPerformanceScreenState
           selected: isActive,
           selectedColor: AppColors.primary.withValues(alpha: 0.15),
           labelStyle: TextStyle(
-            color: isActive ? AppColors.primary : AppColors.textMuted,
+            color: isActive ? AppColors.primary : context.picposMuted,
             fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
           ),
           onSelected: (_) => _onPeriodChanged(e.key),
           side: BorderSide(
-              color: isActive ? AppColors.primary : AppColors.border),
+              color: isActive ? AppColors.primary : context.picposHairline),
           padding: const EdgeInsets.symmetric(horizontal: 8),
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           visualDensity: VisualDensity.compact,
@@ -315,7 +316,7 @@ class _BranchPerformanceScreenState
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: context.picposHairline),
           boxShadow: [
             BoxShadow(
               color: color.withValues(alpha: 0.08),
@@ -340,8 +341,8 @@ class _BranchPerformanceScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title,
-                      style: const TextStyle(
-                          color: AppColors.textMuted, fontSize: 12)),
+                      style: TextStyle(
+                          color: context.picposMuted, fontSize: 12)),
                   const SizedBox(height: 4),
                   FittedBox(
                     fit: BoxFit.scaleDown,
@@ -368,7 +369,7 @@ class _BranchPerformanceScreenState
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: context.picposHairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -391,8 +392,8 @@ class _BranchPerformanceScreenState
                         const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                 const Spacer(),
                 Text(tr('{p0} فرع', {'p0': _branchData.length}),
-                    style: const TextStyle(
-                        color: AppColors.textMuted, fontSize: 13)),
+                    style: TextStyle(
+                        color: context.picposMuted, fontSize: 13)),
               ],
             ),
           ),
@@ -403,13 +404,13 @@ class _BranchPerformanceScreenState
             color: Theme.of(context).cardColor,
             child:  Row(
               children: [
-                const SizedBox(width: 40, child: Text('#', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12))),
-                Expanded(flex: 3, child: Text(tr('الفرع'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12))),
-                Expanded(flex: 2, child: Text(tr('المبيعات'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12), textAlign: TextAlign.center)),
-                Expanded(flex: 1, child: Text(tr('الفواتير'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12), textAlign: TextAlign.center)),
-                Expanded(flex: 2, child: Text(tr('متوسط الفاتورة'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12), textAlign: TextAlign.center)),
-                Expanded(flex: 2, child: Text(tr('قيمة المخزون'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12), textAlign: TextAlign.center)),
-                Expanded(flex: 1, child: Text(tr('الحصة %'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12), textAlign: TextAlign.center)),
+                SizedBox(width: 40, child: Text('#', style: TextStyle(fontWeight: FontWeight.bold, color: context.picposMuted, fontSize: 12))),
+                Expanded(flex: 3, child: Text(tr('الفرع'), style: TextStyle(fontWeight: FontWeight.bold, color: context.picposMuted, fontSize: 12))),
+                Expanded(flex: 2, child: Text(tr('المبيعات'), style: TextStyle(fontWeight: FontWeight.bold, color: context.picposMuted, fontSize: 12), textAlign: TextAlign.center)),
+                Expanded(flex: 1, child: Text(tr('الفواتير'), style: TextStyle(fontWeight: FontWeight.bold, color: context.picposMuted, fontSize: 12), textAlign: TextAlign.center)),
+                Expanded(flex: 2, child: Text(tr('متوسط الفاتورة'), style: TextStyle(fontWeight: FontWeight.bold, color: context.picposMuted, fontSize: 12), textAlign: TextAlign.center)),
+                Expanded(flex: 2, child: Text(tr('قيمة المخزون'), style: TextStyle(fontWeight: FontWeight.bold, color: context.picposMuted, fontSize: 12), textAlign: TextAlign.center)),
+                Expanded(flex: 1, child: Text(tr('الحصة %'), style: TextStyle(fontWeight: FontWeight.bold, color: context.picposMuted, fontSize: 12), textAlign: TextAlign.center)),
               ],
             ),
           ),
@@ -473,7 +474,7 @@ class _BranchPerformanceScreenState
                                 child:  Text(tr('الأفضل'),
                                     style: const TextStyle(
                                         color: AppColors.success,
-                                        fontSize: 10,
+                                        fontSize: 11,
                                         fontWeight: FontWeight.bold)),
                               ),
                             ],
@@ -536,8 +537,8 @@ class _BranchPerformanceScreenState
       bg = const Color(0xFFCD7F32).withValues(alpha: 0.2);
       fg = const Color(0xFF8B4513);
     } else {
-      bg = AppColors.border.withValues(alpha: 0.3);
-      fg = AppColors.textMuted;
+      bg = context.picposHairline.withValues(alpha: 0.3);
+      fg = context.picposMuted;
     }
     return Container(
       width: 28,
@@ -555,16 +556,16 @@ class _BranchPerformanceScreenState
       mainAxisSize: MainAxisSize.min,
       children: [
         Text('${percent.toStringAsFixed(1)}%',
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
-                color: AppColors.textMuted)),
+                color: context.picposMuted)),
         const SizedBox(height: 4),
         ClipRRect(
           borderRadius: BorderRadius.circular(3),
           child: LinearProgressIndicator(
             value: percent / 100,
-            backgroundColor: AppColors.border,
+            backgroundColor: context.picposHairline,
             color: percent > 40
                 ? AppColors.success
                 : percent > 20

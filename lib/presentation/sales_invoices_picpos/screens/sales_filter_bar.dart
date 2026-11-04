@@ -138,7 +138,7 @@ class _StatusChip extends StatelessWidget {
                 Text(
                   '$count',
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: fg.withValues(alpha: .6),
                     fontFeatures: const [ui.FontFeature.tabularFigures()],

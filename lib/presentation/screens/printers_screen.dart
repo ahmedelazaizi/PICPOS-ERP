@@ -8,6 +8,8 @@ import 'package:picpos_erp/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/i18n/tr.dart';
+import 'printer_paper_width_fields.dart';
 import '../../core/widgets/shimmer_loading.dart';
 
 import '../../data/providers/providers.dart';
@@ -251,7 +253,10 @@ class _PrintersBodyState extends ConsumerState<PrintersBody> {
                 ),
                 // Delete button
                 IconButton(
-                  icon: const Icon(PhosphorIconsBold.trash, color: AppColors.error),
+                  icon: const Icon(
+                    PhosphorIconsBold.trash,
+                    color: AppColors.error,
+                  ),
                   onPressed: () => _confirmDelete(printer),
                   tooltip: 'حذف',
                 ),
@@ -277,18 +282,9 @@ class _PrintersBodyState extends ConsumerState<PrintersBody> {
     );
     String printerType = printer?.printerType ?? 'thermal';
     String printerPurpose = printer?.purpose ?? 'pos_receipt';
+    double paperWidthMm = printer?.paperWidthMm ?? 80;
     bool isActive = printer?.isActive ?? true;
 
-    // ═══ لوحةُ `PANELS.printer` بغلاف PicPos ═══
-    //
-    // ⚠️ **خروجٌ مبكّرٌ لا تفريعٌ داخل الشجرة**: حوارُ UralCash تحت هذا السطرِ
-    //    لا يُمَسّ حرفاً.
-    //
-    // ⚠️ **وثلاثُ مجموعاتٍ من التصميم لم تُنقَل**: «عرض الورق» و«الربط بنقاط
-    //    البيع» لا عمودَ لهما في `printers`، و«خيارات» التصميم (‏افتراضيّة ·
-    //    فتحُ الدرج · قطعُ الورق) كذلك. وتنبيهُ التصميم يحيل إلى «طباعة
-    //    تجريبيّة من كارت الطابعة» — ولا زرَّ تجريبيّاً في هذه الشاشة، فلم
-    //    يُنقَل التنبيهُ أيضاً.
     if (Brand.isPicPos) {
       const purposes = {
         'pos_receipt': 'إيصال البيع السريع',
@@ -346,6 +342,15 @@ class _PrintersBodyState extends ConsumerState<PrintersBody> {
                 ),
               ),
               PicPosPanelGroup(
+                label: tr('عرض الورق'),
+                hint: tr('اختر مقاس الورق أو أدخل العرض بالمليمتر'),
+                child: PrinterPaperWidthFields(
+                  paperWidthMm: paperWidthMm,
+                  onChanged: (value) =>
+                      setDialogState(() => paperWidthMm = value),
+                ),
+              ),
+              PicPosPanelGroup(
                 label: 'الاتّصال',
                 hint: 'يحدّد الحقلَ المطلوبَ تحته',
                 child: Column(
@@ -385,26 +390,28 @@ class _PrintersBodyState extends ConsumerState<PrintersBody> {
                         ),
                       )
                     else
-                      PicPosDialogRow(children: [
-                        TextField(
-                          controller: ipController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'عنوان IP',
-                            hintText: 'مثال: 192.168.1.100',
-                            prefixIcon: Icon(PhosphorIconsLight.wifiHigh),
+                      PicPosDialogRow(
+                        children: [
+                          TextField(
+                            controller: ipController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'عنوان IP',
+                              hintText: 'مثال: 192.168.1.100',
+                              prefixIcon: Icon(PhosphorIconsLight.wifiHigh),
+                            ),
                           ),
-                        ),
-                        TextField(
-                          controller: portNumberController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'رقم المنفذ',
-                            hintText: '9100',
-                            prefixIcon: Icon(PhosphorIconsLight.hash),
+                          TextField(
+                            controller: portNumberController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'رقم المنفذ',
+                              hintText: '9100',
+                              prefixIcon: Icon(PhosphorIconsLight.hash),
+                            ),
                           ),
-                        ),
-                      ]),
+                        ],
+                      ),
                   ],
                 ),
               ),
@@ -445,6 +452,7 @@ class _PrintersBodyState extends ConsumerState<PrintersBody> {
                   ipAddress: ipController.text,
                   portNumber: int.tryParse(portNumberController.text),
                   printerType: printerType,
+                  paperWidthMm: paperWidthMm,
                   purpose: printerPurpose,
                   description: descriptionController.text,
                   isActive: isActive,
@@ -478,7 +486,6 @@ class _PrintersBodyState extends ConsumerState<PrintersBody> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Printer name
                 TextField(
                   controller: nameController,
                   decoration: const InputDecoration(
@@ -489,7 +496,6 @@ class _PrintersBodyState extends ConsumerState<PrintersBody> {
                 ),
                 const SizedBox(height: 16),
 
-                // Printer purpose
                 const Text(
                   'الغرض من الطابعة:',
                   style: TextStyle(fontWeight: FontWeight.w500),
@@ -634,7 +640,6 @@ class _PrintersBodyState extends ConsumerState<PrintersBody> {
 
                 const SizedBox(height: 16),
 
-                // Description
                 TextField(
                   controller: descriptionController,
                   decoration: const InputDecoration(
@@ -673,6 +678,7 @@ class _PrintersBodyState extends ConsumerState<PrintersBody> {
                 ipAddress: ipController.text,
                 portNumber: int.tryParse(portNumberController.text),
                 printerType: printerType,
+                paperWidthMm: paperWidthMm,
                 purpose: printerPurpose,
                 description: descriptionController.text,
                 isActive: isActive,
@@ -701,6 +707,7 @@ class _PrintersBodyState extends ConsumerState<PrintersBody> {
     String? ipAddress,
     int? portNumber,
     required String printerType,
+    required double paperWidthMm,
     required String purpose,
     String? description,
     required bool isActive,
@@ -723,6 +730,7 @@ class _PrintersBodyState extends ConsumerState<PrintersBody> {
           ipAddress: ipAddress?.isNotEmpty == true ? ipAddress : null,
           portNumber: portNumber,
           printerType: printerType,
+          paperWidthMm: paperWidthMm,
           purpose: purpose,
           description: description?.isNotEmpty == true ? description : null,
           isActive: isActive,
@@ -747,6 +755,7 @@ class _PrintersBodyState extends ConsumerState<PrintersBody> {
           ipAddress: ipAddress?.isNotEmpty == true ? ipAddress : null,
           portNumber: portNumber,
           printerType: printerType,
+          paperWidthMm: paperWidthMm,
           purpose: purpose,
           description: description?.isNotEmpty == true ? description : null,
         );

@@ -11,6 +11,7 @@ import 'package:file_picker/file_picker.dart';
 import 'dart:ui' as ui;
 
 import '../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import '../../core/widgets/app_toast.dart';
 import '../../data/providers/providers.dart';
 import '../../domain/repositories/scale_repository.dart';
@@ -198,7 +199,7 @@ class _PluManagerScreenState extends ConsumerState<PluManagerScreen>
             ),
              Text(
               tr('ربط أرقام PLU بالمنتجات للموازين'),
-              style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 13, color: context.picposMuted),
             ),
           ],
         ),
@@ -264,7 +265,7 @@ class _PluManagerScreenState extends ConsumerState<PluManagerScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
-                Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                Text(label, style: TextStyle(fontSize: 11, color: context.picposMuted)),
               ],
             ),
           ],
@@ -282,7 +283,7 @@ class _PluManagerScreenState extends ConsumerState<PluManagerScreen>
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.3)),
+        border: Border.all(color: context.picposHairline.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [

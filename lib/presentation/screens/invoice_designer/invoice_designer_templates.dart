@@ -304,7 +304,7 @@ mixin _InvoiceDesignerTemplatesMixin
                                 color: AppColors.success.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child:  Text(tr('افتراضي'), style: const TextStyle(fontSize: 10, color: AppColors.success)),
+                              child:  Text(tr('افتراضي'), style: const TextStyle(fontSize: 11, color: AppColors.success)),
                             ),
                           ],
                         ],
@@ -493,16 +493,15 @@ mixin _InvoiceDesignerTemplatesMixin
     try {
       final templatesRepo = ref.read(invoiceTemplatesRepositoryProvider);
       final jsonString = await templatesRepo.exportTemplateToJson(template!.id);
-      final prettyJson = const JsonEncoder.withIndent('  ').convert(jsonDecode(jsonString));
 
-      final result = await FilePicker.saveFile(
+      // الحوارُ والتنسيقُ مشتركان مع قماش الملصق — `template_json_file.dart`.
+      final written = await saveTemplateJsonFile(
         dialogTitle: tr('تصدير تصميم الفاتورة'),
-        fileName: '${template!.name.replaceAll(RegExp(r'[^\w\u0600-\u06FF]'), '_')}.json',
-        type: FileType.custom, allowedExtensions: ['json'],
+        baseName: template!.name,
+        json: jsonString,
       );
 
-      if (result != null) {
-        await File(result).writeAsString(prettyJson, flush: true);
+      if (written) {
         if (mounted) AppToast.show(context, tr('تم تصدير "{p0}" بنجاح!', {'p0': template!.name}), type: ToastType.success);
       }
     } catch (e) {
@@ -512,22 +511,12 @@ mixin _InvoiceDesignerTemplatesMixin
 
   Future<void> importTemplateFromFile() async {
     try {
-      final result = await FilePicker.pickFiles(
+      final picked = await pickTemplateJsonFile(
         dialogTitle: tr('استيراد تصميم فاتورة'),
-        type: FileType.custom, allowedExtensions: ['json'], withData: true,
       );
 
-      if (result != null && result.files.isNotEmpty) {
-        final file = result.files.first;
-        String jsonString;
-
-        if (file.bytes != null) {
-          jsonString = utf8.decode(file.bytes!);
-        } else if (file.path != null) {
-          jsonString = await File(file.path!).readAsString();
-        } else {
-          throw Exception('لم يتم قراءة الملف');
-        }
+      if (picked != null) {
+        final String jsonString = picked;
 
         final data = jsonDecode(jsonString) as Map<String, dynamic>;
         if (!data.containsKey('elements')) {

@@ -170,7 +170,7 @@ class TablePosSummary extends ConsumerWidget {
                     Text(
                       cartState.taxEnabled ? tr('مفعلة ({taxRatePercent}%)', {'taxRatePercent': taxRatePercent}) : tr('معطلة'),
                       style: GoogleFonts.cairo(
-                        fontSize: 10,
+                        fontSize: 11,
                         color: cartState.taxEnabled 
                             ? AppColors.primary 
                             : Colors.white.withValues(alpha: 0.3),
@@ -314,7 +314,7 @@ class TablePosSummary extends ConsumerWidget {
               Icon(icon, size: 16, color: color),
               const SizedBox(height: 2),
               Text(label,
-                  style: GoogleFonts.cairo(fontSize: 10, color: color, fontWeight: FontWeight.w700)),
+                  style: GoogleFonts.cairo(fontSize: 11, color: color, fontWeight: FontWeight.w700)),
             ],
           ),
         ),

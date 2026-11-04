@@ -38,8 +38,10 @@ import '../../core/theme/app_colors.dart';
 import '../../services/admin/data_wipe_service.dart';
 import '../../data/providers/providers.dart';
 import '../picpos_shell/picpos_danger_confirm.dart';
+import 'developer_categories/developer_categories_section.dart';
 import 'first_run/provisioning_providers.dart';
 import 'first_run/reprovision_confirm_dialog.dart';
+import '../picpos_shell/picpos_surface.dart';
 
 class DeveloperToolsScreen extends ConsumerWidget {
   const DeveloperToolsScreen({super.key});
@@ -185,9 +187,9 @@ class _DeveloperPasswordGateState
                       ? tr('لم يتم تعيين كلمة مرور مطوّر على هذا التركيب. عيّن واحدة الآن لحماية الشاشة وفتحها.')
                       : tr('هذه الشاشة محمية. أدخل كلمة مرور المطوّر للمتابعة.'),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textMuted,
+                    color: context.picposMuted,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -344,6 +346,7 @@ class DeveloperToolsPanels extends ConsumerWidget {
       (tr('تغيير ملف النشاط'), _ChangeProfileSection(snapshot: snapshot)),
       (tr('تغيير نمط التشغيل'), _ChangeModeSection(snapshot: snapshot)),
       (tr('تخصيص الميزات'), const _FeatureOverridesSection()),
+      (tr('مجموعات التصنيفات'), const DeveloperCategoriesSection()),
       (tr('تغيير كلمة مرور المطوّر'), const _ChangeDeveloperPasswordSection()),
       (tr('منطقة الخطر — إعادة ضبط'), const _ResetWizardSection()),
       (tr('تصفير البيانات — بلا رجعة'), const _DataWipeSection()),
@@ -357,7 +360,7 @@ class DeveloperToolsPanels extends ConsumerWidget {
       return Center(
         child: Text(
           tr('لا توجد أداةٌ تطابق «{q}»', {'q': q}),
-          style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
+          style: TextStyle(fontSize: 14, color: context.picposMuted),
         ),
       );
     }
@@ -425,29 +428,29 @@ class _SnapshotPanel extends StatelessWidget {
                     child: Text(
                       tr('الجلسة: {p0}:{p1}', {'p0': remaining.inMinutes, 'p1': (remaining.inSeconds % 60).toString().padLeft(2, '0')}),
                       style: const TextStyle(
-                          fontSize: 10, color: AppColors.success),
+                          fontSize: 11, color: AppColors.success),
                     ),
                   ),
               ],
             ),
             const Divider(),
-            _row(tr('ملف النشاط'),
+            _row(context, tr('ملف النشاط'),
                 BusinessProfileCatalog.metaFor(snapshot.profile).arabicName),
-            _row(tr('نمط التشغيل'), _modeLabel(snapshot.mode)),
-            _row('Config Hash', hash.substring(0, 12)),
-            _row(tr('وقت اللقطة'), _hhmm(snapshot.capturedAt)),
+            _row(context, tr('نمط التشغيل'), _modeLabel(snapshot.mode)),
+            _row(context, 'Config Hash', hash.substring(0, 12)),
+            _row(context, tr('وقت اللقطة'), _hhmm(snapshot.capturedAt)),
           ],
         ),
       ),
     );
   }
 
-  Widget _row(String label, String value) => Padding(
+  Widget _row(BuildContext context, String label, String value) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 2),
         child: Row(
           children: [
             Text(label,
-                style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                style: TextStyle(fontSize: 12, color: context.picposMuted)),
             const Spacer(),
             Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
           ],
@@ -511,7 +514,7 @@ class _ChangeProfileSectionState
             const SizedBox(height: 8),
              Text(
               tr('يبدّل قائمة الشاشات والـ feature flags بالكامل. أى overrides يدوية تظل سارية فوق الـ defaults الجديدة.'),
-              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 11, color: context.picposMuted),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<BusinessProfile>(
@@ -532,9 +535,9 @@ class _ChangeProfileSectionState
             const SizedBox(height: 8),
             Text(
               BusinessProfileCatalog.metaFor(_selected).arabicDescription,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
-                color: AppColors.textMuted,
+                color: context.picposMuted,
               ),
             ),
             const SizedBox(height: 12),
@@ -673,7 +676,7 @@ class _FeatureOverridesSection extends ConsumerWidget {
             const SizedBox(height: 8),
              Text(
               tr('كل ميزة لها قيمة افتراضية من ملف النشاط. أى توجيه يدوى هنا يحلّ محل الافتراضى. الميزات الأساسية (محاسبة / مخزون / مبيعات / خزينة) محمية ولا تظهر هنا.'),
-              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 11, color: context.picposMuted),
             ),
             const SizedBox(height: 12),
             for (final entry in byModule.entries) ...[
@@ -737,7 +740,7 @@ class _FeatureRow extends ConsumerWidget {
                 ),
                 Text(
                   fk.settingKey,
-                  style: const TextStyle(fontSize: 9, color: AppColors.textMuted),
+                  style: TextStyle(fontSize: 11, color: context.picposMuted),
                 ),
               ],
             ),
@@ -934,7 +937,7 @@ class _ResetWizardSection extends ConsumerWidget {
             const SizedBox(height: 8),
              Text(
               tr('يعيد تشغيل الـ setup wizard. البيانات تظل سليمة لكن إعدادات التشغيل (الملف، النمط، الميزات) ستُسأل من جديد.'),
-              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 11, color: context.picposMuted),
             ),
             const SizedBox(height: 12),
             Align(
@@ -1211,10 +1214,10 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
                           fontSize: 13, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 2),
                   Text(detail,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 11,
                           height: 1.4,
-                          color: AppColors.textMuted)),
+                          color: context.picposMuted)),
                 ],
               ),
             ),
@@ -1306,8 +1309,8 @@ class _DataWipeSectionState extends ConsumerState<_DataWipeSection> {
                         if (result.backupPath != null) ...[
                           const Divider(),
                           Text(tr('النسخة الاحتياطية: {p0}', {'p0': result.backupPath}),
-                              style: const TextStyle(
-                                  fontSize: 11, color: AppColors.textMuted)),
+                              style: TextStyle(
+                                  fontSize: 11, color: context.picposMuted)),
                         ],
                       ],
                     )

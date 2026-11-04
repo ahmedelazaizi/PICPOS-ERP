@@ -12,6 +12,9 @@ import '../../data/providers/providers.dart';
 import '../../domain/repositories/accounting_repository.dart';
 import '../../core/widgets/app_toast.dart';
 import '../../core/permissions/permission_codes.dart';
+import '../../core/permissions/fiscal_permission_codes.dart';
+
+part 'fiscal_year_screen_periods.dart';
 
 /// هل [permissions] تسمح بإعادة فتح فترة محاسبية مقفلة؟
 ///
@@ -125,12 +128,12 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-                const Icon(PhosphorIconsBold.calendarBlank, size: 64, color: AppColors.textMuted),
+                Icon(PhosphorIconsBold.calendarBlank, size: 64, color: context.picposMuted),
           const SizedBox(height: 16),
-          Text(tr('لا توجد سنوات مالية'), style: GoogleFonts.cairo(fontSize: 16, color: AppColors.textMuted)),
+          Text(tr('لا توجد سنوات مالية'), style: GoogleFonts.cairo(fontSize: 16, color: context.picposMuted)),
           const SizedBox(height: 8),
           Text(tr('أنشئ أول سنة مالية لبدء المحاسبة'),
-              style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted)),
+              style: GoogleFonts.cairo(fontSize: 12, color: context.picposMuted)),
           const SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: () => _guardedCreateYear(context),
@@ -207,12 +210,14 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
                         const SizedBox(height: 2),
                         Text(
                           '${_dateFormat.format(year.startDate)} — ${_dateFormat.format(year.endDate)}',
-                          style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted),
+                          style: GoogleFonts.cairo(fontSize: 12, color: context.picposMuted),
                         ),
                       ],
                     ),
                   ),
-                  if (!isClosed) ...[
+                  if (!isClosed &&
+                      (ref.watch(currentUserPermissionsProvider).asData?.value ?? const <String>[])
+                          .contains(FiscalPermissionCodes.fiscalYearClose)) ...[
                     IconButton(
                       icon: const Icon(PhosphorIconsBold.lockSimple, size: 18, color: AppColors.error),
                       tooltip: tr('إقفال السنة'),
@@ -273,7 +278,7 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
-                        Text(tr('لا توجد فترات محاسبية'), style: GoogleFonts.cairo(color: AppColors.textMuted)),
+                        Text(tr('لا توجد فترات محاسبية'), style: GoogleFonts.cairo(color: context.picposMuted)),
                         const SizedBox(height: 8),
                         if (!year.isClosed)
                           TextButton.icon(
@@ -312,7 +317,7 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
       ),
-      child: Text(label, style: GoogleFonts.cairo(fontSize: 10, color: color, fontWeight: FontWeight.w700)),
+      child: Text(label, style: GoogleFonts.cairo(fontSize: 11, color: color, fontWeight: FontWeight.w700)),
     );
   }
 
@@ -327,7 +332,7 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
         ),
         child: Column(
           children: [
-            Text(label, style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted)),
+            Text(label, style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
             Text(
               value.toStringAsFixed(AppConstants.decimalPlaces),
               style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.w700, color: color),
@@ -338,90 +343,11 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
     );
   }
 
-  Widget _buildPeriodTile(BuildContext context, IAccountingRepository repo, AccountingPeriodData period, bool yearClosed) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: context.picposHairline.withValues(alpha: 0.5))),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            period.isClosed ? PhosphorIconsBold.lockSimple : PhosphorIconsBold.calendarBlank,
-            size: 16,
-            color: period.isClosed ? AppColors.error : AppColors.success,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(period.name, style: GoogleFonts.cairo(fontSize: 13, fontWeight: FontWeight.w600)),
-          ),
-          Text(
-            '${_dateFormat.format(period.startDate)} — ${_dateFormat.format(period.endDate)}',
-            style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
-          ),
-          const SizedBox(width: 12),
-          _buildStatusBadge(period.isClosed, false),
-          if (!yearClosed) ...[
-            const SizedBox(width: 8),
-            if (!period.isClosed)
-              IconButton(
-                icon: const Icon(PhosphorIconsBold.lockSimple, size: 14),
-                tooltip: tr('إقفال الفترة'),
-                onPressed: _savingPeriodIds.contains(period.id) ? null : () async {
-                  setState(() => _savingPeriodIds.add(period.id));
-                  try {
-                    await repo.closeAccountingPeriod(period.id, 1);
-                    if (context.mounted) {
-                      AppToast.show(context, tr('تم إقفال فترة {p0}', {'p0': period.name}));
-                    }
-                  } finally {
-                    if (mounted) setState(() => _savingPeriodIds.remove(period.id));
-                  }
-                },
-              )
-            else
-              IconButton(
-                icon: const Icon(PhosphorIconsBold.lockSimpleOpen, size: 14),
-                tooltip: tr('إعادة فتح الفترة'),
-                onPressed: _savingPeriodIds.contains(period.id) ? null : () async {
-                  // فحص صريح بلا أي استثناء للمدير — `modify_closed_period`
-                  // كود فصل سلطات (segregation of duties)، فمينفعش يتفتح
-                  // بكلمة مرور مدير زي بقية الأزرار. الصلاحية لازم تتمنح
-                  // صراحة للمستخدم اللي هيعمل الفعل، مفيش باب خلفي.
-                  final perms =
-                      ref.read(currentUserPermissionsProvider).asData?.value ??
-                          const <String>[];
-                  if (!canReopenClosedPeriod(perms)) {
-                    if (context.mounted) {
-                      AppToast.show(
-                        context,
-                        tr('ليس لديك صلاحية إعادة فتح فترة مقفلة'),
-                        type: ToastType.error,
-                      );
-                    }
-                    return;
-                  }
-                  setState(() => _savingPeriodIds.add(period.id));
-                  try {
-                    await repo.reopenAccountingPeriod(period.id);
-                    if (context.mounted) {
-                      AppToast.show(context, tr('تم إعادة فتح فترة {p0}', {'p0': period.name}));
-                    }
-                  } finally {
-                    if (mounted) setState(() => _savingPeriodIds.remove(period.id));
-                  }
-                },
-              ),
-          ],
-        ],
-      ),
-    );
-  }
 
   void _showCreateYearDialog(BuildContext context) {
     final nameCtrl = TextEditingController();
     DateTime startDate = DateTime(DateTime.now().year, 1, 1);
-    DateTime endDate = DateTime(DateTime.now().year, 12, 31);
+    DateTime endDate = DateTime(DateTime.now().year, 12, 31, 23, 59, 59, 999);
     bool saving = false;
 
     showDialog(
@@ -479,7 +405,11 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
                               firstDate: DateTime(2020),
                               lastDate: DateTime(2050),
                             );
-                            if (picked != null) setDialogState(() => endDate = picked);
+                            if (picked != null) {
+                              setDialogState(() => endDate = DateTime(
+                                picked.year, picked.month, picked.day, 23, 59, 59, 999,
+                              ));
+                            }
                           },
                           child: InputDecorator(
                             decoration:  InputDecoration(labelText: tr('إلى تاريخ')),
@@ -515,8 +445,11 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
                     }
                   } catch (e) {
                     setDialogState(() => saving = false);
-                    if (context.mounted) {
-                      AppToast.show(context, tr('خطأ: {p0}', {'p0': e.toString()}), type: ToastType.error);
+                    // The dialog is still open: show the error on ITS overlay (ctx),
+                    // otherwise the toast renders on the screen behind the dialog and
+                    // the overlap-rejection message is never seen.
+                    if (ctx.mounted) {
+                      AppToast.show(ctx, tr('خطأ: {p0}', {'p0': e.toString()}), type: ToastType.error);
                     }
                   }
                 },
@@ -655,7 +588,7 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          tr('سيتم ترحيل الأرباح/الخسائر إلى الأرباح المحتجزة وإغلاق جميع حسابات الإيرادات والمصروفات، ثم إنشاء سنة مالية جديدة مع أرصدة افتتاحية تلقائياً'),
+                          tr('سيتم ترحيل الأرباح/الخسائر إلى الأرباح المحتجزة وإغلاق جميع حسابات الإيرادات والمصروفات، ثم إنشاء سنة مالية جديدة دون قيد أرصدة افتتاحية تلقائي'),
                           style: GoogleFonts.cairo(fontSize: 11, color: AppColors.warning),
                         ),
                       ),
@@ -670,7 +603,9 @@ class _FiscalYearScreenState extends ConsumerState<FiscalYearScreen> {
                 onPressed: saving ? null : () async {
                   setDialogState(() => saving = true);
                   try {
-                    await repo.closeFiscalYear(year.id, 1);
+                    final userId = ref.read(authProvider).user?.id;
+                    if (userId == null) throw Exception('المستخدم غير مسجل الدخول');
+                    await repo.closeFiscalYear(year.id, userId);
                     if (ctx.mounted) Navigator.pop(ctx);
                     if (context.mounted) {
                       AppToast.show(context, tr('تم إقفال السنة المالية {p0}', {'p0': trData(year.name)}));

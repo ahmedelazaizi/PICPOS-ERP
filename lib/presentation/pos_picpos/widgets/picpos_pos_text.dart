@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/readable_colors.dart' as readable;
 import '../../picpos_shell/picpos_surface.dart';
 
 /// أنماط نص نقطة بيع PicPos — **الوزن واللون فقط**.
@@ -46,13 +47,6 @@ class PicPosText {
   /// halation حوالين الأسود المطلق على خلفية بيضاء فالنص يبان مهزوز.
   static const Color _value = Color(0xFF0A0A0A);
 
-  /// لون التسميات الصغيرة في **الوضع الفاتح**: «التاريخ»، «رقم الفاتورة»،
-  /// رؤوس الأعمدة.
-  ///
-  /// رمادي غامق مقروء بدل `AppColors.textMuted` (`#6B7280`) اللي كان باهت على
-  /// شاشات التِل تحت إضاءة المحل.
-  static const Color _label = Color(0xFF334155);
-
   /// لونُ القيمة تابعاً للوضع.
   ///
   /// الفاتحُ يبقى [_value] **بايتاً ببايت** — حجّةُ الـhalation أعلاه ما زالت
@@ -63,24 +57,25 @@ class PicPosText {
   static Color valueOf(BuildContext context) =>
       context.picposIsDark ? context.picposText : _value;
 
-  /// خافتُ التسمية في **الوضع الغامق**.
-  ///
-  /// ⚠️ **وليس `context.picposMuted`.** ذاك `#94A3B8` وهو خافتُ التصميم
-  /// العامّ، وقياسُه على كرتِ النكهةِ الافتراضيّةِ الداكن **٣٫٧٥** — دون
-  /// حدِّ المقروئيّة ٤٫٥. وهذا هو **عينُ** المنطقِ المكتوبِ في [_label]
-  /// للوضع الفاتح: التسمياتُ في الكاشير رُفع تباينُها عمداً فوقَ الخافتِ
-  /// العامِّ لأنّ شاشاتِ التِل تُقرأ تحت إضاءةِ محلٍّ لا على مكتب. والوضعُ
-  /// الغامقُ يرث القاعدةَ نفسَها مقلوبةً: أفتحُ من الخافت العامّ لا أخفتُ.
-  ///
-  /// و`#CBD5E1` من نفس عائلةِ الرماديّاتِ الزرقاءِ في اللوحة (‏`border`
-  /// `#E2E8F0` و`surface` `#F8FAFC`)، وتباينُه ٦٫٤ على كرتِ الافتراضيّة
-  /// و١١٫٥ على كرتِ PicPos `#121C2E`.
-  static const Color _labelDark = Color(0xFFCBD5E1);
-
-  /// لونُ التسمية تابعاً للوضع — الفاتحُ [_label] كما هو، والداكنُ
-  /// [_labelDark].
+  /// لونُ التسمية تابعاً للوضع — الفاتحُ `#334155` (رمادي غامق بدل
+  /// `picposMuted` الباهت على شاشات التِل) والداكنُ `#CBD5E1` (تباينه ٦٫٤ على
+  /// كرت الافتراضيّة و١١٫٥ على كرت PicPos). القيمتان في `readable_colors.dart`.
   static Color labelOf(BuildContext context) =>
-      context.picposIsDark ? _labelDark : _label;
+      readable.readableLabel(context);
+
+  /// حبرُ الهويّة (أزرق) تابعاً للوضع: الفاتحُ `primaryDark` كما كان،
+  /// والداكنُ `picposBrandInk` — `primaryDark` على كرتٍ داكن غير مقروء.
+  static Color brandOf(BuildContext context) => readable.readableBrand(context);
+
+  /// لونٌ دلاليٌّ (أحمر/أخضر/كهرماني) **مقروءٌ** فوق كرتِ الوضع الحاليّ.
+  ///
+  /// ألوانُ `AppColors.error/success/warning` مضبوطةٌ للأرضيّة الفاتحة، فتهبط
+  /// تحت ٤٫٥:١ على الكرت الداكن (أحمر ٢٫٥) — وأخضر `#22C55E` على الفاتح
+  /// نفسِه ٢٫١. فإن كان [c] مقروءاً يُرجَع **كما هو** (الهويّةُ بايتاً ببايت)،
+  /// وإلا تُزاح إضاءتُه (HSL) نحو الأفتح في الغامق والأغمق في الفاتح حتى
+  /// يبلغ ٥:١ على [on] (الافتراضيّ: كرتُ الوضع).
+  static Color readableOn(BuildContext context, Color c, {Color? on}) =>
+      readable.readableOn(context, c, on: on);
 
   /// نمط قيمة: بولد وحبرُ القيمة. المقاس من المستدعي دايماً.
   ///

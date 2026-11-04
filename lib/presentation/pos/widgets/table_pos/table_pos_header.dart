@@ -123,7 +123,7 @@ class TablePosHeader extends ConsumerWidget {
                     Text(
                       tr('تسجيل طلبات'),
                       style: GoogleFonts.cairo(
-                        fontSize: 10,
+                        fontSize: 11,
                         color: const Color(0xFF10B981),
                         fontWeight: FontWeight.w600,
                       ),

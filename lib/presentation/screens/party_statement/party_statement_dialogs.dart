@@ -178,7 +178,7 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
                       columnWidths: const {0: FlexColumnWidth(3), 1: FixedColumnWidth(80), 2: FixedColumnWidth(80), 3: FixedColumnWidth(100)},
                       children: [
                          TableRow(
-                          decoration: const BoxDecoration(color: AppColors.surface),
+                          decoration: BoxDecoration(color: context.picposField),
                           children: [
                             Padding(padding: const EdgeInsets.all(8), child: Text(tr('الصنف'), style: const TextStyle(fontWeight: FontWeight.bold))),
                             Padding(padding: const EdgeInsets.all(8), child: Text(tr('الكمية'), style: const TextStyle(fontWeight: FontWeight.bold))),
@@ -250,7 +250,7 @@ mixin _PartyStatementDialogsMixin on ConsumerState<PartyStatementScreen> {
                       columnWidths: const {0: FlexColumnWidth(3), 1: FixedColumnWidth(80), 2: FixedColumnWidth(80), 3: FixedColumnWidth(100)},
                       children: [
                          TableRow(
-                          decoration: const BoxDecoration(color: AppColors.surface),
+                          decoration: BoxDecoration(color: context.picposField),
                           children: [
                             Padding(padding: const EdgeInsets.all(8), child: Text(tr('الصنف'), style: const TextStyle(fontWeight: FontWeight.bold))),
                             Padding(padding: const EdgeInsets.all(8), child: Text(tr('الكمية'), style: const TextStyle(fontWeight: FontWeight.bold))),

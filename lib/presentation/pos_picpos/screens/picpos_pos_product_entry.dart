@@ -23,13 +23,21 @@ extension _PicPosProductEntryOps on _PicPosOperations {
     // صامتاً عند الحفظ — بلاغُ المراجع C2. رفضٌ صريحٌ برسالةٍ ظاهرة بدل
     // إهمالٍ صامت. `blocksCartMutation` مُختبَرةٌ في
     // `picpos_quick_return_lines_test.dart`.
-    if (blocksCartMutation(ref.read(posReturnModeProvider))) {
-      showPosToast(
-        context,
-        ref,
-        tr('أنت في وضع المرتجع — أنهِ الحفظَ أو الإلغاءَ قبل إضافة صنفٍ للبيع'),
-        type: PosNotificationType.warning,
-      );
+    //
+    // 2026-11-04: الحارسُ باقٍ (لا كتابةَ على سلّة البيع)، لكنّ الرفضَ الشاملَ
+    // صار توجيهاً: اللمسُ يزيد سطرَ هذا الصنف في **وضع المرتجع** نفسِه، أو
+    // يرفض برسالةٍ ظاهرة إن لم يُبَع في الفاتورة — كان الرفضُ يترك الكاشيرَ
+    // أمام سلّةٍ فارغةٍ بلا طريقٍ لإضافة الصنف المرتجَع (‏quick_return_cart).
+    final returnMode = ref.read(posReturnModeProvider);
+    if (blocksCartMutation(returnMode)) {
+      _addProductToQuickReturn(returnMode!, product.id,
+          productName: product.name);
+      return;
+    }
+    // وضعُ إدخال المرتجع بلا فاتورة (بند ٤): الصنفُ سطرُ مرتجعٍ لا بيع، فلا
+    // سؤالَ «غير متوفر» (المرتجعُ يزيد المخزون) ولا منتقيَ وحدة.
+    if (ref.read(posReturnEntryModeProvider)) {
+      await _addReturnLine(product);
       return;
     }
     // سؤال «غير متوفر» **أول حاجة**، قبل الميزان وقبل منتقي الوحدة: لو الكاشير

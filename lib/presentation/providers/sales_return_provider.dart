@@ -246,12 +246,20 @@ class SalesReturnNotifier extends Notifier<SalesReturnState> {
       };
       final previouslyReturned = <int, double>{};
       final returnQuantities = <int, double>{};
+      final remainingReturnedBase = Map<int, double>.from(returnedByProduct);
       for (final item in items) {
-        final returnedQty = returnedByProduct[item.productId] ?? 0;
-        previouslyReturned[item.id] = returnedQty;
+        final factor = item.quantityInBase > 0 ? item.quantityInBase : 1.0;
+        final soldBase = item.quantity * factor;
+        final returnedBase = (remainingReturnedBase[item.productId] ?? 0)
+            .clamp(0.0, soldBase)
+            .toDouble();
+        final returnedInSaleUnits = returnedBase / factor;
+        previouslyReturned[item.id] = returnedInSaleUnits;
         returnQuantities[item.id] = state.isFullReturn
-            ? (item.quantity - returnedQty)
+            ? (item.quantity - returnedInSaleUnits)
             : 0;
+        remainingReturnedBase[item.productId] =
+            (remainingReturnedBase[item.productId] ?? 0) - returnedBase;
       }
 
       state = state.copyWith(

@@ -264,9 +264,9 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
                     final filtered = filterProducts(products);
                     return Text(
                       tr('{p0} / {p1} صنف', {'p0': selectedProductIds.length, 'p1': filtered.length}),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textMuted,
+                        color: context.picposMuted,
                       ),
                     );
                   },
@@ -288,18 +288,18 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
                         Icon(
                           PhosphorIconsBold.scales,
                           size: 48,
-                          color: AppColors.textMuted.withValues(alpha: 0.3),
+                          color: context.picposMuted.withValues(alpha: 0.3),
                         ),
                         const SizedBox(height: 8),
                          Text(
                           tr('لا توجد أصناف مطابقة'),
-                          style: const TextStyle(color: AppColors.textMuted),
+                          style: TextStyle(color: context.picposMuted),
                         ),
                         const SizedBox(height: 4),
                          Text(
                           tr('حدد تصنيفات أو اختر أصناف ميزان'),
-                          style: const TextStyle(
-                            color: AppColors.textMuted,
+                          style: TextStyle(
+                            color: context.picposMuted,
                             fontSize: 12,
                           ),
                         ),
@@ -369,7 +369,7 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
                                   : Future.value(null),
                               builder: (_, snap) => Text(
                                 snap.data?.name ?? '—',
-                                style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                                style: TextStyle(fontSize: 12, color: context.picposMuted),
                               ),
                             ),
                           ),
@@ -393,7 +393,7 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
       'weight' => (tr('ميزان'), AppColors.success),
       'weightByPiece' => (tr('حبة'), AppColors.info),
       'display' => (tr('عرض'), AppColors.warning),
-      _ => (tr('عدد'), AppColors.textMuted),
+      _ => (tr('عدد'), context.picposMuted),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -587,7 +587,7 @@ mixin _ScalePanelsMixin on ConsumerState<ScalePluExportScreen> {
                 ?  Center(
                     child: Text(
                       tr('لا توجد موازين — اضغط "إضافة ميزان"'),
-                      style: const TextStyle(color: AppColors.textMuted),
+                      style: TextStyle(color: context.picposMuted),
                     ),
                   )
                 : SingleChildScrollView(

@@ -16,6 +16,7 @@ import 'warehouse_locations_screen.dart';
 import '../widgets/permission_guard.dart';
 import '../../core/permissions/permission_codes.dart';
 import 'widgets/dialogs/quick_cost_center_dialog.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 part 'branch_management_dialogs.dart';
 
@@ -353,7 +354,7 @@ class _BranchManagementScreenState extends ConsumerState<BranchManagementScreen>
                       color: Colors.green.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child:  Text(tr('افتراضي'), style: const TextStyle(color: Colors.green, fontSize: 10)),
+                    child:  Text(tr('افتراضي'), style: const TextStyle(color: Colors.green, fontSize: 11)),
                   ),
                 ],
                 const SizedBox(width: 4),
@@ -364,7 +365,7 @@ class _BranchManagementScreenState extends ConsumerState<BranchManagementScreen>
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(typeLabel,
-                      style: TextStyle(color: typeColor, fontSize: 10, fontWeight: FontWeight.w600)),
+                      style: TextStyle(color: typeColor, fontSize: 11, fontWeight: FontWeight.w600)),
                 ),
               ],
             ),

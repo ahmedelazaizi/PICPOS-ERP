@@ -19,12 +19,12 @@ mixin _PluTableMixin on ConsumerState<PluManagerScreen> {
             Icon(
               PhosphorIconsBold.magnifyingGlass,
               size: 48,
-              color: AppColors.textMuted.withValues(alpha: 0.3),
+              color: context.picposMuted.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 12),
              Text(
               tr('لا توجد نتائج'),
-              style: const TextStyle(fontSize: 16, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 16, color: context.picposMuted),
             ),
           ],
         ),
@@ -35,7 +35,7 @@ mixin _PluTableMixin on ConsumerState<PluManagerScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.3)),
+        border: Border.all(color: context.picposHairline.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -72,7 +72,7 @@ mixin _PluTableMixin on ConsumerState<PluManagerScreen> {
             ),
             child: Row(
               children: [
-                Text(tr('إجمالي: {p0} صنف', {'p0': products.length}), style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                Text(tr('إجمالي: {p0} صنف', {'p0': products.length}), style: TextStyle(fontSize: 12, color: context.picposMuted)),
                 const SizedBox(width: 16),
                 Text('مُعيّن PLU: ${products.where((p) => p.scalePluNumber != null).length}', style: const TextStyle(fontSize: 12, color: AppColors.success)),
               ],
@@ -92,12 +92,12 @@ mixin _PluTableMixin on ConsumerState<PluManagerScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: index.isEven ? Colors.transparent : AppColors.surface.withValues(alpha: 0.5),
+        color: index.isEven ? Colors.transparent : context.picposField.withValues(alpha: 0.5),
         border: hasPlu ? const Border(right: BorderSide(color: AppColors.success, width: 3)) : null,
       ),
       child: Row(
         children: [
-          SizedBox(width: 50, child: Text('${index + 1}', style: const TextStyle(fontSize: 12, color: AppColors.textMuted))),
+          SizedBox(width: 50, child: Text('${index + 1}', style: TextStyle(fontSize: 12, color: context.picposMuted))),
           Expanded(
             flex: 3,
             child: Row(
@@ -113,7 +113,7 @@ mixin _PluTableMixin on ConsumerState<PluManagerScreen> {
               ],
             ),
           ),
-          SizedBox(width: 100, child: Text(product.code, style: const TextStyle(fontSize: 12, fontFamily: AppTypography.mono, color: AppColors.textMuted))),
+          SizedBox(width: 100, child: Text(product.code, style: TextStyle(fontSize: 12, fontFamily: AppTypography.mono, color: context.picposMuted))),
           SizedBox(width: 80, child: Text(product.salePrice.toStringAsFixed(AppConstants.decimalPlaces), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
           SizedBox(
             width: 60,

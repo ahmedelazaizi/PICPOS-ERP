@@ -23,6 +23,7 @@ Map<String, PermissionCategory> get permissionCategories => {
       'pos_save': tr('حفظ البيع وإنهاء الفاتورة'),
       'pos_print': tr('طباعة الفاتورة/الإيصال'),
       'pos_price_edit': tr('تعديل سعر الصنف في البيع'),
+      'pos_return_price_edit': tr('إدخال سعر المرتجع بلا فاتورة'),
       'pos_tax_toggle': tr('تغيير حالة الضريبة'),
       'pos_expense': tr('إضافة مصروف سريع'),
       'pos_expense_type_select': tr('اختيار نوع المصروف'),

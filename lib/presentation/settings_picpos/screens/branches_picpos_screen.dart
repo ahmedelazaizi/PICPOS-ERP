@@ -342,7 +342,7 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
                   subtitle: _branchSub(b),
                   tint: b.isActive == true
                       ? AppColors.success
-                      : AppColors.textMuted,
+                      : context.picposMuted,
                   icon: PhosphorIconsBold.storefront,
                   status: b.isSystemDefault == true
                       ? tr('افتراضيّ')
@@ -351,7 +351,7 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
                       ? AppColors.primary
                       : (b.isActive == true
                           ? AppColors.success
-                          : AppColors.textMuted),
+                          : context.picposMuted),
                   stats: [
                     PicPosEntityStat(
                       tr('المخازن'),
@@ -482,11 +482,11 @@ class _BranchesPicposScreenState extends ConsumerState<BranchesPicposScreen>
                   ),
                   PicPosPillCell(
                     _whTypes[w.type]?.$1 ?? tr('عام'),
-                    _whTypes[w.type]?.$2 ?? AppColors.textMuted,
+                    _whTypes[w.type]?.$2 ?? context.picposMuted,
                   ),
                   PicPosPillCell(
                     w.isActive ? tr('نشط') : tr('موقوف'),
-                    w.isActive ? AppColors.success : AppColors.textMuted,
+                    w.isActive ? AppColors.success : context.picposMuted,
                   ),
                   PicPosButtonCell(
                     tr('مواقع التخزين'),

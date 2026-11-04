@@ -2,6 +2,7 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class InventoryHeader extends StatelessWidget {
   const InventoryHeader({super.key});
@@ -31,15 +32,15 @@ class InventoryHeader extends StatelessWidget {
               children: [
                 Text(
                   tr('إدارة المخزون'),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: context.picposText,
                   ),
                 ),
                 Text(
                   tr('متابعة مستويات المخزون وحركات الأصناف ولائحة الصلاحيات'),
-                  style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
+                  style: TextStyle(fontSize: 14, color: context.picposMuted),
                 ),
               ],
             ),

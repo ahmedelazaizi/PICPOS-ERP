@@ -2,6 +2,7 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Settings card wrapper widget
 class SettingsCard extends StatelessWidget {
@@ -89,7 +90,7 @@ class BackupListItem extends StatelessWidget {
       title: Text(_formattedDate),
       subtitle: Text(
         _filename,
-        style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+        style: TextStyle(fontSize: 11, color: context.picposMuted),
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,

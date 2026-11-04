@@ -195,7 +195,7 @@ class InvoiceDesignerCanvas extends StatelessWidget {
             ),
             child: Text(
               sec.label,
-              style: TextStyle(fontSize: 8, color: Colors.blueGrey.shade400, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 11, color: Colors.blueGrey.shade400, fontWeight: FontWeight.w600),
             ),
           ),
         ),
@@ -235,7 +235,7 @@ class InvoiceDesignerCanvas extends StatelessWidget {
                 height: 30,
                 color: Colors.grey.shade300,
                 child:  Center(
-                  child: Text(tr('جدول الأصناف (اسحب للتحريك)'), style: const TextStyle(fontSize: 10)),
+                  child: Text(tr('جدول الأصناف (اسحب للتحريك)'), style: const TextStyle(fontSize: 11)),
                 ),
               ),
               for (int i = 0; i < 3; i++)
@@ -537,7 +537,7 @@ class InvoiceDesignerCanvas extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.image, color: Colors.grey.shade400, size: 24),
-                Text(tr('شعار'), style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
+                Text(tr('شعار'), style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
               ],
             ),
           ),
@@ -556,7 +556,7 @@ class InvoiceDesignerCanvas extends StatelessWidget {
             height: 40,
             color: Colors.black,
             child: const Center(
-              child: Text('QR', style: TextStyle(color: Colors.white, fontSize: 10)),
+              child: Text('QR', style: TextStyle(color: Colors.white, fontSize: 11)),
             ),
           ),
         );

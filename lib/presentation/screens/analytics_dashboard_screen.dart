@@ -298,7 +298,7 @@ class _AnalyticsDashboardScreenState
                     value: _selectedCostCenterId,
                     isExpanded: true,
                     hint:  Text(tr('مركز التكلفة'), style: const TextStyle(fontSize: 12)),
-                    style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                    style: TextStyle(fontSize: 12, color: context.picposText),
                     items: [
                        DropdownMenuItem<int?>(value: null, child: Text(tr('الكل'))),
                       ...ccList.map((cc) => DropdownMenuItem<int?>(value: cc.id, child: Text(trData(cc.name)))),
@@ -326,7 +326,7 @@ class _AnalyticsDashboardScreenState
                     value: _selectedBranchId,
                     isExpanded: true,
                     hint:  Text(tr('الفرع'), style: const TextStyle(fontSize: 12)),
-                    style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                    style: TextStyle(fontSize: 12, color: context.picposText),
                     items: [
                        DropdownMenuItem<int?>(value: null, child: Text(tr('الكل'))),
                       // Feature 004 — branch chips in the analytics filter
@@ -552,7 +552,7 @@ class _AnalyticsDashboardScreenState
                 if (idx < 0 || idx >= labels.length) return const SizedBox.shrink();
                 return Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Text(labels[idx], style: const TextStyle(fontSize: 10)),
+                  child: Text(labels[idx], style: const TextStyle(fontSize: 11)),
                 );
               },
               reservedSize: 24,
@@ -800,7 +800,7 @@ class _AnalyticsDashboardScreenState
                     padding: const EdgeInsets.all(16),
                     child: Text(
                       tr('لا توجد مصروفات في هذه الفترة'),
-                      style: const TextStyle(color: AppColors.textMuted),
+                      style: TextStyle(color: context.picposMuted),
                     ),
                   ),
                 )
@@ -864,7 +864,7 @@ class _AnalyticsDashboardScreenState
                                 ),
                                 Text(
                                   tr('{count} قيد', {'count': count}),
-                                  style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                                 ),
                               ],
                             ),
@@ -883,7 +883,7 @@ class _AnalyticsDashboardScreenState
                               ),
                               Text(
                                 '${pct.toStringAsFixed(0)}%',
-                                style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                                style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                               ),
                             ],
                           ),

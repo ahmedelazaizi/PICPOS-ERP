@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../data/database/database.dart'; // Only for model types
 import '../../pos/screens/pos_table_service_screen.dart';
 import '../../../../../../core/constants/app_constants.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Callback types for table order dialog actions
 typedef OnPrintKitchen =
@@ -102,7 +103,7 @@ class _TableOrderDialogState extends State<TableOrderDialog> {
                   ?  Center(
                       child: Text(
                         tr('لا توجد أصناف في الطلب'),
-                        style: const TextStyle(color: AppColors.textMuted),
+                        style: TextStyle(color: context.picposMuted),
                       ),
                     )
                   : ListView.separated(

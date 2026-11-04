@@ -23,6 +23,7 @@ import '../../widgets/permission_guard.dart';
 import '../../widgets/branch_warehouse_filter.dart';
 import '../../widgets/report_components.dart' show DateRangeFilter;
 import '../../widgets/report_filter_bar.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 part 'sales_by_classification_report_async.dart';
 
@@ -59,11 +60,9 @@ class _SalesByClassificationReportState
 
   // Spec 149 B12-5b (FIL-2): the logged-in user's branch authorization scope.
   // null = full access (admin/financial-manager/mirror) → no restriction.
-  // Mirrors tax_report_screen.dart's B12-2 wiring. Set both here (build())
-  // AND at the top of _loadData() — this screen fetches imperatively from
-  // initState()'s microtask, which can run before build() ever resolves
-  // branchScopeProvider; _loadData() re-resolves the scope itself so the
-  // very first fetch can never race ahead unrestricted.
+  // Mirrors tax_report_screen.dart B12-2. Set in build() AND at the top of
+  // _loadData() (fetches from initState() microtask, maybe before build()
+  // resolves branchScopeProvider) so the first fetch is never unrestricted.
   Set<int>? _allowedBranchIds;
 
   // Feature 058: one-time guard for the no-branch-assigned inline notice.
@@ -267,7 +266,7 @@ class _SalesByClassificationReportState
         ],
         indicatorColor: AppColors.primary,
         labelColor: AppColors.primary,
-        unselectedLabelColor: AppColors.textPrimary,
+        unselectedLabelColor: context.picposText,
       ),
       actions: [
         buildReportExportAction(onExport: _exportToExcel),
@@ -286,7 +285,7 @@ class _SalesByClassificationReportState
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             style: OutlinedButton.styleFrom(
-              backgroundColor: AppColors.surface,
+              backgroundColor: context.picposField,
               foregroundColor: AppColors.primary,
             ),
           ),
@@ -602,8 +601,8 @@ class _SalesByClassificationReportState
                           'count': count,
                           'p0': (percentage * 100).toStringAsFixed(1),
                         }),
-                        style: const TextStyle(
-                          color: AppColors.textMuted,
+                        style: TextStyle(
+                          color: context.picposMuted,
                           fontSize: 12,
                         ),
                       ),
@@ -612,7 +611,7 @@ class _SalesByClassificationReportState
                         borderRadius: BorderRadius.circular(4),
                         child: LinearProgressIndicator(
                           value: percentage,
-                          backgroundColor: AppColors.border,
+                          backgroundColor: context.picposHairline,
                           valueColor: AlwaysStoppedAnimation<Color>(color),
                           minHeight: 6,
                         ),
@@ -776,7 +775,7 @@ class _SalesByClassificationReportState
                                             fontSize: 12,
                                             color: invRemaining > 0
                                                 ? AppColors.error
-                                                : AppColors.textMuted,
+                                                : context.picposMuted,
                                           ),
                                         ),
                                       ),
@@ -827,7 +826,7 @@ class _SalesByClassificationReportState
         children: [
           Text(
             label,
-            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 11, color: context.picposMuted),
           ),
           const SizedBox(height: 2),
           Text(

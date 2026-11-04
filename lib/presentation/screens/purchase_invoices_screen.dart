@@ -1,3 +1,4 @@
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../../core/widgets/app_shortcuts.dart';
@@ -110,13 +111,8 @@ class _PurchaseInvoicesScreenState
     final state = ref.watch(purchaseInvoicesControllerProvider);
     final controller = ref.read(purchaseInvoicesControllerProvider.notifier);
 
-    // Purchase-edit policy (owner decision 2026-07-22): the edit button is
-    // gated by the `purchases_edit` permission ONLY — never by `isLocked`.
-    // A permitted user (including مدير النظام) edits without limit, before or
-    // after posting; the DAO reverses and re-posts the GL entry each time.
-    // Previously this was `onPressed: invoice.isLocked ? null : ...`, which
-    // made every posted invoice permanently uneditable from the UI and left
-    // the `modify_locked_invoice` permission unreachable.
+    // Edit gated by `purchases_edit` only, never `isLocked` (owner decision 2026-07-22);
+    // the DAO reverses and re-posts the GL entry on each edit.
     final canEditPurchase =
         ref.watch(hasPermissionProvider(PermissionCodes.purchasesEdit)).value ??
             false;
@@ -128,7 +124,7 @@ class _PurchaseInvoicesScreenState
         searchController: _searchController,
         onNew: createNewInvoice,
         child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.picposField,
         appBar: AppBar(
           title:  Text(tr('فواتير المشتريات')),
           backgroundColor: AppColors.primary,
@@ -316,7 +312,7 @@ class _PurchaseInvoicesScreenState
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 12),
                                 decoration: BoxDecoration(
-                                  border: Border.all(color: AppColors.border),
+                                  border: Border.all(color: context.picposHairline),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: DropdownButtonHideUnderline(
@@ -344,7 +340,7 @@ class _PurchaseInvoicesScreenState
                             return Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12),
                               decoration: BoxDecoration(
-                                border: Border.all(color: AppColors.border),
+                                border: Border.all(color: context.picposHairline),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: DropdownButtonHideUnderline(
@@ -374,7 +370,7 @@ class _PurchaseInvoicesScreenState
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 12),
                                 decoration: BoxDecoration(
-                                  border: Border.all(color: AppColors.border),
+                                  border: Border.all(color: context.picposHairline),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: DropdownButtonHideUnderline(
@@ -473,14 +469,14 @@ class _PurchaseInvoicesScreenState
                                 Icon(
                                   PhosphorIconsBold.receipt,
                                   size: 64,
-                                  color: AppColors.textMuted.withValues(
+                                  color: context.picposMuted.withValues(
                                     alpha: 0.3,
                                   ),
                                 ),
                                 const SizedBox(height: 16),
                                  Text(
                                   tr('لا توجد فواتير مشتريات'),
-                                  style: const TextStyle(color: AppColors.textMuted),
+                                  style: TextStyle(color: context.picposMuted),
                                 ),
                               ],
                             ),
@@ -693,7 +689,7 @@ class _PurchaseInvoicesScreenState
                                               // Spec 119 (Bug K) — fallback أنظف بدل "م.ت #N"
                                               ? (state.costCenterNames[invoice.costCenterId] ?? '—')
                                               : '—',
-                                          style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                                          style: TextStyle(fontSize: 12, color: context.picposMuted),
                                         ),
                                       ),
                                       DataCell(
@@ -716,7 +712,7 @@ class _PurchaseInvoicesScreenState
                                                 size: 18,
                                                 color: canEditPurchase
                                                     ? AppColors.warning
-                                                    : AppColors.textMuted
+                                                    : context.picposMuted
                                                         .withValues(alpha: 0.3),
                                               ),
                                               tooltip: canEditPurchase
@@ -928,7 +924,7 @@ class _PurchaseReturnBadge extends StatelessWidget {
             Text(
               full ? tr('مُرتجعة') : tr('مُرتجعة جزئياً'),
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),

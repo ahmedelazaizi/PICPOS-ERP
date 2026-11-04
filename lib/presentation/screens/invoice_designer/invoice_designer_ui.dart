@@ -305,7 +305,7 @@ mixin _InvoiceDesignerUIMixin on ConsumerState<InvoiceDesignerScreen> {
   Widget _buildPicposBody() {
     return PicPosScreenScaffold(
       title: tr('مصمم الفواتير'),
-      subtitle: tr('الإعدادات ← الأجهزة والطباعة'),
+      subtitle: tr('المصمم: تعديل أو إنشاء تصميم. للتفعيل اربط النموذج بنوع المستند من «مكتبة النماذج».'),
       icon: PhosphorIconsBold.fileText,
       headerActions: [
         ElevatedButton.icon(

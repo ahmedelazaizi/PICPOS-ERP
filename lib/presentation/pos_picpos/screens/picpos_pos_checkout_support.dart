@@ -328,7 +328,7 @@ extension _PicPosCheckoutSupportOps on _PicPosOperations {
               ],
               const Divider(),
                Text(tr('هل تريد المتابعة؟'),
-                  style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                  style: TextStyle(fontSize: 13, color: context.picposMuted)),
             ],
           ),
           actions: [

@@ -394,7 +394,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersScreen> {
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 border: Border.all(
-                                  color: AppColors.textMuted.withValues(
+                                  color: context.picposMuted.withValues(
                                     alpha: 0.3,
                                   ),
                                 ),
@@ -402,10 +402,10 @@ mixin _OfferDialogsMixin on ConsumerState<OffersScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     PhosphorIconsBold.calendarBlank,
                                     size: 18,
-                                    color: AppColors.textMuted,
+                                    color: context.picposMuted,
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
@@ -442,7 +442,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersScreen> {
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 border: Border.all(
-                                  color: AppColors.textMuted.withValues(
+                                  color: context.picposMuted.withValues(
                                     alpha: 0.3,
                                   ),
                                 ),
@@ -450,10 +450,10 @@ mixin _OfferDialogsMixin on ConsumerState<OffersScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     PhosphorIconsBold.calendarCheck,
                                     size: 18,
-                                    color: AppColors.textMuted,
+                                    color: context.picposMuted,
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
@@ -503,7 +503,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersScreen> {
                       height: 200,
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: AppColors.textMuted.withValues(alpha: 0.2),
+                          color: context.picposMuted.withValues(alpha: 0.2),
                         ),
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -511,7 +511,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersScreen> {
                           ?  Center(
                               child: Text(
                                 tr('لم يتم إضافة أصناف بعد'),
-                                style: const TextStyle(color: AppColors.textMuted),
+                                style: TextStyle(color: context.picposMuted),
                               ),
                             )
                           : ListView.separated(
@@ -531,9 +531,9 @@ mixin _OfferDialogsMixin on ConsumerState<OffersScreen> {
                                   title: Text(item['productName'] ?? ''),
                                   subtitle: Text(
                                     tr('الرصيد: {p0}', {'p0': (item['currentStock'] as double).toStringAsFixed(0)}),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 11,
-                                      color: AppColors.textMuted,
+                                      color: context.picposMuted,
                                     ),
                                   ),
                                   trailing: Row(
@@ -621,9 +621,9 @@ mixin _OfferDialogsMixin on ConsumerState<OffersScreen> {
                               const SizedBox(height: 2),
                                Text(
                                 tr('اتركها فارغة لتطبيق العرض على كل الفروع'),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11,
-                                  color: AppColors.textMuted,
+                                  color: context.picposMuted,
                                 ),
                               ),
                               const SizedBox(height: 6),
@@ -1048,7 +1048,7 @@ mixin _OfferDialogsMixin on ConsumerState<OffersScreen> {
                           return  Center(
                             child: Text(
                               tr('لا توجد أصناف'),
-                              style: const TextStyle(color: AppColors.textMuted),
+                              style: TextStyle(color: context.picposMuted),
                             ),
                           );
                         }

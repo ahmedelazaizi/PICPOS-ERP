@@ -269,8 +269,8 @@ mixin _BranchManagementDialogsMixin on State<BranchManagementScreen> {
                   const SizedBox(height: 12),
                   Text(
                     tr('بعد النقل سيتم حذف فرع "{p0}" بشكل آمن (soft-delete: تاريخ الفرع وسجلاته يبقى محفوظاً).', {'p0': branch.name}),
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textSecondary),
+                    style: TextStyle(
+                        fontSize: 12, color: context.picposSecondary),
                   ),
                 ],
               ),

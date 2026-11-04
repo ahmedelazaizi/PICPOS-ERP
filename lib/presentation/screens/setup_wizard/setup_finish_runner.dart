@@ -430,7 +430,7 @@ class SetupFinishRunner {
           final now = _clock();
           final year = d.fiscalYear ?? now.year;
           final fyStart = DateTime(year, 1, 1);
-          final fyEnd = DateTime(year, 12, 31);
+          final fyEnd = DateTime(year, 12, 31, 23, 59, 59, 999);
           final fyId = await p.createFiscalYear('$year', fyStart, fyEnd);
           await p.generatePeriodsForYear(fyId, fyStart, fyEnd);
         } catch (_) {

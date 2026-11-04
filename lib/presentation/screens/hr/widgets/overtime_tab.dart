@@ -1,3 +1,4 @@
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -301,7 +302,7 @@ class _OvertimeEmployeeExpansionTile extends StatelessWidget {
               style: TextStyle(
                 color: totalHours > 0
                     ? Colors.orange[700]
-                    : AppColors.textMuted,
+                    : context.picposMuted,
                 fontSize: 12,
               ),
             ),
@@ -311,7 +312,7 @@ class _OvertimeEmployeeExpansionTile extends StatelessWidget {
                       padding: const EdgeInsets.all(16),
                       child: Text(
                         tr('لا توجد سجلات'),
-                        style: const TextStyle(color: AppColors.textMuted),
+                        style: TextStyle(color: context.picposMuted),
                       ),
                     ),
                   ]

@@ -141,7 +141,7 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
               children: [
                 Text(
                   balanceLabel,
-                  style: const TextStyle(color: Colors.white70, fontSize: 10),
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
                 ),
                 Text(
                   '${balanceAmount.abs().toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
@@ -161,7 +161,7 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label, style: TextStyle(color: color.withValues(alpha: 0.7), fontSize: 10)),
+        Text(label, style: TextStyle(color: color.withValues(alpha: 0.7), fontSize: 11)),
         Text(
           value.toStringAsFixed(AppConstants.decimalPlaces),
           style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w600),
@@ -179,7 +179,7 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.2)),
+        border: Border.all(color: context.picposHairline.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -223,7 +223,7 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
       child: ActionChip(
         label: Text(label, style: const TextStyle(fontSize: 11)),
         onPressed: onTap,
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.picposField,
         side: BorderSide(color: AppColors.primary.withValues(alpha: 0.1)),
         padding: const EdgeInsets.symmetric(horizontal: 4),
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -237,9 +237,9 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
         decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(12)),
         child:  Center(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(PhosphorIconsBold.fileX, size: 48, color: AppColors.textMuted),
+            Icon(PhosphorIconsBold.fileX, size: 48, color: context.picposMuted),
             const SizedBox(height: 12),
-            Text(tr('لا توجد سجلات خلال هذه الفترة'), style: const TextStyle(color: AppColors.textMuted, fontSize: 16)),
+            Text(tr('لا توجد سجلات خلال هذه الفترة'), style: TextStyle(color: context.picposMuted, fontSize: 16)),
           ]),
         ),
       );
@@ -249,7 +249,7 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.15)),
+        border: Border.all(color: context.picposHairline.withValues(alpha: 0.15)),
       ),
       child: Column(
         children: [
@@ -277,12 +277,12 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
             child: ListView.separated(
               padding: EdgeInsets.zero,
               itemCount: entries.length,
-              separatorBuilder: (_, _) => Divider(height: 1, color: AppColors.border.withValues(alpha: 0.1)),
+              separatorBuilder: (_, _) => Divider(height: 1, color: context.picposHairline.withValues(alpha: 0.1)),
               itemBuilder: (context, index) {
                 final entry = entries[index];
                 final isEven = index.isEven;
                 return Container(
-                  color: isEven ? Colors.transparent : AppColors.surface.withValues(alpha: 0.4),
+                  color: isEven ? Colors.transparent : context.picposField.withValues(alpha: 0.4),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Row(
                     children: [
@@ -291,7 +291,7 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
                         flex: 2,
                         child: Text(
                           dateFormat.format(entry.date),
-                          style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                          style: TextStyle(fontSize: 12, color: context.picposMuted),
                         ),
                       ),
                       // Description with icon
@@ -343,7 +343,7 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
                                   ),
                                 ),
                               )
-                            : const Center(child: Text('-', style: TextStyle(color: AppColors.textMuted))),
+                            : Center(child: Text('-', style: TextStyle(color: context.picposMuted))),
                       ),
                       // Debit
                       Expanded(
@@ -393,7 +393,7 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
       'receipt' => (PhosphorIconsBold.arrowArcRight, AppColors.success),
       'opening' => (PhosphorIconsBold.flag, AppColors.info),
       'discount' => (PhosphorIconsBold.tag, AppColors.warning),
-      _ => (PhosphorIconsBold.dotsThree, AppColors.textMuted),
+      _ => (PhosphorIconsBold.dotsThree, context.picposMuted),
     };
     return Container(
       padding: const EdgeInsets.all(3),
@@ -410,15 +410,15 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
-          const Icon(PhosphorIconsBold.calculator, color: AppColors.textMuted, size: 18),
+          Icon(PhosphorIconsBold.calculator, color: context.picposMuted, size: 18),
           const SizedBox(width: 8),
-           Text(tr('إجمالي الفترة'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textMuted, fontSize: 12)),
+           Text(tr('إجمالي الفترة'), style: TextStyle(fontWeight: FontWeight.bold, color: context.picposMuted, fontSize: 12)),
           const Spacer(),
           _buildTotalItem(tr('مدين (+)'), totalDebit, AppColors.error),
           const SizedBox(width: 32),
@@ -435,7 +435,7 @@ mixin _PartyStatementTableMixin on ConsumerState<PartyStatementScreen> {
       crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+        Text(label, style: TextStyle(fontSize: 11, color: context.picposMuted)),
         const SizedBox(height: 2),
         Text(
           '${value.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',

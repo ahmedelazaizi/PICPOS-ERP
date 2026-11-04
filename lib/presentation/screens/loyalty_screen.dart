@@ -10,6 +10,7 @@ import '../../core/permissions/permission_codes.dart';
 import 'package:picpos_erp/core/widgets/app_toast.dart';
 import '../../domain/repositories/loyalty_repository.dart';
 import '../widgets/permission_guard.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 
 part 'loyalty_programs_tab.dart';

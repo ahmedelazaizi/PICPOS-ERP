@@ -15,6 +15,7 @@ import 'parties/party_data_gate.dart';
 import 'parties/party_helpers.dart';
 import 'parties/party_dialogs.dart';
 import 'parties/party_groups_screen.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Unified Customers & Suppliers Management Screen
 /// Merges both customers and suppliers into a single view with type filtering
@@ -310,12 +311,12 @@ class _UnifiedPartiesScreenState extends ConsumerState<UnifiedPartiesScreen> {
             Icon(
               PhosphorIconsBold.users,
               size: 64,
-              color: AppColors.textMuted.withValues(alpha: 0.3),
+              color: context.picposMuted.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
              Text(
               tr('لا يوجد أطراف'),
-              style: const TextStyle(color: AppColors.textMuted),
+              style: TextStyle(color: context.picposMuted),
             ),
           ],
         ),
@@ -358,7 +359,7 @@ class _UnifiedPartiesScreenState extends ConsumerState<UnifiedPartiesScreen> {
             child: Text(
               getPartyTypeLabel(party),
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 11,
                 color: getPartyTypeColor(party),
                 fontWeight: FontWeight.bold,
               ),
@@ -398,9 +399,9 @@ class _UnifiedPartiesScreenState extends ConsumerState<UnifiedPartiesScreen> {
           const SizedBox(width: 6),
           Text(
             tr('(حد {p0})', {'p0': party.creditLimit.toStringAsFixed(0)}),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: AppColors.textMuted,
+              color: context.picposMuted,
             ),
           ),
         ],

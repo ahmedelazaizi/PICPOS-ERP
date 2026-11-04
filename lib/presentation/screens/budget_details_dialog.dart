@@ -9,6 +9,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/providers/providers.dart';
 import '../../core/widgets/app_toast.dart';
+import '../picpos_shell/picpos_surface.dart';
 
 class BudgetDetailsDialog extends ConsumerStatefulWidget {
   final BudgetData budget;
@@ -124,7 +125,7 @@ class _BudgetDetailsDialogState extends ConsumerState<BudgetDetailsDialog> {
             const SizedBox(width: 8),
             Text(tr('تفاصيل فترات الموازنة'), style: GoogleFonts.cairo(fontWeight: FontWeight.w700)),
             const Spacer(),
-            Text(widget.budget.name ?? tr('بدون اسم'), style: GoogleFonts.cairo(fontSize: 14, color: AppColors.textMuted)),
+            Text(widget.budget.name ?? tr('بدون اسم'), style: GoogleFonts.cairo(fontSize: 14, color: context.picposMuted)),
           ],
         ),
         content: SizedBox(
@@ -137,9 +138,9 @@ class _BudgetDetailsDialogState extends ConsumerState<BudgetDetailsDialog> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: context.picposField,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.border),
+                      border: Border.all(color: context.picposHairline),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -160,9 +161,9 @@ class _BudgetDetailsDialogState extends ConsumerState<BudgetDetailsDialog> {
                   // Table Header
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                    decoration: const BoxDecoration(
-                      color: AppColors.surface,
-                      border: Border(bottom: BorderSide(color: AppColors.border, width: 2)),
+                    decoration: BoxDecoration(
+                      color: context.picposField,
+                      border: Border(bottom: BorderSide(color: context.picposHairline, width: 2)),
                     ),
                     child: Row(
                       children: [
@@ -184,8 +185,8 @@ class _BudgetDetailsDialogState extends ConsumerState<BudgetDetailsDialog> {
                         return Container(
                           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                           decoration: BoxDecoration(
-                            border: Border(bottom: BorderSide(color: AppColors.border.withValues(alpha: 0.5))),
-                            color: i % 2 == 0 ? Colors.transparent : AppColors.surface.withValues(alpha: 0.3),
+                            border: Border(bottom: BorderSide(color: context.picposHairline.withValues(alpha: 0.5))),
+                            color: i % 2 == 0 ? Colors.transparent : context.picposField.withValues(alpha: 0.3),
                           ),
                           child: Row(
                             children: [
@@ -216,7 +217,7 @@ class _BudgetDetailsDialogState extends ConsumerState<BudgetDetailsDialog> {
                                   line.actualAmount.toStringAsFixed(2), 
                                   style: GoogleFonts.jetBrainsMono(
                                     fontSize: 13, 
-                                    color: AppColors.textMuted
+                                    color: context.picposMuted
                                   )
                                 ),
                               ),

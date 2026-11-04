@@ -1,3 +1,4 @@
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -52,7 +53,7 @@ class AttendanceTab extends ConsumerWidget {
                 return  Center(
                   child: Text(
                     tr('لم يتم تسجيل حضور لأي موظف اليوم'),
-                    style: const TextStyle(color: AppColors.textMuted),
+                    style: TextStyle(color: context.picposMuted),
                   ),
                 );
               }

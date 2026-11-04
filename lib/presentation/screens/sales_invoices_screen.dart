@@ -46,6 +46,7 @@ import '../widgets/common/common.dart';
 // AlertDialog + StatefulBuilder + PopScope pattern that froze on
 // client/mirror). Standalone widget, NOT a part-file, so it is unit-testable.
 import 'widgets/sales_invoices/sales_invoice_form.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 part 'widgets/sales_invoices/sales_summary_cards.dart';
 part 'widgets/sales_invoices/sales_invoices_table.dart';
@@ -99,7 +100,7 @@ class _SalesInvoicesScreenState extends ConsumerState<SalesInvoicesScreen> {
         child: DefaultTabController(
         length: 2,
         child: Scaffold(
-          backgroundColor: AppColors.surface,
+          backgroundColor: context.picposField,
           appBar: AppBar(
             title:  Text(tr('المبيعات وعروض الأسعار')),
             backgroundColor: AppColors.primary,

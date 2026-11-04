@@ -8,7 +8,7 @@
 // لأن `DataTable2` **مُفهرَسٌ أصلاً** — يلفّ صفوفَه في `ListView.builder`،
 // وذلك إصلاحٌ موثَّقٌ لتجمّدٍ فعليٍّ وقع مع `DataTable` القياسيّ. فالانتقالُ
 // إلى بطاقاتٍ في `Column` كان سيُعيد العطبَ نفسَه بعد أن حُلّ. والبطاقةُ
-// المضغوطةُ ~٥٦ بكسل مقابل ~٤٨ للصفّ، فالكثافةُ تكاد تُحفَظ.
+// المضغوطةُ ~٥٦ بكسل مقابل ~٤٨ للصفّ،
 //
 // ⚠️ **وثلاثةُ فروقٍ مقيسةٍ لا منسوخة:**
 //
@@ -146,14 +146,14 @@ class PurchasesInvoicesTable extends ConsumerWidget {
                     ? PhosphorIconsBold.funnelSimple
                     : PhosphorIconsBold.shoppingCart,
                 size: 64,
-                color: AppColors.textMuted.withValues(alpha: 0.3),
+                color: context.picposMuted.withValues(alpha: 0.3),
               ),
               const SizedBox(height: 16),
               Text(
                 hasFilters
                     ? tr('لا نتائج تطابق الفلاتر الحالية')
                     : tr('لا توجد فواتير مشتريات'),
-                style: const TextStyle(color: AppColors.textMuted),
+                style: TextStyle(color: context.picposMuted),
               ),
               if (hasFilters) ...[
                 const SizedBox(height: 12),
@@ -474,7 +474,7 @@ class _PurInvoiceCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: muted,
                   ),
@@ -547,7 +547,7 @@ class _PurInvoiceCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: muted,
                   ),
@@ -710,20 +710,20 @@ class _PurOrderCard extends StatelessWidget {
   final Map<int, String> costCenterNames;
 
   /// تسميةُ حالة الأمر ولونُها — مفرداتٌ خاصّةٌ به لا مفرداتُ السداد.
-  static (String, Color) _statusOf(String raw) => switch (raw) {
-        'draft' => (tr('مسودة'), AppColors.textMuted),
+  static (String, Color) _statusOf(BuildContext context, String raw) => switch (raw) {
+        'draft' => (tr('مسودة'), context.picposMuted),
         'sent' => (tr('مُرسَل'), AppColors.info),
         'confirmed' => (tr('مؤكَّد'), AppColors.primary),
         'received' => (tr('مُستلَم'), AppColors.success),
         'cancelled' => (tr('ملغى'), AppColors.error),
-        _ => (raw, AppColors.textMuted),
+        _ => (raw, context.picposMuted),
       };
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final muted = _purMuted(context);
-    final (statusLabel, statusColor) = _statusOf(order.status);
+    final (statusLabel, statusColor) = _statusOf(context, order.status);
     final whName = order.warehouseId != null
         ? (warehouseNames[order.warehouseId] ?? 'WH#${order.warehouseId}')
         : '—';
@@ -790,7 +790,7 @@ class _PurOrderCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: muted,
                   ),
@@ -893,7 +893,7 @@ class _PurDocKindBadge extends StatelessWidget {
       child:  Text(
         tr('أمر شراء'),
         style: const TextStyle(
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: FontWeight.bold,
           color: AppColors.info,
         ),
@@ -921,7 +921,7 @@ class _PurOrderStatusBadge extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: FontWeight.bold,
           color: color,
         ),
@@ -1054,7 +1054,7 @@ class _PurPaymentCell extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.end,
                 style: TextStyle(
-                  fontSize: 10.5,
+                  fontSize: 11,
                   fontWeight: FontWeight.w700,
                   color: remainingColor,
                   fontFeatures: const [ui.FontFeature.tabularFigures()],

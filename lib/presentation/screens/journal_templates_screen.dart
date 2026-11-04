@@ -12,6 +12,7 @@ import '../../domain/repositories/accounting_repository.dart';
 import '../../data/providers/providers.dart';
 import 'create_journal_template_dialog.dart';
 import '../../core/widgets/app_toast.dart';
+import '../picpos_shell/picpos_surface.dart';
 
 /// Screen to list, create, and manage journal entry templates
 class JournalTemplatesScreen extends ConsumerStatefulWidget {
@@ -27,7 +28,7 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
     final accountingRepo = ref.watch(accountingRepositoryProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.picposField,
       appBar: AppBar(
         title: Text(
           tr('قوالب القيود'),
@@ -72,16 +73,16 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(PhosphorIconsLight.notebook, size: 80, color: AppColors.textMuted.withValues(alpha: 0.3)),
+                  Icon(PhosphorIconsLight.notebook, size: 80, color: context.picposMuted.withValues(alpha: 0.3)),
                   const SizedBox(height: 16),
                   Text(
                     tr('لا توجد قوالب قيود'),
-                    style: GoogleFonts.cairo(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.textMuted),
+                    style: GoogleFonts.cairo(fontSize: 18, fontWeight: FontWeight.w600, color: context.picposMuted),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     tr('استخدم القوالب لتسريع إنشاء القيود المتكررة كرواتب الموظفين أو الإيجارات.'),
-                    style: GoogleFonts.cairo(fontSize: 14, color: AppColors.textMuted),
+                    style: GoogleFonts.cairo(fontSize: 14, color: context.picposMuted),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -109,7 +110,7 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
       color: Theme.of(context).cardColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
+        side: BorderSide(color: context.picposHairline.withValues(alpha: 0.5)),
       ),
       child: ExpansionTile(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -121,13 +122,13 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
               decoration: BoxDecoration(
                 color: template.isActive 
                     ? AppColors.primary.withValues(alpha: 0.1) 
-                    : AppColors.textMuted.withValues(alpha: 0.1),
+                    : context.picposMuted.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 PhosphorIconsBold.notebook,
                 size: 20,
-                color: template.isActive ? AppColors.primary : AppColors.textMuted,
+                color: template.isActive ? AppColors.primary : context.picposMuted,
               ),
             ),
             const SizedBox(width: 16),
@@ -140,7 +141,7 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
                     style: GoogleFonts.cairo(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: template.isActive ? AppColors.textPrimary : AppColors.textMuted,
+                      color: template.isActive ? context.picposText : context.picposMuted,
                     ),
                   ),
                   if (template.description?.isNotEmpty == true)
@@ -148,7 +149,7 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
                       template.description!,
                       style: GoogleFonts.cairo(
                         fontSize: 12,
-                        color: AppColors.textMuted,
+                        color: context.picposMuted,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -160,10 +161,10 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.textMuted.withValues(alpha: 0.1),
+                  color: context.picposMuted.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text(tr('غير نشط'), style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+                child: Text(tr('غير نشط'), style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
               ),
           ],
         ),
@@ -195,7 +196,7 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: context.picposHairline),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: ClipRRect(
@@ -209,11 +210,11 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
                             4: FixedColumnWidth(100),
                           },
                           border: TableBorder.symmetric(
-                            inside: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
+                            inside: BorderSide(color: context.picposHairline.withValues(alpha: 0.5)),
                           ),
                           children: [
                             TableRow(
-                              decoration: const BoxDecoration(color: AppColors.surface),
+                              decoration: BoxDecoration(color: context.picposField),
                               children: [
                                 _tableHeaderCell(tr('رمز الحساب')),
                                 _tableHeaderCell(tr('اسم الحساب')),
@@ -290,7 +291,7 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
         style: GoogleFonts.cairo(
           fontSize: 12,
           fontWeight: FontWeight.w700,
-          color: color ?? AppColors.textPrimary,
+          color: color ?? context.picposText,
         ),
         textAlign: TextAlign.center,
       ),
@@ -305,7 +306,7 @@ class _JournalTemplatesScreenState extends ConsumerState<JournalTemplatesScreen>
         style: GoogleFonts.cairo(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: AppColors.textPrimary,
+          color: context.picposText,
         ),
         textAlign: TextAlign.center,
       ),

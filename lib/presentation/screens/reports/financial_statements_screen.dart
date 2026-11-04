@@ -20,6 +20,7 @@ import '../../../services/sync/sync_worker.dart';
 import '../../../../../../core/constants/app_constants.dart';
 import '../../widgets/report_components.dart' show DateRangeFilter;
 import '../../../domain/entities/accounting_entities.dart' show BranchCostCenterRepairReport;
+import '../../picpos_shell/picpos_surface.dart';
 
 class FinancialStatementsScreen extends ConsumerStatefulWidget {
   /// Optional tab to open on startup. 5 = مطابقة الترحيل (used by sync badge).
@@ -51,10 +52,8 @@ class _FinancialStatementsScreenState
 
   // FIL-2 (spec 149 B12): the logged-in user's branch authorization scope.
   // null = full access (admin/financial-manager/mirror) → no restriction.
-  // Populated at the top of build() from branchScopeProvider and read by
-  // every report call-site (export/print/render) below so a restricted
-  // user can never pull another branch's financial data through this
-  // screen, regardless of what they pick in the branch dropdown.
+  // Set in build() from branchScopeProvider; read by every report call-site
+  // so a restricted user never pulls another branch's data via the dropdown.
   Set<int>? _allowedBranchIds;
 
   @override
@@ -1353,7 +1352,7 @@ class _FinancialStatementsScreenState
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(tr('{p0} بانتظار', {'p0': pending.length}),
-                          style: const TextStyle(fontSize: 10, color: AppColors.warning, fontWeight: FontWeight.bold)),
+                          style: const TextStyle(fontSize: 11, color: AppColors.warning, fontWeight: FontWeight.bold)),
                     ),
                   const SizedBox(width: 4),
                   if (failed.isNotEmpty)
@@ -1364,7 +1363,7 @@ class _FinancialStatementsScreenState
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(tr('{p0} فشل نهائي', {'p0': failed.length}),
-                          style: const TextStyle(fontSize: 10, color: AppColors.error, fontWeight: FontWeight.bold)),
+                          style: const TextStyle(fontSize: 11, color: AppColors.error, fontWeight: FontWeight.bold)),
                     ),
                 ],
               ),
@@ -1422,7 +1421,7 @@ class _FinancialStatementsScreenState
                               border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
                             ),
                             child:  Text(tr('فشل نهائي'),
-                                style: const TextStyle(fontSize: 9, color: AppColors.error, fontWeight: FontWeight.bold)),
+                                style: const TextStyle(fontSize: 11, color: AppColors.error, fontWeight: FontWeight.bold)),
                           ),
                       ],
                     ),
@@ -1431,13 +1430,13 @@ class _FinancialStatementsScreenState
                       children: [
                         Text(
                           tr('{p0} | المحاولات: {p1}', {'p0': _syncOperationTitle(item.operation), 'p1': item.attempts}),
-                          style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                         ),
                         if (item.lastError != null)
                           Text(
                             item.lastError!.replaceAll('DEAD_LETTER: ', ''),
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 11,
                               color: isDeadLetter ? AppColors.error : AppColors.warning,
                             ),
                             maxLines: 2,
@@ -1564,7 +1563,7 @@ class _FinancialStatementsScreenState
             const SizedBox(height: 12),
              Text(
               tr('العملية آمنة ولا تغيّر أي مبالغ مدينة/دائنة — تعيد فقط تصنيف مركز التكلفة.'),
-              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 12, color: context.picposMuted),
             ),
           ],
         ),

@@ -138,7 +138,7 @@ class _CurrencySelector extends ConsumerWidget {
         title: tr('عملة النظام'),
         sub: tr('مقفولة بعد تسجيل حركات مالية — الدقة العشرية جزءٌ من كل مبلغ محفوظ'),
         value: info.code,
-        tint: AppColors.textMuted,
+        tint: context.picposMuted,
       );
     }
 
@@ -524,7 +524,7 @@ class _ShortagePolicyPerBranchDialogState
                       children: [
                          Text(
                           tr('اترك "افتراضى" للفروع التى تستخدم السياسة العامة. الإعداد لكل فرع يتجاوز الافتراضى ويسبق التخصيص لكل ماكينة.'),
-                          style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                          style: TextStyle(fontSize: 12, color: context.picposMuted),
                         ),
                         const Divider(),
                         for (final b in branches)

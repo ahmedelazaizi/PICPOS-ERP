@@ -10,15 +10,23 @@
 // مقيسةٌ من خطّة الرسم في [probePrintout] — لا قائمةٌ مكتوبةٌ بجانب كلِّ
 // حالة، فالرفضُ يقع على العطب لا على اسم الحالة.
 
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/i18n/tr.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/print_test_providers.dart';
 import '../../../domain/models/picpos_template_card.dart';
 import '../../../domain/printing/print_probe.dart';
+import '../../../services/printing/print_pdf_file_saver.dart';
+import '../../../services/printing/pdf_compute_helper.dart';
+import '../../../services/printer_resolver.dart';
 import '../../picpos_shell/picpos_content_card.dart';
 import '../../picpos_shell/picpos_empty_state.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
@@ -31,19 +39,24 @@ const double _sidePanelWidth = 320;
 const double _threePaneMinWidth = 1400;
 const double _twoPaneMinWidth = 1000;
 
+typedef PrintTestPdfSender =
+    Future<bool> Function(Uint8List bytes, String? printerName);
+
 class PrintTestPicposScreen extends ConsumerStatefulWidget {
-  const PrintTestPicposScreen({super.key, this.templateId});
+  const PrintTestPicposScreen({super.key, this.templateId, this.pdfSender});
 
   /// القالبُ المفتوحُ عليه — يمرّره زرُّ «طباعة تجريبية» في المكتبة.
   final int? templateId;
+
+  /// Seam for exercising the actual PDF hand-off without a system printer.
+  final PrintTestPdfSender? pdfSender;
 
   @override
   ConsumerState<PrintTestPicposScreen> createState() =>
       _PrintTestPicposScreenState();
 }
 
-class _PrintTestPicposScreenState
-    extends ConsumerState<PrintTestPicposScreen> {
+class _PrintTestPicposScreenState extends ConsumerState<PrintTestPicposScreen> {
   @override
   void initState() {
     super.initState();
@@ -75,7 +88,8 @@ class _PrintTestPicposScreenState
 
     return PicPosScreenScaffold(
       title: 'معاينة وطباعة تجريبية',
-      subtitle: 'نفس الراسم الذي يطبع — لا معاينة موازية · '
+      subtitle:
+          'نفس الراسم الذي يطبع — لا معاينة موازية · '
           'اختبر الحالات الحدّية قبل التفعيل',
       icon: PhosphorIconsBold.testTube,
       headerActions: [
@@ -93,7 +107,10 @@ class _PrintTestPicposScreenState
       ],
       body: LayoutBuilder(
         builder: (context, box) {
-          final sheets = _Sheets(result: result, loading: resultAsync.isLoading);
+          final sheets = _Sheets(
+            result: result,
+            loading: resultAsync.isLoading,
+          );
 
           if (box.maxWidth < _twoPaneMinWidth) return sheets;
 
@@ -120,7 +137,7 @@ class _PrintTestPicposScreenState
     );
   }
 
-  void _print(PrintTestResult result) {
+  Future<void> _print(PrintTestResult result) async {
     // ⚠️ الرفضُ على الأحمر — وهو **الغرضُ** من الشاشة لا قيدٌ عليها.
     if (result.isBlocked) {
       AppToast.show(
@@ -131,22 +148,105 @@ class _PrintTestPicposScreenState
       );
       return;
     }
-    AppToast.show(
-      context,
-      '${result.pages.length} صفحةً جاهزة'
-      '${result.warnCount > 0 ? ' · ${result.warnCount} تنبيهاً يُراجَع على الورق' : ''}'
-      ' — والمستند موسومٌ «تجريبي» فلا يُسجَّل ولا يُرسَل للمنظومة الضريبية',
-      type: result.warnCount > 0 ? ToastType.warning : ToastType.success,
-    );
+
+    final targetId = ref.read(printTestTargetProvider);
+    try {
+      final sender = widget.pdfSender;
+      if (sender != null) {
+        final configured = targetId == null
+            ? null
+            : (ref.read(printTestPrintersProvider).value ?? const [])
+                  .where((printer) => printer.id == targetId)
+                  .firstOrNull;
+        final sent = await sender(result.pdfBytes, configured?.name);
+        if (!mounted || !sent) return;
+        AppToast.show(
+          context,
+          'أُرسلت ${result.pages.length} صفحة إلى الطابعة'
+          '${result.warnCount > 0 ? ' · ${result.warnCount} تنبيهات' : ''}'
+          ' — مستند تجريبي غير مسجّل',
+          type: result.warnCount > 0 ? ToastType.warning : ToastType.success,
+        );
+        return;
+      }
+      var sent = false;
+      if (targetId == null) {
+        sent = await PdfComputeHelper.layoutBytes(
+          result.pdfBytes,
+          name: result.templateName,
+        );
+      } else {
+        final configured =
+            (ref.read(printTestPrintersProvider).value ?? const [])
+                .where((printer) => printer.id == targetId)
+                .firstOrNull;
+        if (configured == null) {
+          throw StateError('طابعة الوجهة لم تعد متاحة');
+        }
+        final systemPrinter = await PrinterResolver.resolveByPrinter(
+          configured,
+        );
+        if (systemPrinter == null) {
+          throw StateError('لم يُعثر على طابعة نظام مطابقة للاسم المحدد');
+        }
+        sent = await PdfComputeHelper.directPrintBytes(
+          printer: systemPrinter,
+          bytes: result.pdfBytes,
+        );
+      }
+      if (!mounted || !sent) return;
+      AppToast.show(
+        context,
+        'أُرسلت ${result.pages.length} صفحة إلى الطابعة'
+        '${result.warnCount > 0 ? ' · ${result.warnCount} تنبيهات' : ''}'
+        ' — مستند تجريبي غير مسجّل',
+        type: result.warnCount > 0 ? ToastType.warning : ToastType.success,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      AppToast.show(
+        context,
+        'تعذّر إرسال الطباعة التجريبية: $error',
+        type: ToastType.error,
+      );
+    }
   }
 
-  void _savePdf(PrintTestResult result) {
-    AppToast.show(
-      context,
-      '${result.templateName} — ${result.pages.length} صفحةً بمقاس '
-      '${result.paperWidthMm.toStringAsFixed(0)}مم',
-      type: ToastType.success,
+  Future<void> _savePdf(PrintTestResult result) async {
+    final now = DateTime.now();
+    final stamp =
+        '${now.year}${now.month.toString().padLeft(2, '0')}'
+        '${now.day.toString().padLeft(2, '0')}';
+    final safeName = result.templateName
+        .replaceAll(RegExp(r'[^A-Za-z0-9_-]+'), '_')
+        .replaceAll(RegExp(r'^_+|_+$'), '');
+    final suggestedName =
+        '${safeName.isEmpty ? 'print_test' : safeName}_$stamp.pdf';
+    final path = await PrintPdfFileSaver.save(
+      bytes: result.pdfBytes,
+      suggestedName: suggestedName,
+      pickPath: (name) => FilePicker.saveFile(
+        dialogTitle: tr('حفظ PDF'),
+        fileName: name,
+        type: FileType.custom,
+        allowedExtensions: const ['pdf'],
+      ),
     );
+    if (!mounted || path == null) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(tr('تم حفظ PDF في: {path}', {'path': path})),
+          action: SnackBarAction(
+            label: tr('فتح'),
+            onPressed: () async {
+              final uri = Uri.file(path);
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            },
+          ),
+        ),
+      );
   }
 }
 
@@ -224,8 +324,7 @@ class _CasesPanel extends ConsumerWidget {
                 if (p.ipAddress != null) p.ipAddress!,
               ].join(' · '),
               selected: target == p.id,
-              onTap: () =>
-                  ref.read(printTestTargetProvider.notifier).set(p.id),
+              onTap: () => ref.read(printTestTargetProvider.notifier).set(p.id),
             ),
         ],
       ),
@@ -286,21 +385,27 @@ class _PickRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w800,
-                          color: context.picposText)),
-                  Text(sub,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w600,
-                          height: 1.45,
-                          color: context.picposMuted)),
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                      color: context.picposText,
+                    ),
+                  ),
+                  Text(
+                    sub,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      height: 1.45,
+                      color: context.picposMuted,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -362,7 +467,8 @@ class _Sheets extends StatelessWidget {
                   widthMm: p.page.widthMm,
                   heightMm: p.page.heightMm,
                   ops: p.ops,
-                  caption: 'صفحة ${p.page.pageNumber} من ${p.page.pageCount}'
+                  caption:
+                      'صفحة ${p.page.pageNumber} من ${p.page.pageCount}'
                       ' · ${p.page.widthMm.toStringAsFixed(0)}مم',
                 ),
                 const SizedBox(width: 20),
@@ -396,8 +502,8 @@ class _FindingsPanel extends StatelessWidget {
     final (badge, badgeTone) = r.failCount > 0
         ? ('${r.failCount} فشل', AppColors.error)
         : r.warnCount > 0
-            ? ('${r.warnCount} تنبيه', AppColors.warning)
-            : ('كل الفحوص سليمة', AppColors.success);
+        ? ('${r.warnCount} تنبيه', AppColors.warning)
+        : ('كل الفحوص سليمة', AppColors.success);
 
     return PicPosContentCard(
       child: Column(
@@ -409,17 +515,19 @@ class _FindingsPanel extends StatelessWidget {
             icon: PhosphorIconsBold.listChecks,
             actions: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
                 decoration: BoxDecoration(
                   color: badgeTone.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: Text(badge,
-                    style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w800,
-                        color: badgeTone)),
+                child: Text(
+                  badge,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: badgeTone,
+                  ),
+                ),
               ),
             ],
           ),
@@ -467,18 +575,24 @@ class _CheckRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(check.title,
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: context.picposText)),
+                Text(
+                  check.title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: context.picposText,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text(check.note,
-                    style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w600,
-                        height: 1.6,
-                        color: context.picposMuted)),
+                Text(
+                  check.note,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    height: 1.6,
+                    color: context.picposMuted,
+                  ),
+                ),
               ],
             ),
           ),

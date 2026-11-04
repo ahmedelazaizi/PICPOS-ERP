@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../data/database/database_barrel.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class RoleListPanel extends StatelessWidget {
   final List<Role> roles;
@@ -63,7 +64,7 @@ class RoleListPanel extends StatelessWidget {
                     isSelected
                         ? PhosphorIconsBold.userCircleCheck
                         : PhosphorIconsBold.userCircle,
-                    color: isSelected ? AppColors.primary : AppColors.textMuted,
+                    color: isSelected ? AppColors.primary : context.picposMuted,
                   ),
                   title: Text(
                     trData(role.name),
@@ -81,10 +82,10 @@ class RoleListPanel extends StatelessWidget {
                   trailing: role.isSystemRole
                       ?  Tooltip(
                           message: tr('دور نظام - لا يمكن حذفه'),
-                          child: const Icon(
+                          child: Icon(
                             PhosphorIconsBold.lock,
                             size: 14,
-                            color: AppColors.textMuted,
+                            color: context.picposMuted,
                           ),
                         )
                       : IconButton(

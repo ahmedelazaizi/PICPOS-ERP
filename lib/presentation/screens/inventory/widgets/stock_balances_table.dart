@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/diagnostics/perf_trace.dart';
 import '../../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import '../../../../../domain/entities/product_entity.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../../data/providers/providers.dart';
@@ -226,15 +227,15 @@ class _StockBalancesTableState extends ConsumerState<StockBalancesTable> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     PhosphorIconsBold.archive,
                     size: 48,
-                    color: AppColors.textMuted,
+                    color: context.picposMuted,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     tr('لا توجد أصناف مطابقة للبحث'),
-                    style: const TextStyle(color: AppColors.textSecondary),
+                    style: TextStyle(color: context.picposSecondary),
                   ),
                 ],
               ),
@@ -412,8 +413,8 @@ class _StockBalancesHeader extends StatelessWidget {
       height: _kHeaderHeight,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        border: const Border(
-          bottom: BorderSide(color: AppColors.border, width: 1),
+        border: Border(
+          bottom: BorderSide(color: context.picposHairline, width: 1),
         ),
       ),
       child: Row(
@@ -483,7 +484,7 @@ class _StockBalanceRow extends StatelessWidget {
         ? AppColors.error
         : isLow
             ? AppColors.warning
-            : AppColors.textPrimary;
+            : context.picposText;
 
     return Container(
       height: _kRowHeight,
@@ -491,8 +492,8 @@ class _StockBalanceRow extends StatelessWidget {
         color: isStriped
             ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.4)
             : Colors.transparent,
-        border: const Border(
-          bottom: BorderSide(color: AppColors.border, width: 0.5),
+        border: Border(
+          bottom: BorderSide(color: context.picposHairline, width: 0.5),
         ),
       ),
       child: Row(
@@ -505,7 +506,7 @@ class _StockBalanceRow extends StatelessWidget {
             unitLabel,
             _kUnitColWidth,
             fontSize: 12,
-            color: AppColors.textSecondary,
+            color: context.picposSecondary,
           ),
           SizedBox(
             width: _kStockColWidth,
@@ -655,12 +656,12 @@ class _ExpiryBadge extends StatelessWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: AppColors.textMuted.withValues(alpha: 0.1),
+          color: context.picposMuted.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(6),
         ),
-        child: const Text(
+        child: Text(
           '-',
-          style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+          style: TextStyle(color: context.picposMuted, fontSize: 12),
         ),
       );
     }

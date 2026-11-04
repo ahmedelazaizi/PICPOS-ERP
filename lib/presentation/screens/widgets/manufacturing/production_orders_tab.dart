@@ -205,19 +205,19 @@ class _ProductionOrderCard extends ConsumerWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(PhosphorIconsBold.package,
-                            size: 14, color: AppColors.textMuted),
+                        Icon(PhosphorIconsBold.package,
+                            size: 14, color: context.picposMuted),
                         const SizedBox(width: 4),
                         Text(productName,
-                            style: const TextStyle(
-                                fontSize: 13, color: AppColors.textSecondary)),
+                            style: TextStyle(
+                                fontSize: 13, color: context.picposSecondary)),
                         const SizedBox(width: 16),
-                        const Icon(PhosphorIconsBold.listDashes,
-                            size: 14, color: AppColors.textMuted),
+                        Icon(PhosphorIconsBold.listDashes,
+                            size: 14, color: context.picposMuted),
                         const SizedBox(width: 4),
                         Text('BOM: $bomCode',
-                            style: const TextStyle(
-                                fontSize: 12, color: AppColors.textMuted)),
+                            style: TextStyle(
+                                fontSize: 12, color: context.picposMuted)),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -233,7 +233,7 @@ class _ProductionOrderCard extends ConsumerWidget {
                                 fontSize: 12,
                                 color: order.producedQty > 0
                                     ? Colors.green
-                                    : AppColors.textMuted)),
+                                    : context.picposMuted)),
                         if (order.totalCost > 0) ...[
                           const SizedBox(width: 16),
                           Text(tr('التكلفة: {p0}', {'p0': order.totalCost.toStringAsFixed(AppConstants.decimalPlaces)}),

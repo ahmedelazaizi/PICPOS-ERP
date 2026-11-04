@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class PermissionCategoryCard extends StatelessWidget {
   final String categoryKey;
@@ -108,7 +109,7 @@ class PermissionCategoryCard extends StatelessWidget {
                             ? AppColors.success
                             : selectedCount > 0
                                 ? AppColors.warning
-                                : AppColors.textMuted,
+                                : context.picposMuted,
                       ),
                     ),
                   ),
@@ -122,7 +123,7 @@ class PermissionCategoryCard extends StatelessWidget {
                   Icon(
                     isExpanded ? PhosphorIconsBold.caretUp : PhosphorIconsBold.caretDown,
                     size: 18,
-                    color: AppColors.textMuted,
+                    color: context.picposMuted,
                   ),
                 ],
               ),
@@ -155,18 +156,18 @@ class PermissionCategoryCard extends StatelessWidget {
                       entry.value,
                       style: TextStyle(
                         fontSize: 14,
-                        color: isChecked ? null : AppColors.textMuted,
+                        color: isChecked ? null : context.picposMuted,
                       ),
                     ),
                     subtitle: Text(
                       entry.key,
-                      style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                      style: TextStyle(fontSize: 11, color: context.picposMuted),
                     ),
                     dense: true,
                     controlAffinity: ListTileControlAffinity.trailing,
                     secondary: Icon(
                       isChecked ? PhosphorIconsBold.checkCircle : PhosphorIconsBold.circle,
-                      color: isChecked ? AppColors.success : AppColors.textMuted,
+                      color: isChecked ? AppColors.success : context.picposMuted,
                       size: 18,
                     ),
                   );

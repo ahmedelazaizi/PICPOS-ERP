@@ -1,3 +1,4 @@
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,7 +25,7 @@ class _ComplianceDashboardScreenState extends ConsumerState<ComplianceDashboardS
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.picposField,
         body: Column(
           children: [
             _buildHeader(context),
@@ -97,7 +98,7 @@ class _ComplianceDashboardScreenState extends ConsumerState<ComplianceDashboardS
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(tr('النتيجة الإجمالية'), style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+              Text(tr('النتيجة الإجمالية'), style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
               Text('${avg.toStringAsFixed(0)}%',
                   style: GoogleFonts.cairo(fontSize: 24, fontWeight: FontWeight.w800, color: color)),
             ],
@@ -108,7 +109,7 @@ class _ComplianceDashboardScreenState extends ConsumerState<ComplianceDashboardS
               borderRadius: BorderRadius.circular(6),
               child: LinearProgressIndicator(
                 value: avg / 100,
-                backgroundColor: AppColors.border,
+                backgroundColor: context.picposHairline,
                 valueColor: AlwaysStoppedAnimation(color),
                 minHeight: 10,
               ),
@@ -133,12 +134,12 @@ class _ComplianceDashboardScreenState extends ConsumerState<ComplianceDashboardS
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(PhosphorIconsBold.shieldCheck, size: 64, color: AppColors.textMuted),
+          Icon(PhosphorIconsBold.shieldCheck, size: 64, color: context.picposMuted),
           const SizedBox(height: 16),
-          Text(tr('فحص الامتثال'), style: GoogleFonts.cairo(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textMuted)),
+          Text(tr('فحص الامتثال'), style: GoogleFonts.cairo(fontSize: 18, fontWeight: FontWeight.w700, color: context.picposMuted)),
           const SizedBox(height: 8),
           Text(tr('اضغط "تشغيل فحص الامتثال" لتقييم جاهزية النظام للتدقيق'),
-              style: GoogleFonts.cairo(fontSize: 13, color: AppColors.textMuted)),
+              style: GoogleFonts.cairo(fontSize: 13, color: context.picposMuted)),
           const SizedBox(height: 24),
           Wrap(
             spacing: 12,
@@ -216,7 +217,7 @@ class _ComplianceDashboardScreenState extends ConsumerState<ComplianceDashboardS
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(check['checkName'] ?? '', style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w700)),
-                      Text(check['description'] ?? '', style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+                      Text(check['description'] ?? '', style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
                     ],
                   ),
                 ),

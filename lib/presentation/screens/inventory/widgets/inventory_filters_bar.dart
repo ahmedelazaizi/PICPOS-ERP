@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import '../../../../data/database/database.dart';
 import '../inventory_notifier.dart';
 
@@ -46,7 +47,7 @@ class InventoryFiltersBar extends ConsumerWidget {
                   ),
                   indicatorSize: TabBarIndicatorSize.tab,
                   labelColor: Colors.white,
-                  unselectedLabelColor: AppColors.textMuted,
+                  unselectedLabelColor: context.picposMuted,
                   tabs:  [
                     Tab(text: tr('أرصدة المستودع')),
                     Tab(text: tr('حركة الأصناف')),
@@ -58,7 +59,7 @@ class InventoryFiltersBar extends ConsumerWidget {
               const SizedBox(width: 12),
               _buildCategoryFilter(context, ref),
               const SizedBox(width: 12),
-              _buildLowStockToggle(ref, state),
+              _buildLowStockToggle(context, ref, state),
             ],
           ),
         ],
@@ -116,7 +117,7 @@ class InventoryFiltersBar extends ConsumerWidget {
     );
   }
 
-  Widget _buildLowStockToggle(WidgetRef ref, InventoryState state) {
+  Widget _buildLowStockToggle(BuildContext context, WidgetRef ref, InventoryState state) {
     return FilterChip(
       label:  Text(tr('نواقص المخزون')),
       selected: state.showLowStockOnly,
@@ -125,7 +126,7 @@ class InventoryFiltersBar extends ConsumerWidget {
       selectedColor: AppColors.warning.withValues(alpha: 0.2),
       checkmarkColor: AppColors.warning,
       labelStyle: TextStyle(
-        color: state.showLowStockOnly ? AppColors.warning : AppColors.textMuted,
+        color: state.showLowStockOnly ? AppColors.warning : context.picposMuted,
         fontWeight: state.showLowStockOnly
             ? FontWeight.bold
             : FontWeight.normal,

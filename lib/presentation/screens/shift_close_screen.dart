@@ -13,6 +13,7 @@ import '../pos/widgets/pos_cashier_closing_dialog.dart';
 import '../pos/widgets/pos_opening_balance_dialog.dart';
 import '../widgets/permission_guard.dart';
 import 'reports/shifts_report_screen.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Task 10A — shared-engine, brand-neutral base screen for
 /// `ScreenId.shiftClose` / `AppScreen.shiftClose`.
@@ -92,13 +93,13 @@ Widget buildOpenShiftsSection({
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
-                      Text(
+                      Builder(builder: (context) => Text(
                         tr('فُتحت: {p0} · رصيد افتتاحي: {p1}', {'p0': _formatShiftStart(shift.startTime), 'p1': shift.openingBalance.toStringAsFixed(2)}),
-                        style: const TextStyle(
-                          color: AppColors.textMuted,
+                        style: TextStyle(
+                          color: context.picposMuted,
                           fontSize: 12,
                         ),
-                      ),
+                      )),
                       if (!canCloseOthers && shift.userId != currentUserId)
                          Padding(
                           padding: const EdgeInsets.only(top: 4),
@@ -283,7 +284,7 @@ class _ShiftCloseScreenState extends ConsumerState<ShiftCloseScreen> {
                         if (!noOpenShift && state.resolvedShiftId != null)
                           Text(
                             tr('رقم الوردية: #{p0}', {'p0': state.resolvedShiftId}),
-                            style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                            style: TextStyle(color: context.picposMuted, fontSize: 13),
                           ),
                       ],
                     ),

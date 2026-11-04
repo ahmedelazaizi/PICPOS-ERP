@@ -25,7 +25,12 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import 'picpos_pos_text.dart';
+
+/// حبر الهوية: الفاتح AppColors.primary كما كان، والداكن أفتح قراءةً.
+Color _ink(BuildContext c) =>
+    c.picposIsDark ? PicPosText.brandOf(c) : AppColors.primary;
 
 /// زرار الترس. بيتحط أعلى السلة جنب «مسح الكل».
 class PicPosDisplaySettingsButton extends StatelessWidget {
@@ -52,10 +57,10 @@ class PicPosDisplaySettingsButton extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(PhosphorIconsBold.slidersHorizontal,
-                size: 13, color: AppColors.primary),
+            Icon(PhosphorIconsBold.slidersHorizontal,
+                size: 13, color: _ink(context)),
             const SizedBox(width: 4),
-            Text(tr('العرض'), style: PicPosText.v(context, 10, color: AppColors.primary)),
+            Text(tr('العرض'), style: PicPosText.v(context, 10, color: _ink(context))),
           ],
         ),
       ),
@@ -106,8 +111,8 @@ class _PicPosDisplaySettingsDialogState
     return AlertDialog(
       title:  Row(
         children: [
-          const Icon(PhosphorIconsBold.slidersHorizontal,
-              size: 20, color: AppColors.primary),
+          Icon(PhosphorIconsBold.slidersHorizontal,
+              size: 20, color: _ink(context)),
           const SizedBox(width: 8),
           Text(tr('إعدادات عرض السلة')),
         ],
@@ -253,7 +258,7 @@ class _Slider extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 15, color: AppColors.primary),
+              Icon(icon, size: 15, color: _ink(context)),
               const SizedBox(width: 6),
               Expanded(child: Text(label, style: PicPosText.v(context, 13))),
               Container(
@@ -264,7 +269,7 @@ class _Slider extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(display,
-                    style: PicPosText.v(context, 11, color: AppColors.primary)),
+                    style: PicPosText.v(context, 11, color: _ink(context))),
               ),
             ],
           ),

@@ -27,7 +27,7 @@ part of 'purchases_picpos_screen.dart';
 Color _purMuted(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
         ? const Color(0xFF94A3B8)
-        : AppColors.textMuted;
+        : context.picposMuted;
 
 /// شريطُ الإجماليّات — سطرٌ واحدٌ يلتفّ، بدل صفِّ بطاقات.
 class PurchasesTotalsBar extends ConsumerWidget {

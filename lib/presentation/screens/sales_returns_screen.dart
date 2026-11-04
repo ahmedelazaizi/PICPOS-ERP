@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
+import '../picpos_shell/picpos_surface.dart';
 import '../../core/widgets/shimmer_loading.dart';
 
 import '../../data/providers/providers.dart';
@@ -199,7 +200,7 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
                                             ),
                                             decoration: BoxDecoration(
                                               border: Border.all(
-                                                color: AppColors.textMuted
+                                                color: context.picposMuted
                                                     .withValues(alpha: 0.3),
                                               ),
                                               borderRadius:
@@ -207,10 +208,10 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
                                             ),
                                             child: Row(
                                               children: [
-                                                const Icon(
+                                                Icon(
                                                   PhosphorIconsBold.calendar,
                                                   size: 18,
-                                                  color: AppColors.textMuted,
+                                                  color: context.picposMuted,
                                                 ),
                                                 const SizedBox(width: 8),
                                                 Text(
@@ -233,7 +234,7 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
                                             ),
                                             decoration: BoxDecoration(
                                               border: Border.all(
-                                                color: AppColors.textMuted
+                                                color: context.picposMuted
                                                     .withValues(alpha: 0.3),
                                               ),
                                               borderRadius:
@@ -241,10 +242,10 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
                                             ),
                                             child: Row(
                                               children: [
-                                                const Icon(
+                                                Icon(
                                                   PhosphorIconsBold.calendar,
                                                   size: 18,
-                                                  color: AppColors.textMuted,
+                                                  color: context.picposMuted,
                                                 ),
                                                 const SizedBox(width: 8),
                                                 Text(
@@ -304,8 +305,8 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
                               const Spacer(),
                               Text(
                                 tr('{p0} فاتورة', {'p0': state.invoices.length}),
-                                style: const TextStyle(
-                                  color: AppColors.textMuted,
+                                style: TextStyle(
+                                  color: context.picposMuted,
                                 ),
                               ),
                             ],
@@ -335,15 +336,15 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
                                 Icon(
                                   PhosphorIconsBold.arrowCounterClockwise,
                                   size: 80,
-                                  color: AppColors.textMuted.withValues(
+                                  color: context.picposMuted.withValues(
                                     alpha: 0.3,
                                   ),
                                 ),
                                 const SizedBox(height: 24),
                                  Text(
                                   tr('اختر فاتورة من القائمة لعرض تفاصيلها'),
-                                  style: const TextStyle(
-                                    color: AppColors.textMuted,
+                                  style: TextStyle(
+                                    color: context.picposMuted,
                                     fontSize: 16,
                                   ),
                                 ),
@@ -391,12 +392,12 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
                 Icon(
                   PhosphorIconsBold.invoice,
                   size: 64,
-                  color: AppColors.textMuted.withValues(alpha: 0.3),
+                  color: context.picposMuted.withValues(alpha: 0.3),
                 ),
                 const SizedBox(height: 16),
                  Text(
                   tr('لا توجد فواتير في هذه الفترة'),
-                  style: const TextStyle(color: AppColors.textMuted),
+                  style: TextStyle(color: context.picposMuted),
                 ),
               ],
             ),
@@ -470,7 +471,7 @@ class _SalesReturnsScreenState extends ConsumerState<SalesReturnsScreen>
                       child: Text(
                         _getStatusLabel(invoice.status),
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 11,
                           color: _getStatusColor(invoice.status),
                         ),
                       ),

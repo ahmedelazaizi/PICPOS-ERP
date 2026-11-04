@@ -37,6 +37,7 @@ import '../../picpos_shell/picpos_dialog.dart';
 import '../../picpos_shell/picpos_attachments_panel.dart';
 import 'purchases_picpos_account_choices.dart';
 import 'wh_receipts_inbox_dialog.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 // ── Part files (mixin-based extraction — faithful copy of the UralCash
 // `part of` mixins; see purchases_picpos_crud.dart / purchases_picpos_details.dart
@@ -447,7 +448,7 @@ class _PurchaseReturnBadge extends StatelessWidget {
             Text(
               full ? tr('مُرتجعة') : tr('مُرتجعة جزئياً'),
               style: TextStyle(
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: FontWeight.bold,
                 color: color,
               ),

@@ -9,6 +9,7 @@ import '../../../../data/providers/providers.dart';
 import '../../../../../domain/entities/product_entity.dart';
 import '../sales_invoices_notifier.dart';
 import '../../../../presentation/widgets/searchable_unit_selection_dialog.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class SalesItemsTable extends ConsumerWidget {
   const SalesItemsTable({super.key});
@@ -88,16 +89,16 @@ class SalesItemsTable extends ConsumerWidget {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               border: Border.all(
-                color: AppColors.border,
+                color: context.picposHairline,
                 style: BorderStyle.none,
               ),
-              color: AppColors.surface,
+              color: context.picposField,
               borderRadius: BorderRadius.circular(8),
             ),
             child:  Center(
               child: Text(
                 tr('لم يتم إضافة أصناف بعد'),
-                style: const TextStyle(color: AppColors.textMuted),
+                style: TextStyle(color: context.picposMuted),
               ),
             ),
           )
@@ -132,9 +133,9 @@ class SalesItemsTable extends ConsumerWidget {
                           ),
                           Text(
                             item.productCode,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: AppColors.textMuted,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: context.picposMuted,
                             ),
                           ),
                         ],

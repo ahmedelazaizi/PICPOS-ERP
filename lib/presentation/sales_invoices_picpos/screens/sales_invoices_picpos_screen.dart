@@ -58,6 +58,7 @@ import '../../picpos_shell/picpos_attachments_panel.dart';
 import '../../../domain/models/distribution_model.dart';
 import '../../../web/web_write_guard.dart';
 import 'permanent_customer_dialog.dart';
+import 'sales_invoice_print_actions.dart';
 import '../../widgets/any_permission_masked_text.dart';
 import '../../widgets/sales_invoice_figures.dart';
 

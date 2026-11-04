@@ -343,7 +343,7 @@ class _PurchaseReturnsPicposScreenState
           initialValue: selected,
           isExpanded: true,
           isDense: true,
-          style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+          style: TextStyle(fontSize: 13, color: context.picposText),
           decoration: InputDecoration(
             hintText: tr('المورد'),
             prefixIcon: const Icon(PhosphorIconsBold.truck, size: 16),
@@ -382,7 +382,7 @@ class _PurchaseReturnsPicposScreenState
         initialValue: selected,
         isExpanded: true,
         isDense: true,
-        style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+        style: TextStyle(fontSize: 13, color: context.picposText),
         decoration: InputDecoration(
           hintText: tr('الصنف'),
           prefixIcon: const Icon(PhosphorIconsBold.package, size: 16),

@@ -38,6 +38,7 @@ import '../../../../domain/repositories/inventory_repository.dart' show Warehous
 import '../../../widgets/dialogs/add_product_dialog.dart';
 import '../../../widgets/searchable_unit_selection_dialog.dart';
 import '../../sales_invoices_controller.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 typedef SalesInvoiceSaveQuotationCallback = Future<void> Function({
   required BuildContext dialogContext,
@@ -183,16 +184,10 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
         });
       }
     } else {
-      // Spec 135 BUG-B — tax ON by default for new invoices. Previously
-      // false, so a new invoice's displayed total excluded the system tax
-      // even though the sales-transaction orchestrator persists per-line
-      // taxAmount unconditionally (it uses item.taxAmount when > 0, and only
-      // falls back to the taxEnabled-gated system rate for zero-rate lines).
-      // The default-off therefore (a) hid tax from the cashier on configured-
-      // tax products while still saving it, and (b) skipped the system rate
-      // on zero-rate products. Defaulting ON makes the form total match what
-      // is persisted and applies the system rate as intended. No double-count:
-      // the orchestrator picks per-line taxAmount OR the system rate, never both.
+      // Spec 135 BUG-B — tax ON by default for new invoices: the orchestrator
+      // persists per-line taxAmount unconditionally, so default-off hid tax from
+      // the cashier and the displayed total diverged from what is saved.
+      // No double-count: per-line taxAmount OR system rate, never both.
       _taxEnabled = true;
     }
   }
@@ -687,13 +682,13 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
           Container(
             height: 100,
             decoration: BoxDecoration(
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: context.picposHairline),
               borderRadius: BorderRadius.circular(8),
             ),
             child:  Center(
               child: Text(
                 tr('لم يتم إضافة أصناف بعد'),
-                style: const TextStyle(color: AppColors.textMuted),
+                style: TextStyle(color: context.picposMuted),
               ),
             ),
           )
@@ -850,7 +845,7 @@ class _SalesInvoiceFormState extends ConsumerState<SalesInvoiceForm> {
 
   Widget _buildTotalsCard() {
     return Card(
-      color: AppColors.surface,
+      color: context.picposField,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

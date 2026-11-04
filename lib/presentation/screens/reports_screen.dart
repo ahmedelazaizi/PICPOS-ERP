@@ -1,5 +1,5 @@
 import 'package:picpos_erp/core/i18n/tr.dart';
-// ---------------------------------------------------------------------------
+// ---
 // Reports launcher — feature 055.
 //
 // Replaces the legacy flat-ListView launcher with a 13-category grid +
@@ -14,7 +14,7 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 //   4. _HoverCard widget
 //   5. Data classes (_ReportCategory, _ReportEntry, _ReportShortcut,
 //      _FlatItem)
-// ---------------------------------------------------------------------------
+// ---
 
 import 'dart:ui' as ui;
 
@@ -26,6 +26,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/permissions/permission_codes.dart';
 import '../../core/theme/app_colors.dart';
+import '../picpos_shell/picpos_surface.dart';
 import '../../data/providers/e_invoicing_providers.dart';
 import '../../data/providers/providers.dart';
 import '../../data/providers/report_providers.dart';
@@ -692,7 +693,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                       const SizedBox(height: 20),
                     ],
                     _miniHeader(PhosphorIconsBold.squaresFour,
-                        tr('فئات التقارير'), AppColors.textSecondary),
+                        tr('فئات التقارير'), context.picposSecondary),
                     const SizedBox(height: 10),
                     _categoryGrid(catCols),
                   ],
@@ -753,7 +754,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           child: Text(
             tr('{p0} تقرير', {'p0': _allItems.length}),
             style: const TextStyle(
-              fontSize: 10.5,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
               color: AppColors.primary,
             ),
@@ -790,12 +791,12 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide:
-                BorderSide(color: AppColors.border.withValues(alpha: 0.6)),
+                BorderSide(color: context.picposHairline.withValues(alpha: 0.6)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide:
-                BorderSide(color: AppColors.border.withValues(alpha: 0.6)),
+                BorderSide(color: context.picposHairline.withValues(alpha: 0.6)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -984,9 +985,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         : tr('{p0} تقرير • {p1} اختصار', {'p0': cat.mainReports.length, 'p1': cat.shortcuts.length}),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: AppColors.textMuted,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: context.picposMuted,
                     ),
                   ),
                 ],
@@ -1121,9 +1122,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   Text(r.subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: AppColors.textMuted,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: context.picposMuted,
                         height: 1.2,
                       )),
                 ],
@@ -1138,7 +1139,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 child: Icon(
                   isFav ? PhosphorIconsFill.star : PhosphorIconsBold.star,
                   size: 13,
-                  color: isFav ? AppColors.warning : AppColors.textMuted,
+                  color: isFav ? AppColors.warning : context.picposMuted,
                 ),
               ),
             ),
@@ -1216,10 +1217,10 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
             children: [
               Icon(PhosphorIconsBold.magnifyingGlass,
                   size: 56,
-                  color: AppColors.textMuted.withValues(alpha: 0.5)),
+                  color: context.picposMuted.withValues(alpha: 0.5)),
               const SizedBox(height: 12),
               Text(tr('لا توجد تقارير مطابقة لـ "{_query}"', {'_query': _query}),
-                  style: const TextStyle(color: AppColors.textMuted)),
+                  style: TextStyle(color: context.picposMuted)),
             ],
           ),
         ),
@@ -1293,7 +1294,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                           ),
                           child:  Text(tr('اختصار'),
                               style: const TextStyle(
-                                fontSize: 8.5,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.warningDark,
                               )),
@@ -1305,9 +1306,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   Text(item.subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textMuted,
-                        fontSize: 10,
+                      style: TextStyle(
+                        color: context.picposMuted,
+                        fontSize: 11,
                         height: 1.25,
                       )),
                 ],
@@ -1322,7 +1323,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 icon: Icon(
                   isFav ? PhosphorIconsFill.star : PhosphorIconsBold.star,
                   size: 13,
-                  color: isFav ? AppColors.warning : AppColors.textMuted,
+                  color: isFav ? AppColors.warning : context.picposMuted,
                 ),
                 onPressed: () => _toggleFavorite(item.id),
               ),
@@ -1771,7 +1772,7 @@ class _HoverCardState extends State<_HoverCard> {
           border: Border.all(
             color: showActive
                 ? AppColors.primary.withValues(alpha: 0.4)
-                : AppColors.border.withValues(alpha: 0.5),
+                : context.picposHairline.withValues(alpha: 0.5),
             width: showActive ? 1.2 : 1,
           ),
           boxShadow: showActive

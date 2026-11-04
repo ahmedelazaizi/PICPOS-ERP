@@ -13,6 +13,7 @@ import '../../../core/i18n/tr.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
 import '../../pos/providers/cart_controller.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// معرّفُ «عميل نقدي» النظاميّ — `null` حين لا يوجد (عميلٌ قبل أوّل سحب).
 final posCashCustomerIdProvider = FutureProvider.autoDispose<int?>(
@@ -39,7 +40,7 @@ class PicPosOneTimeCustomerButton extends ConsumerWidget {
       icon: Icon(
         hasName ? PhosphorIconsBold.userCheck : PhosphorIconsBold.pencilSimple,
         size: 15,
-        color: hasName ? AppColors.primary : AppColors.textMuted,
+        color: hasName ? AppColors.primary : context.picposMuted,
       ),
       onPressed: () async {
         final result = await showDialog<({String name, String phone})>(

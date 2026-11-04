@@ -259,11 +259,11 @@ class _DistributionPicposScreenState
                 PicPosEntityCard(
                   title: r.name,
                   subtitle: r.area ?? r.description,
-                  tint: r.isActive ? AppColors.success : AppColors.textMuted,
+                  tint: r.isActive ? AppColors.success : context.picposMuted,
                   icon: PhosphorIconsBold.path,
                   status: r.isActive ? tr('نشط') : tr('موقوف'),
                   statusTint:
-                      r.isActive ? AppColors.success : AppColors.textMuted,
+                      r.isActive ? AppColors.success : context.picposMuted,
                   stats: [
                     PicPosEntityStat(
                       tr('المندوب'),
@@ -535,7 +535,7 @@ class _DistributionPicposScreenState
                   PicPosTextCell(c.address ?? '—'),
                   PicPosPillCell(
                     c.isActive ? tr('نشطة') : tr('موقوفة'),
-                    c.isActive ? AppColors.success : AppColors.textMuted,
+                    c.isActive ? AppColors.success : context.picposMuted,
                   ),
                 ],
               ),

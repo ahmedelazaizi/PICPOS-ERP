@@ -36,6 +36,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/repositories/treasury_repository.dart' show SafeData;
 import '../../picpos_shell/picpos_dialog.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// ورقةٌ مرشَّحةٌ للإيداع — القدرُ الذي يحتاجه الحوارُ من صفّ القاعدة.
 ///
@@ -262,7 +263,7 @@ class _DepositBatchDialogState extends State<_DepositBatchDialog> {
            PicPosDialogBanner(
             icon: PhosphorIconsBold.info,
             text: tr('لا أوراقَ بالخزنة قابلةً للإيداع. الإيداعُ يقبل الورقةَ المعلَّقةَ أو التي في الحافظة وحدَها.'),
-            color: AppColors.textMuted,
+            color: context.picposMuted,
           )
         else
           Wrap(

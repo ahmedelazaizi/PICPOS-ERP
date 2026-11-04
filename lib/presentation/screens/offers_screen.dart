@@ -1,3 +1,4 @@
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:picpos_erp/core/widgets/app_toast.dart';
@@ -154,7 +155,7 @@ class _OffersScreenState extends ConsumerState<OffersScreen>
                         ),
                         Text(
                           tr('إدارة عروض الباقات والأسعار الخاصة'),
-                          style: const TextStyle(color: AppColors.textMuted),
+                          style: TextStyle(color: context.picposMuted),
                         ),
                       ],
                     ),
@@ -255,14 +256,14 @@ class _OffersScreenState extends ConsumerState<OffersScreen>
                             Icon(
                               PhosphorIconsBold.tag,
                               size: 80,
-                              color: AppColors.textMuted.withValues(alpha: 0.3),
+                              color: context.picposMuted.withValues(alpha: 0.3),
                             ),
                             const SizedBox(height: 24),
                              Text(
                               tr('لا توجد عروض'),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 18,
-                                color: AppColors.textMuted,
+                                color: context.picposMuted,
                               ),
                             ),
                             const SizedBox(height: 8),

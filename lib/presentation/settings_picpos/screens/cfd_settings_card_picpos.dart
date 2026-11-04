@@ -117,10 +117,10 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
           // ── Connection Type Selector ──
            Text(
             tr('نوع الاتصال'),
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 13,
-              color: AppColors.textSecondary,
+              color: context.picposSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -142,7 +142,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
                 avatar: Icon(
                   _getIconForType(type),
                   size: 16,
-                  color: isSelected ? Colors.white : AppColors.textMuted,
+                  color: isSelected ? Colors.white : context.picposMuted,
                 ),
                 selected: isSelected,
                 selectedColor: AppColors.primary,
@@ -158,7 +158,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
           const SizedBox(height: 4),
           Text(
             _selectedType.description,
-            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 11, color: context.picposMuted),
           ),
           const SizedBox(height: 16),
 
@@ -214,10 +214,10 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
           const SizedBox(height: 8),
            Text(
             tr('روابط الشبكة (متاحة دائماً)'),
-            style: const TextStyle(
+            style: TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 12,
-              color: AppColors.textMuted,
+              color: context.picposMuted,
             ),
           ),
           const SizedBox(height: 8),
@@ -264,7 +264,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
               : connected
                   ? AppColors.success
                   : AppColors.error,
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -292,7 +292,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
         ),
         subtitle:  Text(
           tr('تحكم فيما يظهر على شاشة العميل'),
-          style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+          style: TextStyle(fontSize: 11, color: context.picposMuted),
         ),
         childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
         children: [
@@ -302,10 +302,10 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text(
               tr('بيانات الأصناف'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 11,
-                color: AppColors.textMuted,
+                color: context.picposMuted,
               ),
             ),
           ),
@@ -338,10 +338,10 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text(
               tr('ملخص الفاتورة'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 11,
-                color: AppColors.textMuted,
+                color: context.picposMuted,
               ),
             ),
           ),
@@ -380,10 +380,10 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text(
               tr('رسالة الترحيب'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 11,
-                color: AppColors.textMuted,
+                color: context.picposMuted,
               ),
             ),
           ),
@@ -440,7 +440,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
     return SwitchListTile(
       title: Text(title, style: const TextStyle(fontSize: 12)),
       subtitle: Text(subtitle,
-          style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+          style: TextStyle(fontSize: 11, color: context.picposMuted)),
       value: value,
       dense: true,
       activeTrackColor: AppColors.primary,
@@ -492,7 +492,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
           const SizedBox(height: 8),
            Text(
             tr('شاشة العميل عبر الشبكة تعمل تلقائياً عند تشغيل السيرفر من إعدادات وضع الشبكة. يمكن لأي جهاز (تابلت، هاتف) على نفس الشبكة فتح الرابط أعلاه.'),
-            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 11, color: context.picposMuted),
           ),
           const SizedBox(height: 8),
           if (!_ns.isServerRunning)
@@ -510,7 +510,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
                   Expanded(
                     child: Text(
                       tr('السيرفر غير مشغل. شغّل السيرفر من "وضع الشبكة" لتفعيل شاشة العميل عبر الشبكة.'),
-                      style: const TextStyle(fontSize: 10, color: AppColors.warning),
+                      style: const TextStyle(fontSize: 11, color: AppColors.warning),
                     ),
                   ),
                 ],
@@ -574,8 +574,8 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
                             value: null,
                             child: Text(
                               tr('لا توجد منافذ'),
-                              style: const TextStyle(
-                                  color: AppColors.textMuted, fontSize: 12),
+                              style: TextStyle(
+                                  color: context.picposMuted, fontSize: 12),
                             ),
                           ),
                         ]
@@ -623,7 +623,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
             icon: const Icon(PhosphorIconsBold.arrowClockwise, size: 14),
             label:  Text(tr('تحديث المنافذ'), style: const TextStyle(fontSize: 11)),
             style: TextButton.styleFrom(
-              foregroundColor: AppColors.textMuted,
+              foregroundColor: context.picposMuted,
               padding: EdgeInsets.zero,
               minimumSize: const Size(0, 30),
             ),
@@ -646,7 +646,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
                           ? tr('لم يتم العثور على أجهزة USB. تأكد من توصيل الشاشة وتثبيت الدرايفر.')
                           : tr('لم يتم العثور على منافذ COM. تأكد من توصيل كابل Serial.'),
                       style:
-                          const TextStyle(fontSize: 10, color: AppColors.warning),
+                          const TextStyle(fontSize: 11, color: AppColors.warning),
                     ),
                   ),
                 ],
@@ -698,7 +698,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
                       child: Text(
                         tr('شاشة واحدة فقط'),
                         style:
-                            const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                            TextStyle(color: context.picposMuted, fontSize: 12),
                       ),
                     ),
                   ]
@@ -730,7 +730,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
                   Expanded(
                     child: Text(
                       tr('قم بتوصيل شاشة ثانية عبر HDMI أو DisplayPort، ثم اضبط الشاشة كـ "Extended Display" من إعدادات Windows.'),
-                      style: const TextStyle(fontSize: 10, color: AppColors.info),
+                      style: const TextStyle(fontSize: 11, color: AppColors.info),
                     ),
                   ),
                 ],
@@ -739,7 +739,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
           const SizedBox(height: 8),
            Text(
             tr('سيتم فتح نافذة شاشة العميل في متصفح الويب على الشاشة المحددة مع عرض بيانات السلة في الوقت الفعلي.'),
-            style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 11, color: context.picposMuted),
           ),
         ],
       ),
@@ -844,9 +844,9 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
                         width: 120,
                         child: Text(
                           e.key,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textMuted,
+                            color: context.picposMuted,
                           ),
                         ),
                       ),
@@ -882,7 +882,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
                         Expanded(
                           child: Text(
                             errorDetail,
-                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                            style: TextStyle(fontSize: 11, color: context.picposSecondary),
                           ),
                         ),
                       ],
@@ -975,8 +975,8 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
                 Text(
                   url,
                   style: TextStyle(
-                    fontSize: 10,
-                    color: enabled ? AppColors.textMuted : Colors.grey,
+                    fontSize: 11,
+                    color: enabled ? context.picposMuted : Colors.grey,
                   ),
                 ),
               ],

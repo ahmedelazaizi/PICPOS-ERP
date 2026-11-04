@@ -19,7 +19,9 @@ class _ScaleBarcodeSettingsState extends ConsumerState<_ScaleBarcodeSettings> {
   final _weightPrefixController = TextEditingController(text: '21');
   final _weightCodeLenController = TextEditingController(text: '5');
   final _weightDividerController = TextEditingController(text: '1000');
-  final _pricePrefixController = TextEditingController(text: '22');
+  // كان '22' — يصطدم ببادئة الوزن البديلة scale_fallback_prefix (22) في
+  // scale_barcode_handler الذي يفترض 20 للسعر. (2026-11-04)
+  final _pricePrefixController = TextEditingController(text: '20');
   final _priceCodeLenController = TextEditingController(text: '5');
   final _priceDividerController = TextEditingController(text: '100');
   bool _loading = true;

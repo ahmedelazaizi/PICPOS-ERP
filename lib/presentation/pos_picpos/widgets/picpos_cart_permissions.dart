@@ -30,6 +30,9 @@ import '../../../domain/models/quick_sale_policy.dart';
 import '../../../services/manager_approval_cache.dart';
 import '../../widgets/permission_guard.dart';
 
+// يُصدَّر هنا ليراه جزءُ picpos_pos_cart_edit.dart (لا يملك استيراداتِه الخاصة).
+export 'picpos_invoice_discount_dialog.dart';
+
 bool _isAdmin(List<String> p) =>
     p.contains('system_admin') || p.contains('*');
 
@@ -365,3 +368,33 @@ Future<bool> ensureDecrementReturnLinePermission(
 ) =>
     _ensure(ref, context, canDecrementReturnLineCodes,
         PermissionCodes.posItemMinus, tr('نقص كمية سطر المرتجع'));
+
+// ── دفعة ٦ — المرتجع السريع بلا فاتورة (بند ٤) ───────────────────────────────
+//
+// سعرُ سطر المرتجع بلا فاتورة يُقترَح من سعر بيع الصنف الحاليّ، وتغييرُه يدوياً
+// بابُ احتيالٍ (استردادٌ بسعرٍ أعلى من سعر البيع) فله صلاحيةٌ مستقلّةٌ
+// `pos_return_price_edit` لا تُغني عنها `pos_price_edit` (سعرُ البيع).
+
+/// إدخالُ/تعديلُ سعرِ سطر مرتجعٍ بلا فاتورة يدوياً (`pos_return_price_edit`).
+bool canEditReturnPriceCodes(List<String> permissions) =>
+    _isAdmin(permissions) ||
+    permissions.contains(PermissionCodes.posReturnPriceEdit);
+
+/// بابُ تعديل سعر السطر: مرتجعٌ بلا فاتورة ⇒ صلاحيتُه الخاصّة، وإلا سعرُ البيع.
+bool canEditLinePriceCodes(List<String> permissions, {required bool isReturn}) =>
+    isReturn
+        ? canEditReturnPriceCodes(permissions)
+        : canEditCartPriceCodes(permissions);
+
+/// يسمح بتعديل سعر السطر، أو يطلب موافقةَ مسؤولٍ يملك الصلاحيةَ **المناسبة**.
+Future<bool> ensureLinePricePermission(
+  WidgetRef ref,
+  BuildContext context, {
+  required bool isReturn,
+  String? scope,
+}) =>
+    isReturn
+        ? _ensure(ref, context, canEditReturnPriceCodes,
+            PermissionCodes.posReturnPriceEdit, tr('تعديل سعر المرتجع بلا فاتورة'),
+            scope: scope)
+        : ensureCartPricePermission(ref, context, scope: scope);

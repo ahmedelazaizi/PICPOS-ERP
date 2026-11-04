@@ -299,7 +299,8 @@ class SettingsController extends Notifier<SettingsState> {
     }
   }
 
-  /// Toggle dark mode
+  /// Toggle dark mode — DEAD: لا مستدعٍ ولا أثر على الثيم. مصدر الحقيقة
+  /// 	hemeModeProvider (مفتاح pp_theme_mode)؛ هذا المفتاح منسيّ، لا تعتمد عليه.
   Future<void> toggleDarkMode(bool enabled) async {
     await _repository.saveSetting('isDarkMode', enabled.toString());
     state = state.copyWith(isDarkMode: enabled);

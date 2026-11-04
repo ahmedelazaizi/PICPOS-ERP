@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class InventorySummaryCard extends StatelessWidget {
   final String title;
@@ -47,7 +47,7 @@ class InventorySummaryCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
+                  style: TextStyle(fontSize: 14, color: context.picposMuted),
                 ),
                 Text(
                   value,

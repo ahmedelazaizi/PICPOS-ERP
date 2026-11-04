@@ -94,7 +94,7 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                           tr('تعذّر تحميل أوامر الشراء: {p0}', {'p0': snapshot.error}),
                           textAlign: TextAlign.center,
                           style: GoogleFonts.cairo(
-                            color: AppColors.textSecondary,
+                            color: context.picposSecondary,
                             fontSize: 13,
                           ),
                         ),
@@ -225,7 +225,7 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                     Icon(info.icon, size: 14, color: isSelected ? Colors.white : info.color),
                     const SizedBox(width: 4),
                     Text(info.label, style: GoogleFonts.cairo(
-                      fontSize: 11, color: isSelected ? Colors.white : AppColors.textPrimary,
+                      fontSize: 11, color: isSelected ? Colors.white : context.picposText,
                       fontWeight: FontWeight.w600,
                     )),
                   ],
@@ -252,9 +252,9 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(PhosphorIconsBold.clipboardText, size: 64, color: AppColors.textMuted),
+          Icon(PhosphorIconsBold.clipboardText, size: 64, color: context.picposMuted),
           const SizedBox(height: 16),
-          Text(tr('لا توجد أوامر شراء'), style: GoogleFonts.cairo(fontSize: 16, color: AppColors.textMuted)),
+          Text(tr('لا توجد أوامر شراء'), style: GoogleFonts.cairo(fontSize: 16, color: context.picposMuted)),
           const SizedBox(height: 8),
           ElevatedButton.icon(
             onPressed: () => _showCreatePODialog(context, poRepo, partiesRepo, branchRepo),
@@ -307,12 +307,12 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(statusInfo.label,
-                                style: GoogleFonts.cairo(fontSize: 10, color: statusInfo.color, fontWeight: FontWeight.w700)),
+                                style: GoogleFonts.cairo(fontSize: 11, color: statusInfo.color, fontWeight: FontWeight.w700)),
                           ),
                         ],
                       ),
                       Text(_dateFormat.format(order.orderDate),
-                          style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+                          style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
                     ],
                   ),
                 ),
@@ -323,7 +323,7 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                         style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.primary)),
                     if (order.expectedDate != null)
                       Text(tr('متوقع: {p0}', {'p0': _dateFormat.format(order.expectedDate!)}),
-                          style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted)),
+                          style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
                   ],
                 ),
               ],
@@ -343,7 +343,7 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                   children: [
                     const Icon(PhosphorIconsBold.storefront, size: 14, color: AppColors.info),
                     const SizedBox(width: 6),
-                    Text(name, style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textSecondary)),
+                    Text(name, style: GoogleFonts.cairo(fontSize: 12, color: context.picposSecondary)),
                   ],
                 );
               },
@@ -412,7 +412,7 @@ class _PurchaseOrdersScreenState extends ConsumerState<PurchaseOrdersScreen> {
                         const Icon(PhosphorIconsBold.link, size: 12, color: AppColors.success),
                         const SizedBox(width: 4),
                         Text(tr('فاتورة #{p0}', {'p0': order.convertedToInvoiceId}),
-                            style: GoogleFonts.cairo(fontSize: 10, color: AppColors.success, fontWeight: FontWeight.w700)),
+                            style: GoogleFonts.cairo(fontSize: 11, color: AppColors.success, fontWeight: FontWeight.w700)),
                       ],
                     ),
                   ),

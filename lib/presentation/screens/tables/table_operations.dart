@@ -784,7 +784,7 @@ mixin _TableOperationsMixin<T extends ConsumerStatefulWidget>
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Text('$label: ', style: const TextStyle(color: AppColors.textMuted)),
+          Text('$label: ', style: TextStyle(color: context.picposMuted)),
           Expanded(
             child: Text(
               value,

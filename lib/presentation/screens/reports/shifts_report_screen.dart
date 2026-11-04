@@ -18,13 +18,13 @@ import '../../../../../../core/constants/app_constants.dart';
 import '../../widgets/branch_warehouse_filter.dart';
 import 'report_export_guard.dart';
 import 'report_scaffold.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// سقفُ صفحةِ تقرير الورديات.
 ///
 /// كان `limit: 100` رقماً مدفوناً في النداء بتعليق `// Load top 100 for now`:
 /// لا المستخدمُ يعلم بوجوده ولا شيءَ ينطق حين يُقتطع التقرير. والتقريرُ
 /// المقتطعُ لا يُميَّز عن الكامل — وهذا أخطرُ من فشلٍ، لأن الفشلَ يُرى.
-/// (نفسُ العلاج المقيس في `report_builder_dao.dart` — سقفٌ معلَنٌ ينطق.)
 const int kShiftsReportPageLimit = 100;
 
 class ShiftsReportScreen extends ConsumerStatefulWidget {
@@ -349,7 +349,7 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
-                              side: const BorderSide(color: AppColors.border),
+                              side: BorderSide(color: context.picposHairline),
                             ),
                             child: SizedBox(
                               width: double.infinity,
@@ -563,9 +563,9 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
                     const SizedBox(height: 16),
                      Text(
                       tr('الملاحظات / تفاصيل بطاقات الدفع:'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textMuted,
+                        color: context.picposMuted,
                       ),
                     ),
                     Text(shift.notes!),
@@ -609,7 +609,7 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: context.picposHairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -625,7 +625,7 @@ class _ShiftsReportScreenState extends ConsumerState<ShiftsReportScreen> {
             padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 12),
             child: Text(
               tr('العجز والزيادة منفصلان — الصافي وحده يخفي خطأين يتقاصّان.'),
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 12, color: context.picposSecondary),
             ),
           ),
           SizedBox(

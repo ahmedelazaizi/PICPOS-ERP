@@ -7,6 +7,7 @@ import '../../../data/database/database.dart';
 import '../../../domain/repositories/accounting_repository.dart';
 import 'coa_rollup.dart';
 import 'coa_shared.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // COA TREE NODE — Recursive hierarchical account tree rendering
@@ -72,7 +73,7 @@ class CoaTreeNode extends StatelessWidget {
                       : null,
               border: Border(
                 bottom: BorderSide(
-                  color: AppColors.border.withValues(alpha: 0.3),
+                  color: context.picposHairline.withValues(alpha: 0.3),
                 ),
               ),
             ),
@@ -96,7 +97,7 @@ class CoaTreeNode extends StatelessWidget {
                               ? PhosphorIconsBold.arrowBendDownRight
                               : PhosphorIconsBold.minus,
                           size: 12,
-                          color: AppColors.textMuted.withValues(alpha: 0.4),
+                          color: context.picposMuted.withValues(alpha: 0.4),
                         ),
                 ),
                 const SizedBox(width: 4),
@@ -158,7 +159,7 @@ class CoaTreeNode extends StatelessWidget {
                           ),
                           child: Text(
                             '${children.length}',
-                            style: GoogleFonts.cairo(fontSize: 9, color: typeInfo.color, fontWeight: FontWeight.w700),
+                            style: GoogleFonts.cairo(fontSize: 11, color: typeInfo.color, fontWeight: FontWeight.w700),
                           ),
                         ),
                       ],
@@ -175,9 +176,9 @@ class CoaTreeNode extends StatelessWidget {
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                       color: displayBalance.abs() < 0.01
-                          ? AppColors.textMuted
+                          ? context.picposMuted
                           : (displayBalance >= 0
-                              ? AppColors.textPrimary
+                              ? context.picposText
                               : AppColors.error),
                     ),
                   );
@@ -185,8 +186,8 @@ class CoaTreeNode extends StatelessWidget {
                 const SizedBox(width: 4),
                 // Actions
                 PopupMenuButton<String>(
-                  icon: const Icon(PhosphorIconsBold.dotsThreeVertical,
-                      size: 14, color: AppColors.textMuted),
+                  icon: Icon(PhosphorIconsBold.dotsThreeVertical,
+                      size: 14, color: context.picposMuted),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                   onSelected: (action) => onAction(account, action),
@@ -282,7 +283,7 @@ class CoaTreeNode extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(text,
-        style: GoogleFonts.cairo(fontSize: 9, color: color, fontWeight: FontWeight.w700),
+        style: GoogleFonts.cairo(fontSize: 11, color: color, fontWeight: FontWeight.w700),
       ),
     );
   }

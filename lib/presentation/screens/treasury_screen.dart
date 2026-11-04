@@ -20,6 +20,7 @@ import '../treasury/widgets/treasury_safe_card.dart';
 import '../treasury/widgets/safe_management_dialog.dart';
 import '../../services/reconciliation_service.dart';
 import '../../domain/usecases/accounting/get_cashflow_statement_usecase.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Provider for safe transactions.
 ///
@@ -202,7 +203,7 @@ class _TreasuryScreenState extends ConsumerState<TreasuryScreen>
                 child: TabBar(
                   controller: _tabController,
                   labelColor: AppColors.primary,
-                  unselectedLabelColor: AppColors.textMuted,
+                  unselectedLabelColor: context.picposMuted,
                   indicatorColor: AppColors.primary,
                   indicatorSize: TabBarIndicatorSize.tab,
                   tabs: [
@@ -323,7 +324,7 @@ class _TreasuryClickTab extends StatelessWidget {
                       return  Center(
                         child: Text(
                           tr('لا توجد صناديق كليك'),
-                          style: const TextStyle(color: AppColors.textMuted),
+                          style: TextStyle(color: context.picposMuted),
                         ),
                       );
                     }
@@ -393,7 +394,7 @@ class _CashFlowTab extends ConsumerWidget {
         if (list.isEmpty) {
           return Center(
             child: Text(tr('لا توجد حركات مالية'),
-                style: GoogleFonts.cairo(color: AppColors.textMuted)),
+                style: GoogleFonts.cairo(color: context.picposMuted)),
           );
         }
 
@@ -419,15 +420,15 @@ class _CashFlowTab extends ConsumerWidget {
               // KPI Row
               Row(
                 children: [
-                  _flowCard(tr('إجمالي الواردات'), result.totalInflows,
+                  _flowCard(context, tr('إجمالي الواردات'), result.totalInflows,
                       PhosphorIconsBold.arrowCircleDown,
                       const Color(0xFF059669)),
                   const SizedBox(width: 16),
-                  _flowCard(tr('إجمالي الصادرات'), result.totalOutflows,
+                  _flowCard(context, tr('إجمالي الصادرات'), result.totalOutflows,
                       PhosphorIconsBold.arrowCircleUp,
                       const Color(0xFFDC2626)),
                   const SizedBox(width: 16),
-                  _flowCard(tr('صافي التدفق'), result.netFlow,
+                  _flowCard(context, tr('صافي التدفق'), result.netFlow,
                       PhosphorIconsBold.arrowsLeftRight,
                       result.netFlow >= 0
                           ? const Color(0xFF059669)
@@ -471,7 +472,7 @@ class _CashFlowTab extends ConsumerWidget {
     );
   }
 
-  Widget _flowCard(
+  Widget _flowCard(BuildContext context,
       String title, double amount, IconData icon, Color color) {
     return Expanded(
       child: Container(
@@ -493,7 +494,7 @@ class _CashFlowTab extends ConsumerWidget {
                     color: color)),
             Text(title,
                 style: GoogleFonts.cairo(
-                    fontSize: 11, color: AppColors.textMuted)),
+                    fontSize: 11, color: context.picposMuted)),
           ],
         ),
       ),
@@ -529,7 +530,7 @@ class _CashFlowTab extends ConsumerWidget {
                 '${value.toStringAsFixed(0)} (${(pct * 100).toStringAsFixed(0)}%)',
                 textAlign: TextAlign.end,
                 style: GoogleFonts.cairo(
-                    fontSize: 10, fontWeight: FontWeight.w600)),
+                    fontSize: 11, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -679,14 +680,14 @@ class _ReconciliationDialogState extends ConsumerState<_ReconciliationDialog> {
         title: Text(report.entityType, style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
         subtitle: Text(
           tr('تم فحص {p0} — {p1} فرق{p2}', {'p0': report.totalChecked, 'p1': report.discrepanciesFound, 'p2': report.fixed > 0 ? tr(' — تم إصلاح {p0}', {'p0': report.fixed}) : ''}),
-          style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
+          style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
         ),
         children: report.discrepancies.map((d) => ListTile(
           dense: true,
           title: Text(d.entityName, style: GoogleFonts.cairo(fontSize: 12)),
           subtitle: Text(
             tr('مخزّن: {p0} | محسوب: {p1} | فرق: {p2}', {'p0': d.cachedValue.toStringAsFixed(AppConstants.decimalPlaces), 'p1': d.calculatedValue.toStringAsFixed(AppConstants.decimalPlaces), 'p2': d.difference.toStringAsFixed(AppConstants.decimalPlaces)}),
-            style: GoogleFonts.cairo(fontSize: 10, color: AppColors.error),
+            style: GoogleFonts.cairo(fontSize: 11, color: AppColors.error),
           ),
         )).toList(),
       ),

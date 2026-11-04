@@ -23,7 +23,7 @@ Color _heroBg(BuildContext context) =>
 Color _mutedOf(BuildContext context) =>
     Theme.of(context).brightness == Brightness.dark
         ? const Color(0xFF94A3B8)
-        : AppColors.textMuted;
+        : context.picposMuted;
 
 /// نسبةُ التغيّر بين [current] و[previous].
 ///
@@ -87,7 +87,7 @@ class _TrendBadge extends StatelessWidget {
           Text(
             text,
             style: TextStyle(
-              fontSize: 10.5,
+              fontSize: 11,
               fontWeight: FontWeight.w800,
               color: color,
             ),
@@ -217,7 +217,7 @@ class _SalesKpiTile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: muted,
                     ),
@@ -515,7 +515,7 @@ class _SalesHeroCard extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            fontSize: 9.5,
+            fontSize: 11,
             fontWeight: FontWeight.w600,
             color: Colors.white.withValues(alpha: .6),
           ),

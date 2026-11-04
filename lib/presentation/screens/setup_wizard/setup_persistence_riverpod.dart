@@ -159,9 +159,11 @@ class RiverpodSetupPersistence implements SetupPersistence, SetupTablesPort {
 
   @override
   Future<int> createFiscalYear(String name, DateTime start, DateTime end) =>
-      _ref
-          .read(accountingRepositoryProvider)
-          .createFiscalYear(name: name, startDate: start, endDate: end);
+      _ref.read(databaseProvider).ensureFiscalYear(
+            name: name,
+            startDate: start,
+            endDate: DateTime(end.year, end.month, end.day, 23, 59, 59, 999),
+          );
 
   @override
   Future<void> generatePeriodsForYear(

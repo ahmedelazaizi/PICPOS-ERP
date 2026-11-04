@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/number_utils.dart';
 import '../../../domain/models/exchange_settlement.dart';
 import 'picpos_pos_text.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// ترويسةُ وضع الاستبدال — الأرقامُ الثلاثة.
 ///
@@ -31,27 +32,32 @@ class PicPosExchangeModeBanner extends StatelessWidget {
   });
 
   /// نصُّ الفرق ولونُه — الاتّجاهُ يحمل الإشارةَ لا الرقم.
-  (String, Color) get _difference => switch (direction) {
+  /// [bg] الخلفية المصبوغة الفعلية — الألوان الدلالية تُقرأ عليها لا على الكرت.
+  (String, Color) _difference(BuildContext context, Color bg) =>
+      switch (direction) {
         ExchangeCashDirection.collect => (
             tr('يُحصَّل {p0}', {'p0': NumberUtils.formatCurrency(difference)}),
-            AppColors.success,
+            PicPosText.readableOn(context, AppColors.success, on: bg),
           ),
         ExchangeCashDirection.refund => (
             tr('يُرَدّ {p0}', {'p0': NumberUtils.formatCurrency(difference)}),
-            AppColors.error,
+            PicPosText.readableOn(context, AppColors.error, on: bg),
           ),
-        ExchangeCashDirection.none => (tr('لا فرق'), AppColors.textSecondary),
+        ExchangeCashDirection.none => (tr('لا فرق'), context.picposSecondary),
       };
 
   @override
   Widget build(BuildContext context) {
-    final (differenceLabel, differenceColor) = _difference;
+    final tint = AppColors.warning.withValues(alpha: 0.12);
+    final bg = Color.alphaBlend(tint, context.picposCard);
+    final (differenceLabel, differenceColor) = _difference(context, bg);
+    final ink = PicPosText.readableOn(context, AppColors.warning, on: bg);
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 4),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.12),
+        color: tint,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
       ),
@@ -60,17 +66,16 @@ class PicPosExchangeModeBanner extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(PhosphorIconsBold.arrowsLeftRight,
-                  size: 16, color: AppColors.warning),
+              Icon(PhosphorIconsBold.arrowsLeftRight, size: 16, color: ink),
               const SizedBox(width: 8),
               Text(tr('وضع الاستبدال'),
-                  style: PicPosText.v(context, 13, color: AppColors.warning)),
+                  style: PicPosText.v(context, 13, color: ink)),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   invoiceNumber,
                   overflow: TextOverflow.ellipsis,
-                  style: PicPosText.v(context, 13, color: AppColors.warning),
+                  style: PicPosText.v(context, 13, color: ink),
                 ),
               ),
             ],
@@ -82,14 +87,14 @@ class PicPosExchangeModeBanner extends StatelessWidget {
                 child: Text(
                   tr('المرتجع {p0}', {'p0': NumberUtils.formatCurrency(refundTotal)}),
                   overflow: TextOverflow.ellipsis,
-                  style: PicPosText.v(context, 12, color: AppColors.textSecondary),
+                  style: PicPosText.v(context, 12, color: context.picposSecondary),
                 ),
               ),
               Expanded(
                 child: Text(
                   tr('البديل {p0}', {'p0': NumberUtils.formatCurrency(replacementTotal)}),
                   overflow: TextOverflow.ellipsis,
-                  style: PicPosText.v(context, 12, color: AppColors.textSecondary),
+                  style: PicPosText.v(context, 12, color: context.picposSecondary),
                 ),
               ),
               Expanded(

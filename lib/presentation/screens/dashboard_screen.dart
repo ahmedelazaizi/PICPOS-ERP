@@ -1,5 +1,6 @@
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
+import '../picpos_shell/picpos_surface.dart';
 import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -137,13 +138,13 @@ class DashboardScreen extends ConsumerWidget {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
                   children: [
-                    const Icon(PhosphorIconsBold.calendarBlank,
-                        size: 14, color: AppColors.textMuted),
+                    Icon(PhosphorIconsBold.calendarBlank,
+                        size: 14, color: context.picposMuted),
                     const SizedBox(width: 6),
                     Text(
                       _dashboardPeriodLabel(dashFilter.from, dashFilter.to),
-                      style: const TextStyle(
-                          fontSize: 12, color: AppColors.textMuted),
+                      style: TextStyle(
+                          fontSize: 12, color: context.picposMuted),
                     ),
                   ],
                 ),
@@ -464,10 +465,10 @@ class DashboardScreen extends ConsumerWidget {
                             const SizedBox(width: 8),
                             Text(
                               tr('آخر المبيعات'),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
+                                color: context.picposText,
                               ),
                             ),
                           ],
@@ -480,8 +481,8 @@ class DashboardScreen extends ConsumerWidget {
                                 return  Center(
                                   child: Text(
                                     tr('لا توجد مبيعات اليوم'),
-                                    style: const TextStyle(
-                                      color: AppColors.textMuted,
+                                    style: TextStyle(
+                                      color: context.picposMuted,
                                     ),
                                   ),
                                 );
@@ -521,8 +522,8 @@ class DashboardScreen extends ConsumerWidget {
                                         'hh:mm a',
                                         uiLocaleCode,
                                       ).format(sale.invoiceDate),
-                                      style: const TextStyle(
-                                        color: AppColors.textMuted,
+                                      style: TextStyle(
+                                        color: context.picposMuted,
                                         fontSize: 12,
                                       ),
                                     ),
@@ -744,7 +745,7 @@ class _DashboardFilterBarState extends ConsumerState<_DashboardFilterBar> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: context.picposHairline),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -786,8 +787,8 @@ class _DashboardFilterBarState extends ConsumerState<_DashboardFilterBar> {
                     value: effectiveBranch,
                     isExpanded: true,
                     hint:  Text(tr('الفرع'), style: const TextStyle(fontSize: 12)),
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textPrimary),
+                    style: TextStyle(
+                        fontSize: 12, color: context.picposText),
                     items: [
                        DropdownMenuItem<int?>(
                           value: null, child: Text(tr('كل الفروع'))),
@@ -815,17 +816,17 @@ class _DashboardFilterBarState extends ConsumerState<_DashboardFilterBar> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.surface,
+          color: isSelected ? AppColors.primary : context.picposField,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
+            color: isSelected ? AppColors.primary : context.picposHairline,
             width: isSelected ? 1.5 : 1,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textPrimary,
+            color: isSelected ? Colors.white : context.picposText,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             fontSize: 12,
           ),
@@ -891,7 +892,6 @@ class _HoverableStatCardState extends State<_HoverableStatCard> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Row(
           children: [
-            // Icon
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
@@ -901,7 +901,6 @@ class _HoverableStatCardState extends State<_HoverableStatCard> {
               child: Icon(widget.icon, color: widget.color, size: 20),
             ),
             const SizedBox(width: 12),
-            // Text
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -910,7 +909,7 @@ class _HoverableStatCardState extends State<_HoverableStatCard> {
                   Text(
                     widget.title,
                     style: TextStyle(
-                      color: AppColors.textSecondary.withValues(alpha: 0.7),
+                      color: context.picposSecondary.withValues(alpha: 0.7),
                       fontSize: 11,
                       fontWeight: FontWeight.w500,
                     ),
@@ -938,9 +937,9 @@ class _HoverableStatCardState extends State<_HoverableStatCard> {
                       const SizedBox(width: 3),
                       Text(
                         widget.suffix,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: AppColors.textMuted,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: context.picposMuted,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -963,7 +962,7 @@ class _HoverableStatCardState extends State<_HoverableStatCard> {
                   const SizedBox(width: 2),
                   Text(
                     tr(widget.trendLabel),
-                    style: const TextStyle(fontSize: 9, color: AppColors.success, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 11, color: AppColors.success, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -1050,7 +1049,7 @@ class _QuickActionCardState extends State<_QuickActionCard> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: _isHovered ? FontWeight.w700 : FontWeight.w600,
-                      color: _isHovered ? widget.color : AppColors.textPrimary,
+                      color: _isHovered ? widget.color : context.picposText,
                       letterSpacing: -0.2,
                     ),
                     maxLines: 1,

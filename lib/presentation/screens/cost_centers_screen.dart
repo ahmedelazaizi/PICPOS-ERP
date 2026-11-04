@@ -7,6 +7,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
+import '../picpos_shell/picpos_surface.dart';
 import '../../data/providers/repository_providers.dart';
 import '../../data/database/database.dart';
 import '../../domain/repositories/accounting_repository.dart';
@@ -39,7 +40,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
     return Directionality(
       textDirection: ui.TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.picposField,
         body: Column(
           children: [
             _buildHeader(context),
@@ -180,7 +181,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border: Border.all(color: context.picposHairline.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,7 +196,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                 const Spacer(),
                 Text(
                   tr('{p0} مركز', {'p0': centers.length}),
-                  style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
+                  style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
                 ),
               ],
             ),
@@ -207,16 +208,16 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(PhosphorIconsBold.treeStructure, size: 48, color: AppColors.textMuted),
+                        Icon(PhosphorIconsBold.treeStructure, size: 48, color: context.picposMuted),
                         const SizedBox(height: 8),
                         Text(
                           tr('لا توجد مراكز تكلفة'),
-                          style: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 14),
+                          style: GoogleFonts.cairo(color: context.picposMuted, fontSize: 14),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           tr('أضف فرع أو مركز تكلفة للبدء'),
-                          style: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 12),
+                          style: GoogleFonts.cairo(color: context.picposMuted, fontSize: 12),
                         ),
                       ],
                     ),
@@ -265,7 +266,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                   size: 16,
                   color: isSelected
                       ? AppColors.primary
-                      : (!node.isActive ? AppColors.textMuted : (isRoot ? AppColors.warning : AppColors.textSecondary)),
+                      : (!node.isActive ? context.picposMuted : (isRoot ? AppColors.warning : context.picposSecondary)),
                 ),
                 const SizedBox(width: 8),
                 // Code badge
@@ -278,7 +279,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                   child: Text(
                     node.code,
                     style: GoogleFonts.jetBrainsMono(
-                      fontSize: 9,
+                      fontSize: 11,
                       fontWeight: FontWeight.w600,
                       color: AppColors.primary,
                     ),
@@ -293,8 +294,8 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                       fontSize: 12,
                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                       color: !node.isActive
-                          ? AppColors.textMuted
-                          : (isSelected ? AppColors.primary : AppColors.textPrimary),
+                          ? context.picposMuted
+                          : (isSelected ? AppColors.primary : context.picposText),
                       decoration: !node.isActive ? TextDecoration.lineThrough : null,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -307,19 +308,19 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                       color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(3),
                     ),
-                    child: Text(tr('معطل'), style: GoogleFonts.cairo(fontSize: 8, color: AppColors.error)),
+                    child: Text(tr('معطل'), style: GoogleFonts.cairo(fontSize: 11, color: AppColors.error)),
                   ),
                 if (hasChildren)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                     margin: const EdgeInsetsDirectional.only(start: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.textMuted.withValues(alpha: 0.1),
+                      color: context.picposMuted.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(3),
                     ),
                     child: Text(
                       '${children.length}',
-                      style: GoogleFonts.jetBrainsMono(fontSize: 8, color: AppColors.textMuted),
+                      style: GoogleFonts.jetBrainsMono(fontSize: 11, color: context.picposMuted),
                     ),
                   ),
               ],
@@ -339,17 +340,17 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+          border: Border.all(color: context.picposHairline.withValues(alpha: 0.5)),
         ),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(PhosphorIconsBold.cursorClick, size: 48, color: AppColors.textMuted.withValues(alpha: 0.5)),
+              Icon(PhosphorIconsBold.cursorClick, size: 48, color: context.picposMuted.withValues(alpha: 0.5)),
               const SizedBox(height: 12),
               Text(
                 tr('اختر مركز تكلفة لعرض التفاصيل'),
-                style: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 14),
+                style: GoogleFonts.cairo(color: context.picposMuted, fontSize: 14),
               ),
             ],
           ),
@@ -372,7 +373,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        border: Border.all(color: context.picposHairline.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -400,13 +401,13 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                         children: [
                           Text(
                             tr('الرمز: {p0}', {'p0': center.code}),
-                            style: GoogleFonts.jetBrainsMono(fontSize: 11, color: AppColors.textMuted),
+                            style: GoogleFonts.jetBrainsMono(fontSize: 11, color: context.picposMuted),
                           ),
                           if (parent != null) ...[
                             const SizedBox(width: 12),
                             Text(
                               tr('تابع لـ: {p0}', {'p0': parent.name}),
-                              style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
+                              style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
                             ),
                           ],
                         ],
@@ -593,7 +594,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                   return Center(
                     child: Text(
                       tr('لا توجد حركات لهذا المركز'),
-                      style: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 13),
+                      style: GoogleFonts.cairo(color: context.picposMuted, fontSize: 13),
                     ),
                   );
                 }
@@ -621,20 +622,20 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                       decoration: BoxDecoration(
                         color: isOpening
                             ? AppColors.primary.withValues(alpha: 0.06)
-                            : (i.isEven ? AppColors.surface : Theme.of(context).cardColor),
+                            : (i.isEven ? context.picposField : Theme.of(context).cardColor),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
                         children: [
                           SizedBox(
                             width: 80,
-                            child: Text(date, style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppColors.textMuted)),
+                            child: Text(date, style: GoogleFonts.jetBrainsMono(fontSize: 11, color: context.picposMuted)),
                           ),
                           SizedBox(
                             width: 80,
                             child: Text(
                               e['entry_number']?.toString() ?? '',
-                              style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppColors.primary),
+                              style: GoogleFonts.jetBrainsMono(fontSize: 11, color: AppColors.primary),
                             ),
                           ),
                           Expanded(
@@ -648,7 +649,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                             width: 70,
                             child: Text(
                               e['account_name']?.toString() ?? '',
-                              style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted),
+                              style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -657,8 +658,8 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                             child: Text(
                               debit > 0 ? debit.toStringAsFixed(AppConstants.decimalPlaces) : '-',
                               style: GoogleFonts.jetBrainsMono(
-                                fontSize: 10,
-                                color: debit > 0 ? AppColors.error : AppColors.textMuted,
+                                fontSize: 11,
+                                color: debit > 0 ? AppColors.error : context.picposMuted,
                                 fontWeight: debit > 0 ? FontWeight.w600 : FontWeight.normal,
                               ),
                               textAlign: TextAlign.center,
@@ -669,8 +670,8 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                             child: Text(
                               credit > 0 ? credit.toStringAsFixed(AppConstants.decimalPlaces) : '-',
                               style: GoogleFonts.jetBrainsMono(
-                                fontSize: 10,
-                                color: credit > 0 ? AppColors.success : AppColors.textMuted,
+                                fontSize: 11,
+                                color: credit > 0 ? AppColors.success : context.picposMuted,
                                 fontWeight: credit > 0 ? FontWeight.w600 : FontWeight.normal,
                               ),
                               textAlign: TextAlign.center,
@@ -684,7 +685,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
                               ((e['balance'] as num?)?.toDouble() ?? 0)
                                   .toStringAsFixed(AppConstants.decimalPlaces),
                               style: GoogleFonts.jetBrainsMono(
-                                fontSize: 10,
+                                fontSize: 11,
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -715,7 +716,7 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
         ),
         child: Column(
           children: [
-            Text(title, style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted)),
+            Text(title, style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
             const SizedBox(height: 2),
             Text(
               value,
@@ -727,9 +728,9 @@ class _CostCentersScreenState extends ConsumerState<CostCentersScreen> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ═══════
   // DIALOGS
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ═══════
 
   void _showAddDialog(BuildContext context, {int? parentId}) async {
     await showDialog(

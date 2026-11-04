@@ -174,7 +174,7 @@ extension _ReportsPicposSearch on _ReportsPicposScreenState {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: context.picposMuted,
                   ),
@@ -345,7 +345,7 @@ extension _ReportsPicposSearch on _ReportsPicposScreenState {
                           child: Text(
                             tr('اختصار'),
                             style: const TextStyle(
-                              fontSize: 10.5,
+                              fontSize: 11,
                               fontWeight: FontWeight.w700,
                               color: AppColors.warningDark,
                             ),

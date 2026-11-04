@@ -1,3 +1,4 @@
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -128,10 +129,10 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(PhosphorIconsBold.clipboardText, size: 64,
-                              color: AppColors.textMuted.withValues(alpha: 0.3)),
+                              color: context.picposMuted.withValues(alpha: 0.3)),
                           const SizedBox(height: 16),
                           Text(tr('لا توجد طلبات بيع'),
-                              style: GoogleFonts.cairo(color: AppColors.textMuted)),
+                              style: GoogleFonts.cairo(color: context.picposMuted)),
                         ],
                       ),
                     );
@@ -161,7 +162,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
       label: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: selected ? Colors.white : AppColors.textMuted),
+          Icon(icon, size: 14, color: selected ? Colors.white : context.picposMuted),
           const SizedBox(width: 4),
           Text(label),
         ],
@@ -171,7 +172,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
       checkmarkColor: Colors.white,
       labelStyle: GoogleFonts.cairo(
         fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-        color: selected ? Colors.white : AppColors.textPrimary,
+        color: selected ? Colors.white : context.picposText,
         fontSize: 12,
       ),
     );
@@ -202,7 +203,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(statusInfo.$1,
-                  style: GoogleFonts.cairo(fontSize: 9, color: statusInfo.$2, fontWeight: FontWeight.w700)),
+                  style: GoogleFonts.cairo(fontSize: 11, color: statusInfo.$2, fontWeight: FontWeight.w700)),
             ),
           ],
         ),
@@ -214,7 +215,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
             final customerName = snap.data?.name ?? tr('بدون عميل');
             return Text(
               '$customerName  •  ${order.orderDate.toString().substring(0, 10)}  •  ${order.total.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
-              style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
+              style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
             );
           },
         ),
@@ -250,7 +251,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
   (String, Color, IconData) _getStatusInfo(String status) {
     switch (status) {
       case 'draft':
-        return (tr('مسودة'), AppColors.textMuted, PhosphorIconsBold.pencilSimple);
+        return (tr('مسودة'), context.picposMuted, PhosphorIconsBold.pencilSimple);
       case 'sent':
         return (tr('مرسل'), AppColors.info, PhosphorIconsBold.paperPlaneRight);
       case 'confirmed':
@@ -260,7 +261,7 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
       case 'cancelled':
         return (tr('ملغي'), AppColors.error, PhosphorIconsBold.xCircle);
       default:
-        return ('غير معروف', AppColors.textMuted, PhosphorIconsBold.question);
+        return ('غير معروف', context.picposMuted, PhosphorIconsBold.question);
     }
   }
 
@@ -272,14 +273,9 @@ class _SalesOrdersScreenState extends ConsumerState<SalesOrdersScreen> {
         case 'confirm':
           await salesRepo.updateSalesOrderStatus(order.id, 'confirmed');
         case 'deliver':
-          // "تسليم" is a three-in-one action: flip status → delivered,
-          // materialise the sales invoice, and post its treasury receipt.
-          // Previously we only flipped the status, so the quotation/order
-          // stayed with no invoice and the treasury never saw the cash —
-          // the root cause the user reported as "لا يتم تحويلها ولا يظهر
-          // تحصيلها فى الخزينة". convertSOToInvoice() does all three
-          // inside one DAO transaction (status, invoice, receipt) and
-          // stamps convertedToInvoiceId so the UI flips to "محول".
+          // "تسليم": flips status → delivered, creates the sales invoice and posts its
+          // treasury receipt in one DAO transaction (convertSOToInvoice), stamping
+          // convertedToInvoiceId so the UI shows "محول".
           final invoiceId = await salesRepo.convertSOToInvoice(order.id);
           if (mounted) {
             AppToast.show(

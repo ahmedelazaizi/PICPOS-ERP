@@ -3,6 +3,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/database/database.dart';
 import '../../../../../../core/constants/app_constants.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Product list tile widget
 ///
@@ -78,9 +79,9 @@ class ProductListTile extends StatelessWidget {
                       children: [
                         Text(
                           product.code,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.textMuted,
+                            color: context.picposMuted,
                           ),
                         ),
                         if (product.isSoldByWeight) ...[
@@ -138,9 +139,9 @@ class ProductListTile extends StatelessWidget {
                   ),
                   Text(
                     '?????: ${product.costPrice.toStringAsFixed(AppConstants.decimalPlaces)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: AppColors.textMuted,
+                      color: context.picposMuted,
                     ),
                   ),
                 ],

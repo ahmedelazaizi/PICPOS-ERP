@@ -50,10 +50,10 @@ class _BomTab extends ConsumerWidget {
                 children: [
                   Text(
                     tr('{p0} قائمة مواد', {'p0': boms.length}),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
+                      color: context.picposSecondary,
                     ),
                   ),
                   const Spacer(),
@@ -231,7 +231,7 @@ class _BomCard extends ConsumerWidget {
                 return  Padding(
                   padding: const EdgeInsets.all(16),
                   child: Text(tr('لا توجد مكونات'),
-                      style: const TextStyle(color: AppColors.textMuted)),
+                      style: TextStyle(color: context.picposMuted)),
                 );
               }
               return _buildComponentsTable(context, ref, components);
@@ -304,10 +304,10 @@ class _TableHeader extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         child: Text(text,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 12,
-                color: AppColors.textSecondary)),
+                color: context.picposSecondary)),
       );
 }
 
@@ -749,7 +749,7 @@ class _BomDialogState extends ConsumerState<_BomDialog> {
                                                 return ListTile(
                                                   dense: true,
                                                   title: Text(p.name, overflow: TextOverflow.ellipsis),
-                                                  subtitle: Text(p.code, style: const TextStyle(fontSize: 10)),
+                                                  subtitle: Text(p.code, style: const TextStyle(fontSize: 11)),
                                                   onTap: () => onSelected(p),
                                                 );
                                               },

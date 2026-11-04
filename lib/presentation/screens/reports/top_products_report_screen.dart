@@ -15,6 +15,7 @@ import '../../widgets/branch_warehouse_filter.dart';
 import '../../widgets/report_components.dart' show DateRangeFilter;
 import '../../widgets/report_filter_bar.dart';
 import 'report_export_guard.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class TopProductsReportScreen extends ConsumerStatefulWidget {
   const TopProductsReportScreen({super.key});
@@ -330,9 +331,9 @@ class _TopProductsReportScreenState
                                   ),
                                    Text(
                                     tr('إجمالي القيمة'),
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      color: AppColors.textMuted,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: context.picposMuted,
                                     ),
                                   ),
                                 ],

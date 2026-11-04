@@ -266,7 +266,7 @@ class _CreateJournalTemplateDialogState extends ConsumerState<CreateJournalTempl
                                 color: AppColors.primary.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: Text(tr('بند {p0}', {'p0': i + 1}), style: GoogleFonts.cairo(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                              child: Text(tr('بند {p0}', {'p0': i + 1}), style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
                             ),
                             const Spacer(),
                             if (_lines.length > 2)
@@ -458,8 +458,8 @@ class _TemplateAccountAutocompleteState extends State<_TemplateAccountAutocomple
     if (_allAccounts == null) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        decoration: BoxDecoration(border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(6)),
-        child: Text(tr('تحميل الحسابات...'), style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+        decoration: BoxDecoration(border: Border.all(color: context.picposHairline), borderRadius: BorderRadius.circular(6)),
+        child: Text(tr('تحميل الحسابات...'), style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
       );
     }
 
@@ -493,7 +493,7 @@ class _TemplateAccountAutocompleteState extends State<_TemplateAccountAutocomple
               focusNode: focusNode,
               decoration: InputDecoration(
                 hintText: tr('اكتب اسم أو رمز الحساب...'),
-                hintStyle: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
+                hintStyle: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
                 isDense: true,
                 prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 14, color: AppColors.primary),
                 prefixIconConstraints: const BoxConstraints(minWidth: 32),
@@ -542,17 +542,17 @@ class _TemplateAccountAutocompleteState extends State<_TemplateAccountAutocomple
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                         decoration: BoxDecoration(
                           color: isHighlighted ? AppColors.primary.withValues(alpha: 0.12) : isSelected ? AppColors.primary.withValues(alpha: 0.06) : null,
-                          border: Border(bottom: BorderSide(color: AppColors.border.withValues(alpha: 0.3))),
+                          border: Border(bottom: BorderSide(color: context.picposHairline.withValues(alpha: 0.3))),
                         ),
                         child: Row(
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                               decoration: BoxDecoration(color: isHighlighted ? AppColors.primary.withValues(alpha: 0.18) : AppColors.primary.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(3)),
-                              child: Text(a.code, style: GoogleFonts.jetBrainsMono(fontSize: 9, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                              child: Text(a.code, style: GoogleFonts.jetBrainsMono(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary)),
                             ),
                             const SizedBox(width: 8),
-                            Expanded(child: Text(trData(a.name), style: GoogleFonts.cairo(fontSize: 11, fontWeight: (isSelected || isHighlighted) ? FontWeight.w700 : FontWeight.w500, color: (isSelected || isHighlighted) ? AppColors.primary : AppColors.textPrimary), overflow: TextOverflow.ellipsis)),
+                            Expanded(child: Text(trData(a.name), style: GoogleFonts.cairo(fontSize: 11, fontWeight: (isSelected || isHighlighted) ? FontWeight.w700 : FontWeight.w500, color: (isSelected || isHighlighted) ? AppColors.primary : context.picposText), overflow: TextOverflow.ellipsis)),
                             if (isHighlighted) const Icon(PhosphorIconsBold.caretLeft, size: 12, color: AppColors.primary),
                           ],
                         ),
@@ -608,9 +608,9 @@ class _TemplateCostCenterPickerState extends State<_TemplateCostCenterPicker> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       ),
-      style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textPrimary),
+      style: GoogleFonts.cairo(fontSize: 11, color: context.picposText),
       items: [
-        DropdownMenuItem<int?>(value: null, child: Text(tr('بدون'), style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted))),
+        DropdownMenuItem<int?>(value: null, child: Text(tr('بدون'), style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted))),
         ..._centers!.map((c) => DropdownMenuItem<int?>(value: c.id, child: Text('${c.code} - ${c.name}', style: GoogleFonts.cairo(fontSize: 11)))),
       ],
       onChanged: widget.onChanged,

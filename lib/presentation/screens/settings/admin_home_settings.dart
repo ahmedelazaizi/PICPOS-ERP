@@ -38,7 +38,7 @@ class _AdminPasswordSettingState extends ConsumerState<_AdminPasswordSetting> {
               children: [
                  Text(
                   tr('تُستخدم هذه الكلمة لتأكيد حذف الفواتير'),
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                  style: TextStyle(color: context.picposMuted, fontSize: 12),
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -364,7 +364,7 @@ class _ForceSyncPanelState extends ConsumerState<_ForceSyncPanel> {
             const SizedBox(height: 8),
              Text(
               tr('أداة النجدة للمدير المالي ومدير النظام. تقوم هذه العملية بالاتصال المباشر بالسيرفر لجلب جميع التحديثات وإجبار المزامنة لحل أي تعارض في البيانات أو الأرصدة.'),
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+              style: TextStyle(color: context.picposMuted, fontSize: 13),
             ),
             const SizedBox(height: 16),
             SizedBox(

@@ -1,3 +1,4 @@
+import '../picpos_shell/picpos_surface.dart';
 import 'package:picpos_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:picpos_erp/core/constants/app_constants.dart';
@@ -48,7 +49,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.picposField,
         body: Column(
           children: [
             _buildHeader(context),
@@ -102,7 +103,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
 
   Widget _buildTabBar() {
     return Container(
-      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.border))),
+      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: context.picposHairline))),
       child: Row(
         children: [
           _tab(tr('الموازنات'), PhosphorIconsBold.listBullets, 0),
@@ -124,9 +125,9 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
         ),
         child: Row(
           children: [
-            Icon(icon, size: 16, color: isActive ? AppColors.primary : AppColors.textMuted),
+            Icon(icon, size: 16, color: isActive ? AppColors.primary : context.picposMuted),
             const SizedBox(width: 8),
-            Text(label, style: GoogleFonts.cairo(fontSize: 13, fontWeight: isActive ? FontWeight.w700 : FontWeight.w500, color: isActive ? AppColors.primary : AppColors.textMuted)),
+            Text(label, style: GoogleFonts.cairo(fontSize: 13, fontWeight: isActive ? FontWeight.w700 : FontWeight.w500, color: isActive ? AppColors.primary : context.picposMuted)),
           ],
         ),
       ),
@@ -147,11 +148,11 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(PhosphorIconsBold.calendarBlank, size: 64, color: AppColors.textMuted),
+            Icon(PhosphorIconsBold.calendarBlank, size: 64, color: context.picposMuted),
             const SizedBox(height: 16),
-            Text(tr('لا توجد سنوات مالية مسجلة'), style: GoogleFonts.cairo(fontSize: 16, color: AppColors.textMuted)),
+            Text(tr('لا توجد سنوات مالية مسجلة'), style: GoogleFonts.cairo(fontSize: 16, color: context.picposMuted)),
             const SizedBox(height: 8),
-            Text(tr('يجب إنشاء سنة مالية أولاً من إعدادات الفترات المالية'), style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted)),
+            Text(tr('يجب إنشاء سنة مالية أولاً من إعدادات الفترات المالية'), style: GoogleFonts.cairo(fontSize: 12, color: context.picposMuted)),
           ],
         ),
       );
@@ -165,8 +166,8 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            border: Border(bottom: BorderSide(color: AppColors.border.withValues(alpha: 0.5))),
+            color: context.picposField,
+            border: Border(bottom: BorderSide(color: context.picposHairline.withValues(alpha: 0.5))),
           ),
           child: Row(
             children: [
@@ -201,11 +202,11 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(PhosphorIconsBold.chartBar, size: 64, color: AppColors.textMuted),
+                      Icon(PhosphorIconsBold.chartBar, size: 64, color: context.picposMuted),
                       const SizedBox(height: 16),
-                      Text(tr('لا توجد موازنات في هذه السنة'), style: GoogleFonts.cairo(fontSize: 16, color: AppColors.textMuted)),
+                      Text(tr('لا توجد موازنات في هذه السنة'), style: GoogleFonts.cairo(fontSize: 16, color: context.picposMuted)),
                       const SizedBox(height: 8),
-                      Text(tr('أنشئ موازنة للنقر عليها وتعديل تفاصيلها الشهرية'), style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted)),
+                      Text(tr('أنشئ موازنة للنقر عليها وتعديل تفاصيلها الشهرية'), style: GoogleFonts.cairo(fontSize: 12, color: context.picposMuted)),
                     ],
                   ),
                 );
@@ -218,7 +219,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                   final budget = budgets[index];
                   return Card(
                     margin: const EdgeInsets.only(bottom: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: const BorderSide(color: AppColors.border)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide(color: context.picposHairline)),
                     elevation: 0,
                     child: InkWell(
                       onTap: () => _showBudgetDetailsDialog(context, budget),
@@ -242,7 +243,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                     future: accountingRepo.getAccountById(budget.accountId),
                                     builder: (context, accSnap) {
                                       final acc = accSnap.data;
-                                      return Text(acc != null ? '${acc.code} - ${trData(acc.name)}' : tr('حساب #{p0}', {'p0': budget.accountId}), style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted));
+                                      return Text(acc != null ? '${acc.code} - ${trData(acc.name)}' : tr('حساب #{p0}', {'p0': budget.accountId}), style: GoogleFonts.cairo(fontSize: 12, color: context.picposMuted));
                                     }
                                   ),
                                 ],
@@ -251,12 +252,12 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                Text(tr('المبلغ السنوي'), style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted)),
+                                Text(tr('المبلغ السنوي'), style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
                                 Text(budget.annualAmount.toStringAsFixed(AppConstants.decimalPlaces), style: GoogleFonts.jetBrainsMono(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
                               ],
                             ),
                             const SizedBox(width: 16),
-                            const Icon(PhosphorIconsBold.caretLeft, size: 16, color: AppColors.textMuted),
+                            Icon(PhosphorIconsBold.caretLeft, size: 16, color: context.picposMuted),
                           ],
                         ),
                       ),
@@ -309,9 +310,9 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(PhosphorIconsBold.chartLineUp, size: 48, color: AppColors.textMuted),
+                Icon(PhosphorIconsBold.chartLineUp, size: 48, color: context.picposMuted),
                 const SizedBox(height: 16),
-                Text(tr('لا توجد موازنات متاحة لهذه السنة المالية'), style: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 16)),
+                Text(tr('لا توجد موازنات متاحة لهذه السنة المالية'), style: GoogleFonts.cairo(color: context.picposMuted, fontSize: 16)),
               ],
             ),
           );
@@ -353,7 +354,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            Text(tr('تحليل الحسابات التفصيلي'), style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textMuted)),
+            Text(tr('تحليل الحسابات التفصيلي'), style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.bold, color: context.picposMuted)),
             const SizedBox(height: 8),
             // Account Details
             ...reportData.map((row) {
@@ -379,7 +380,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                                 Text(row['accountName'] == null
                                      ? tr('غير معروف')
                                      : trData(row['accountName'].toString()), style: GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 14)),
-                                Text(row['accountCode']?.toString() ?? '', style: GoogleFonts.jetBrainsMono(color: AppColors.textMuted, fontSize: 12)),
+                                Text(row['accountCode']?.toString() ?? '', style: GoogleFonts.jetBrainsMono(color: context.picposMuted, fontSize: 12)),
                               ],
                             ),
                           ),
@@ -403,7 +404,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                       const SizedBox(height: 12),
                       LinearProgressIndicator(
                         value: utilization.clamp(0.0, 1.0),
-                        backgroundColor: AppColors.border,
+                        backgroundColor: context.picposHairline,
                         color: utilization > 1.0 ? AppColors.error : AppColors.primary,
                         minHeight: 8,
                         borderRadius: BorderRadius.circular(4),
@@ -412,8 +413,8 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _statItem(tr('مخطط'), planned, AppColors.textMuted),
-                          _statItem(tr('فعلي'), actual, AppColors.textPrimary),
+                          _statItem(tr('مخطط'), planned, context.picposMuted),
+                          _statItem(tr('فعلي'), actual, context.picposText),
                           _statItem(tr('انحراف'), variance, variance > 0 ? AppColors.error : AppColors.success),
                         ],
                       ),
@@ -432,7 +433,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted)),
+        Text(title, style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
         Text(value.toStringAsFixed(AppConstants.decimalPlaces), style: GoogleFonts.jetBrainsMono(fontSize: 12, fontWeight: FontWeight.bold, color: valueColor)),
       ],
     );
@@ -477,15 +478,15 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
                     ),
                     const SizedBox(height: 16),
                     if (data.isEmpty)
-                      Text(tr('لا تتوفر بيانات تاريخية كافية للتوقعات'), style: GoogleFonts.cairo(color: AppColors.textMuted))
+                      Text(tr('لا تتوفر بيانات تاريخية كافية للتوقعات'), style: GoogleFonts.cairo(color: context.picposMuted))
                     else
                       ...data.map((m) => Container(
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: context.picposField,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.border),
+                          border: Border.all(color: context.picposHairline),
                         ),
                         child: Row(
                           children: [
@@ -516,7 +517,7 @@ class _BudgetScreenState extends ConsumerState<BudgetScreen> {
       decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
       child: Column(
         children: [
-          Text(label, style: GoogleFonts.cairo(fontSize: 9, color: AppColors.textMuted)),
+          Text(label, style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
           Text(value.toStringAsFixed(0), style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
         ],
       ),

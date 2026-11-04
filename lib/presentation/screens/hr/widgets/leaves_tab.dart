@@ -1,3 +1,4 @@
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -75,7 +76,7 @@ class LeavesTab extends ConsumerWidget {
             child: Center(
               child: Text(
                 tr('اختر موظفاً لعرض رصيد إجازاته'),
-                style: const TextStyle(color: AppColors.textMuted),
+                style: TextStyle(color: context.picposMuted),
               ),
             ),
           ),
@@ -278,7 +279,7 @@ class _PendingLeavesSection extends StatelessWidget {
                 return  Center(
                   child: Text(
                     tr('لا توجد طلبات معلقة'),
-                    style: const TextStyle(color: AppColors.textMuted),
+                    style: TextStyle(color: context.picposMuted),
                   ),
                 );
               }
@@ -344,9 +345,9 @@ class _PendingLeaveCard extends ConsumerWidget {
               ),
               Text(
                 '${DateFormat('MM/dd').format(leave.startDate)} → ${DateFormat('MM/dd').format(leave.endDate)}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
-                  color: AppColors.textMuted,
+                  color: context.picposMuted,
                 ),
               ),
               const Spacer(),
@@ -446,9 +447,9 @@ class _EmployeeLeaveDetails extends ConsumerWidget {
                                   ),
                                   Text(
                                     tr('من {p0} يوم', {'p0': b.totalDays}),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 11,
-                                      color: AppColors.textMuted,
+                                      color: context.picposMuted,
                                     ),
                                   ),
                                 ],

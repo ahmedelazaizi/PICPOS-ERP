@@ -1,7 +1,7 @@
 import 'package:picpos_erp/core/i18n/tr.dart';
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════
 // PARTY GROUPS TAB — Phase 2
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════
 //
 // Management UI for party groups, mounted as the third tab of
 // `PartiesScreen`. Displays groups with their member counts, exposes
@@ -11,13 +11,14 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 // close) are deliberately stubbed as "Coming soon" popups — the user
 // asked for the grouping infrastructure only; the accounting behaviour
 // will be wired up in a later phase once the domain rules are pinned.
-// ═══════════════════════════════════════════════════════════════════════════
+// ═══════
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../picpos_shell/picpos_surface.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/database/database.dart';
 import '../../../web/web_write_guard.dart';
@@ -204,9 +205,9 @@ class PartyGroupsTab extends ConsumerWidget {
                     const SizedBox(height: 4),
                      Text(
                       tr('هذه الحقول مرجعية فقط — تُطبَّق يدوياً عبر العمليات المجمعة ولا تُفرض تلقائياً على كل فاتورة.'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.textMuted,
+                        color: context.picposMuted,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -541,9 +542,9 @@ class PartyGroupsTab extends ConsumerWidget {
   }
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// ═══════
 // Empty state
-// ═════════════════════════════════════════════════════════════════════
+// ═══════
 
 class _EmptyState extends StatelessWidget {
   final VoidCallback onCreate;
@@ -555,10 +556,10 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             PhosphorIconsBold.usersThree,
             size: 64,
-            color: AppColors.textMuted,
+            color: context.picposMuted,
           ),
           const SizedBox(height: 12),
            Text(
@@ -574,9 +575,9 @@ class _EmptyState extends StatelessWidget {
             child: Text(
               tr('المجموعات تُمكّنك من تقسيم العملاء والموردين لفئات (جملة، VIP، تجزئة، ...) ثم تطبيق خصومات أو تسويات مالية مجمّعة عليهم دفعة واحدة.'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: AppColors.textMuted,
+                color: context.picposMuted,
               ),
             ),
           ),
@@ -592,9 +593,9 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// ═══════
 // Group card
-// ═════════════════════════════════════════════════════════════════════
+// ═══════
 
 class _GroupCard extends StatelessWidget {
   final PartyGroup group;
@@ -633,7 +634,7 @@ class _GroupCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         side: BorderSide(
           color: group.isActive
-              ? AppColors.border
+              ? context.picposHairline
               : AppColors.warning.withValues(alpha: 0.4),
         ),
       ),
@@ -690,7 +691,7 @@ class _GroupCard extends StatelessWidget {
                                 child:  Text(
                                   tr('معطّلة'),
                                   style: const TextStyle(
-                                    fontSize: 10,
+                                    fontSize: 11,
                                     color: AppColors.warning,
                                   ),
                                 ),
@@ -716,17 +717,17 @@ class _GroupCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            const Icon(
+                            Icon(
                               PhosphorIconsBold.user,
                               size: 12,
-                              color: AppColors.textMuted,
+                              color: context.picposMuted,
                             ),
                             const SizedBox(width: 2),
                             Text(
                               tr('{memberCount} عضو', {'memberCount': memberCount}),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: AppColors.textMuted,
+                                color: context.picposMuted,
                               ),
                             ),
                           ],
@@ -805,9 +806,9 @@ class _GroupCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   group.description!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textMuted,
+                    color: context.picposMuted,
                   ),
                 ),
               ],
@@ -855,20 +856,20 @@ class _MiniChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 11, color: AppColors.textMuted),
+          Icon(icon, size: 11, color: context.picposMuted),
           const SizedBox(width: 3),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: AppColors.textMuted,
+              color: context.picposMuted,
             ),
           ),
         ],

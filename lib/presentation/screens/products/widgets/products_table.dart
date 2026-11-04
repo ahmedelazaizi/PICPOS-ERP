@@ -2,6 +2,7 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 import 'dart:async' show unawaited;
 
 import 'package:flutter/material.dart';
+import '../../../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/diagnostics/perf_trace.dart';
@@ -21,17 +22,9 @@ import '../../../../data/providers/manufacturing_providers.dart';
 import '../../../../core/permissions/permission_codes.dart';
 import '../../../widgets/permission_guard.dart';
 
-// ─── Column widths (Spec 032 v2 — flex distribution) ─────────────────────
-//
-// Strategy: when the viewport is wider than `_kFlexModeThreshold`, the
-// table fits exactly inside the viewport (NO horizontal scroll) and the
-// four flex columns (barcode/name/category/warehouse) divide the surplus
-// proportionally to their flex factors. The vertical scrollbar then sits
-// flush at the screen's right edge — operators don't have to scroll
-// horizontally first to grab it. When the viewport is narrower than the
-// threshold (rare on POS hardware, but supported for completeness), we
-// fall back to a horizontal SingleChildScrollView with min column widths
-// so cells don't visually break.
+// Column widths (Spec 032 v2): above `_kFlexModeThreshold` the four flex
+// columns split the surplus (no horizontal scroll); below it, fall back to a
+// horizontal SingleChildScrollView with min widths.
 const double _kCheckboxColWidth = 40;
 const double _kCodeColWidth = 70;
 const double _kTypeColWidth = 80;
@@ -173,14 +166,17 @@ Widget buildProductStockCell({
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Align(
           alignment: AlignmentDirectional.centerEnd,
-          child: Text(
-            currentStock.toStringAsFixed(0),
-            style: TextStyle(
-              color: currentStock <= minStock
-                  ? AppColors.error
-                  : AppColors.textPrimary,
-              fontWeight:
-                  currentStock <= minStock ? FontWeight.bold : FontWeight.normal,
+          child: Builder(
+            builder: (context) => Text(
+              currentStock.toStringAsFixed(0),
+              style: TextStyle(
+                color: currentStock <= minStock
+                    ? AppColors.error
+                    : context.picposText,
+                fontWeight: currentStock <= minStock
+                    ? FontWeight.bold
+                    : FontWeight.normal,
+              ),
             ),
           ),
         ),
@@ -204,26 +200,31 @@ Widget buildProductLockButton({
     allowManagerOverride: true,
     actionName: isLocked ? tr('إلغاء استثناء الصنف') : tr('استثناء الصنف من قفل التصنيف'),
     onGranted: onToggle,
-    child: IconButton(
-      icon: Icon(
-        isLocked ? PhosphorIconsBold.lockOpen : PhosphorIconsBold.lock,
+    child: Builder(
+      builder: (context) => IconButton(
+        icon: Icon(
+          isLocked ? PhosphorIconsBold.lockOpen : PhosphorIconsBold.lock,
+        ),
+        iconSize: 18,
+        color: isLocked ? AppColors.success : context.picposSecondary,
+        tooltip:
+            isLocked ? tr('إلغاء الاستثناء') : tr('استثناء من قفل التصنيف'),
+        padding: const EdgeInsets.all(4),
+        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+        onPressed: onToggle,
       ),
-      iconSize: 18,
-      color: isLocked ? AppColors.success : AppColors.textSecondary,
-      tooltip: isLocked ? tr('إلغاء الاستثناء') : tr('استثناء من قفل التصنيف'),
-      padding: const EdgeInsets.all(4),
-      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-      onPressed: onToggle,
     ),
   );
 }
 
 /// بديل الخلية المحجوبة — نفس العرض بالظبط عشان الأعمدة تفضل تحت عناوينها.
-Widget _maskedCell(double width, {bool alignEnd = false}) => _gridTextCell(
-      '••••',
-      width,
-      alignEnd: alignEnd,
-      color: AppColors.textMuted,
+Widget _maskedCell(double width, {bool alignEnd = false}) => Builder(
+      builder: (context) => _gridTextCell(
+        '••••',
+        width,
+        alignEnd: alignEnd,
+        color: context.picposMuted,
+      ),
     );
 
 Widget _gridTextCell(
@@ -345,16 +346,16 @@ class _ProductsTableState extends ConsumerState<ProductsTable> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(PhosphorIconsBold.package,
-                  size: 48, color: AppColors.textMuted.withValues(alpha: 0.5)),
+                  size: 48, color: context.picposMuted.withValues(alpha: 0.5)),
               const SizedBox(height: 12),
                Text(
                 tr('لا توجد أصناف بعد'),
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 16),
+                style: TextStyle(color: context.picposMuted, fontSize: 16),
               ),
               const SizedBox(height: 8),
                Text(
                 tr('اضغط "إضافة صنف" لإنشاء أول صنف'),
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                style: TextStyle(color: context.picposMuted, fontSize: 13),
               ),
             ],
           ),
@@ -548,8 +549,8 @@ class _ProductsTableHeader extends StatelessWidget {
       height: _kHeaderHeight,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        border: const Border(
-          bottom: BorderSide(color: AppColors.border, width: 1),
+        border: Border(
+          bottom: BorderSide(color: context.picposHairline, width: 1),
         ),
       ),
       child: Row(
@@ -675,9 +676,9 @@ class _ProductRow extends ConsumerWidget {
             .toggleSelection(product.id),
         child: Container(
           height: _kRowHeight,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(
-              bottom: BorderSide(color: AppColors.border, width: 0.5),
+              bottom: BorderSide(color: context.picposHairline, width: 0.5),
             ),
           ),
           child: Row(
@@ -873,7 +874,7 @@ class _ProductTypeBadge extends StatelessWidget {
       'raw_material' => AppColors.warning,
       'finished_goods' => AppColors.success,
       'service' => AppColors.info,
-      _ => AppColors.textSecondary,
+      _ => context.picposSecondary,
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -910,7 +911,7 @@ class _AvgCostCell extends StatelessWidget {
       );
     }
     if (value == null) {
-      return const Text('-', style: TextStyle(color: AppColors.textMuted));
+      return Text('-', style: TextStyle(color: context.picposMuted));
     }
     final diff = product.costPrice > 0
         ? ((value! - product.costPrice) / product.costPrice * 100)
@@ -921,7 +922,7 @@ class _AvgCostCell extends StatelessWidget {
         '${value!.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
         style: TextStyle(
           fontSize: 12,
-          color: diff.abs() > 10 ? AppColors.warning : AppColors.textPrimary,
+          color: diff.abs() > 10 ? AppColors.warning : context.picposText,
           fontWeight: diff.abs() > 10 ? FontWeight.bold : FontWeight.normal,
         ),
       ),

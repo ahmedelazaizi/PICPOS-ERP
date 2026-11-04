@@ -713,7 +713,7 @@ class _StockMovementsScreenState extends ConsumerState<StockMovementsScreen> {
           children: [
             Text(
               label,
-              style: GoogleFonts.cairo(fontSize: 9, color: context.picposMuted),
+              style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
             ),
             Text(
               value,

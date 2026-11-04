@@ -365,7 +365,7 @@ class _AddUserDialogState extends AppFormDialogState<bool, AddUserDialog> {
           padding: const EdgeInsetsDirectional.only(start: 12),
           child: Text(
             tr('لإنشاء دور جديد بصلاحيات مخصصة اضغط +'),
-            style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+            style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
           ),
         ),
         if (branches.isNotEmpty) ...[

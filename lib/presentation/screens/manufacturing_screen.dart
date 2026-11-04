@@ -11,6 +11,7 @@ import '../../data/providers/providers.dart';
 import '../../data/providers/manufacturing_providers.dart';
 import '../../domain/entities/product_entity.dart';
 import '../widgets/permission_guard.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 part 'widgets/manufacturing/bom_tab.dart';
 part 'widgets/manufacturing/production_orders_tab.dart';
@@ -86,7 +87,7 @@ class _ManufacturingScreenState extends ConsumerState<ManufacturingScreen>
                         borderRadius: BorderRadius.circular(10),
                       ),
                       labelColor: Colors.white,
-                      unselectedLabelColor: AppColors.textSecondary,
+                      unselectedLabelColor: context.picposSecondary,
                       labelStyle: const TextStyle(
                           fontWeight: FontWeight.w700, fontSize: 13),
                       unselectedLabelStyle: const TextStyle(

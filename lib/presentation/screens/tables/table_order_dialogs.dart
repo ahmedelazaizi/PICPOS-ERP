@@ -116,7 +116,7 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: context.picposField,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -346,7 +346,7 @@ mixin _TableOrderDialogsMixin<T extends ConsumerStatefulWidget>
                 ?  Center(
                     child: Text(
                       tr('لا توجد أصناف في الطلب'),
-                      style: const TextStyle(color: AppColors.textMuted),
+                      style: TextStyle(color: context.picposMuted),
                     ),
                   )
                 : ListView.separated(

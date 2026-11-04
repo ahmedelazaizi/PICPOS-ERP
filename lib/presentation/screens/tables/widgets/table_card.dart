@@ -145,7 +145,7 @@ class TableCard extends ConsumerWidget {
                     const SizedBox(width: 3),
                     Text('${table.capacity}',
                         style: GoogleFonts.cairo(
-                            fontSize: 10,
+                            fontSize: 11,
                             color: cs.onSurfaceVariant,
                             fontWeight: FontWeight.w600)),
                     if (isActive) ...[
@@ -155,7 +155,7 @@ class TableCard extends ConsumerWidget {
                       const SizedBox(width: 2),
                       Text(elapsedStr,
                           style: GoogleFonts.cairo(
-                              fontSize: 10,
+                              fontSize: 11,
                               color: statusInfo.color,
                               fontWeight: FontWeight.w700)),
                     ],
@@ -182,7 +182,7 @@ class TableCard extends ConsumerWidget {
                       const SizedBox(width: 4),
                       Text(statusInfo.label,
                           style: GoogleFonts.cairo(
-                              fontSize: 9,
+                              fontSize: 11,
                               color: statusInfo.color,
                               fontWeight: FontWeight.w700)),
                     ],
@@ -204,7 +204,7 @@ class TableCard extends ConsumerWidget {
                         child: Text(
                           tr('دُفع {p0} من {p1}', {'p0': progress.paid.toStringAsFixed(AppConstants.decimalPlaces), 'p1': progress.effective.toStringAsFixed(AppConstants.decimalPlaces)}),
                           style: GoogleFonts.cairo(
-                              fontSize: 8,
+                              fontSize: 11,
                               color: TableStatusPalette.of(context, 'paid'),
                               fontWeight: FontWeight.w700),
                         ),
@@ -239,7 +239,7 @@ class TableCard extends ConsumerWidget {
                       child: Text(
                         order.total.toStringAsFixed(0),
                         style: GoogleFonts.cairo(
-                            fontSize: 9,
+                            fontSize: 11,
                             fontWeight: FontWeight.w800,
                             color: TableStatusPalette.of(context, 'available')),
                       ),

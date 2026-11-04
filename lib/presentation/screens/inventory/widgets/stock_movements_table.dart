@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import '../../../../domain/repositories/inventory_repository.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../inventory_notifier.dart';
@@ -82,14 +83,14 @@ class _StockMovementsTableState extends ConsumerState<StockMovementsTable> {
                 Icon(
                   PhosphorIconsBold.arrowsLeftRight,
                   size: 64,
-                  color: AppColors.textMuted.withValues(alpha: 0.3),
+                  color: context.picposMuted.withValues(alpha: 0.3),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   state.selectedMovementProductId != null
                       ? tr('لا توجد حركات لهذا الصنف')
                       : tr('لا توجد حركات مخزون'),
-                  style: const TextStyle(color: AppColors.textMuted),
+                  style: TextStyle(color: context.picposMuted),
                 ),
               ],
             ),
@@ -239,7 +240,7 @@ class _StockMovementsTableState extends ConsumerState<StockMovementsTable> {
         Icon(icon, size: 14, color: color),
         const SizedBox(width: 4),
         Text('$label: ',
-            style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+            style: TextStyle(fontSize: 11, color: context.picposMuted)),
         Text(value,
             style: TextStyle(
                 fontSize: 12, fontWeight: FontWeight.bold, color: color)),
@@ -266,8 +267,8 @@ class _StockMovementsHeader extends StatelessWidget {
       height: _kHeaderHeight,
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
-        border: const Border(
-          bottom: BorderSide(color: AppColors.border, width: 1),
+        border: Border(
+          bottom: BorderSide(color: context.picposHairline, width: 1),
         ),
       ),
       child: Row(
@@ -332,8 +333,8 @@ class _StockMovementRow extends StatelessWidget {
         color: isStriped
             ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.4)
             : Colors.transparent,
-        border: const Border(
-          bottom: BorderSide(color: AppColors.border, width: 0.5),
+        border: Border(
+          bottom: BorderSide(color: context.picposHairline, width: 0.5),
         ),
       ),
       child: Row(
@@ -354,8 +355,8 @@ class _StockMovementRow extends StatelessWidget {
                   ),
                   Text(
                     timeText,
-                    style: const TextStyle(
-                        fontSize: 10, color: AppColors.textMuted),
+                    style: TextStyle(
+                        fontSize: 11, color: context.picposMuted),
                   ),
                 ],
               ),
@@ -501,8 +502,8 @@ class _StockMovementRow extends StatelessWidget {
                           ),
                         ),
                       )
-                    : const Text('-',
-                        style: TextStyle(color: AppColors.textMuted)),
+                    : Text('-',
+                        style: TextStyle(color: context.picposMuted)),
               ),
             ),
           ),
@@ -517,8 +518,8 @@ class _StockMovementRow extends StatelessWidget {
                   message: m.notes ?? '',
                   child: Text(
                     m.notes ?? '-',
-                    style: const TextStyle(
-                        color: AppColors.textMuted, fontSize: 12),
+                    style: TextStyle(
+                        color: context.picposMuted, fontSize: 12),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ),

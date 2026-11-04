@@ -1,6 +1,7 @@
 import 'package:picpos_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:flutter/material.dart';
+import '../picpos_shell/picpos_surface.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -23,7 +24,7 @@ class _ApprovalDashboardScreenState extends ConsumerState<ApprovalDashboardScree
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.picposField,
         body: Column(
           children: [
             _buildHeader(context),
@@ -77,7 +78,7 @@ class _ApprovalDashboardScreenState extends ConsumerState<ApprovalDashboardScree
 
   Widget _buildTabBar() {
     return Container(
-      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.border))),
+      decoration: BoxDecoration(border: Border(bottom: BorderSide(color: context.picposHairline))),
       child: Row(
         children: [
           _tab(tr('اعتمادات معلقة'), PhosphorIconsBold.hourglass, 0),
@@ -98,9 +99,9 @@ class _ApprovalDashboardScreenState extends ConsumerState<ApprovalDashboardScree
         ),
         child: Row(
           children: [
-            Icon(icon, size: 16, color: isActive ? AppColors.primary : AppColors.textMuted),
+            Icon(icon, size: 16, color: isActive ? AppColors.primary : context.picposMuted),
             const SizedBox(width: 8),
-            Text(label, style: GoogleFonts.cairo(fontSize: 13, fontWeight: isActive ? FontWeight.w700 : FontWeight.w500, color: isActive ? AppColors.primary : AppColors.textMuted)),
+            Text(label, style: GoogleFonts.cairo(fontSize: 13, fontWeight: isActive ? FontWeight.w700 : FontWeight.w500, color: isActive ? AppColors.primary : context.picposMuted)),
           ],
         ),
       ),
@@ -123,7 +124,7 @@ class _ApprovalDashboardScreenState extends ConsumerState<ApprovalDashboardScree
           const SizedBox(height: 16),
           Text(tr('لا توجد اعتمادات معلقة'), style: GoogleFonts.cairo(fontSize: 18, fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
-          Text(tr('جميع العمليات تمت الموافقة عليها'), style: GoogleFonts.cairo(fontSize: 13, color: AppColors.textMuted)),
+          Text(tr('جميع العمليات تمت الموافقة عليها'), style: GoogleFonts.cairo(fontSize: 13, color: context.picposMuted)),
         ],
       ),
     );
@@ -143,12 +144,12 @@ class _ApprovalDashboardScreenState extends ConsumerState<ApprovalDashboardScree
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(PhosphorIconsBold.flowArrow, size: 64, color: AppColors.textMuted),
+                Icon(PhosphorIconsBold.flowArrow, size: 64, color: context.picposMuted),
                 const SizedBox(height: 16),
-                Text(tr('لا توجد إعدادات سير عمل'), style: GoogleFonts.cairo(fontSize: 16, color: AppColors.textMuted)),
+                Text(tr('لا توجد إعدادات سير عمل'), style: GoogleFonts.cairo(fontSize: 16, color: context.picposMuted)),
                 const SizedBox(height: 8),
                 Text(tr('أنشئ سير عمل لبدء تفعيل الاعتمادات المتعددة المستويات'),
-                    style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted)),
+                    style: GoogleFonts.cairo(fontSize: 12, color: context.picposMuted)),
               ],
             ),
           );
@@ -183,15 +184,15 @@ class _ApprovalDashboardScreenState extends ConsumerState<ApprovalDashboardScree
                   Text(workflow.name, style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w700)),
                   Row(
                     children: [
-                      Text('${workflow.entityType}', style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+                      Text('${workflow.entityType}', style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                         decoration: BoxDecoration(color: AppColors.warning.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-                        child: Text(tr('{p0} مستويات', {'p0': workflow.requiredLevels}), style: GoogleFonts.cairo(fontSize: 10, color: AppColors.warning, fontWeight: FontWeight.w600)),
+                        child: Text(tr('{p0} مستويات', {'p0': workflow.requiredLevels}), style: GoogleFonts.cairo(fontSize: 11, color: AppColors.warning, fontWeight: FontWeight.w600)),
                       ),
                       const SizedBox(width: 6),
-                      Text(tr('الحد: {p0}', {'p0': workflow.amountThreshold}), style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted)),
+                      Text(tr('الحد: {p0}', {'p0': workflow.amountThreshold}), style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
                     ],
                   ),
                 ],
@@ -212,14 +213,14 @@ class _ApprovalDashboardScreenState extends ConsumerState<ApprovalDashboardScree
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (i > 0) const Icon(PhosphorIconsBold.arrowLeft, size: 10, color: AppColors.textMuted),
+            if (i > 0) Icon(PhosphorIconsBold.arrowLeft, size: 10, color: context.picposMuted),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: [AppColors.primary, AppColors.warning, AppColors.success][i].withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
-              child: Text(labels[i], style: GoogleFonts.cairo(fontSize: 9, fontWeight: FontWeight.w700,
+              child: Text(labels[i], style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w700,
                   color: [AppColors.primary, AppColors.warning, AppColors.success][i])),
             ),
           ],

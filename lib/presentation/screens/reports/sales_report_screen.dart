@@ -1,3 +1,4 @@
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import 'package:picpos_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'dart:async';
@@ -23,6 +24,8 @@ import '../../../core/constants/app_constants.dart';
 import '../../../data/providers/manufacturing_providers.dart';
 import '../../widgets/branch_warehouse_filter.dart';
 
+part 'sales_report_detail_widgets.dart';
+
 class SalesReportScreen extends ConsumerStatefulWidget {
   const SalesReportScreen({super.key});
 
@@ -47,6 +50,9 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
   /// «المرتجع» و«المتبقي» في الجدول والتصدير، وهو **نفسُ** ما بُنيت منه
   /// بطاقةُ «إجمالي المبيعات» الصافية.
   Map<int, double> _returnedAmounts = const {};
+
+  /// FS-16: مرتجعٌ معروضٌ بلا قيدٍ محلّيّ ⇒ ربحُه تقديريّ، وتعلنه البطاقة.
+  bool _profitEstimated = false;
   final _dateFormat = DateFormat('yyyy-MM-dd HH:mm');
   final _currencyFormat = NumberFormat.currency(symbol: '', decimalDigits: AppConstants.decimalPlaces);
   int? _selectedUserId;
@@ -150,11 +156,8 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      // Spec 149 B12-4 (FIL-2): resolve the auth-level branch scope BEFORE
-      // the report query runs, on every call. _loadData is invoked from
-      // initState's microtask, the salesDataVersionProvider subscription,
-      // AND the filter-bar onChanged callbacks, so re-resolving here closes
-      // the race where an early load could otherwise run unrestricted.
+      // Spec 149 B12-4 (FIL-2): resolve the branch auth scope before every query
+      // (initState, data-version listener and filter callbacks all call _loadData).
       final scope = await ref.read(branchScopeProvider.future);
       if (!mounted) return;
       _allowedBranchIds = scope.hasFullAccess ? null : scope.allowedBranchIds;
@@ -278,6 +281,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
         _analytics = current.net;
         _previousAnalytics = previous.net;
         _returnedAmounts = current.returned;
+        _profitEstimated = current.estimated;
         _invoices = filtered;
         _userNames = userMap;
         _warehouseNames = whMap;
@@ -356,25 +360,35 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
   /// الازدواجَ **بالبناء** — الفواتيرُ المرتجَعةُ كلياً ليست في القائمة أصلاً.
   /// ويعيد الخريطةَ كذلك: الجدولُ والتصديرُ يعرضان «المرتجع» لكلّ صفّ بنفس
   /// الأرقام التي بُنيت منها البطاقة — مصدرٌ واحدٌ لا اثنان.
-  Future<({SalesAnalytics net, Map<int, double> returned})>
+  ///
+  /// FS-16: والربحُ يُحسم بما قيّده قيدُ كلِّ مرتجعٍ (تكلفةً وضريبة) لا
+  /// بالتناسب — راجع `returnsProfitBasis`.
+  Future<({SalesAnalytics net, Map<int, double> returned, bool estimated})>
       _netOfDisplayedReturns(
     SalesAnalytics gross,
     List<SalesInvoiceData> displayed,
   ) async {
     if (displayed.isEmpty) {
-      return (net: gross, returned: const <int, double>{});
+      return (net: gross, returned: const <int, double>{}, estimated: false);
     }
-    final returnedByInvoice = await ref
-        .read(reportingRepositoryProvider)
-        .getReturnedAmountsForInvoices([for (final i in displayed) i.id]);
+    final repo = ref.read(reportingRepositoryProvider);
+    final ids = [for (final i in displayed) i.id];
+    final returnedByInvoice = await repo.getReturnedAmountsForInvoices(ids);
+    final actual = returnsProfitBasis(
+      gross: gross,
+      returnedByInvoice: returnedByInvoice,
+      displayedInvoices: displayed,
+      ledgerByInvoice: await repo.getReturnLedgerAmountsForInvoices(ids),
+    );
     final net = netOfReturns(
       gross,
       clampedReturnedTotal(
         returnedByInvoice: returnedByInvoice,
         displayedInvoiceTotals: {for (final i in displayed) i.id: i.total},
       ),
+      actual: actual,
     );
-    return (net: net, returned: returnedByInvoice);
+    return (net: net, returned: returnedByInvoice, estimated: actual.isEstimated);
   }
 
   @override
@@ -654,7 +668,10 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                                         '${_currencyFormat.format(_analytics!.totalProfit)} ${AppConstants.currencySymbolEn}',
                                     icon: PhosphorIconsBold.trendUp,
                                     color: AppColors.success,
-                                    subtitle: tr('بناءً على تكلفة المنتج — قبل المصروفات التشغيلية'),
+                                    // FS-16: يطابق الفواتيرَ وقيودَ مرتجعاتها؛ لا يرى قيداً يدوياً على 5211.
+                                    subtitle: _profitEstimated
+                                        ? tr('تقديري: مرتجع بلا قيد محلي — بلا تسويات الأستاذ اليدوية ولا المصروفات')
+                                        : tr('من الفواتير وقيود مرتجعاتها — بلا تسويات الأستاذ اليدوية ولا المصروفات'),
                                     changePercent: _calcChange(
                                       _analytics!.totalProfit,
                                       _previousAnalytics?.totalProfit,
@@ -729,7 +746,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
-                              side: const BorderSide(color: AppColors.border),
+                              side: BorderSide(color: context.picposHairline),
                             ),
                             clipBehavior: Clip.antiAlias,
                             child: SingleChildScrollView(
@@ -913,9 +930,9 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: context.picposField,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.border),
+                      border: Border.all(color: context.picposHairline),
                     ),
                     child: Wrap(
                       spacing: 28,
@@ -954,7 +971,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                       child: Text(
                         tr('لا توجد أصناف على هذه الفاتورة'),
                         textAlign: TextAlign.center,
-                        style: const TextStyle(color: AppColors.textMuted),
+                        style: TextStyle(color: context.picposMuted),
                       ),
                     )
                   else
@@ -989,7 +1006,7 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                                         ? FontStyle.italic
                                         : FontStyle.normal,
                                     color:
-                                        missing ? AppColors.textMuted : null,
+                                        missing ? context.picposMuted : null,
                                   ),
                                 ),
                               ),
@@ -1080,9 +1097,9 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
                       alignment: AlignmentDirectional.centerStart,
                       child: Text(
                         tr('ملاحظات: {p0}', {'p0': invoice.notes!.trim()}),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textSecondary,
+                          color: context.picposSecondary,
                         ),
                       ),
                     ),
@@ -1250,103 +1267,5 @@ class _SalesReportScreenState extends ConsumerState<SalesReportScreen> {
   double? _calcChange(double current, double? previous) {
     if (previous == null || previous == 0) return null;
     return ((current - previous) / previous) * 100;
-  }
-}
-/// Small label-over-value block used in the invoice details header.
-class _MetaField extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _MetaField({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-        ),
-      ],
-    );
-  }
-}
-
-/// One line of the totals stack in the invoice details dialog.
-class _TotalRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color? color;
-  final bool emphasize;
-
-  const _TotalRow({
-    required this.label,
-    required this.value,
-    this.color,
-    this.emphasize = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final style = TextStyle(
-      fontSize: emphasize ? 15 : 13,
-      fontWeight: emphasize ? FontWeight.bold : FontWeight.w500,
-      color: color,
-    );
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: style),
-          Text(value, style: style),
-        ],
-      ),
-    );
-  }
-}
-
-/// Status chip in the invoice details title. A posted (locked) invoice is
-/// called out explicitly because it cannot be edited — the cashier asking
-/// "why can't I change this?" should be able to see the answer.
-class _StatusPill extends StatelessWidget {
-  final String status;
-  final bool isLocked;
-
-  const _StatusPill({required this.status, required this.isLocked});
-
-  @override
-  Widget build(BuildContext context) {
-    final (String label, Color color) = switch (status) {
-      'cancelled' || 'canceled' => (tr('ملغاة'), AppColors.error),
-      'returned' => (tr('مرتجعة'), AppColors.warning),
-      'draft' => (tr('مسودة'), AppColors.textMuted),
-      _ => isLocked
-          ? (tr('مُرحّلة'), AppColors.success)
-          : (tr('مكتملة'), AppColors.success),
-    };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          color: color,
-        ),
-      ),
-    );
   }
 }

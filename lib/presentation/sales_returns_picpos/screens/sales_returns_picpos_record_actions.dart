@@ -20,15 +20,51 @@ abstract class SalesReturnRecordActionsState<W extends ConsumerStatefulWidget>
     super.dispose();
   }
 
-  /// «طباعة» صفٍّ معتمد — `_printReturnReceipt` القائمُ نفسُه.
+  /// «طباعة» صفٍّ معتمد.
+  ///
+  /// [originalInvoiceId] حاضراً ⇒ `printPostedSalesReturn`: البنودُ المرتجعةُ
+  /// فعلاً من حركات المخزون. كان `_printReturnReceipt` بلا جلسةٍ يطبع **كلَّ**
+  /// بنود الفاتورة (فرعُ «من السجلّ»)، ويبقى سقوطاً حين يغيب المعرّف.
   Future<void> reprintPostedReturn({
     required String originalInvoiceNumber,
     required double returnTotal,
-  }) =>
-      _printReturnReceipt(
+    int? originalInvoiceId,
+  }) async {
+    if (originalInvoiceId == null) {
+      return _printReturnReceipt(
         invoiceNumber: originalInvoiceNumber,
         returnTotal: returnTotal,
       );
+    }
+    try {
+      final outcome = await printPostedSalesReturn(
+        db: ref.read(databaseProvider),
+        returns: ref.read(returnsRepositoryProvider),
+        products: ref.read(productRepositoryProvider),
+        originalInvoiceId: originalInvoiceId,
+        returnTotal: returnTotal,
+        employeeName: ref.read(authProvider).user?.displayName,
+      );
+      if (!mounted) return;
+      final args = {'invoiceNumber': originalInvoiceNumber};
+      AppToast.show(
+        context,
+        switch (outcome) {
+          PostedReturnPrintOutcome.printed =>
+            tr('تم طباعة إيصال مرتجع فاتورة {invoiceNumber}', args),
+          PostedReturnPrintOutcome.cancelled =>
+            tr('أُلغيت طباعة إيصال مرتجع فاتورة {invoiceNumber}', args),
+          PostedReturnPrintOutcome.noReturnData =>
+            tr('لا مرتجعَ مرحَّلاً لهذه الفاتورة'),
+        },
+        type: outcome == PostedReturnPrintOutcome.printed
+            ? ToastType.success
+            : ToastType.warning,
+      );
+    } catch (e, stack) {
+      if (mounted) AppErrorHandler.handle(context, e, stack);
+    }
+  }
 
   /// زرُّ «طباعة» الصفّ — نفسُ حارس `sales_return_print` الذي كان في الحوار.
   Widget postedReturnPrintButton({required VoidCallback onPrint}) =>

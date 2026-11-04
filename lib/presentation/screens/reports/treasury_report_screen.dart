@@ -19,6 +19,7 @@ import '../../widgets/report_filter_bar.dart';
 import '../../../services/invoice_generator.dart';
 import '../../../../../../core/constants/app_constants.dart';
 import '../../widgets/branch_warehouse_filter.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class TreasuryReportScreen extends ConsumerStatefulWidget {
   const TreasuryReportScreen({super.key});
@@ -110,11 +111,8 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
   /// يقرأ **كلَّ الفروع**. العنوانُ يقول فرعاً والأرقامُ تقول شركة —
   /// والمستخدمُ لا يملك ما يكشف الفرق.
   ///
-  /// (‏`allowedBranchIds` سقفُ **صلاحية** لا فلترُ عرض: صاحبُ الوصول الكامل
-  ///  يأخذ `null` فلا يحدّ شيئاً.)
-  ///
-  /// Spec 079b b142 hotfix: نقرأ من الـDAO مباشرةً بدل المزوّد — نفسُ مشكلة
-  /// التخلّص في `regionBranchesProvider`.
+  /// (`allowedBranchIds` سقفُ **صلاحية** لا فلترُ عرض؛ الوصول الكامل يأخذ `null`.)
+  /// Spec 079b b142: نقرأ من الـDAO مباشرةً (نفسُ مشكلة تخلّص `regionBranchesProvider`).
   Future<void> _resolveBranchSafeIds(int? branchId) async {
     if (branchId != null) {
       final db = ref.read(databaseProvider);
@@ -535,7 +533,7 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                       side: BorderSide(
-                                        color: AppColors.border.withValues(
+                                        color: context.picposHairline.withValues(
                                           alpha: 0.5,
                                         ),
                                       ),
@@ -657,7 +655,7 @@ class _TreasuryReportScreenState extends ConsumerState<TreasuryReportScreen> {
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
-                              side: const BorderSide(color: AppColors.border),
+                              side: BorderSide(color: context.picposHairline),
                             ),
                             child: SizedBox(
                               width: double.infinity,

@@ -39,7 +39,7 @@ class HRDashboardTab extends ConsumerWidget {
               const SizedBox(height: 16),
 
               // ── Role Distribution ──────────────────────────
-              _buildRoleDistribution(active),
+              _buildRoleDistribution(context, active),
               const SizedBox(height: 16),
 
               // ── Salary Overview ────────────────────────────
@@ -123,7 +123,7 @@ class HRDashboardTab extends ConsumerWidget {
                     color: color)),
             Text(label,
                 style: GoogleFonts.cairo(
-                    fontSize: 11, color: AppColors.textMuted)),
+                    fontSize: 11, color: context.picposMuted)),
           ],
         ),
       ),
@@ -131,7 +131,7 @@ class HRDashboardTab extends ConsumerWidget {
     );
   }
 
-  Widget _buildRoleDistribution(List<Employee> employees) {
+  Widget _buildRoleDistribution(BuildContext context, List<Employee> employees) {
     final roleMap = <String, int>{};
     for (final e in employees) {
       roleMap[e.role] = (roleMap[e.role] ?? 0) + 1;
@@ -164,7 +164,7 @@ class HRDashboardTab extends ConsumerWidget {
         spacing: 8,
         runSpacing: 8,
         children: roleMap.entries.map((e) {
-          final color = roleColors[e.key] ?? AppColors.textMuted;
+          final color = roleColors[e.key] ?? context.picposMuted;
           final name = roleNames[e.key] ?? e.key;
           final pct = employees.isEmpty
               ? 0
@@ -189,7 +189,7 @@ class HRDashboardTab extends ConsumerWidget {
                         color: color)),
                 Text('$pct%',
                     style: GoogleFonts.cairo(
-                        fontSize: 10, color: AppColors.textMuted)),
+                        fontSize: 11, color: context.picposMuted)),
               ],
             ),
           );
@@ -229,7 +229,7 @@ class HRDashboardTab extends ConsumerWidget {
 
           return Column(
             children: [
-              _salaryRow(tr('الرواتب الأساسية'), totalBase, AppColors.textPrimary),
+              _salaryRow(tr('الرواتب الأساسية'), totalBase, context.picposText),
               _salaryRow(tr('إضافي'), totalOvertime, const Color(0xFF059669)),
               _salaryRow(tr('سُلف'), -totalAdv, const Color(0xFFDC2626)),
               _salaryRow(tr('خصومات'), -totalDed, const Color(0xFFDC2626)),
@@ -313,9 +313,9 @@ class HRDashboardTab extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _attendanceStat(tr('حضروا'), '$checkedIn', const Color(0xFF059669)),
-                  _attendanceStat(tr('غائبون'), '${total - checkedIn}', const Color(0xFFDC2626)),
-                  _attendanceStat(tr('نسبة الحضور'), '$pct%', const Color(0xFF2563EB)),
+                   _attendanceStat(context, tr('حضروا'), '$checkedIn', const Color(0xFF059669)),
+                   _attendanceStat(context, tr('غائبون'), '${total - checkedIn}', const Color(0xFFDC2626)),
+                   _attendanceStat(context, tr('نسبة الحضور'), '$pct%', const Color(0xFF2563EB)),
                 ],
               ),
               const SizedBox(height: 12),
@@ -336,7 +336,7 @@ class HRDashboardTab extends ConsumerWidget {
     );
   }
 
-  Widget _attendanceStat(String label, String value, Color color) {
+  Widget _attendanceStat(BuildContext context, String label, String value, Color color) {
     return Column(
       children: [
         Text(value,
@@ -344,7 +344,7 @@ class HRDashboardTab extends ConsumerWidget {
                 fontSize: 22, fontWeight: FontWeight.w800, color: color)),
         Text(label,
             style: GoogleFonts.cairo(
-                fontSize: 11, color: AppColors.textMuted)),
+                fontSize: 11, color: context.picposMuted)),
       ],
     );
   }
@@ -389,7 +389,7 @@ class HRDashboardTab extends ConsumerWidget {
                 'emergency': const Color(0xFFF59E0B),
               };
               final label = typeLabels[leave.leaveType] ?? leave.leaveType;
-              final color = typeColors[leave.leaveType] ?? AppColors.textMuted;
+              final color = typeColors[leave.leaveType] ?? context.picposMuted;
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 6),
@@ -423,14 +423,14 @@ class HRDashboardTab extends ConsumerWidget {
                       ),
                       child: Text(label,
                           style: GoogleFonts.cairo(
-                              fontSize: 10,
+                              fontSize: 11,
                               color: color,
                               fontWeight: FontWeight.w700)),
                     ),
                     const SizedBox(width: 8),
                     Text(tr('{p0} يوم', {'p0': leave.days}),
                         style: GoogleFonts.cairo(
-                            fontSize: 11, color: AppColors.textMuted)),
+                            fontSize: 11, color: context.picposMuted)),
                   ],
                 ),
               );

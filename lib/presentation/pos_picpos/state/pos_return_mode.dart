@@ -55,6 +55,18 @@ class PosReturnMode {
     );
   }
 
+  /// نسخةٌ بخريطة كمياتٍ مستقلّة (والسطورُ نفسُها، فهي ثابتة) — لوحةُ المرتجع
+  /// في عمود الفاتورة تعدّل النسخةَ ثم تضعها في `posReturnModeProvider`، لأنّ
+  /// تعديلَ الكائن نفسِه في مكانه لا يُخطر المراقبين (‏`StateProvider` يقارن
+  /// المرجع)، فتبقى اللوحةُ وزرُّ «إتمام المرتجع» على قيمٍ قديمة.
+  PosReturnMode copy() => PosReturnMode._(
+        invoiceId: invoiceId,
+        linesByItemId: linesByItemId,
+        requestedQty: Map<int, double>.of(requestedQty),
+        invoiceTotal: invoiceTotal,
+        invoiceDeliveryFee: invoiceDeliveryFee,
+      );
+
   /// مبلغُ الاسترداد الفعليّ لطلب المرتجع الحاليّ (‏[requestedQty]) — نفسُ
   /// صيغة `ReturnsRepositoryImpl._calculateReturnTotal` بالحرف عبر
   /// [calculateReturnRefundTotal] المشتركة، لا `Σ qty × unitPrice` (سعرُ ما

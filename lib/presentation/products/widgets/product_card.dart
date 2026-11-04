@@ -3,6 +3,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/database/database.dart';
 import '../../../../../../core/constants/app_constants.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Product card widget for grid display
 class ProductCard extends StatelessWidget {
@@ -38,7 +39,7 @@ class ProductCard extends StatelessWidget {
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.picposField,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: product.imageData != null
@@ -73,8 +74,8 @@ class ProductCard extends StatelessWidget {
               // Code
               Text(
                 product.code,
-                style: const TextStyle(
-                  color: AppColors.textMuted,
+                style: TextStyle(
+                  color: context.picposMuted,
                   fontSize: 12,
                 ),
               ),

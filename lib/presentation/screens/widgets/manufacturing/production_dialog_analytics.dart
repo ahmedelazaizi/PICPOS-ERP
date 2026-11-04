@@ -258,10 +258,10 @@ Widget _buildEmptyState(
         Icon(icon, size: 64, color: Colors.grey.shade300),
         const SizedBox(height: 16),
         Text(title,
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: AppColors.textSecondary)),
+                color: context.picposSecondary)),
         const SizedBox(height: 8),
         Text(subtitle,
             textAlign: TextAlign.center,
@@ -363,7 +363,7 @@ class _MfgAnalyticsTab extends ConsumerWidget {
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: AppColors.border),
+                    side: BorderSide(color: context.picposHairline),
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -389,7 +389,7 @@ class _MfgAnalyticsTab extends ConsumerWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(32),
                     child: Text(tr('لا توجد أوامر إنتاج بعد'),
-                        style: GoogleFonts.cairo(color: AppColors.textMuted)),
+                        style: GoogleFonts.cairo(color: context.picposMuted)),
                   ),
                 ),
             ],
@@ -416,9 +416,9 @@ class _MfgAnalyticsTab extends ConsumerWidget {
             Text(value,
                 style: GoogleFonts.cairo(
                     fontSize: 22, fontWeight: FontWeight.w800, color: color)),
-            Text(title,
+            Builder(builder: (context) => Text(title,
                 style: GoogleFonts.cairo(
-                    fontSize: 11, color: AppColors.textMuted)),
+                    fontSize: 11, color: context.picposMuted))),
           ],
         ),
       ),

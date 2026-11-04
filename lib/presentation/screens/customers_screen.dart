@@ -15,6 +15,7 @@ import 'party_statement_screen.dart';
 import '../../core/constants/app_constants.dart';
 import 'widgets/dialogs/party_edit_dialog.dart';
 import '../widgets/dialogs/app_confirm_dialog.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Customers management screen
 class CustomersScreen extends ConsumerStatefulWidget {
@@ -294,7 +295,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                                 children: [
                                   Text(c.phone ?? tr('لا يوجد رقم')),
                                   if (c.address != null && c.address!.isNotEmpty)
-                                    Text(c.address!, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                                    Text(c.address!, style: TextStyle(fontSize: 12, color: context.picposMuted)),
                                 ],
                               ),
                               trailing: Row(
@@ -313,7 +314,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                                       ),
                                       Text(
                                         tr('حد الائتمان: {p0}', {'p0': c.creditLimit.toStringAsFixed(0)}),
-                                        style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                                        style: TextStyle(fontSize: 11, color: context.picposMuted),
                                       ),
                                     ],
                                   ),

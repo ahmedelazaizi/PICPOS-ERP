@@ -9,6 +9,7 @@ import '../../core/theme/app_colors.dart';
 import '../../data/providers/providers.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../widgets/permission_guard.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Exchange Rate Management Screen — إدارة أسعار الصرف
 class ExchangeRateScreen extends ConsumerStatefulWidget {
@@ -27,7 +28,7 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.picposField,
         body: Column(
           children: [
             _buildHeader(context, repo),
@@ -166,9 +167,9 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(PhosphorIconsBold.currencyCircleDollar, size: 64, color: AppColors.textMuted),
+                Icon(PhosphorIconsBold.currencyCircleDollar, size: 64, color: context.picposMuted),
                 const SizedBox(height: 16),
-                Text(tr('لا توجد عملات'), style: GoogleFonts.cairo(fontSize: 16, color: AppColors.textMuted)),
+                Text(tr('لا توجد عملات'), style: GoogleFonts.cairo(fontSize: 16, color: context.picposMuted)),
               ],
             ),
           );
@@ -189,7 +190,7 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: isDefault ? AppColors.success : AppColors.border,
+          color: isDefault ? AppColors.success : context.picposHairline,
           width: isDefault ? 2 : 1,
         ),
       ),
@@ -220,11 +221,11 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppColors.textMuted.withValues(alpha: 0.1),
+                          color: context.picposMuted.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(currency.code,
-                            style: GoogleFonts.cairo(fontSize: 10, fontWeight: FontWeight.w600)),
+                            style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w600)),
                       ),
                       if (isDefault) ...[
                         const SizedBox(width: 6),
@@ -235,13 +236,13 @@ class _ExchangeRateScreenState extends ConsumerState<ExchangeRateScreen> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(tr('أساسية'),
-                              style: GoogleFonts.cairo(fontSize: 10, color: AppColors.success, fontWeight: FontWeight.w700)),
+                              style: GoogleFonts.cairo(fontSize: 11, color: AppColors.success, fontWeight: FontWeight.w700)),
                         ),
                       ],
                     ],
                   ),
                   Text(tr('سعر الصرف: {p0}', {'p0': currency.exchangeRate}),
-                      style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted)),
+                      style: GoogleFonts.cairo(fontSize: 12, color: context.picposMuted)),
                 ],
               ),
             ),

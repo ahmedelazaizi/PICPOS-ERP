@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/database/database.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Dialog to select a target table for merging orders
 class MergeTableDialog extends StatelessWidget {
@@ -37,9 +38,9 @@ class MergeTableDialog extends StatelessWidget {
             children: [
               Text(
                 tr('سيتم نقل جميع أصناف "{p0}" إلى الطاولة التي ستختارها:', {'p0': sourceTable.name}),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.textMuted,
+                  color: context.picposMuted,
                 ),
               ),
               const SizedBox(height: 16),

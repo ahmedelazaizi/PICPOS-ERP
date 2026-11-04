@@ -9,6 +9,7 @@ import '../../../../data/providers/providers.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../widgets/branch_chip.dart';
 import '../sales_invoices_notifier.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class SalesInvoicesDashboard extends ConsumerStatefulWidget {
   final Function(SalesInvoiceData) onView;
@@ -297,9 +298,9 @@ class _SalesInvoicesDashboardState
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textMuted,
+                    color: context.picposMuted,
                   ),
                 ),
                 Text(

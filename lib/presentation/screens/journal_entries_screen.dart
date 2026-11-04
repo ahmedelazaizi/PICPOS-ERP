@@ -1,3 +1,4 @@
+import '../picpos_shell/picpos_surface.dart';
 import 'package:picpos_erp/core/i18n/tr.dart';
 // ignore_for_file: avoid_dynamic_calls
 import 'package:picpos_erp/core/constants/app_constants.dart';
@@ -56,13 +57,12 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
   /// manual journal-entry posting/reversal.
   ///
   /// The gate previously existed ONLY server-side (api_data_handler.dart
-  /// postJournalEntry → PermissionCodes.accountingJournal, see line ~2280).
+  /// postJournalEntry → PermissionCodes.accountingJournal).
   /// Locally, `saveManualEntry` called `repo.createJournalEntry(...,
   /// isAutoPosted: false)` with no permission check at all — any user who
   /// got past the screen-password (a shared secret, not a per-user gate)
   /// could post arbitrary GL entries on a standalone/server install. Mirrors
-  /// the server-side check on the client, for BOTH creating a manual entry
-  /// and reversing one (same missing-gate shape).
+  /// the server-side check for both creating and reversing a manual entry.
   ///
   /// Returns true and does nothing when the user holds the permission.
   /// Returns false and shows an Arabic error toast when they don't (or
@@ -104,7 +104,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
     return Directionality(
       textDirection: ui.TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.picposField,
         body: Column(
           children: [
             _buildHeader(context, accountingRepo),
@@ -164,10 +164,10 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(PhosphorIconsBold.bookOpen, size: 56, color: AppColors.textMuted),
+                          Icon(PhosphorIconsBold.bookOpen, size: 56, color: context.picposMuted),
                           const SizedBox(height: 12),
                           Text(tr('لا توجد قيود في هذه الفترة'),
-                              style: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 15)),
+                              style: GoogleFonts.cairo(color: context.picposMuted, fontSize: 15)),
                         ],
                       ),
                     );
@@ -308,7 +308,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
             onChanged: (v) => setState(() => _searchQuery = v.trim()),
             decoration: InputDecoration(
               hintText: tr('بحث برقم القيد أو الوصف أو التاريخ...'),
-              hintStyle: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted),
+              hintStyle: GoogleFonts.cairo(fontSize: 12, color: context.picposMuted),
               prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 18, color: AppColors.primary),
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
@@ -325,11 +325,11 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: BorderSide(color: context.picposHairline),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.border),
+                borderSide: BorderSide(color: context.picposHairline),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -350,7 +350,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.border),
+                      border: Border.all(color: context.picposHairline),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -413,7 +413,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int?>(
@@ -428,7 +428,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
             ],
           ),
           icon: const Icon(PhosphorIconsBold.caretDown, size: 12),
-          style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+          style: GoogleFonts.cairo(fontSize: 12, color: context.picposText, fontWeight: FontWeight.w600),
           items: [
             DropdownMenuItem<int?>(
               value: null,
@@ -448,7 +448,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
             DropdownMenuItem<int?>(
               value: _noBranchSentinel,
               child: Text(tr('بدون فرع (قديم)'),
-                  style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+                  style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
             ),
           ],
           onChanged: (v) => setState(() => _filterBranchId = v),
@@ -494,13 +494,13 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                     ),
                     child: Text(
                       entry.entryNumber,
-                      style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.primary),
+                      style: GoogleFonts.jetBrainsMono(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Text(
                     _dateFormat.format(entry.entryDate),
-                    style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
+                    style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
                   ),
                   const SizedBox(width: 6),
                   // Feature 004 — Branch chip: gives the auditor an immediate
@@ -527,7 +527,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                     child: Text(
                       entry.isAutoPosted ? tr('تلقائي') : tr('يدوي'),
                       style: GoogleFonts.cairo(
-                        fontSize: 9,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: entry.isAutoPosted ? AppColors.info : AppColors.warning,
                       ),
@@ -545,7 +545,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                       child: Text(
                         tr('يدوي'),
                         style: GoogleFonts.cairo(
-                          fontSize: 9,
+                          fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: AppColors.success,
                         ),
@@ -557,12 +557,12 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppColors.textMuted.withValues(alpha: 0.08),
+                        color: context.picposMuted.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         refLabel,
-                        style: GoogleFonts.cairo(fontSize: 9, color: AppColors.textMuted, fontWeight: FontWeight.w600),
+                        style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
@@ -570,7 +570,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                   AnimatedRotation(
                     turns: isExpanded ? 0.25 : 0,
                     duration: const Duration(milliseconds: 200),
-                    child: const Icon(PhosphorIconsBold.caretLeft, size: 14, color: AppColors.textMuted),
+                    child: Icon(PhosphorIconsBold.caretLeft, size: 14, color: context.picposMuted),
                   ),
                 ],
               ),
@@ -607,7 +607,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
                           3: FixedColumnWidth(90),
                           4: FixedColumnWidth(90),
                         },
-                        border: TableBorder.all(color: AppColors.border, width: 0.5),
+                        border: TableBorder.all(color: context.picposHairline, width: 0.5),
                         children: [
                           TableRow(
                             decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.05)),
@@ -688,7 +688,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
         style: GoogleFonts.cairo(
           fontSize: 11,
           fontWeight: isHeader ? FontWeight.w700 : FontWeight.normal,
-          color: isHeader ? AppColors.primary : AppColors.textPrimary,
+          color: isHeader ? AppColors.primary : context.picposText,
         ),
         textAlign: TextAlign.center,
       ),
@@ -894,9 +894,9 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: context.picposField,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: context.picposHairline),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -911,7 +911,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
               const SizedBox(height: 12),
               Text(
                 tr('سيظهر في القوائم المالية بعد الاعتماد.'),
-                style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
+                style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
               ),
             ],
           ),
@@ -970,9 +970,9 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: context.picposField,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: context.picposHairline),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -987,7 +987,7 @@ class _JournalEntriesScreenState extends ConsumerState<JournalEntriesScreen> {
               const SizedBox(height: 12),
               Text(
                 tr('سيتم إنشاء قيد عكسي بمبالغ معكوسة (المدين يصبح دائن والعكس)'),
-                style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
+                style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
               ),
               // MJE-2: an auto-posted JE is normally the byproduct of a
               // source document (invoice/voucher/...). Reversing it here

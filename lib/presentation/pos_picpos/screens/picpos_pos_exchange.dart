@@ -76,22 +76,36 @@ extension _PicPosExchangeOps on _PicPosOperations {
     };
     final nameById = <int, String>{for (final p in products) p.id: p.name};
 
+    // الحركاتُ بوحدة الأساس ومجمّعةٌ حسب المنتج؛ وزّع السابق على الأسطر
+    // كيلا يُطرح كاملاً من كل سطرٍ مكرر.
+    final returnedSaleQtyByLine = distributeReturnedBaseQtyToSaleLines(
+      invoiceLines: items.map((item) => (
+        invoiceItemId: item.id,
+        productId: item.productId,
+        saleQuantity: item.quantity,
+        quantityInBase: item.quantityInBase,
+      )),
+      returnedBaseByProduct: returnedByProduct,
+    );
+    final lines = <ReturnableLine>[
+      for (final item in items)
+        ReturnableLine(
+          invoiceItemId: item.id,
+          productId: item.productId,
+          productName:
+              nameById[item.productId] ?? tr('صنف #{p0}', {'p0': item.productId}),
+          soldQty: item.quantity,
+          alreadyReturnedQty: returnedSaleQtyByLine[item.id] ?? 0,
+          unitPrice: item.unitPrice,
+          lineTotal: item.total,
+        ),
+    ];
+
     final mode = PosExchangeMode.fromLines(
       invoiceId: invoice.id,
       invoiceTotal: invoice.total,
       invoiceDeliveryFee: invoice.deliveryFee,
-      lines: [
-        for (final item in items)
-          ReturnableLine(
-            invoiceItemId: item.id,
-            productId: item.productId,
-            productName: nameById[item.productId] ?? tr('صنف #{p0}', {'p0': item.productId}),
-            soldQty: item.quantity,
-            alreadyReturnedQty: returnedByProduct[item.productId] ?? 0,
-            unitPrice: item.unitPrice,
-            lineTotal: item.total,
-          ),
-      ],
+      lines: lines,
     );
 
     // محرِّرُ الأسطر نفسُه — يعمل على `returnLeg` مباشرةً، فلا نسخةَ ثانيةً

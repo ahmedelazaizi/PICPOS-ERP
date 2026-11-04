@@ -11,6 +11,7 @@ import '../../../domain/models/quick_sale_policy.dart';
 import '../../../services/client_write_interceptor.dart';
 import '../../../services/sync/strategies/setting_sync_strategy.dart';
 import '../../picpos_shell/picpos_surface.dart';
+import '../widgets/no_invoice_return_cap_card.dart';
 import '../widgets/quick_sale_cashier_preview.dart';
 import '../widgets/quick_sale_settings_chrome.dart';
 
@@ -193,7 +194,7 @@ class _QuickSalePolicyScreenState
             padding: const EdgeInsetsDirectional.fromSTEB(8, 6, 8, 8),
             child: Text(tr('خطوات البيع'),
                 style: TextStyle(
-                  fontSize: 10.5,
+                  fontSize: 11,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 0.4,
                   color: context.picposMuted,
@@ -247,6 +248,11 @@ class _QuickSalePolicyScreenState
           const SizedBox(height: 14),
         ],
         if (step.pick != null) _buildPick(step.pick!, values),
+        // سقفُ المرتجع بلا فاتورة (بند ٤) — بطاقةٌ مستقلّةٌ في خطوة «الدفع».
+        if (step.id == 'pay') ...[
+          const SizedBox(height: 14),
+          NoInvoiceReturnCapCard(values: values, onChanged: _put),
+        ],
       ],
     );
   }
@@ -320,7 +326,7 @@ class _QuickSalePolicyScreenState
           ),
           child:  Text(tr('يُحفَظ ولا يُنفَّذ بعد'),
               style: const TextStyle(
-                  fontSize: 9.5,
+                  fontSize: 11,
                   fontWeight: FontWeight.w800,
                   color: AppColors.warning)),
         ),
@@ -328,7 +334,7 @@ class _QuickSalePolicyScreenState
         Expanded(
           child: Text(tr(row.notEnforcedReason ?? ''),
               style: TextStyle(
-                  fontSize: 10.5, height: 1.55, color: context.picposMuted)),
+                  fontSize: 11, height: 1.55, color: context.picposMuted)),
         ),
       ]),
     );
@@ -339,7 +345,7 @@ class _QuickSalePolicyScreenState
       padding: const EdgeInsetsDirectional.fromSTEB(0, 0, 44, 10),
       child: Text('⚠︎ ${tr(caveat)}',
           style: TextStyle(
-              fontSize: 10.5, height: 1.55, color: context.picposMuted)),
+              fontSize: 11, height: 1.55, color: context.picposMuted)),
     );
   }
 
@@ -455,7 +461,7 @@ class _QuickSalePolicyScreenState
                         Text(tr(row.optionSubs[i]),
                             textAlign: TextAlign.end,
                             style: TextStyle(
-                                fontSize: 10,
+                                fontSize: 11,
                                 height: 1.45,
                                 color: context.picposMuted)),
                     ],

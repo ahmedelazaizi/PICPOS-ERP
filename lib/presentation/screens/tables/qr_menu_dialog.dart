@@ -8,6 +8,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import '../../../services/generators/base_generator.dart';
 import '../../../services/printing/pdf_compute_helper.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class QrMenuDialog extends StatelessWidget {
   final List<RestaurantTable> tables;
@@ -81,7 +82,7 @@ class QrMenuDialog extends StatelessWidget {
 
                     return Container(
                       decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: context.picposHairline),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(
@@ -114,9 +115,9 @@ class QrMenuDialog extends StatelessWidget {
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(vertical: 4),
-                            decoration: const BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: BorderRadius.vertical(
+                            decoration: BoxDecoration(
+                              color: context.picposField,
+                              borderRadius: const BorderRadius.vertical(
                                 bottom: Radius.circular(11),
                               ),
                             ),

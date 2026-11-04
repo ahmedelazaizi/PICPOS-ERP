@@ -136,7 +136,7 @@ class _PaymentMethodsSettingsCardState
         children: [
            Text(
             tr('الطرقُ المؤشَّرة وحدَها تظهر للكاشير عند إتمام الدفع — والصلاحياتُ تضيّق عليها ولا توسّعها.'),
-            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            style: TextStyle(fontSize: 13, color: context.picposSecondary),
           ),
           const SizedBox(height: 12),
           ..._paymentMethodLabels.entries.map(

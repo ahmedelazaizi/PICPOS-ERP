@@ -1,3 +1,4 @@
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -71,7 +72,7 @@ class PerformanceTab extends ConsumerWidget {
                             const SizedBox(height: 8),
                             Text(tr('لا توجد تقييمات بعد'),
                                 style: GoogleFonts.cairo(
-                                    color: AppColors.textMuted)),
+                                    color: context.picposMuted)),
                           ],
                         ),
                       );
@@ -318,23 +319,23 @@ class _ReviewCard extends StatelessWidget {
                   Text(
                     '${review.period} — ${periodLabels[review.periodType] ?? review.periodType}',
                     style: GoogleFonts.cairo(
-                        fontSize: 11, color: AppColors.textMuted),
+                        fontSize: 11, color: context.picposMuted),
                   ),
                 ],
               ),
             ),
             // Individual scores
-            _miniScore(tr('التزام'), review.commitmentScore),
-            _miniScore(tr('إنتاج'), review.productivityScore),
-            _miniScore(tr('جودة'), review.qualityScore),
-            _miniScore(tr('فريق'), review.teamworkScore),
+            _miniScore(context, tr('التزام'), review.commitmentScore),
+            _miniScore(context, tr('إنتاج'), review.productivityScore),
+            _miniScore(context, tr('جودة'), review.qualityScore),
+            _miniScore(context, tr('فريق'), review.teamworkScore),
           ],
         ),
       ),
     );
   }
 
-  Widget _miniScore(String label, int score) {
+  Widget _miniScore(BuildContext context, String label, int score) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6),
       child: Column(
@@ -344,7 +345,7 @@ class _ReviewCard extends StatelessWidget {
                   fontSize: 13, fontWeight: FontWeight.w700)),
           Text(label,
               style:
-                  GoogleFonts.cairo(fontSize: 9, color: AppColors.textMuted)),
+                  GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
         ],
       ),
     );

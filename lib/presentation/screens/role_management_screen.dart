@@ -10,6 +10,7 @@ import '../../core/widgets/shimmer_loading.dart';
 import '../../data/providers/providers.dart';
 import 'settings/widgets/add_role_dialog.dart';
 import '../widgets/dialogs/app_confirm_dialog.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class RoleManagementScreen extends ConsumerStatefulWidget {
   const RoleManagementScreen({super.key});
@@ -119,7 +120,7 @@ class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> {
                                   : PhosphorIconsBold.userCircle,
                               color: isSelected
                                   ? AppColors.primary
-                                  : AppColors.textMuted,
+                                  : context.picposMuted,
                             ),
                             title: Text(
                               trData(role.name),
@@ -137,10 +138,10 @@ class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> {
                                 : null,
                             onTap: () => _selectRole(role),
                             trailing: role.isSystemRole
-                                ? const Icon(
+                                ? Icon(
                                     PhosphorIconsBold.lock,
                                     size: 14,
-                                    color: AppColors.textMuted,
+                                    color: context.picposMuted,
                                   )
                                 : IconButton(
                                     icon: const Icon(
@@ -164,16 +165,16 @@ class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(
+                            Icon(
                               PhosphorIconsBold.shieldCheck,
                               size: 64,
-                              color: AppColors.textMuted,
+                              color: context.picposMuted,
                             ),
                             const SizedBox(height: 16),
                             Text(
                               tr('اختر دوراً لتعديل صلاحياته'),
-                              style: const TextStyle(
-                                color: AppColors.textMuted,
+                              style: TextStyle(
+                                color: context.picposMuted,
                                 fontSize: 18,
                               ),
                             ),
@@ -355,9 +356,9 @@ class _RoleManagementScreenState extends ConsumerState<RoleManagementScreen> {
                                 ),
                                 Text(
                                   category.toUpperCase(),
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: AppColors.textMuted,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: context.picposMuted,
                                   ),
                                 ),
                               ],

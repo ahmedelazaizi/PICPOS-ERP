@@ -176,14 +176,21 @@ class _CycleCountScreenState extends ConsumerState<CycleCountScreen>
             if (plan.status == 'active')
               OutlinedButton.icon(
                 onPressed: () async {
-                  final taskId = await repo.generateCycleCountTask(
-                    planId: plan.id, warehouseId: plan.warehouseId,
-                    productsPerTask: plan.productsPerTask, abcClassification: plan.abcClassification,
-                  );
-                  if (taskId > 0 && mounted) {
-                    AppToast.show(context, tr('تم إنشاء مهمة جرد جديدة'));
-                    notifier.refresh();
-                    _tabController.animateTo(1);
+                  try {
+                    final taskId = await repo.generateCycleCountTask(
+                      planId: plan.id, warehouseId: plan.warehouseId,
+                      productsPerTask: plan.productsPerTask, abcClassification: plan.abcClassification,
+                    );
+                    if (!mounted) return;
+                    if (taskId > 0) {
+                      AppToast.show(context, tr('تم إنشاء مهمة جرد جديدة'));
+                      notifier.refresh();
+                      _tabController.animateTo(1);
+                    } else {
+                      AppToast.show(context, tr('لا توجد أصناف موجبة المخزون متاحة للجرد'));
+                    }
+                  } on db.CycleCountGenerationException catch (e) {
+                    if (mounted) AppToast.show(context, e.message);
                   }
                 },
                 icon: const Icon(Icons.play_arrow, size: 18),
@@ -589,15 +596,19 @@ class _CycleCountScreenState extends ConsumerState<CycleCountScreen>
     // between the isEmpty check above and the firstWhere below.
     if (state.plans.isEmpty) return;
     final plan = state.plans.firstWhere((p) => p.status == 'active', orElse: () => state.plans.first);
-    final taskId = await repo.generateCycleCountTask(
-      planId: plan.id, warehouseId: plan.warehouseId,
-      productsPerTask: plan.productsPerTask,
-    );
-    if (taskId > 0 && mounted) {
-      AppToast.show(context, tr('تم إنشاء مهمة جرد جديدة'));
-      notifier.refresh();
-    } else if (mounted) {
-      AppToast.show(context, tr('لا توجد أصناف بمخزون لجردها'), type: ToastType.error);
+    try {
+      final taskId = await repo.generateCycleCountTask(
+        planId: plan.id, warehouseId: plan.warehouseId,
+        productsPerTask: plan.productsPerTask,
+      );
+      if (taskId > 0 && mounted) {
+        AppToast.show(context, tr('تم إنشاء مهمة جرد جديدة'));
+        notifier.refresh();
+      } else if (mounted) {
+        AppToast.show(context, tr('لا توجد أصناف بمخزون لجردها'), type: ToastType.error);
+      }
+    } on db.CycleCountGenerationException catch (e) {
+      if (mounted) AppToast.show(context, e.message);
     }
   }
 

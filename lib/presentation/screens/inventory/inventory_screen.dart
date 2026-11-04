@@ -6,6 +6,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/diagnostics/perf_trace.dart';
 import '../../../core/logging/diagnostic_logger.dart';
 import '../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import '../../../core/widgets/app_toast.dart';
 // 063 (D1-005): dual-approval gate for stock write-offs.
 import '../../../services/dual_approval_service.dart';
@@ -211,7 +212,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
         fillColor: Theme.of(context).cardColor,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: context.picposHairline),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       ),
@@ -228,7 +229,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: context.picposHairline),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<int?>(
@@ -259,7 +260,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: context.picposHairline),
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<int?>(
@@ -290,7 +291,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
       selectedColor: AppColors.warning.withValues(alpha: 0.2),
       checkmarkColor: AppColors.warning,
       labelStyle: TextStyle(
-        color: state.showLowStockOnly ? AppColors.warning : AppColors.textMuted,
+        color: state.showLowStockOnly ? AppColors.warning : context.picposMuted,
         fontWeight: state.showLowStockOnly
             ? FontWeight.bold
             : FontWeight.normal,
@@ -502,7 +503,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
                   color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: selectedProductId != null ? AppColors.primary : AppColors.border,
+                    color: selectedProductId != null ? AppColors.primary : context.picposHairline,
                   ),
                 ),
                 child: DropdownButtonHideUnderline(
@@ -589,7 +590,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
       label: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: isSelected ? Colors.white : AppColors.textMuted),
+          Icon(icon, size: 14, color: isSelected ? Colors.white : context.picposMuted),
           const SizedBox(width: 4),
           Text(label),
         ],
@@ -601,7 +602,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen>
       selectedColor: AppColors.primary,
       checkmarkColor: Colors.white,
       labelStyle: TextStyle(
-        color: isSelected ? Colors.white : AppColors.textMuted,
+        color: isSelected ? Colors.white : context.picposMuted,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         fontSize: 12,
       ),

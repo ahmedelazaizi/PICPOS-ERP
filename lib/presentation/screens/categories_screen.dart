@@ -15,6 +15,7 @@ import '../widgets/category_icon_picker.dart';
 import '../widgets/category_card.dart';
 import '../../services/label_scale_service.dart';
 import '../../data/providers/providers.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Categories management screen
 class CategoriesScreen extends ConsumerStatefulWidget {
@@ -661,8 +662,8 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                   const SizedBox(height: 12),
                   Text(
                     tr('بعد النقل سيتم حذف تصنيف "{p0}" (يمكن استرجاعه من سجل النشاطات).', {'p0': deleting.name}),
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textSecondary),
+                    style: TextStyle(
+                        fontSize: 12, color: context.picposSecondary),
                   ),
                 ],
               ),
@@ -1127,8 +1128,7 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
       categoryId: category.id,
       limit: 10000,
     );
-    // Map ProductEntity to Product (Drift class for scale service compatibility if needed, 
-    // but the ScalePLUItem mapping below looks like it uses properties common to both)
+    // Map ProductEntity to Drift Product (scale service compat).
     final weightProducts = productEntities
         .where(
           (p) =>

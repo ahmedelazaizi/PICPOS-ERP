@@ -8,6 +8,7 @@ import 'package:intl/intl.dart' hide TextDirection;
 import '../../core/theme/app_colors.dart';
 import '../../data/providers/repository_providers.dart';
 import '../../core/widgets/app_toast.dart';
+import '../picpos_shell/picpos_surface.dart';
 
 /// Deferred Revenue / Expense Management Screen — الإيرادات والمصروفات المؤجلة
 class DeferredScheduleScreen extends ConsumerStatefulWidget {
@@ -26,7 +27,7 @@ class _DeferredScheduleScreenState extends ConsumerState<DeferredScheduleScreen>
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
-        backgroundColor: AppColors.surface,
+        backgroundColor: context.picposField,
         body: Column(
           children: [
             _buildHeader(context),
@@ -118,12 +119,12 @@ class _DeferredScheduleScreenState extends ConsumerState<DeferredScheduleScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(PhosphorIconsBold.calendarCheck, size: 64, color: AppColors.textMuted),
+                Icon(PhosphorIconsBold.calendarCheck, size: 64, color: context.picposMuted),
                 const SizedBox(height: 16),
-                Text(tr('لا توجد جداول استحقاق نشطة'), style: GoogleFonts.cairo(fontSize: 16, color: AppColors.textMuted)),
+                Text(tr('لا توجد جداول استحقاق نشطة'), style: GoogleFonts.cairo(fontSize: 16, color: context.picposMuted)),
                 const SizedBox(height: 8),
                 Text(tr('أضف إيراداً مؤجلاً أو مصروفاً مدفوعاً مقدماً لبدء الترحيل التلقائي'),
-                    style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted)),
+                    style: GoogleFonts.cairo(fontSize: 12, color: context.picposMuted)),
               ],
             ),
           );
@@ -171,7 +172,7 @@ class _DeferredScheduleScreenState extends ConsumerState<DeferredScheduleScreen>
                     children: [
                       Text(schedule.description, style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w700)),
                       Text(isRevenue ? tr('إيراد مؤجل') : tr('مصروف مدفوع مقدماً'),
-                          style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+                          style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
                     ],
                   ),
                 ),
@@ -180,7 +181,7 @@ class _DeferredScheduleScreenState extends ConsumerState<DeferredScheduleScreen>
                   children: [
                     Text('${schedule.totalAmount}', style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w800)),
                     Text(tr('متبقي: {p0}', {'p0': schedule.remainingAmount}),
-                        style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+                        style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
                   ],
                 ),
               ],
@@ -193,7 +194,7 @@ class _DeferredScheduleScreenState extends ConsumerState<DeferredScheduleScreen>
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: progress,
-                      backgroundColor: AppColors.border,
+                      backgroundColor: context.picposHairline,
                       valueColor: AlwaysStoppedAnimation(isRevenue ? AppColors.success : AppColors.warning),
                       minHeight: 6,
                     ),

@@ -12,14 +12,18 @@ extension _PicPosBarcodeScanOps on _PicPosOperations {
     // وضعُ المرتجع: نفسُ رفض `_handleProductTap` أعلاه — حقلُ الباركود
     // الرئيسيّ يضيف لسلّة بيعٍ، ومحرِّرُ أسطر المرتجع له حقلُ بحثٍ خاصٌّ به
     // يمرّ بـ`canAcceptProduct` (‏`_QuickReturnLinesEditorDialog`).
+    //
+    // 2026-11-04: لا يزال لا يمسّ سلّةَ البيع، لكنّ المسحةَ صارت تُحسب سطرَ
+    // مرتجعٍ (ضمن ما بيع فعلاً) أو تُرفض برسالة — بدل رفضٍ شاملٍ يمنع مسحَ
+    // الصنف المرتجَع نفسِه (‏quick_return_cart).
     if (blocksCartMutation(ref.read(posReturnModeProvider))) {
-      showPosToast(
-        context,
-        ref,
-        tr('أنت في وضع المرتجع — أنهِ الحفظَ أو الإلغاءَ قبل إضافة صنفٍ للبيع'),
-        type: PosNotificationType.warning,
-      );
-      barcodeController.clear();
+      await _addBarcodeToQuickReturn(barcode);
+      return;
+    }
+
+    // وضعُ إدخال المرتجع بلا فاتورة (بند ٤): مسارٌ مستقلٌّ عن متحكّم البحث.
+    if (ref.read(posReturnEntryModeProvider)) {
+      await _addReturnByBarcode(barcode);
       return;
     }
 

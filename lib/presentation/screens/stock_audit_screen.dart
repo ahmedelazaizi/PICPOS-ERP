@@ -10,6 +10,7 @@ import '../../core/widgets/shimmer_loading.dart';
 
 import '../../data/providers/providers.dart';
 import 'inventory/providers/stock_audit_controller.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Stock Audit Screen - The Auditor
 class StockAuditScreen extends ConsumerStatefulWidget {
@@ -88,24 +89,24 @@ class _StockAuditScreenState extends ConsumerState<StockAuditScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             PhosphorIconsBold.archive,
             size: 80,
-            color: AppColors.textMuted,
+            color: context.picposMuted,
           ),
           const SizedBox(height: 24),
            Text(
             tr('لا توجد جلسة جرد مفتوحة حالياً'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+              color: context.picposText,
             ),
           ),
           const SizedBox(height: 8),
            Text(
             tr('ابدأ جلسة جرد جديدة لمطابقة المتوفر الفعلي مع النظام'),
-            style: const TextStyle(color: AppColors.textSecondary),
+            style: TextStyle(color: context.picposSecondary),
           ),
           const SizedBox(height: 32),
           ElevatedButton.icon(
@@ -237,7 +238,7 @@ class _StockAuditScreenState extends ConsumerState<StockAuditScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+          style: TextStyle(fontSize: 11, color: context.picposMuted),
         ),
         const SizedBox(height: 4),
         isEditable
@@ -314,7 +315,7 @@ class _StockAuditScreenState extends ConsumerState<StockAuditScreen> {
       children: [
          Text(
           tr('الفارق'),
-          style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+          style: TextStyle(fontSize: 11, color: context.picposMuted),
         ),
         const SizedBox(height: 4),
         Container(

@@ -131,7 +131,7 @@ class _CustomerPointsTabState extends State<_CustomerPointsTab> {
                       padding: const EdgeInsets.all(12),
                       child: Text(
                         tr('لا يوجد برنامج ولاء. أنشئ برنامجاً أولاً لتفعيل النقاط.'),
-                        style: const TextStyle(color: AppColors.textMuted),
+                        style: TextStyle(color: context.picposMuted),
                       ),
                     );
                   }

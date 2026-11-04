@@ -257,42 +257,27 @@ extension _PicPosCartEditOps on _PicPosOperations {
       return;
     }
     if (!mounted) return;
-    final current = ref.read(cartControllerProvider).discountPercent;
-    final controller =
-        TextEditingController(text: current == 0 ? '' : current.toString());
-    final result = await showDialog<double>(
-      context: context,
-      builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          title:  Text(tr('خصم الفاتورة')),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration:  InputDecoration(
-              labelText: tr('نسبة الخصم %'),
-              border: const OutlineInputBorder(),
-            ),
-            onSubmitted: (v) =>
-                Navigator.pop(ctx, double.tryParse(v.trim()) ?? current),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child:  Text(tr('إلغاء')),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(
-                  ctx, double.tryParse(controller.text.trim()) ?? current),
-              child:  Text(tr('تطبيق')),
-            ),
-          ],
-        ),
-      ),
+    final cartState = ref.read(cartControllerProvider);
+    // في وضع المبلغ الثابت لا نسبةَ مخزَّنة: التبويبُ الافتراضي للنسبة يبدأ فارغاً.
+    final current =
+        cartState.invoiceDiscountAmount != null ? 0.0 : cartState.discountPercent;
+    // بند ٦ (أ): نسبة أو قيمة. القيمةُ تُحوَّل إلى نسبةٍ داخل الحوار على قاعدة
+    // خصم الفاتورة (subtotal − خصم الأسطر)، فلا تتغيّر حالةُ السلّة ولا الحساب.
+    final totals = cartState.totals;
+    final base = totals.subtotal - totals.itemDiscounts;
+    final result = await showPicPosInvoiceDiscountDialog(
+      context,
+      base: base,
+      currentPercent: current,
     );
-    controller.dispose();
-    if (result != null && result >= 0 && result <= 100) {
+    if (!mounted) return;
+    final pickedPercent = result?.percent;
+    final pickedAmount = result?.amount;
+    if (result != null &&
+        ((pickedPercent != null &&
+                pickedPercent >= 0 &&
+                pickedPercent <= 100) ||
+            (pickedAmount != null && pickedAmount >= 0))) {
       // §٤ `disccap` على خصم الفاتورة كلِّها.
       //
       // ⚠️ **هنا الفحصُ بعد الحوار لا قبله**، خلافاً للبابين الآخرين: القيمةُ
@@ -301,8 +286,13 @@ extension _PicPosCartEditOps on _PicPosOperations {
       // أصلاً)، فمن لا يملك الصلاحيةَ **ويتجاوز السقفَ** يرى حوارَين —
       // وهما قراران مختلفان فعلاً: «أتخصم أصلاً؟» ثمّ «أتتجاوز الحدَّ؟».
              if (!mounted) return;
+      // السقفُ يقيس **النسبةَ الفعلية** (المبلغ ÷ القاعدة، بعد القصّ) لا المُدخل.
+      final policyPercent =
+          pickedAmount != null
+              ? cartState.effectivePercentForAmount(pickedAmount)
+              : pickedPercent!;
       final verdict = await ensureDiscountWithinPolicy(
-          ref, context, result,
+          ref, context, policyPercent,
           scope: 'invoice_discount');
       if (verdict != DiscountPolicyOutcome.allowed) {
         final msg = discountPolicyMessage(verdict);
@@ -313,7 +303,12 @@ extension _PicPosCartEditOps on _PicPosOperations {
         return;
       }
       if (!mounted) return;
-      ref.read(cartControllerProvider.notifier).setDiscount(result);
+      final cart = ref.read(cartControllerProvider.notifier);
+      if (pickedAmount != null) {
+        cart.setInvoiceDiscountAmount(pickedAmount);
+      } else {
+        cart.setDiscount(pickedPercent!);
+      }
     }
     _refocusScanner();
   }

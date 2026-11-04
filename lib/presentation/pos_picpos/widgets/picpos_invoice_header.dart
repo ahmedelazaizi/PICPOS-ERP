@@ -204,7 +204,7 @@ class _CustomerField extends StatelessWidget {
           icon: PhosphorIconsBold.user,
           label: tr('العميل'),
           value: name ?? tr('عميل نقدي'),
-          valueColor: name == null ? AppColors.textMuted : AppColors.primary,
+          valueColor: name == null ? context.picposMuted : AppColors.primary,
         ),
       ),
     );
@@ -291,7 +291,7 @@ class _WarehouseField extends ConsumerWidget {
       data: (list) => _Field(
         icon: PhosphorIconsBold.warehouse,
         label: tr('المستودع'),
-        value: list.isEmpty ? '—' : list.first.name,
+        value: list.isEmpty ? '—' : trData(list.first.name),
       ),
     );
   }

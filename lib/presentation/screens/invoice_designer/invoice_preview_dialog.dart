@@ -378,7 +378,7 @@ class InvoicePreviewDialog extends StatelessWidget {
               children: [
                 Icon(Icons.image, color: Colors.grey, size: 16),
                 SizedBox(width: 4),
-                Text('LOGO', style: TextStyle(fontSize: 8, color: Colors.grey)),
+                Text('LOGO', style: TextStyle(fontSize: 11, color: Colors.grey)),
               ],
             ),
           ),
@@ -390,7 +390,7 @@ class InvoicePreviewDialog extends StatelessWidget {
             margin: const EdgeInsets.symmetric(vertical: 4),
             color: Colors.black,
             child: const Center(
-              child: Text('QR', style: TextStyle(color: Colors.white, fontSize: 10)),
+              child: Text('QR', style: TextStyle(color: Colors.white, fontSize: 11)),
             ),
           ),
         );

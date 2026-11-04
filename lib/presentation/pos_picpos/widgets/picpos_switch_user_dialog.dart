@@ -10,6 +10,7 @@ import '../../../data/providers/providers.dart';
 import '../../pos/logic/open_shift_gate.dart';
 import '../../pos/providers/cart_controller.dart';
 import '../providers/pos_return_mode_provider.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// Hand the till to another cashier without leaving the application.
 ///
@@ -216,7 +217,7 @@ class _PicposSwitchUserDialogState
                   child: Text(
                     tr('لا يوجد مستخدم آخر نشط للتحويل إليه.'),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: AppColors.textMuted),
+                    style: TextStyle(color: context.picposMuted),
                   ),
                 );
               }

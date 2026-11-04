@@ -1,6 +1,5 @@
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import '../picpos_shell/picpos_screen_scaffold.dart';
 import '../picpos_shell/picpos_surface.dart';
@@ -9,8 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:drift/drift.dart' show Value;
 import '../../data/database/database.dart' as db;
-import 'package:file_picker/file_picker.dart';
 import '../../core/theme/app_colors.dart';
+import '../template_editor_picpos/label/template_json_file.dart';
 
 import '../../data/providers/providers.dart';
 import 'invoice_designer/invoice_designer_canvas.dart';
@@ -24,6 +23,14 @@ part 'invoice_designer/invoice_designer_ui.dart';
 
 /// مصمم الفواتير المخصص
 /// شاشة لتصميم قوالب الفواتير Thermal و A4
+///
+/// ⚠️ مُخفى عن الواجهة بعد التكافؤ — قرار المالك 2026-11-03.
+/// ملصقاتُ الباركود (‏`templateCategory == 'barcode'`) تُحرَّر الآن بـ«قماش
+/// الملصق» في `TemplateEditorPicposScreen(labelMode: true)` من تبويب «ملصقات
+/// الباركود» في المكتبة، وقوالبُ الفواتير بمحرّر النطاقات. الكودُ باقٍ كما هو
+/// ولا يُحذف؛ بلاطتُه في `settings_picpos_tiles.dart` خلف
+/// `_kLegacyLabelDesignerTileVisible`. التقرير:
+/// `docs/plans/2026-11-03-barcode-label-editor-migration.md`.
 class InvoiceDesignerScreen extends ConsumerStatefulWidget {
   final int? templateId; // لتعديل قالب موجود
 

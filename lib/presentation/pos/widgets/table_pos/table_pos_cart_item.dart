@@ -49,7 +49,7 @@ class TablePosCartItem extends StatelessWidget {
                     Text(
                         '${item.effectivePrice.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
                         style: GoogleFonts.cairo(
-                            fontSize: 10,
+                            fontSize: 11,
                             color: Colors.white.withValues(alpha: 0.3))),
                   ],
                 ),
@@ -164,7 +164,7 @@ class TablePosCartItem extends StatelessWidget {
                   Expanded(
                     child: Text(item.note!,
                         style: GoogleFonts.cairo(
-                            fontSize: 10,
+                            fontSize: 11,
                             color: const Color(0xFFF59E0B)
                                 .withValues(alpha: 0.8),
                             fontStyle: FontStyle.italic),

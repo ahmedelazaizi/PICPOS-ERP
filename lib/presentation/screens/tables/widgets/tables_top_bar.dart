@@ -167,7 +167,7 @@ class TablesTopBar extends ConsumerWidget {
                   const SizedBox(width: 4),
                   Text(tr('نشط'),
                       style: GoogleFonts.cairo(
-                          fontSize: 10,
+                          fontSize: 11,
                           color: const Color(0xFF10B981),
                           fontWeight: FontWeight.w600)),
                 ],
@@ -258,7 +258,7 @@ class TablesTopBar extends ConsumerWidget {
           const SizedBox(width: 4),
           Text(label,
               style: GoogleFonts.cairo(
-                  fontSize: 9,
+                  fontSize: 11,
                   color: color.withValues(alpha: 0.7),
                   fontWeight: FontWeight.w600)),
         ],

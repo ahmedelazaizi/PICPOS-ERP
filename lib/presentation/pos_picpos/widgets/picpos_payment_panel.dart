@@ -39,21 +39,24 @@ import '../../../domain/usecases/sales/calculate_invoice_totals_usecase.dart';
 import '../../pos/providers/cart_controller.dart';
 import '../providers/pos_exchange_mode_provider.dart';
 import '../providers/pos_return_mode_provider.dart';
+import '../state/pos_return_mode.dart';
 import 'picpos_cart_permissions.dart';
 import 'picpos_one_time_customer.dart';
 import 'picpos_pos_text.dart';
 
+part 'picpos_payment_panel_buttons.dart';
+part 'picpos_payment_panel_return.dart';
+
 /// `--field` من التصميم تابعاً للوضع.
 ///
-/// ⚠️ القيمةُ الفاتحةُ **هي هي** (`#F4F7FC`) لا `AppColors.surface`: اللوحةُ
+/// ⚠️ القيمةُ الفاتحةُ **هي هي** (`#F4F7FC`) لا `context.picposField`: اللوحةُ
 /// رُسمت على رمز التصميم، و`context.picposField` تعطي `#F8FAFC` — فرقٌ لا
 /// يُرى لكنّه يبدّل الفاتحَ، والعقدُ أن يبقى الفاتحُ كما هو بايتاً ببايت.
 ///
 /// وكان الخمسةُ مكتوبين بالرقم مباشرةً، فبقيت أرضيّاتُ اللوحة بيضاءَ في
 /// الوضع الغامق — أحدُ مواضعِ بلاغ المالك 2026-08-24 عن «البيع السريع».
-Color _fieldOf(BuildContext context) => context.picposIsDark
-    ? const Color(0xFF18243A)
-    : const Color(0xFFF4F7FC);
+Color _fieldOf(BuildContext context) =>
+    context.picposIsDark ? const Color(0xFF18243A) : const Color(0xFFF4F7FC);
 
 class PicPosPaymentPanel extends ConsumerWidget {
   final VoidCallback onCheckout;
@@ -101,6 +104,9 @@ class PicPosPaymentPanel extends ConsumerWidget {
     final controller = ref.read(cartControllerProvider.notifier);
     final totals = cart.totals;
 
+    // وضع المرتجع لا يستخدم مجاميع سلّة البيع؛ المبلغ مصدره وضع المرتجع نفسه.
+    final returnMode = ref.watch(posReturnModeProvider);
+
     // المفاتيح هي نفس مفاتيح UralCash. الافتراضيات لما الإعداد مش مضبوط
     // **أصغر** عن قصد: عمود الفاتورة هنا ضيّق (٤٠٪) مش نص الشاشة زي سلة
     // UralCash، وأول تنفيذ بافتراضيات UralCash خلّى اللوحة تاكل العمود
@@ -130,13 +136,18 @@ class PicPosPaymentPanel extends ConsumerWidget {
                 Expanded(
                   flex: 3,
                   child: _CustomerRow(
-                      onPickCustomer: onPickCustomer, scale: scale),
+                    onPickCustomer: onPickCustomer,
+                    scale: scale,
+                  ),
                 ),
               if (showOrderType)
                 Expanded(
                   flex: 2,
                   child: _OrderTypeRow(
-                      cart: cart, controller: controller, scale: scale),
+                    cart: cart,
+                    controller: controller,
+                    scale: scale,
+                  ),
                 ),
             ],
           ),
@@ -144,6 +155,7 @@ class PicPosPaymentPanel extends ConsumerWidget {
             cart: cart,
             controller: controller,
             totals: totals,
+            returnMode: returnMode,
             scale: scale,
             onEditDiscount: onEditDiscount,
           ),
@@ -207,22 +219,32 @@ class _CustomerRow extends ConsumerWidget {
           ),
           child: Row(
             children: [
-              Icon(PhosphorIconsBold.user,
-                  size: 15, color: isSet ? AppColors.primary : AppColors.textMuted),
+              Icon(
+                PhosphorIconsBold.user,
+                size: 15,
+                color: isSet ? AppColors.primary : context.picposMuted,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   isSet ? name : tr('عميل نقدي — اضغط للاختيار'),
                   overflow: TextOverflow.ellipsis,
                   style: isSet
-                      ? PicPosText.v(context, 13 * scale, color: AppColors.primary)
+                      ? PicPosText.v(
+                          context,
+                          13 * scale,
+                          color: AppColors.primary,
+                        )
                       : PicPosText.l(context, 13 * scale),
                 ),
               ),
               // J3 — اسمُ العميل لمرّةٍ واحدة على «عميل نقدي».
               const PicPosOneTimeCustomerButton(),
-              const Icon(PhosphorIconsBold.caretLeft,
-                  size: 13, color: AppColors.textMuted),
+              Icon(
+                PhosphorIconsBold.caretLeft,
+                size: 13,
+                color: context.picposMuted,
+              ),
             ],
           ),
         ),
@@ -324,9 +346,11 @@ class _TypeChip extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon,
-                size: 14,
-                color: selected ? Colors.white : PicPosText.labelOf(context)),
+            Icon(
+              icon,
+              size: 14,
+              color: selected ? Colors.white : PicPosText.labelOf(context),
+            ),
             const SizedBox(width: 5),
             Text(
               label,
@@ -347,6 +371,7 @@ class _TotalsBlock extends ConsumerWidget {
   final CartState cart;
   final CartController controller;
   final InvoiceTotals totals;
+  final PosReturnMode? returnMode;
   final double scale;
   final VoidCallback onEditDiscount;
 
@@ -354,6 +379,7 @@ class _TotalsBlock extends ConsumerWidget {
     required this.cart,
     required this.controller,
     required this.totals,
+    required this.returnMode,
     required this.scale,
     required this.onEditDiscount,
   });
@@ -367,7 +393,7 @@ class _TotalsBlock extends ConsumerWidget {
 
     return Column(
       children: [
-        if (showTax || showDiscount)
+        if (returnMode == null && (showTax || showDiscount))
           Padding(
             padding: EdgeInsets.only(bottom: 8 * scale),
             child: Row(
@@ -398,11 +424,19 @@ class _TotalsBlock extends ConsumerWidget {
                 if (showDiscount)
                   Expanded(
                     child: _ToggleTile(
-                      label: cart.discountPercent > 0
-                          ? tr('خصم {p0}', {'p0': NumberUtils.formatPercent(cart.discountPercent)})
+                      label: cart.hasInvoiceDiscount
+                          ? tr('خصم {p0}', {
+                              'p0': cart.invoiceDiscountAmount != null
+                                  ? NumberUtils.formatAmount(
+                                      cart.totals.invoiceDiscount,
+                                    )
+                                  : NumberUtils.formatPercent(
+                                      cart.discountPercent,
+                                    ),
+                            })
                           : tr('خصم'),
                       icon: PhosphorIconsBold.percent,
-                      active: cart.discountPercent > 0,
+                      active: cart.hasInvoiceDiscount,
                       onTap: onEditDiscount,
                       scale: scale,
                     ),
@@ -418,27 +452,27 @@ class _TotalsBlock extends ConsumerWidget {
           ),
           child: Column(
             children: [
-              if (showSubtotal)
+              if (returnMode == null && showSubtotal)
                 _Line(
                   label: tr('المجموع الفرعي'),
                   value: totals.subtotal,
                   scale: scale,
                 ),
-              if (totals.totalDiscount > 0)
+              if (returnMode == null && totals.totalDiscount > 0)
                 _Line(
                   label: tr('الخصم'),
                   value: totals.totalDiscount,
                   scale: scale,
-                  color: AppColors.error,
+                  color: PicPosText.readableOn(context, AppColors.error),
                   negative: true,
                 ),
-              if (showTax && cart.taxEnabled)
+              if (returnMode == null && showTax && cart.taxEnabled)
                 _Line(
                   label: tr('ضريبة القيمة المضافة'),
                   value: totals.taxAmount,
                   scale: scale,
                 ),
-              if (cart.deliveryFee > 0)
+              if (returnMode == null && cart.deliveryFee > 0)
                 _Line(
                   label: tr('رسوم التوصيل'),
                   value: cart.deliveryFee,
@@ -451,21 +485,27 @@ class _TotalsBlock extends ConsumerWidget {
               Row(
                 children: [
                   Text(
-                    tr('الإجمالي النهائي'),
-                    style: PicPosText.l(context, 
+                    returnMode == null
+                        ? tr('الإجمالي النهائي')
+                        : tr('المبلغ المسترد'),
+                    style: PicPosText.l(
+                      context,
                       13 * scale,
-                      color: AppColors.textSecondary,
+                      color: context.picposSecondary,
                     ),
                   ),
                   const Spacer(),
                   Text(
-                    NumberUtils.formatCurrency(cart.total),
+                    // الصافي بإشارته (بيع − مرتجع بلا فاتورة): السالبُ = نقدٌ يُردّ.
+                    _paymentPanelTotal(cart, returnMode),
+                    key: const ValueKey('picpos_payment_panel_total'),
                     // اللون دلالي (أحمر لو سالب) فبيغلب أسود القيم.
-                    style: PicPosText.v(context, 
+                    style: PicPosText.v(
+                      context,
                       24 * scale,
-                      color: cart.isNegative
-                          ? AppColors.error
-                          : AppColors.primaryDark,
+                      color: returnMode != null || cart.signedTotal < 0
+                          ? PicPosText.readableOn(context, AppColors.error)
+                          : PicPosText.brandOf(context),
                     ),
                   ),
                 ],
@@ -503,10 +543,7 @@ class _Line extends StatelessWidget {
           const Spacer(),
           Text(
             '${negative ? '− ' : ''}${NumberUtils.formatCurrency(value)}',
-            style: PicPosText.v(context, 
-              13 * scale,
-              color: color,
-            ),
+            style: PicPosText.v(context, 13 * scale, color: color),
           ),
         ],
       ),
@@ -548,9 +585,11 @@ class _ToggleTile extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon,
-                size: 14,
-                color: active ? AppColors.primary : PicPosText.labelOf(context)),
+            Icon(
+              icon,
+              size: 14,
+              color: active ? AppColors.primary : PicPosText.labelOf(context),
+            ),
             const SizedBox(width: 5),
             Text(
               label,
@@ -592,8 +631,10 @@ class _SafeChipRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bankSafes = ref.watch(branchBankSafesProvider).value ?? const <Safe>[];
-    final cashSafes = ref.watch(branchCashSafesProvider).value ?? const <Safe>[];
+    final bankSafes =
+        ref.watch(branchBankSafesProvider).value ?? const <Safe>[];
+    final cashSafes =
+        ref.watch(branchCashSafesProvider).value ?? const <Safe>[];
     final method = cart.paymentMethod;
 
     if (_isBankMethod(method)) {
@@ -611,7 +652,9 @@ class _SafeChipRow extends ConsumerWidget {
       return _SafeChip(
         icon: PhosphorIconsBold.timer,
         color: AppColors.warning,
-        label: tr('آجل — {p0}', {'p0': cart.selectedCustomerName ?? tr('بدون عميل')}),
+        label: tr('آجل — {p0}', {
+          'p0': cart.selectedCustomerName ?? tr('بدون عميل'),
+        }),
         scale: scale,
       );
     }
@@ -620,7 +663,7 @@ class _SafeChipRow extends ConsumerWidget {
       color: AppColors.success,
       label: cashSafes.isEmpty
           ? tr('نقدي')
-          : tr('الصندوق: {p0}', {'p0': cashSafes.first.name}),
+          : tr('الصندوق: {p0}', {'p0': trData(cashSafes.first.name)}),
       scale: scale,
     );
   }
@@ -633,8 +676,10 @@ class _SafeChipRow extends ConsumerWidget {
     final position = RelativeRect.fromRect(
       Rect.fromPoints(
         box.localToGlobal(Offset.zero, ancestor: overlayBox),
-        box.localToGlobal(box.size.bottomRight(Offset.zero),
-            ancestor: overlayBox),
+        box.localToGlobal(
+          box.size.bottomRight(Offset.zero),
+          ancestor: overlayBox,
+        ),
       ),
       Offset.zero & overlayBox.size,
     );
@@ -649,16 +694,21 @@ class _SafeChipRow extends ConsumerWidget {
               textDirection: TextDirection.rtl,
               child: Row(
                 children: [
-                  Icon(PhosphorIconsBold.bank,
-                      size: 15,
-                      color: cart.bankSafeId == safe.id
-                          ? AppColors.primary
-                          : AppColors.textMuted),
+                  Icon(
+                    PhosphorIconsBold.bank,
+                    size: 15,
+                    color: cart.bankSafeId == safe.id
+                        ? AppColors.primary
+                        : context.picposMuted,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(child: Text(trData(safe.name))),
                   if (cart.bankSafeId == safe.id)
-                    const Icon(PhosphorIconsBold.check,
-                        size: 15, color: AppColors.primary),
+                    const Icon(
+                      PhosphorIconsBold.check,
+                      size: 15,
+                      color: AppColors.primary,
+                    ),
                 ],
               ),
             ),
@@ -698,6 +748,7 @@ class _SafeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ink = PicPosText.readableOn(context, color);
     return Padding(
       padding: const EdgeInsets.only(top: 5),
       child: InkWell(
@@ -713,18 +764,12 @@ class _SafeChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 12, color: color),
+              Icon(icon, size: 12, color: ink),
               const SizedBox(width: 5),
-              Text(
-                label,
-                style: PicPosText.v(context, 
-                  11 * scale,
-                  color: color,
-                ),
-              ),
+              Text(label, style: PicPosText.v(context, 11 * scale, color: ink)),
               if (onTap != null) ...[
                 const SizedBox(width: 4),
-                Icon(PhosphorIconsBold.caretDown, size: 10, color: color),
+                Icon(PhosphorIconsBold.caretDown, size: 10, color: ink),
               ],
             ],
           ),
@@ -773,8 +818,12 @@ class _ActionButtons extends ConsumerWidget {
     final showExpense = ref.watch(showExpenseButtonInPOSProvider).value ?? true;
     final showSaveOnly = ref.watch(showSaveOnlyInPOSProvider).value ?? true;
     final showHold = ref.watch(showHoldButtonInPOSProvider).value ?? true;
-    final cartIsEmpty =
-        ref.watch(cartControllerProvider.select((s) => s.items.isEmpty));
+    final showReturn = ref.watch(showReturnButtonInPOSProvider).value ?? true;
+    final showExchange =
+        ref.watch(showExchangeButtonInPOSProvider).value ?? true;
+    final cartIsEmpty = ref.watch(
+      cartControllerProvider.select((s) => s.items.isEmpty),
+    );
     // وضعُ المرتجع (المهمّة ٧، جولةُ إصلاح ١ — C1): «دفع»/«حفظ» كانا
     // معطَّلين **دوماً** أثناء المرتجع لأنهما يقيسان فراغَ سلّة البيع، وسلّةُ
     // المرتجع لا تكتب على `cartController` عمداً (محرِّرُ الأسطر منفصلٌ
@@ -810,7 +859,9 @@ class _ActionButtons extends ConsumerWidget {
                 child: ElevatedButton(
                   onPressed: isEmpty ? null : onCheckout,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.success,
+                    // أخضر أغمق من `AppColors.success` ليبلغ نصُّه الأبيض
+                    // ٤٫٥:١ (كان ٢٫٢٨ على `#22C55E`).
+                    backgroundColor: const Color(0xFF15803D),
                     foregroundColor: Colors.white,
                     disabledBackgroundColor: context.picposHairline,
                     padding: EdgeInsets.zero,
@@ -822,10 +873,13 @@ class _ActionButtons extends ConsumerWidget {
                       const SizedBox(width: 5),
                       // «دفع» بقى بيحفظ **ويطبع ويفتح الدرج** (طلب ١)، فما
                       // بقاش فيه زرار طباعة منفصل يتلغبط معاه.
-                      Text(tr('دفع F4'),
-                          style: TextStyle(
-                              fontSize: btnFont + 1,
-                              fontWeight: FontWeight.bold)),
+                      Text(
+                        _paymentCheckoutLabel(returnMode),
+                        style: TextStyle(
+                          fontSize: btnFont + 1,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -868,33 +922,37 @@ class _ActionButtons extends ConsumerWidget {
             // صغيرة): بلا هذا كان يمكن الضغطُ عليه ثانيةً فيستبدل الاختيارَ
             // الحاليّ (فاتورةً وكمياتٍ ضُبطت بعنايةٍ في المحرِّر) بآخرَ صامتاً
             // بلا تأكيد.
-            SizedBox(width: 5 * scale),
-            Expanded(
-              child: _Action(
-                label: tr('مرتجع سريع'),
-                icon: PhosphorIconsBold.arrowUUpLeft,
-                onTap: (returnMode != null || exchangeMode != null)
-                    ? null
-                    : onQuickReturn,
-                height: btnHeight + 6,
-                font: btnFont,
+            if (showReturn) ...[
+              SizedBox(width: 5 * scale),
+              Expanded(
+                child: _Action(
+                  label: tr('مرتجع سريع'),
+                  icon: PhosphorIconsBold.arrowUUpLeft,
+                  onTap: (returnMode != null || exchangeMode != null)
+                      ? null
+                      : onQuickReturn,
+                  height: btnHeight + 6,
+                  font: btnFont,
+                ),
               ),
-            ),
+            ],
             // «استبدال» — نفسُ منطق «مرتجع سريع»، وكلُّ وضعٍ يعطّل الآخرَ
             // والنفسَ: الوضعان يقرآن فاتورةً أصليّةً واحدة، وفتحُ الثاني فوق
             // الأوّل كان يستبدل اختياراً ضُبط بعناية بلا تأكيد.
-            SizedBox(width: 5 * scale),
-            Expanded(
-              child: _Action(
-                label: tr('استبدال'),
-                icon: PhosphorIconsBold.arrowsLeftRight,
-                onTap: (returnMode != null || exchangeMode != null)
-                    ? null
-                    : onExchange,
-                height: btnHeight + 6,
-                font: btnFont,
+            if (showExchange) ...[
+              SizedBox(width: 5 * scale),
+              Expanded(
+                child: _Action(
+                  label: tr('استبدال'),
+                  icon: PhosphorIconsBold.arrowsLeftRight,
+                  onTap: (returnMode != null || exchangeMode != null)
+                      ? null
+                      : onExchange,
+                  height: btnHeight + 6,
+                  font: btnFont,
+                ),
               ),
-            ),
+            ],
           ],
         ),
         SizedBox(height: 5 * scale),
@@ -966,102 +1024,6 @@ class _ActionButtons extends ConsumerWidget {
           ],
         ),
       ],
-    );
-  }
-}
-
-/// زرار ثانوي مضغوط — أيقونة فوق تسمية، بلا إطار ثقيل.
-class _MiniAction extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback? onTap;
-  final double height;
-  final double font;
-
-  const _MiniAction({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-    required this.height,
-    required this.font,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onTap != null;
-    return Opacity(
-      opacity: enabled ? 1 : 0.4,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          height: height,
-          decoration: BoxDecoration(
-            color: _fieldOf(context),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: context.picposHairline),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: font + 2, color: AppColors.primaryDark),
-              Text(
-                label,
-                overflow: TextOverflow.ellipsis,
-                style: PicPosText.v(context, 
-                  font,
-                  color: AppColors.primaryDark,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Action extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback? onTap;
-  final double height;
-  final double font;
-
-  const _Action({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-    required this.height,
-    required this.font,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      child: OutlinedButton(
-        onPressed: onTap,
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          side: BorderSide(color: context.picposHairline),
-          foregroundColor: AppColors.primaryDark,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 15),
-            const SizedBox(width: 5),
-            Flexible(
-              child: Text(
-                label,
-                overflow: TextOverflow.ellipsis,
-                style: PicPosText.v(context, font),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

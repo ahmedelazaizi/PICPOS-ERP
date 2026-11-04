@@ -17,6 +17,7 @@ import '../../widgets/branch_warehouse_filter.dart';
 import '../../widgets/report_components.dart' show DateRangeFilter;
 import '../../widgets/report_filter_bar.dart';
 import 'report_export_guard.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 class TaxReportScreen extends ConsumerStatefulWidget {
   const TaxReportScreen({super.key});
@@ -49,12 +50,9 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
 
   // FIL-2 (spec 149 B12): the logged-in user's branch authorization scope.
   // null = full access (admin/financial-manager/mirror) → no restriction.
-  // Mirrors financial_statements_screen.dart's B12-1 wiring. Set both here
-  // (build()) AND at the top of _loadData() — unlike financial_statements_
-  // screen's declarative per-tab FutureBuilder, this screen fetches
-  // imperatively from initState()'s microtask, which can run before build()
-  // ever resolves branchScopeProvider; _loadData() re-resolves the scope
-  // itself so the very first fetch can never race ahead unrestricted.
+  // Mirrors financial_statements_screen.dart B12-1. Set in build() AND at the
+  // top of _loadData() (fetches from initState() microtask, maybe before
+  // build() resolves branchScopeProvider) so the first fetch is never unrestricted.
   Set<int>? _allowedBranchIds;
 
   // Feature 058: one-time guard for the no-branch-assigned inline notice.
@@ -423,7 +421,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
               elevation: 0,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  side: const BorderSide(color: AppColors.border)),
+                  side: BorderSide(color: context.picposHairline)),
               child: SizedBox(
                 width: double.infinity,
                 child: DataTable(
@@ -458,7 +456,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
             const SizedBox(height: 8),
             Card(
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: AppColors.border)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: context.picposHairline)),
               child: SizedBox(
                 width: double.infinity,
                 child: Column(
@@ -511,7 +509,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
                            Padding(
                             padding: const EdgeInsets.all(12),
                             child: Text(tr('لا توجد أصناف مسجّلة لهذه الفاتورة'),
-                                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                style: TextStyle(fontSize: 12, color: context.picposSecondary)),
                           )
                         else
                           SizedBox(
@@ -556,7 +554,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
             const SizedBox(height: 8),
             Card(
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: AppColors.border)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: context.picposHairline)),
               child: SizedBox(
                 width: double.infinity,
                 child: DataTable(
@@ -627,7 +625,7 @@ class _TaxReportScreenState extends ConsumerState<TaxReportScreen> {
           const SizedBox(height: 10),
           Text(
             title,
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+            style: TextStyle(color: context.picposMuted, fontSize: 14),
           ),
           const SizedBox(height: 6),
           Text(

@@ -96,7 +96,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
                       decoration: BoxDecoration(
                         color: context.picposField,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.border),
+                        border: Border.all(color: context.picposHairline),
                       ),
                       child: Wrap(
                         spacing: 26,
@@ -131,8 +131,8 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
                     const SizedBox(height: 8),
                     Text(
                       tr('ملاحظات: {p0}', {'p0': invoice.notes}),
-                      style: const TextStyle(
-                          fontSize: 12, color: AppColors.textSecondary),
+                      style: TextStyle(
+                          fontSize: 12, color: context.picposSecondary),
                     ),
                   ],
                   const Divider(height: 24),
@@ -166,7 +166,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
                   if (items.isEmpty)
                      Text(
                       tr('لا توجد أصناف'),
-                      style: const TextStyle(color: AppColors.textMuted),
+                      style: TextStyle(color: context.picposMuted),
                     )
                   else
                     SalesInvoiceItemsTable(items: [for (final i in items) InvoiceItemRow(name: i.displayName, unit: i.item.unitName, quantity: i.item.quantity, unitPrice: i.item.unitPrice, total: i.item.total)]),
@@ -185,10 +185,11 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
             ),
           ),
           actions: [
-            TextButton.icon(
-              onPressed: () => _printInvoice(invoice),
-              icon: const Icon(PhosphorIconsBold.printer, size: 16),
-              label:  Text(tr('طباعة')),
+            SalesInvoicePrintActions(
+              invoice: invoice,
+              returnedAmount: ref.read(salesInvoicesControllerProvider)
+                      .returnedAmounts[invoice.id] ?? 0,
+              onPrintInvoice: () => _printInvoice(invoice),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -207,7 +208,7 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+            style: TextStyle(fontSize: 11, color: context.picposMuted)),
         const SizedBox(height: 2),
         Text(value,
             style:
@@ -272,13 +273,12 @@ extension SalesInvoiceDialogsExt on _SalesInvoicesPicposScreenState {
 
   void _printInvoice(InvoiceEntity invoice) async {
     try {
-      // Use PrintingService.printReceipt — the same unified path as POS.
-      // This ensures the user's custom thermal/receipt template is applied
-      // (falls back to default layout if no template exists).
+      // Bound `sales_invoice` template first, else the receipt as before.
       final printingService = ref.read(printingServiceProvider);
-      // §٤‑٣ — `printReceipt` لا ترمي أبداً، فكان الإخفاقُ يمرّ **صامتاً
+      // §٤‑٣ — الخدمةُ لا ترمي أبداً، فكان الإخفاقُ يمرّ **صامتاً
       // تماماً**: لا رسالةَ نجاحٍ ولا خطأ، والمستخدمُ ينتظر ورقةً لن تخرج.
-      final printed = await printingService.printReceipt(invoice.id!);
+      final printed =
+          await printingService.printSalesInvoiceDocument(invoice.id!);
       if (!printed && mounted) {
         AppToast.show(context, tr('تعذّرت الطباعة — تأكد من الطابعة'),
             type: ToastType.error);

@@ -22,6 +22,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../picpos_shell/picpos_dialog.dart';
+import '../../picpos_shell/picpos_surface.dart';
 
 /// حصيلةُ الحوار.
 class EndorseForm {
@@ -214,7 +215,7 @@ class _EndorseDialogState extends State<_EndorseDialog> {
             (
               label: tr('ذمة {p0}', {'p0': widget.fromPartyName}),
               value: tr('لا تتغيّر'),
-              color: AppColors.textMuted,
+              color: context.picposMuted,
             ),
             (
               label: tr('استحقاق الورقة'),

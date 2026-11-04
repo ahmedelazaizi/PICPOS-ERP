@@ -7,7 +7,6 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../../core/config/business_profile_provider.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/utils/number_utils.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/entities/cart_item_entity.dart';
 import '../../pos/providers/cart_controller.dart';
@@ -16,6 +15,7 @@ import 'picpos_numeric_keypad_dialog.dart';
 import '../../pos/providers/pos_notification_provider.dart';
 import 'picpos_cart_permissions.dart';
 import 'picpos_pos_text.dart';
+import 'picpos_return_line_style.dart';
 
 /// The invoice line table: م · المادة · الكمية · السعر · الخصم · المجموع · إلغاء
 ///
@@ -75,7 +75,7 @@ class PicPosItemsTable extends ConsumerWidget {
           _TableHeader(scale: scale, showOptions: showOptions),
           Expanded(
             child: items.isEmpty
-                ? const _EmptyState()
+                ? const PicPosItemsEmptyState()
                 : _AutoScrollItemList(
                     items: items,
                     selectedIndex: selectedIndex,
@@ -280,28 +280,6 @@ class _HeaderCell extends StatelessWidget {
   }
 }
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(PhosphorIconsBold.barcode,
-              size: 44, color: AppColors.textMuted),
-          const SizedBox(height: 10),
-          Text(
-            tr('امسح باركود أو اكتب كود الصنف للبدء'),
-            style: PicPosText.l(context, 14),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _ItemRow extends ConsumerWidget {
   final int index;
   final CartItemEntity item;
@@ -370,7 +348,8 @@ class _ItemRow extends ConsumerWidget {
     final perms = ref.watch(currentUserPermissionsProvider).asData?.value ??
         const <String>[];
     final canQty = canEditCartQuantityCodes(perms);
-    final canPrice = canEditCartPriceCodes(perms);
+    final isReturn = isReturnLine(item);
+    final canPrice = canEditLinePriceCodes(perms, isReturn: isReturn);
     final canDiscount = canApplyDiscountCodes(perms);
 
     return InkWell(
@@ -378,9 +357,8 @@ class _ItemRow extends ConsumerWidget {
       child: Container(
         height: 44 * scale,
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primary.withValues(alpha: 0.10)
-              : (index.isEven ? context.picposCard : context.picposField),
+          color: picposRowColor(context, item,
+              isSelected: isSelected, index: index),
           border: Border(
             bottom: BorderSide(color: context.picposHairline),
             right: BorderSide(
@@ -401,11 +379,8 @@ class _ItemRow extends ConsumerWidget {
               flex: _kFlexName,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 6),
-                child: Text(
-                  '${item.productName}$unitSuffix',
-                  overflow: TextOverflow.ellipsis,
-                  style: PicPosText.v(context, 13 * scale),
-                ),
+                child: PicPosLineName(
+                    item: item, suffix: unitSuffix, fontSize: 13 * scale),
               ),
             ),
             Expanded(
@@ -450,20 +425,21 @@ class _ItemRow extends ConsumerWidget {
                 min: 0,
                 onEditComplete: onEditComplete,
                 canEdit: canPrice,
-                requestAccess: () => ensureCartPricePermission(ref, context,
-                    scope: 'cell_line_price'),
+                requestAccess: () => ensureLinePricePermission(ref, context,
+                    isReturn: isReturn, scope: 'cell_line_price'),
                 onSubmitted: (v) async {
                   if (v < 0) return;
-                  // §٤ `priceedit` — «ممنوع» قبل أيّ حوارِ مصادقة.
-                  if (await priceEditBlockedByPolicy(ref)) {
+                  // §٤ `priceedit` — «ممنوع» قبل أيّ حوارِ مصادقة. وسعرُ
+                  // المرتجع بلا فاتورة له صلاحيتُه الخاصّة لا هذه السياسة.
+                  if (!isReturn && await priceEditBlockedByPolicy(ref)) {
                     if (!context.mounted) return;
                     showPosToast(context, ref, kPriceEditBlockedMessage,
                         type: PosNotificationType.error);
                     return;
                   }
                   if (!context.mounted) return;
-                  if (!await ensureCartPricePermission(ref, context,
-                      scope: 'cell_line_price')) {
+                  if (!await ensureLinePricePermission(ref, context,
+                      isReturn: isReturn, scope: 'cell_line_price')) {
                     return;
                   }
                   cart.updatePrice(index, v);
@@ -533,13 +509,13 @@ class _ItemRow extends ConsumerWidget {
                 // العمود ده جنب «السعر» و«الخصم ٪»، فمعناه المتوقّع هو
                 // ناتجهم: الكمية × السعر − الخصم. والضريبة سطر مستقل في
                 // لوحة الإجماليات، مش مدسوسة في صفوف الأصناف.
-                NumberUtils.formatCurrency(item.totalBeforeTax),
+                picposLineTotalText(item),
                 textAlign: TextAlign.center,
                 // `13 * scale` مش `13`: الخانة دي كانت مثبِّتة المقاس وبتتجاهل
                 // `posCartItemScaleProvider`، فسلايدر «حجم نص الأصناف» كان
                 // بيكبّر كل الأعمدة إلا المجموع.
                 style: PicPosText.v(context, 13 * scale,
-                    color: AppColors.primaryDark),
+                    color: PicPosText.brandOf(context)),
               ),
             ),
             if (showOptions)
@@ -556,8 +532,8 @@ class _ItemRow extends ConsumerWidget {
                     // يتّسع لعرضها نصّاً.
                     color: (item.modifiers.isNotEmpty ||
                             (item.itemNote?.isNotEmpty ?? false))
-                        ? AppColors.success
-                        : AppColors.textMuted,
+                        ? PicPosText.readableOn(context, AppColors.success)
+                        : context.picposMuted,
                   ),
                   tooltip: tr('الإضافات والخيارات وملاحظة الصنف'),
                 ),
@@ -568,7 +544,8 @@ class _ItemRow extends ConsumerWidget {
                 onPressed: onRemove,
                 padding: EdgeInsets.zero,
                 iconSize: 18 * scale,
-                icon: const Icon(PhosphorIconsBold.x, color: AppColors.error),
+                icon: Icon(PhosphorIconsBold.x,
+                    color: PicPosText.readableOn(context, AppColors.error)),
                 tooltip: tr('إلغاء الصنف'),
               ),
             ),
@@ -719,7 +696,7 @@ class _NumberCellState extends State<_NumberCell> {
           FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
         ],
         style: PicPosText.v(context, 13 * widget.scale,
-            color: widget.canEdit ? null : AppColors.textMuted),
+            color: widget.canEdit ? null : context.picposMuted),
         // `readOnly` لا `enabled: false`: المعطَّلُ لا يستقبل `onTap` أصلاً،
         // فيضيع بابُ موافقة المسؤول. والقراءةُ فقط تمنع الكتابةَ المباشرة
         // (‏كيبورد فيزيائيّ) وتُبقي اللمسَ يستأذن.

@@ -63,11 +63,11 @@ extension _SalesByClassificationReportAsync
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
+            colorScheme: ColorScheme.light(
               primary: AppColors.primary,
               onPrimary: Colors.white,
-              surface: AppColors.surface,
-              onSurface: AppColors.textPrimary,
+              surface: context.picposField,
+              onSurface: context.picposText,
             ),
           ),
           child: Center(
