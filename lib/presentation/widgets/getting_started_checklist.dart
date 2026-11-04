@@ -4,6 +4,8 @@ import 'dart:ui' as ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
+import 'package:picpos_erp/core/theme/readable_colors.dart';
 import '../../data/providers/providers.dart';
 import '../../data/providers/repository_providers.dart';
 import '../../domain/repositories/sales_repository.dart';
@@ -169,8 +171,11 @@ class _GettingStartedChecklistState
                       color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(PhosphorIconsBold.rocketLaunch,
-                        color: AppColors.primary, size: 20),
+                    child: Icon(PhosphorIconsBold.rocketLaunch,
+                        color: context.picposIsDark
+                            ? readableBrand(context)
+                            : AppColors.primary,
+                        size: 20),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -182,8 +187,8 @@ class _GettingStartedChecklistState
                                 fontSize: 15, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 2),
                         Text(tr('{doneCount} من {totalCount} مهام مكتملة', {'doneCount': doneCount, 'totalCount': totalCount}),
-                            style: const TextStyle(
-                                color: AppColors.textMuted, fontSize: 12)),
+                            style: TextStyle(
+                                color: context.picposMuted, fontSize: 12)),
                       ],
                     ),
                   ),
@@ -197,13 +202,13 @@ class _GettingStartedChecklistState
                         CircularProgressIndicator(
                           value: progress,
                           strokeWidth: 4,
-                          backgroundColor: AppColors.border,
+                          backgroundColor: context.picposHairline,
                           color: AppColors.success,
                         ),
                         Text(
                           '${(progress * 100).toInt()}%',
                           style: const TextStyle(
-                              fontSize: 10, fontWeight: FontWeight.bold),
+                              fontSize: 11, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -214,7 +219,7 @@ class _GettingStartedChecklistState
                     icon: const Icon(PhosphorIconsBold.x, size: 16),
                     tooltip: tr('إخفاء'),
                     style: IconButton.styleFrom(
-                      foregroundColor: AppColors.textMuted,
+                      foregroundColor: context.picposMuted,
                       padding: EdgeInsets.zero,
                       minimumSize: const Size(28, 28),
                     ),
@@ -238,6 +243,13 @@ class _GettingStartedChecklistState
   }
 
   Widget _buildItem(_ChecklistItem item) {
+    final card = context.picposCard;
+    final circleBg = Color.alphaBlend(
+        (item.isDone
+                ? AppColors.success.withValues(alpha: 0.15)
+                : context.picposHairline.withValues(alpha: 0.3)),
+        card);
+    final mutedInk = readableOn(context, context.picposMuted, on: card);
     return InkWell(
       onTap: item.isDone
           ? null
@@ -259,17 +271,20 @@ class _GettingStartedChecklistState
                 shape: BoxShape.circle,
                 color: item.isDone
                     ? AppColors.success.withValues(alpha: 0.15)
-                    : AppColors.border.withValues(alpha: 0.3),
+                    : context.picposHairline.withValues(alpha: 0.3),
                 border: Border.all(
-                  color: item.isDone ? AppColors.success : AppColors.border,
+                  color: item.isDone ? AppColors.success : context.picposHairline,
                   width: 1.5,
                 ),
               ),
               child: item.isDone
-                  ? const Icon(Icons.check_rounded,
-                      color: AppColors.success, size: 16)
+                  ? Icon(Icons.check_rounded,
+                      color: readableOn(context, AppColors.success,
+                          on: circleBg),
+                      size: 16)
                   : Icon(item.icon,
-                      color: AppColors.textMuted.withValues(alpha: 0.5),
+                      color: readableOn(
+                          context, context.picposMuted, on: circleBg),
                       size: 14),
             ),
             const SizedBox(width: 12),
@@ -285,14 +300,14 @@ class _GettingStartedChecklistState
                       fontWeight: FontWeight.w600,
                       decoration:
                           item.isDone ? TextDecoration.lineThrough : null,
-                      color: item.isDone ? AppColors.textMuted : null,
+                      color: item.isDone ? mutedInk : null,
                     ),
                   ),
                   Text(
                     item.subtitle,
                     style: TextStyle(
                       fontSize: 11,
-                      color: AppColors.textMuted.withValues(alpha: 0.7),
+                      color: mutedInk,
                     ),
                   ),
                 ],
@@ -303,7 +318,8 @@ class _GettingStartedChecklistState
               Icon(
                 PhosphorIconsBold.arrowLeft,
                 size: 14,
-                color: AppColors.primary.withValues(alpha: 0.6),
+                color: readableOn(context, AppColors.primary)
+                    .withValues(alpha: 0.75),
               ),
           ],
         ),

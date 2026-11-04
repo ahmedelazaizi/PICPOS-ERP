@@ -7,6 +7,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/config/business_profile_provider.dart';
 import '../../../data/providers/providers.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Wraps a widget (usually the POS screen) and detects inactivity.
 /// If inactive for [timeoutMinutes], it displays a lock screen overlay
@@ -255,7 +256,7 @@ class _SessionTimeoutWrapperState extends ConsumerState<SessionTimeoutWrapper> {
                   width: 420,
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.picposField,
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
@@ -286,19 +287,19 @@ class _SessionTimeoutWrapperState extends ConsumerState<SessionTimeoutWrapper> {
                       
                        Text(
                         tr('جلسة مقفلة'),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                          color: context.picposText,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         tr('الجلسة مقفلة تلقائياً لعدم النشاط.\nيرجى إدخال كلمة مرور {currentUser}\nأو رمز مدير النظام لفك القفل.', {'currentUser': currentUser}),
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: AppColors.textMuted,
+                          color: context.picposMuted,
                           height: 1.5,
                         ),
                       ),
@@ -360,7 +361,7 @@ class _SessionTimeoutWrapperState extends ConsumerState<SessionTimeoutWrapper> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           filled: true,
-                          fillColor: AppColors.surface,
+                          fillColor: context.picposField,
                         ),
                         onSubmitted: (_) => _unlock(),
                       ),

@@ -105,7 +105,7 @@ class SettingsNavRail extends StatelessWidget {
                     child: Text(
                       group,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: AppColors.textMuted,
+                            color: context.picposMuted,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 0.4,
                           ),
@@ -174,7 +174,7 @@ class _NavItem extends StatelessWidget {
                 child: Icon(
                   item.icon,
                   size: 18,
-                  color: selected ? AppColors.primary : AppColors.textMuted,
+                  color: selected ? AppColors.primary : context.picposMuted,
                 ),
               ),
               const SizedBox(width: 12),
@@ -198,7 +198,7 @@ class _NavItem extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: text.labelSmall
-                          ?.copyWith(color: AppColors.textMuted),
+                          ?.copyWith(color: context.picposMuted),
                     ),
                   ],
                 ),
@@ -212,7 +212,7 @@ class _NavItem extends StatelessWidget {
                   style: text.labelSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                     color:
-                        selected ? AppColors.primary : AppColors.textMuted,
+                        selected ? AppColors.primary : context.picposMuted,
                   ),
                 ),
               ],
@@ -252,7 +252,7 @@ class SettingsRailFooter extends ConsumerWidget {
             size: 18,
             color: activated.value == true
                 ? AppColors.success
-                : AppColors.textMuted,
+                : context.picposMuted,
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -273,7 +273,7 @@ class SettingsRailFooter extends ConsumerWidget {
                     false => tr('غير مفعّلة'),
                     null => '…',
                   },
-                  style: text.labelSmall?.copyWith(color: AppColors.textMuted),
+                  style: text.labelSmall?.copyWith(color: context.picposMuted),
                 ),
               ],
             ),

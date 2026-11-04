@@ -8,6 +8,7 @@ import '../../widgets/branch_chip.dart';
 
 import 'package:picpos_erp/l10n/app_localizations.dart';
 import '../../../../../../core/constants/app_constants.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class TreasurySafeCard extends StatelessWidget {
   final SafeData safe;
@@ -109,7 +110,7 @@ class TreasurySafeCard extends StatelessWidget {
             safe.isDefault
                 ? localizations.defaultSafe
                 : _safeLabel(localizations),
-            style: const TextStyle(fontSize: 9),
+            style: const TextStyle(fontSize: 11),
           ),
           trailing: Text(
             '${NumberFormat('#,##0.00', 'ar').format(safe.balance)} ${AppConstants.currencySymbolEn}',
@@ -118,7 +119,7 @@ class TreasurySafeCard extends StatelessWidget {
               fontWeight: FontWeight.w900,
               color: safe.balance > 0
                   ? color
-                  : AppColors.textMuted,
+                  : context.picposMuted,
             ),
           ),
         ),

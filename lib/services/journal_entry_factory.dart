@@ -100,9 +100,9 @@ class JournalEntryFactory {
     this._auditRepo,
   );
 
-  /// PIR-014: Current zero-cost policy. New factory instances block by default;
-  /// persisted settings still override this for existing installations.
-  ZeroCostPolicy _zeroCostPolicy = ZeroCostPolicy.block;
+  /// PIR-014: Current zero-cost policy. Defaults to warn (as
+  /// kDefaultZeroCostPolicy); persisted settings override.
+  ZeroCostPolicy _zeroCostPolicy = ZeroCostPolicy.warn;
 
   /// Set the zero-cost policy at runtime (loaded from settings).
   void setZeroCostPolicy(ZeroCostPolicy policy) {
@@ -256,6 +256,7 @@ class JournalEntryFactory {
     required double paid,
     required double remaining,
     double? invoiceTotal,
+    double salesDiscount = 0,
 
     /// فرقُ تقريب الإجماليّ (`total - roundedTotal`) — صفرٌ بلا تقريب.
     ///
@@ -456,13 +457,7 @@ class JournalEntryFactory {
     // equals the old `subtotal - discount`. A missing output_vat/delivery
     // account folds that amount into Sales instead of failing the sale.
     //
-    // Spec 136 (item 2): this builder books NET revenue — the trade discount
-    // is already embedded in `total` (paid + remaining), so there is NO
-    // separate sales-discount contra leg. This DELIBERATELY differs from
-    // accounting_autopost_dao, which books GROSS Sales + a sales-discount
-    // debit; both net to the same revenue (IFRS recognises revenue net of
-    // trade discount). Because the net is derived from the total, the former
-    // `subtotal` / `discount` parameters were dead and have been removed.
+    // Spec 136 item 2 chose net; owner now requires gross Sales + 4212.
     final salesAcc = revenueAccount ?? await _requireAccount('sales');
     final vatAcc = tax > 0 ? await _optionalAccount('output_vat') : null;
     final deliveryAcc = deliveryFee > 0
@@ -519,12 +514,24 @@ class JournalEntryFactory {
     // فبدونه يُحسَب الإيرادُ على المقبوضِ المقرَّب ويختلّ القيد.
     final netSalesCredit =
         (paid + remaining + roundingAdjustment) - vatLeg - deliveryLeg;
-    if (netSalesCredit.abs() > 0.001) {
+    final grossSalesCredit = netSalesCredit + salesDiscount;
+    if (grossSalesCredit.abs() > 0.001) {
       journalLines.add(
         JournalLine(
           accountId: salesAcc.id,
-          credit: netSalesCredit,
+          credit: grossSalesCredit,
           description: 'إيراد مبيعات فاتورة #$invNumber',
+          costCenterId: costCenterId,
+        ),
+      );
+    }
+    if (salesDiscount > 0) {
+      final discountAcc = await _requireAccount('sales_discount');
+      journalLines.add(
+        JournalLine(
+          accountId: discountAcc.id,
+          debit: salesDiscount,
+          description: 'خصم مبيعات فاتورة #$invNumber',
           costCenterId: costCenterId,
         ),
       );

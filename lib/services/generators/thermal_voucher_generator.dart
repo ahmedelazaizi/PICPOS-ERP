@@ -308,6 +308,7 @@ class ThermalVoucherGenerator {
       ),
     );
 
+    final printOutput = await PdfComputeHelper.saveToBytesWithMediaBox(pdf);
     // Resolve printer from repository config, fallback to system default
     Printer? resolvedPrinter;
     if (printersRepo != null) {
@@ -318,21 +319,23 @@ class ThermalVoucherGenerator {
     }
 
     if (resolvedPrinter != null) {
-      await Printing.directPrintPdf(
+      await PdfComputeHelper.directPrintBytes(
         printer: resolvedPrinter,
-        onLayout: (format) async => pdf.save(),
+        bytes: printOutput.bytes,
+        format: printOutput.format,
       );
     } else {
       final printers = await Printing.listPrinters();
       if (printers.isNotEmpty) {
         final fallback =
             printers.where((p) => p.isDefault).firstOrNull ?? printers.first;
-        await Printing.directPrintPdf(
+        await PdfComputeHelper.directPrintBytes(
           printer: fallback,
-          onLayout: (format) async => pdf.save(),
+          bytes: printOutput.bytes,
+          format: printOutput.format,
         );
       } else {
-        return PdfComputeHelper.layoutPdf(pdf);
+        return PdfComputeHelper.layoutBytes(printOutput.bytes, format: printOutput.format);
       }
     }
     // الإرسالُ المباشرُ إلى طابعةٍ مضبوطةٍ لا يُلغى من حوار.
@@ -561,6 +564,7 @@ class ThermalVoucherGenerator {
       ),
     );
 
+    final printOutput = await PdfComputeHelper.saveToBytesWithMediaBox(pdf);
     // Resolve printer
     Printer? resolvedPrinter;
     if (printersRepo != null) {
@@ -571,21 +575,23 @@ class ThermalVoucherGenerator {
     }
 
     if (resolvedPrinter != null) {
-      await Printing.directPrintPdf(
+      await PdfComputeHelper.directPrintBytes(
         printer: resolvedPrinter,
-        onLayout: (format) async => pdf.save(),
+        bytes: printOutput.bytes,
+        format: printOutput.format,
       );
     } else {
       final printers = await Printing.listPrinters();
       if (printers.isNotEmpty) {
         final fallback =
             printers.where((p) => p.isDefault).firstOrNull ?? printers.first;
-        await Printing.directPrintPdf(
+        await PdfComputeHelper.directPrintBytes(
           printer: fallback,
-          onLayout: (format) async => pdf.save(),
+          bytes: printOutput.bytes,
+          format: printOutput.format,
         );
       } else {
-        return PdfComputeHelper.layoutPdf(pdf);
+        return PdfComputeHelper.layoutBytes(printOutput.bytes, format: printOutput.format);
       }
     }
     // الإرسالُ المباشرُ إلى طابعةٍ مضبوطةٍ لا يُلغى من حوار.

@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../core/theme/app_colors.dart';
+import '../core/theme/core_surface_colors.dart';
 import '../data/providers/providers.dart';
 
 /// Operations that can require two-person approval
@@ -89,9 +90,9 @@ class DualApprovalService {
                         Text('العملية: ${operation.labelAr}',
                             style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w600)),
                         Text('بواسطة: $requestedBy',
-                            style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+                            style: GoogleFonts.cairo(fontSize: 11, color: context.coreTextMuted)),
                         Text('التفاصيل: $details',
-                            style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+                            style: GoogleFonts.cairo(fontSize: 11, color: context.coreTextMuted)),
                       ],
                     ),
                   ),

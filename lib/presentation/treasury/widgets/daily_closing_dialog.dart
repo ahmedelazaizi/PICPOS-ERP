@@ -189,7 +189,7 @@ class _DailyClosingDialogState extends ConsumerState<DailyClosingDialog> {
                         _buildSummaryRow(
                           tr('عدد العمليات'),
                           tr('{_transactionCount} عملية', {'_transactionCount': _transactionCount}),
-                          AppColors.textMuted,
+                          context.picposMuted,
                           PhosphorIconsBold.listNumbers,
                         ),
                       ] else
@@ -333,9 +333,9 @@ class _DailyClosingDialogState extends ConsumerState<DailyClosingDialog> {
               const SizedBox(height: 6),
               Text(
                 localizations.closingNote,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
-                  color: AppColors.textMuted,
+                  color: context.picposMuted,
                 ),
               ),
             ],
@@ -466,7 +466,7 @@ class _DailyClosingDialogState extends ConsumerState<DailyClosingDialog> {
           children: [
             Icon(icon, size: 14, color: color),
             const SizedBox(width: 6),
-            Text(label, style: TextStyle(fontSize: 12, color: isBold ? null : AppColors.textMuted)),
+            Text(label, style: TextStyle(fontSize: 12, color: isBold ? null : context.picposMuted)),
           ],
         ),
         Text(

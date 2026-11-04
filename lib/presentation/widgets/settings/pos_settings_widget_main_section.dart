@@ -281,7 +281,7 @@ extension _PosSettingsWidgetMainSection on _PosSettingsWidgetState {
           tr(
             'تحديد بادئة الترقيم لكل نوع مستند. اترك الحقل فارغاً للترقيم الافتراضي.',
           ),
-          style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+          style: TextStyle(fontSize: 11, color: context.picposMuted),
         ),
         const SizedBox(height: 8),
         // Sales group

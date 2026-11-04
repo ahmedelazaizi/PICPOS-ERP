@@ -1,8 +1,11 @@
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import '../../../data/providers/providers.dart';
 import '../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 // منطق منسوخ من lib/presentation/pos/widgets/pos_opening_balance_dialog.dart
 // (الأصل، ١٢٤ سطر) — أي إصلاح منطقي يتصلّح في المصدر أولاً ثم patch (مصيدة
@@ -15,18 +18,18 @@ import '../../../core/theme/app_colors.dart';
 // `PicposOpeningBalanceDialog`.
 /// حوار طلب الرصيد الافتتاحي عند بدء وردية جديدة — نسخة PicPos.
 /// يرجع `double` (الرصيد الافتتاحي) أو `null` لو أُلغي.
-class PicposOpeningBalanceDialog extends StatefulWidget {
+class PicposOpeningBalanceDialog extends ConsumerStatefulWidget {
   final String userName;
 
   const PicposOpeningBalanceDialog({super.key, required this.userName});
 
   @override
-  State<PicposOpeningBalanceDialog> createState() =>
+  ConsumerState<PicposOpeningBalanceDialog> createState() =>
       _PicposOpeningBalanceDialogState();
 }
 
 class _PicposOpeningBalanceDialogState
-    extends State<PicposOpeningBalanceDialog> {
+    extends ConsumerState<PicposOpeningBalanceDialog> {
   final _controller = TextEditingController(text: '0');
 
   @override
@@ -94,7 +97,7 @@ class _PicposOpeningBalanceDialogState
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: AppColors.card,
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: context.picposHairline),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -127,7 +130,7 @@ class _PicposOpeningBalanceDialogState
                 style:
                     const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 decoration: InputDecoration(
-                  suffixText: 'JOD',
+                  suffixText: ref.watch(systemCurrencySettingProvider).asData?.value ?? '',
                   prefixIcon: const Icon(
                     PhosphorIconsBold.money,
                     color: AppColors.primary,
@@ -149,7 +152,7 @@ class _PicposOpeningBalanceDialogState
               const SizedBox(height: 8),
                Text(
                 tr('يمكنك إدخال 0 إذا لم يكن هناك رصيد افتتاحي'),
-                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 11, color: context.picposMuted),
               ),
               const SizedBox(height: 20),
               Row(

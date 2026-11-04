@@ -55,6 +55,15 @@ class TemplateDetailPanel extends ConsumerWidget {
             icon: PhosphorIconsBold.fileText,
           ),
           const SizedBox(height: 4),
+          if (c.isLabel) ...[
+            // الملصقُ لا نطاقاتٍ له ولا أعمدة ولا رابطات: الراسمُ يأخذ قالبَه
+            // بالمعرِّف أو بالافتراضيِّ لفئة `barcode`.
+            _Spec(label: tr('المقاس'), value: tr('{p0} مم', {'p0': c.paperLabel})),
+            _Spec(label: tr('العناصر'), value: '${c.elementCount}'),
+            _Spec(label: tr('التخطيط'), value: tr('قماشُ ملصقٍ حرّ بالمليمتر')),
+            _Spec(label: tr('الحالة'), value: templateStatusLabel(c),
+                tone: templateStatusTone(c)),
+          ] else ...[
           _Spec(label: tr('الورق'), value: tr('{p0} · {p1}مم', {'p0': c.paperLabel, 'p1': c.paperWidthMm.toStringAsFixed(0)})),
           _Spec(label: tr('النوع'), value: '${c.type} · ${c.category}'),
           _Spec(label: tr('العناصر'), value: '${c.elementCount}'),
@@ -65,7 +74,9 @@ class TemplateDetailPanel extends ConsumerWidget {
           ),
           _Spec(label: tr('الحالة'), value: templateStatusLabel(c),
               tone: templateStatusTone(c)),
+          ],
 
+          if (!c.isLabel) ...[
           const SizedBox(height: 14),
           PicPosSectionHeader(
             title: tr('المستندات المربوطة'),
@@ -86,6 +97,7 @@ class TemplateDetailPanel extends ConsumerWidget {
                 binding: b,
                 onRelease: () => _release(context, ref, b),
               ),
+          ],
 
           const SizedBox(height: 14),
            PicPosSectionHeader(
@@ -99,19 +111,33 @@ class TemplateDetailPanel extends ConsumerWidget {
             children: [
               // «تحرير» في عقد الأزرار §٢ — يفتح المحرّرَ على هذا القالب
               // بتمرير `templateId`. وهو المدخلُ الأوّلُ للمحرّر.
+              // والملصقُ يفتح على «قماش الملصق» — لا على النطاقات التي
+              // تهاجره فتكتب أعمدةً لا يقرؤها راسمُ الملصقات.
               FilledButton.icon(
+                key: const Key('library-edit'),
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        TemplateEditorPicposScreen(templateId: c.id),
+                    builder: (_) => TemplateEditorPicposScreen(
+                        templateId: c.id, labelMode: c.isLabel),
                   ),
                 ),
                 icon: const Icon(PhosphorIconsBold.pencilSimple, size: 15),
                 label:  Text(tr('تحرير')),
               ),
+              // الافتراضيُّ لفئة `barcode` هو ما يطبعه راسمُ الملصقات حين لا
+              // يُمرَّر قالب — نظيرُ «تعيين كافتراضي» في المصمّم القديم.
+              if (c.isLabel && !c.isDefault)
+                OutlinedButton.icon(
+                  key: const Key('library-label-default'),
+                  onPressed: () => _setDefault(context, ref, c),
+                  icon: const Icon(PhosphorIconsBold.star, size: 15),
+                  label: Text(tr('تعيين كافتراضي')),
+                ),
               // «طباعة تجريبية» في عقد الأزرار §٢ — تفتح المعاينةَ على هذا
-              // القالب بعينه، فتُفحص حالاتُه الحدّيّةُ قبل التفعيل.
+              // القالب بعينه، فتُفحص حالاتُه الحدّيّةُ قبل التفعيل. وللملصق
+              // معاينتُه في قماشه: شاشةُ الطباعة التجريبيّة تمرّ بالنطاقات.
+              if (!c.isLabel)
               OutlinedButton.icon(
                 onPressed: () => Navigator.push(
                   context,
@@ -157,6 +183,22 @@ class TemplateDetailPanel extends ConsumerWidget {
       }
     } catch (e) {
       if (context.mounted) _toast(context, tr('تعذّر النسخ: {e}', {'e': e}), AppColors.error);
+    }
+  }
+
+  Future<void> _setDefault(
+      BuildContext context, WidgetRef ref, TemplateCard c) async {
+    try {
+      await ref.read(invoiceTemplatesRepositoryProvider).setDefaultTemplate(c.id);
+      ref.read(templateLibraryRefreshProvider.notifier).bump();
+      if (context.mounted) {
+        _toast(context, tr('«{p0}» صار الملصقَ الافتراضيّ', {'p0': c.name}),
+            AppColors.success);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        _toast(context, tr('تعذّر التعيين: {e}', {'e': e}), AppColors.error);
+      }
     }
   }
 

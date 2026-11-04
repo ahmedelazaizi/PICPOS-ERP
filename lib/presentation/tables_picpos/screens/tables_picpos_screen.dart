@@ -42,6 +42,7 @@ import '../widgets/guest_requests_banner.dart';
 import '../widgets/table_session_pin_card.dart';
 import '../widgets/tables_action_rail.dart';
 import '../widgets/tables_status_rail.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// أقسامُ الطاولات — مجرًى واحدٌ للتطبيق كلِّه.
 final _sectionsProvider = StreamProvider.autoDispose<List<TableSection>>((ref) {
@@ -269,7 +270,7 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
         child: Center(
           child: Text(
             tr('لا توجد طاولاتٌ في هذا النطاق'),
-            style: const TextStyle(color: AppColors.textMuted),
+            style: TextStyle(color: context.picposMuted),
           ),
         ),
       );
@@ -367,7 +368,7 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
         tooltip: tr('المنطقة'),
         icon: PhosphorIconsBold.mapPin,
         priority: 3,
-        color: AppColors.textSecondary,
+        color: context.picposSecondary,
         choices: [
           if (!uiState.isVisualView)
             PicPosHeaderChoice(
@@ -412,15 +413,15 @@ class _TablesPicposBodyState extends ConsumerState<_TablesPicposBody> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               PhosphorIconsBold.mapPin,
               size: IconSizes.xxl,
-              color: AppColors.textMuted,
+              color: context.picposMuted,
             ),
             const SizedBox(height: Spacing.md),
              Text(
               tr('لا توجد أقسام — أضف قسماً قبل الطاولات'),
-              style: const TextStyle(color: AppColors.textMuted),
+              style: TextStyle(color: context.picposMuted),
             ),
             const SizedBox(height: Spacing.md),
             PermissionGuard(

@@ -14,6 +14,7 @@ import '../../../services/api/table_bill_token.dart';
 import '../../../services/generators/base_generator.dart';
 import '../../../services/network_service.dart';
 import '../../../services/printing/pdf_compute_helper.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// أكوادُ حسابِ الطاولات — ورقةٌ تُطبَع وتُلصَق على كلّ طاولة.
 ///
@@ -155,7 +156,7 @@ class TableBillQrDialog extends ConsumerWidget {
                                 fontSize: 11,
                                 color: url == null
                                     ? AppColors.error
-                                    : AppColors.textMuted,
+                                    : context.picposMuted,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -337,7 +338,7 @@ class _PublicBaseUrlFieldState extends ConsumerState<_PublicBaseUrlField> {
                 hintText: 'https://shop.example.com',
                 hintStyle: const TextStyle(fontSize: 11.5),
                 helperText: tr('اتركه فارغاً إن كان الخادمُ على شبكة المحلّ فقط'),
-                helperStyle: const TextStyle(fontSize: 10.5),
+                helperStyle: const TextStyle(fontSize: 11),
                 errorText: _error,
                 border: const OutlineInputBorder(),
               ),

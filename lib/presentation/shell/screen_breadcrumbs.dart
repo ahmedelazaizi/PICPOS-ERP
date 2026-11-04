@@ -30,6 +30,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../data/providers/auth_providers.dart';
+import '../picpos_shell/picpos_surface.dart';
 
 /// مسارُ شاشةٍ كما يُعرَض: مجموعتُها ثمّ اسمُها.
 @immutable
@@ -130,12 +131,12 @@ class ScreenBreadcrumbs extends StatelessWidget {
         children: [
           if (path.groupLabel case final g?) ...[
             if (path.groupIcon != null)
-              Icon(path.groupIcon, size: 12, color: AppColors.textMuted),
+              Icon(path.groupIcon, size: 12, color: context.picposMuted),
             _Crumb(text: g, isCurrent: false),
-            const Icon(
+            Icon(
               PhosphorIconsBold.caretLeft,
               size: 10,
-              color: AppColors.textMuted,
+              color: context.picposMuted,
             ),
           ],
           _Crumb(text: path.label, isCurrent: true),
@@ -160,7 +161,7 @@ class _Crumb extends StatelessWidget {
       style: TextStyle(
         fontSize: 11.5,
         height: 1.2,
-        color: isCurrent ? AppColors.primary : AppColors.textMuted,
+        color: isCurrent ? AppColors.primary : context.picposMuted,
         fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
       ),
     );

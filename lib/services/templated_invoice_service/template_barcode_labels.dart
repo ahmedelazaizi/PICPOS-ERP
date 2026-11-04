@@ -9,10 +9,17 @@ abstract final class _TemplatedBarcodeLabels {
     required String productName,
     String? productCode,
     double? price,
+    double? weight,
+    double? total,
+    DateTime? packDate,
     String? companyName,
     int copies = 1,
     bool directPrint = true,
     int? templateId,
+    @visibleForTesting bool debugBuildOnly = false,
+    @visibleForTesting void Function(Uint8List bytes)? onDebugBytes,
+    @visibleForTesting
+    Future<bool> Function(Uint8List bytes, String name)? pdfSender,
   }) async {
     await _initFont();
 
@@ -44,71 +51,66 @@ abstract final class _TemplatedBarcodeLabels {
     final labelWidth = labelWidthMM * PdfPageFormat.mm;
     final labelHeight = labelHeightMM * PdfPageFormat.mm;
 
-    // Calculate grid layout on A4
-    const pageMargin = 10.0;
-    const a4Width = 210.0 * PdfPageFormat.mm;
-    const a4Height = 297.0 * PdfPageFormat.mm;
-    const usableWidth = a4Width - (2 * pageMargin);
-    const usableHeight = a4Height - (2 * pageMargin);
-
-    final labelsPerRow = (usableWidth / (labelWidth + 2)).floor().clamp(1, 20);
-    final labelsPerCol = (usableHeight / (labelHeight + 2)).floor().clamp(
-      1,
-      40,
-    );
-    final labelsPerPage = labelsPerRow * labelsPerCol;
-    final totalPages = (copies / labelsPerPage).ceil();
-
     final pdf = await BaseGenerator.newDocument();
+    final labelFormat = PdfPageFormat(labelWidth, labelHeight);
 
-    for (int page = 0; page < totalPages; page++) {
-      final labelsOnThisPage = (page == totalPages - 1)
-          ? copies - (page * labelsPerPage)
-          : labelsPerPage;
-
+    for (var copy = 0; copy < copies; copy++) {
       pdf.addPage(
         pw.Page(
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(pageMargin),
-          // بدونه تؤول الصفحةُ إلى LTR فلا تُشكَّل العربيةُ ولا يُعاد
-          // ترتيبُها: اسمُ الصنف يخرج بحروفٍ منفصلةٍ ومقلوبِ الترتيب على
-          // **كلّ ملصقِ باركود**. مقيسٌ بالرسم: «صبري» ⇒ «يربص».
+          pageFormat: labelFormat,
+          margin: pw.EdgeInsets.zero,
+          // طابعة الملصق تتلقى صفحةً واحدةً بمقاس الورق الفعلي لكل نسخة.
           textDirection: pw.TextDirection.rtl,
-          build: (context) => pw.Wrap(
-            spacing: 2,
-            runSpacing: 2,
-            children: List.generate(
-              labelsOnThisPage,
-              (_) => _buildSingleBarcodeLabel(
-                elements: elements,
-                labelWidth: labelWidth,
-                labelHeight: labelHeight,
-                labelWidthMM: labelWidthMM,
-                labelHeightMM: labelHeightMM,
-                barcodeValue: barcodeValue,
-                productName: productName,
-                productCode: productCode,
-                price: price,
-                companyName: companyName,
-              ),
-            ),
+          build: (context) => _buildSingleBarcodeLabel(
+            elements: elements,
+            labelWidth: labelWidth,
+            labelHeight: labelHeight,
+            labelWidthMM: labelWidthMM,
+            labelHeightMM: labelHeightMM,
+            barcodeValue: barcodeValue,
+            productName: productName,
+            productCode: productCode,
+            price: price,
+            weight: weight,
+            total: total,
+            packDate: packDate,
+            companyName: companyName,
           ),
         ),
       );
     }
 
-    if (directPrint) {
-      final printerName = await PrinterResolver.resolveByPurpose(PrintersRepositoryImpl(db), 'barcode');
-      await Printing.directPrintPdf(
-        printer: printerName ?? (await Printing.listPrinters()).first,
-        onLayout: (format) async => pdf.save(),
-        name: 'Barcode_${barcodeValue}_x$copies',
-      );
-    } else {
-      return PdfComputeHelper.layoutPdf(pdf, name: 'Barcode_${barcodeValue}_x$copies');
+    final bytes = await PdfComputeHelper.saveToBytes(pdf);
+    if (debugBuildOnly) {
+      onDebugBytes?.call(bytes);
+      return false;
     }
-    // الإرسالُ المباشرُ إلى طابعةٍ مضبوطةٍ لا يُلغى من حوار.
-    return true;
+    final sender = pdfSender;
+    if (sender != null) {
+      return sender(bytes, 'Barcode_${barcodeValue}_x$copies');
+    }
+    // ⚠️ **مقاسُ الورقة يُمرَّر للسائق صراحةً** — الصفحةُ بمقاس الملصق لا
+    // تكفي. حزمةُ `printing` على Windows تبني `DEVMODE` من `format` وحده
+    // (‏الافتراضُ `PdfPageFormat.standard` = A4)، ثم ترسم صفحةَ الـPDF بمقاسها
+    // الأصليّ في ركن تلك الورقة. فكان ملصقُ ٥٨×٤٠ يخرج صغيراً أعلى يسار
+    // صفحة A4 مع أنّ MediaBox الملف سليم (‏التحقّق الحيّ 2026-11-03).
+    if (directPrint) {
+      final printerName = await PrinterResolver.resolveByPurpose(
+        PrintersRepositoryImpl(db),
+        'barcode',
+      );
+      return PdfComputeHelper.directPrintBytes(
+        printer: printerName ?? (await Printing.listPrinters()).first,
+        bytes: bytes,
+        name: 'Barcode_${barcodeValue}_x$copies',
+        format: labelFormat,
+      );
+    }
+    return PdfComputeHelper.layoutBytes(
+      bytes,
+      name: 'Barcode_${barcodeValue}_x$copies',
+      format: labelFormat,
+    );
   }
 
   /// Build a single barcode label from template elements
@@ -122,6 +124,9 @@ abstract final class _TemplatedBarcodeLabels {
     required String productName,
     String? productCode,
     double? price,
+    double? weight,
+    double? total,
+    DateTime? packDate,
     String? companyName,
   }) {
     // Scale factor from mm units (template coords) to points
@@ -169,14 +174,34 @@ abstract final class _TemplatedBarcodeLabels {
           break;
         case 'barcode_image':
           final barcodeType = _resolveBarcodeType(el.content);
-          contentWidget = pw.BarcodeWidget(
-            data: barcodeValue,
-            barcode: barcodeType,
-            width: w,
-            height: h * 0.8,
-            drawText: true,
-            textStyle: pw.TextStyle(font: _arabicFont, fontSize: el.fontSize),
-          );
+          if (el.content == 'ean13') {
+            contentWidget = pw.Column(
+              mainAxisAlignment: pw.MainAxisAlignment.center,
+              children: [
+                pw.BarcodeWidget(
+                  data: barcodeValue,
+                  barcode: barcodeType,
+                  width: w,
+                  height: h * 0.68,
+                  drawText: false,
+                ),
+                pw.Text(
+                  barcodeValue,
+                  textDirection: pw.TextDirection.ltr,
+                  style: pw.TextStyle(font: _arabicFont, fontSize: el.fontSize),
+                ),
+              ],
+            );
+          } else {
+            contentWidget = pw.BarcodeWidget(
+              data: barcodeValue,
+              barcode: barcodeType,
+              width: w,
+              height: h * 0.8,
+              drawText: true,
+              textStyle: pw.TextStyle(font: _arabicFont, fontSize: el.fontSize),
+            );
+          }
           break;
         case 'product_price':
           if (price != null) {
@@ -188,6 +213,35 @@ abstract final class _TemplatedBarcodeLabels {
           } else {
             contentWidget = pw.SizedBox();
           }
+          break;
+        case 'scale_weight':
+          contentWidget = pw.Text(
+            '${el.labelAr ?? 'الوزن'}: ${weight?.toStringAsFixed(3) ?? ''} kg',
+            style: style,
+            textAlign: align,
+          );
+          break;
+        case 'scale_unit_price':
+          contentWidget = pw.Text(
+            '${el.labelAr ?? 'سعر الوحدة / كجم'}: ${price?.toStringAsFixed(_docDecimals) ?? ''}',
+            style: style,
+            textAlign: align,
+          );
+          break;
+        case 'scale_total':
+          contentWidget = pw.Text(
+            '${el.labelAr ?? 'الإجمالي'}: ${total?.toStringAsFixed(_docDecimals) ?? ''}',
+            style: style,
+            textAlign: align,
+          );
+          break;
+        case 'scale_pack_date':
+          final date = packDate ?? DateTime.now();
+          contentWidget = pw.Text(
+            '${el.labelAr ?? 'تاريخ التعبئة'}: ${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}',
+            style: style,
+            textAlign: align,
+          );
           break;
         case 'company_name':
           contentWidget = pw.Text(

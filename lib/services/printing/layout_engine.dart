@@ -33,6 +33,10 @@ class PositionedCell {
   /// الرؤوس أحاديّةِ اللغة.
   final String subText;
 
+  /// إزاحةٌ عموديّةٌ داخل الصفّ للجدول الحراريّ ذي السطرين.
+  final double topOffsetMm;
+  final double? cellHeightMm;
+
   const PositionedCell({
     required this.columnKey,
     required this.xMm,
@@ -40,6 +44,8 @@ class PositionedCell {
     required this.align,
     required this.text,
     this.subText = '',
+    this.topOffsetMm = 0,
+    this.cellHeightMm,
   });
 }
 
@@ -176,6 +182,30 @@ class _PageDraft {
 ///
 /// تفصل الحراريَّ (٥٨مم ⇒ ٥٢ متاحة · ٨٠مم ⇒ ٧٤) عن A5 (١٤٨مم ⇒ ١٣٨).
 const double narrowPaperMm = 100;
+// Preserve enough width for either numeric field at the conservative 7pt check.
+const double _compactQuantityPriceFraction = .64;
+const double _compactFitGlyphWidthEm = .65;
+const double _compactFitSafetyMm = .5;
+const double _narrowNameGlyphWidthEm = .7;
+// The 9mm name box supports two lines; leave room for an explicit ellipsis.
+const int _narrowNameLineCount = 2;
+
+typedef _NarrowCellGeometry = ({
+  double startX,
+  double contentWidth,
+  double lineHeightMm,
+  double nameHeightMm,
+  int nameRuneLimit,
+  bool compact,
+});
+typedef _NarrowCellContent = (String, String, ColumnAlign);
+typedef _NarrowCellPlacement = ({
+  double xMm,
+  double widthMm,
+  ColumnAlign align,
+  double topOffsetMm,
+  double heightMm,
+});
 
 /// ارتفاعُ رأسٍ ثنائيِّ اللغة — **مشتقٌّ من الخطّ لا من ارتفاع الصفّ**.
 ///
@@ -232,7 +262,9 @@ class LayoutEngine {
     // الورقُ المتّصلُ بلا قاع — نستعمل حدّاً عالياً جدّاً فلا ينكسر أبداً.
     final flowBottom = paper.isContinuous
         ? double.infinity
-        : paper.heightMm! - paper.margins.bottom - (pinnedFooter?.heightMm ?? 0);
+        : paper.heightMm! -
+              paper.margins.bottom -
+              (pinnedFooter?.heightMm ?? 0);
 
     final startX = paper.margins.left;
     final contentWidth = paper.contentWidthMm;
@@ -263,7 +295,8 @@ class LayoutEngine {
       }
 
       // نطاقٌ عاديّ — لا يُقطع في منتصفه. لا يسع الصفحةَ ⇒ صفحةٌ جديدة.
-      if (cursorY + band.heightMm > flowBottom && drafts.last.contentBottomMm > flowTop) {
+      if (cursorY + band.heightMm > flowBottom &&
+          drafts.last.contentBottomMm > flowTop) {
         breakPage();
       }
       drafts.last.elements.addAll(_placeBand(band, cursorY, startX, values));
@@ -314,28 +347,27 @@ class LayoutEngine {
     double bandTop,
     double startX,
     Map<String, String> values,
-  ) =>
-      [
-        for (final el in band.elements)
-          if (_shows(el, values))
-            PositionedElement(
-              id: el.id,
-              contentKey: el.contentKey,
-              band: band.id,
-              xMm: startX + el.xMm,
-              yMm: bandTop + el.yMm,
-              wMm: el.wMm,
-              hMm: el.hMm,
-              text: values[el.contentKey] ?? '',
-              labelAr: el.labelAr,
-              labelEn: el.labelEn,
-              fontSize: el.fontSize,
-              bold: el.bold,
-              align: el.align,
-              colorHex: el.colorHex,
-              kind: el.kind,
-            ),
-      ];
+  ) => [
+    for (final el in band.elements)
+      if (_shows(el, values))
+        PositionedElement(
+          id: el.id,
+          contentKey: el.contentKey,
+          band: band.id,
+          xMm: startX + el.xMm,
+          yMm: bandTop + el.yMm,
+          wMm: el.wMm,
+          hMm: el.hMm,
+          text: values[el.contentKey] ?? '',
+          labelAr: el.labelAr,
+          labelEn: el.labelEn,
+          fontSize: el.fontSize,
+          bold: el.bold,
+          align: el.align,
+          colorHex: el.colorHex,
+          kind: el.kind,
+        ),
+  ];
 
   /// هل يُطبع هذا العنصر؟ ثلاثةُ حواجزَ بالترتيب.
   static bool _shows(TemplateElement el, Map<String, String> values) {
@@ -377,13 +409,43 @@ class LayoutEngine {
     required void Function() onBreak,
   }) {
     final columns = table.visibleColumns;
+    final narrowItemRows =
+        contentWidth <= 52 &&
+        table.kind == TableKind.items &&
+        columns.map((c) => c.key).toSet().difference(const {
+          'name',
+          'product',
+          'quantity',
+          'price',
+          'total',
+        }).isEmpty &&
+        columns.any((c) => c.key == 'name' || c.key == 'product') &&
+        columns.any((c) => c.key == 'quantity') &&
+        columns.any((c) => c.key == 'price') &&
+        columns.any((c) => c.key == 'total');
+    final compactNarrowItems =
+        narrowItemRows && _fitsCompactNarrowRows(columns, rows, contentWidth);
     final widths = _columnWidths(columns, contentWidth);
+    const narrowNameHeightMm = 9.0;
+    final narrowCellGeometry = (
+      startX: startX,
+      contentWidth: contentWidth,
+      lineHeightMm: table.rowHeightMm,
+      nameHeightMm: narrowNameHeightMm,
+      nameRuneLimit: _narrowNameRuneLimit(contentWidth, table.fontSize),
+      compact: compactNarrowItems,
+    );
+    final rowHeight = narrowItemRows
+        ? narrowNameHeightMm + table.rowHeightMm * (compactNarrowItems ? 1 : 2)
+        : table.rowHeightMm;
 
     // العناوينُ الثنائيّةُ تُطفأ على الورق الضيّق مهما طلب القالب: ٥٢مم لا
     // تسع سطرين لكلِّ عمود، والسطرُ الثاني يدهس الصفَّ الأوّل من البيانات.
     // العتبةُ تفصل الحراريَّ (٥٨/٨٠) عن A5 (١٤٨) وA4 (٢١٠).
     final bilingual = table.bilingualHeaders && contentWidth >= narrowPaperMm;
-    final headerHeight = bilingual
+    final headerHeight = narrowItemRows
+        ? table.rowHeightMm * (compactNarrowItems ? 2 : 3)
+        : bilingual
         ? bilingualHeaderHeightMm(table.headerFontSize, table.rowHeightMm)
         : table.rowHeightMm;
 
@@ -398,7 +460,7 @@ class LayoutEngine {
       final headerOnThisSlice = wantsHeader ? headerHeight : 0.0;
 
       // لا يسع الرأسَ وصفّاً واحداً على الأقلّ ⇒ صفحةٌ جديدة.
-      final needed = headerOnThisSlice + table.rowHeightMm;
+      final needed = headerOnThisSlice + rowHeight;
       if (index < rows.length && y + needed > flowBottom && y > flowTop) {
         onBreak();
         y = flowTop;
@@ -407,29 +469,45 @@ class LayoutEngine {
 
       final sliceTop = y;
       final headerCells = wantsHeader
-          ? _cells(
-              columns,
-              widths,
-              startX,
-              [for (final c in columns) c.labelAr],
-              subTexts:
-                  bilingual ? [for (final c in columns) c.labelEn] : null,
-            )
+          ? narrowItemRows
+                ? _narrowItemCells(
+                    columns,
+                    [for (final c in columns) c.labelAr],
+                    (
+                      startX: narrowCellGeometry.startX,
+                      contentWidth: narrowCellGeometry.contentWidth,
+                      lineHeightMm: narrowCellGeometry.lineHeightMm,
+                      nameHeightMm: table.rowHeightMm,
+                      nameRuneLimit: narrowCellGeometry.nameRuneLimit,
+                      compact: compactNarrowItems,
+                    ),
+                  )
+                : _cells(
+                    columns,
+                    widths,
+                    startX,
+                    [for (final c in columns) c.labelAr],
+                    subTexts: bilingual
+                        ? [for (final c in columns) c.labelEn]
+                        : null,
+                  )
           : const <PositionedCell>[];
       y += headerOnThisSlice;
 
       final sliceRows = <PositionedRow>[];
       while (index < rows.length) {
-        if (y + table.rowHeightMm > flowBottom) break;
+        if (y + rowHeight > flowBottom) break;
         sliceRows.add(
           PositionedRow(
             sourceIndex: index,
             yMm: y,
-            heightMm: table.rowHeightMm,
-            cells: _cells(columns, widths, startX, rows[index]),
+            heightMm: rowHeight,
+            cells: narrowItemRows
+                ? _narrowItemCells(columns, rows[index], narrowCellGeometry)
+                : _cells(columns, widths, startX, rows[index]),
           ),
         );
-        y += table.rowHeightMm;
+        y += rowHeight;
         index++;
       }
 
@@ -462,6 +540,8 @@ class LayoutEngine {
     // الحدُّ الأدنى المعلَن — يُطبَّق على الشريحة الأخيرة وحدَها.
     final minBottom = detailsTop + band.heightMm;
     final bottom = drafts.length == 1 && y < minBottom ? minBottom : y;
+    // Do not add per-receipt padding here: narrow rows already include their
+    // name and numeric lines, so the following totals band starts after them.
     drafts.last.contentBottomMm = bottom;
     return bottom;
   }
@@ -478,6 +558,169 @@ class LayoutEngine {
       return List.filled(columns.length, even);
     }
     return [for (final c in columns) contentWidth * (c.flex / totalFlex)];
+  }
+
+  /// Use the shorter row form only when each value fits at the 7pt floor.
+  static bool _fitsCompactNarrowRows(
+    List<TableColumn> columns,
+    List<List<String>> rows,
+    double contentWidth,
+  ) {
+    final indexByKey = {
+      for (var i = 0; i < columns.length; i++) columns[i].key: i,
+    };
+    return rows.every(
+      (row) => _fitsCompactNarrowRow(row, indexByKey, contentWidth),
+    );
+  }
+
+  static bool _fitsCompactNarrowRow(
+    List<String> row,
+    Map<String, int> indexByKey,
+    double contentWidth,
+  ) {
+    final quantity = row[indexByKey['quantity']!];
+    final price = row[indexByKey['price']!];
+    final total = row[indexByKey['total']!];
+    final priceWidth = contentWidth * _compactQuantityPriceFraction;
+    final totalWidth = contentWidth - priceWidth;
+    return _integerDigitCount(price) <= 7 &&
+        _integerDigitCount(total) <= 7 &&
+        _fitsAtMinimumFont('$quantity × $price', priceWidth) &&
+        _fitsAtMinimumFont(total, totalWidth);
+  }
+
+  static int _integerDigitCount(String value) {
+    final integerPart = value.split(RegExp(r'[.٫]')).first;
+    return integerPart.runes.where(_isDigit).length;
+  }
+
+  static bool _isDigit(int rune) =>
+      (rune >= 48 && rune <= 57) ||
+      (rune >= 0x0660 && rune <= 0x0669) ||
+      (rune >= 0x06f0 && rune <= 0x06f9);
+
+  static bool _fitsAtMinimumFont(String text, double widthMm) =>
+      text.runes.length * _compactFitGlyphWidthEm * 7 / 2.8346 +
+          _compactFitSafetyMm <=
+      widthMm;
+
+  static int _narrowNameRuneLimit(double widthMm, double fontSize) =>
+      (widthMm *
+              2.8346 /
+              (fontSize * _narrowNameGlyphWidthEm) *
+              _narrowNameLineCount)
+          .floor();
+
+  static String _truncateNarrowName(String text, int runeLimit) {
+    final codePoints = text.runes.toList();
+    if (codePoints.length <= runeLimit) return text;
+    final visibleCount = (runeLimit - 3).clamp(0, codePoints.length).toInt();
+    return '${String.fromCharCodes(codePoints.take(visibleCount))}...';
+  }
+
+  /// Narrow rows put each numeric expression on their selected full-width or
+  /// split line form.
+  static List<PositionedCell> _narrowItemCells(
+    List<TableColumn> columns,
+    List<String> texts,
+    _NarrowCellGeometry geometry,
+  ) {
+    final contents = _narrowCellContents(
+      columns,
+      texts,
+      geometry.nameRuneLimit,
+    );
+    return List.unmodifiable([
+      for (final entry in contents.indexed)
+        _positionedNarrowCell(entry.$2, geometry, entry.$1),
+    ]);
+  }
+
+  static List<_NarrowCellContent> _narrowCellContents(
+    List<TableColumn> columns,
+    List<String> texts,
+    int nameRuneLimit,
+  ) {
+    final columnsByKey = {for (final column in columns) column.key: column};
+    final valuesByKey = {
+      for (var i = 0; i < columns.length; i++)
+        columns[i].key: i < texts.length ? texts[i] : '',
+    };
+    return _narrowCellContentsByKey(columnsByKey, valuesByKey, nameRuneLimit);
+  }
+
+  static List<_NarrowCellContent> _narrowCellContentsByKey(
+    Map<String, TableColumn> columns,
+    Map<String, String> values,
+    int nameRuneLimit,
+  ) {
+    final name = columns['name'] ?? columns['product']!;
+    final quantity = columns['quantity']!;
+    final price = columns['price']!;
+    final total = columns['total']!;
+    final nameText = values[name.key] ?? name.labelAr;
+    return [
+      (name.key, _truncateNarrowName(nameText, nameRuneLimit), name.align),
+      (
+        'quantity_price',
+        '${values[quantity.key]} × ${values[price.key]}',
+        ColumnAlign.center,
+      ),
+      // In RTL, end alignment places the numeric total on the left edge.
+      ('total', values['total'] ?? total.labelAr, ColumnAlign.end),
+    ];
+  }
+
+  static PositionedCell _positionedNarrowCell(
+    _NarrowCellContent content,
+    _NarrowCellGeometry geometry,
+    int line,
+  ) {
+    final placement = _narrowCellPlacement(geometry, line, content.$3);
+    return PositionedCell(
+      columnKey: content.$1,
+      xMm: placement.xMm,
+      wMm: placement.widthMm,
+      align: placement.align,
+      text: content.$2,
+      topOffsetMm: placement.topOffsetMm,
+      cellHeightMm: placement.heightMm,
+    );
+  }
+
+  static _NarrowCellPlacement _narrowCellPlacement(
+    _NarrowCellGeometry geometry,
+    int line,
+    ColumnAlign align,
+  ) {
+    final isName = line == 0;
+    final compactPrice = geometry.compact && line == 1;
+    final compactTotal = geometry.compact && line == 2;
+    return (
+      xMm:
+          geometry.startX +
+          (compactTotal
+              ? geometry.contentWidth * _compactQuantityPriceFraction
+              : 0),
+      widthMm:
+          geometry.contentWidth *
+          (compactPrice
+              ? _compactQuantityPriceFraction
+              : compactTotal
+              ? 1 - _compactQuantityPriceFraction
+              : 1),
+      align: compactPrice
+          ? ColumnAlign.start
+          : compactTotal
+          ? ColumnAlign.end
+          : align,
+      topOffsetMm: isName
+          ? 0
+          : geometry.nameHeightMm +
+                (line == 2 && !geometry.compact ? geometry.lineHeightMm : 0),
+      heightMm: isName ? geometry.nameHeightMm : geometry.lineHeightMm,
+    );
   }
 
   static List<PositionedCell> _cells(

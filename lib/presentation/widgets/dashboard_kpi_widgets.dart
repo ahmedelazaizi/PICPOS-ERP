@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
+import '../picpos_shell/picpos_surface.dart';
 
 final _fmt = NumberFormat('#,##0.00');
 
@@ -114,7 +115,7 @@ class CashFlowForecastWidget extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.border.withValues(alpha: 0.3)),
+        side: BorderSide(color: context.picposHairline.withValues(alpha: 0.3)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -127,16 +128,16 @@ class CashFlowForecastWidget extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(tr('توقعات التدفق النقدي'), style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w700)),
                 const Spacer(),
-                Text(tr('30 يوم'), style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+                Text(tr('30 يوم'), style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
               ],
             ),
             const SizedBox(height: 16),
-            _flowRow(tr('الرصيد الحالي'), currentCash, AppColors.primary),
-            _flowRow(tr('+ إيرادات متوقعة'), projectedIncome30, AppColors.success),
-            _flowRow(tr('- مصروفات متوقعة'), projectedExpenses30, AppColors.error),
+            _flowRow(context, tr('الرصيد الحالي'), currentCash, AppColors.primary),
+            _flowRow(context, tr('+ إيرادات متوقعة'), projectedIncome30, AppColors.success),
+            _flowRow(context, tr('- مصروفات متوقعة'), projectedExpenses30, AppColors.error),
             const Divider(height: 16),
             _flowRow(
-              tr('الرصيد المتوقع'),
+              context, tr('الرصيد المتوقع'),
               forecast,
               isPositive ? AppColors.success : AppColors.error,
               isBold: true,
@@ -147,13 +148,13 @@ class CashFlowForecastWidget extends StatelessWidget {
     );
   }
 
-  Widget _flowRow(String label, double amount, Color color, {bool isBold = false}) {
+  Widget _flowRow(BuildContext context, String label, double amount, Color color, {bool isBold = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted)),
+          Text(label, style: GoogleFonts.cairo(fontSize: 12, color: context.picposMuted)),
           Text(
             '$currencySymbol ${_fmt.format(amount)}',
             style: GoogleFonts.cairo(
@@ -202,7 +203,7 @@ class SlowMovingItemsWidget extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.border.withValues(alpha: 0.3)),
+        side: BorderSide(color: context.picposHairline.withValues(alpha: 0.3)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -221,7 +222,7 @@ class SlowMovingItemsWidget extends StatelessWidget {
                 ),
                 Text(
                   tr('أعلى {p0}', {'p0': items.length}),
-                  style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
+                  style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
                 ),
               ],
             ),
@@ -230,7 +231,7 @@ class SlowMovingItemsWidget extends StatelessWidget {
               Center(
                 child: Text(
                   tr('لا توجد أصناف بطيئة الحركة'),
-                  style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted),
+                  style: GoogleFonts.cairo(fontSize: 12, color: context.picposMuted),
                 ),
               )
             else
@@ -260,7 +261,7 @@ class SlowMovingItemsWidget extends StatelessWidget {
                     Expanded(
                       child: Text(
                         item.currentStock.toStringAsFixed(0),
-                        style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
+                        style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -268,7 +269,7 @@ class SlowMovingItemsWidget extends StatelessWidget {
                       flex: 2,
                       child: Text(
                         '$currencySymbol ${_fmt.format(item.stockValue)}',
-                        style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
+                        style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
                         textAlign: TextAlign.end,
                       ),
                     ),
@@ -311,7 +312,7 @@ class _AgingCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.border.withValues(alpha: 0.3)),
+        side: BorderSide(color: context.picposHairline.withValues(alpha: 0.3)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -336,7 +337,7 @@ class _AgingCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(b.label, style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+                      Text(b.label, style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
                       Text(
                         '$currencySymbol ${_fmt.format(b.amount)} (${b.count})',
                         style: GoogleFonts.cairo(fontSize: 11, fontWeight: FontWeight.w600),
@@ -348,7 +349,7 @@ class _AgingCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(3),
                     child: LinearProgressIndicator(
                       value: total > 0 ? b.amount / total : 0,
-                      backgroundColor: AppColors.border.withValues(alpha: 0.2),
+                      backgroundColor: context.picposHairline.withValues(alpha: 0.2),
                       valueColor: AlwaysStoppedAnimation(b.color),
                       minHeight: 6,
                     ),

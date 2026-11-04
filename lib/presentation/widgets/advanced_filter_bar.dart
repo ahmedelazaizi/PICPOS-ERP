@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import '../widgets/compact_date_picker.dart';
 
 /// Filter chip options
@@ -94,8 +95,8 @@ class AdvancedFilterBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(16, 10, 16, 6),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.border.withValues(alpha: 0.3))),
+        color: context.picposField,
+        border: Border(bottom: BorderSide(color: context.picposHairline.withValues(alpha: 0.3))),
       ),
       child: Column(
         children: [
@@ -136,7 +137,7 @@ class AdvancedFilterBar extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (opt.icon != null) ...[
-                          Icon(opt.icon, size: 14, color: isSelected ? Colors.white : AppColors.textMuted),
+                          Icon(opt.icon, size: 14, color: isSelected ? Colors.white : context.picposMuted),
                           const SizedBox(width: 4),
                         ],
                         Text(
@@ -151,7 +152,7 @@ class AdvancedFilterBar extends StatelessWidget {
                     selected: isSelected,
                     selectedColor: AppColors.primary,
                     backgroundColor: Theme.of(context).cardColor,
-                    labelStyle: TextStyle(color: isSelected ? Colors.white : AppColors.textPrimary),
+                    labelStyle: TextStyle(color: isSelected ? Colors.white : context.picposText),
                     labelPadding: const EdgeInsets.symmetric(horizontal: 4),
                     padding: const EdgeInsets.symmetric(horizontal: 6),
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -171,7 +172,7 @@ class AdvancedFilterBar extends StatelessWidget {
       onChanged: onSearchChanged,
       decoration: InputDecoration(
         hintText: searchHint,
-        hintStyle: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted),
+        hintStyle: GoogleFonts.cairo(fontSize: 12, color: context.picposMuted),
         prefixIcon: const Icon(PhosphorIconsBold.magnifyingGlass, size: 16, color: AppColors.primary),
         suffixIcon: searchQuery.isNotEmpty
             ? IconButton(
@@ -187,11 +188,11 @@ class AdvancedFilterBar extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: context.picposHairline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.border),
+          borderSide: BorderSide(color: context.picposHairline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
@@ -221,7 +222,7 @@ class AdvancedFilterBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: context.picposHairline),
         ),
         child: Row(
           children: [

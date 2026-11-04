@@ -11,6 +11,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/design_system/typography.dart';
 import '../../../data/providers/providers.dart';
 import '../../../services/client_write_interceptor.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Dialog/Widget for company information and branding (Web Compatible)
 class CompanyInfoWidget extends ConsumerStatefulWidget {
@@ -159,9 +160,9 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: Column(
         children: [
@@ -182,7 +183,7 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppColors.border,
+                  color: context.picposHairline,
                   width: 2,
                   style: BorderStyle.solid,
                 ),
@@ -214,17 +215,17 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
                         return  Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(
+                            Icon(
                               PhosphorIconsBold.uploadSimple,
                               size: 32,
-                              color: AppColors.textMuted,
+                              color: context.picposMuted,
                             ),
                             const SizedBox(height: 8),
                             Text(
                               tr('اضغط لاختيار'),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: AppColors.textMuted,
+                                color: context.picposMuted,
                               ),
                             ),
                           ],
@@ -251,7 +252,7 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
           const SizedBox(height: 8),
            Text(
             tr('يظهر الشعار على الفواتير والإيصالات'),
-            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 11, color: context.picposMuted),
           ),
         ],
       ),

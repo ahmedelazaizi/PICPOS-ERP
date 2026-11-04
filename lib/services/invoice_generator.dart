@@ -17,6 +17,8 @@ import 'printing/template_pdf_renderer.dart';
 import 'templated_invoice_service.dart';
 import 'printing/report_pdf_generator.dart';
 import 'printing/printing_models.dart';
+import 'printing/template_item_map.dart';
+import 'printing/document_print_route.dart';
 
 // Re-export models for backward compatibility if needed,
 // though direct imports are preferred in new code.
@@ -136,7 +138,9 @@ class InvoiceGenerator {
           return printed; // Done — template used successfully
         }
       } catch (e) {
-        debugPrint('[InvoiceGenerator] Template rendering failed, falling back: $e');
+        debugPrint(
+          '[InvoiceGenerator] Template rendering failed, falling back: $e',
+        );
       }
     }
 
@@ -175,8 +179,7 @@ class InvoiceGenerator {
       locale: locale,
       receiptQr: receiptQr,
       paperWidthMm: paperWidthMm,
-    ))
-        .printed;
+    )).printed;
   }
 
   /// Print A4 sales invoice — uses user template if available
@@ -207,20 +210,22 @@ class InvoiceGenerator {
     String? notes, // NEW: Support passing order notes to A4 invoices
     String title = 'فاتورة مبيعات',
     AppDatabase? db,
+    int? printerId,
   }) async {
     // Try template-based rendering first
     if (db != null) {
+      final targetPrinterId =
+          printerId ?? (await db.getActivePrinterByPurpose('pos_receipt'))?.id;
       final hasTemplate = await TemplatedInvoiceService.hasDefaultTemplate(
-        db, 'a4', category: 'invoice',
+        db,
+        'a4',
+        category: 'invoice',
+        documentType: 'sales_invoice',
+        printerId: targetPrinterId,
       );
       if (hasTemplate) {
         try {
-          final itemsMaps = items.map((i) => <String, dynamic>{
-            'name': i.name, 'quantity': i.quantity,
-            'price': i.price, 'total': i.total, 'note': i.note ?? '',
-            'code': i.code, 'unit': i.unit, 'barcode': i.barcode,
-            'discount': i.discount, 'tax': i.tax,
-          }).toList();
+          final itemsMaps = items.map(templateItemMapWithBarcode).toList();
           final r = await TemplatedInvoiceService.printWithTemplate(
             db: db,
             invoiceNumber: invoiceNumber,
@@ -243,6 +248,7 @@ class InvoiceGenerator {
             type: 'a4',
             category: 'invoice',
             documentType: 'sales_invoice',
+            printerId: targetPrinterId,
           );
           return r.printed;
         } catch (e) {
@@ -298,10 +304,18 @@ class InvoiceGenerator {
     String? companyAddress,
     String? employeeName,
     AppDatabase? db,
+    int? printerId,
   }) async {
     if (db != null) {
+      // الطابعةُ المربوطةُ بـ`sales_return` أوّلاً — `document_print_route.dart`.
+      final targetPrinterId = printerId ??
+          await resolveDocumentPrinterId(db, documentType: 'sales_return');
       final hasTemplate = await TemplatedInvoiceService.hasDefaultTemplate(
-        db, 'thermal', category: 'sales_return',
+        db,
+        'thermal',
+        category: 'sales_return',
+        documentType: 'sales_return',
+        printerId: targetPrinterId,
       );
       if (hasTemplate) {
         try {
@@ -316,19 +330,7 @@ class InvoiceGenerator {
             customerName: customerName,
             customerPhone: null,
             customerAddress: null,
-            items: items
-                .map((i) => <String, dynamic>{
-                      'name': i.name,
-                      'quantity': i.quantity,
-                      'price': i.price,
-                      'total': i.total,
-                      'note': i.note ?? '',
-                      'code': i.code,
-                      'unit': i.unit,
-                      'discount': i.discount,
-                      'tax': i.tax,
-                    })
-                .toList(),
+            items: items.map(generatorTemplateItemMap).toList(),
             subtotal: returnTotal,
             discount: 0,
             tax: 0,
@@ -347,12 +349,14 @@ class InvoiceGenerator {
             type: 'thermal',
             category: 'sales_return',
             documentType: 'sales_return',
+            printerId: targetPrinterId,
             directPrint: true,
           );
           return r.printed;
         } catch (e) {
           debugPrint(
-              '[InvoiceGenerator] Sales return template failed, falling back: $e');
+            '[InvoiceGenerator] Sales return template failed, falling back: $e',
+          );
         }
       }
     }
@@ -394,21 +398,23 @@ class InvoiceGenerator {
     String? companyName,
     AppDatabase? db,
     bool isReturn = false,
+    int? printerId,
   }) async {
     // Try template-based rendering first — لكلٍّ قالبُه
     final category = isReturn ? 'purchase_return' : 'purchase';
     if (db != null) {
+      final targetPrinterId =
+          printerId ?? (await db.getActivePrinterByPurpose('pos_receipt'))?.id;
       final hasTemplate = await TemplatedInvoiceService.hasDefaultTemplate(
-        db, 'a4', category: category,
+        db,
+        'a4',
+        category: category,
+        documentType: isReturn ? 'purchase_return' : 'purchase_invoice',
+        printerId: targetPrinterId,
       );
       if (hasTemplate) {
         try {
-          final itemsMaps = items.map((i) => <String, dynamic>{
-            'name': i.name, 'quantity': i.quantity,
-            'price': i.price, 'total': i.total, 'note': i.note ?? '',
-            'code': i.code, 'unit': i.unit, 'barcode': i.barcode,
-            'discount': i.discount, 'tax': i.tax,
-          }).toList();
+          final itemsMaps = items.map(templateItemMapWithBarcode).toList();
           final r = await TemplatedInvoiceService.printWithTemplate(
             db: db,
             invoiceNumber: invoiceNumber,
@@ -429,12 +435,14 @@ class InvoiceGenerator {
             companyTaxId: null,
             type: 'a4',
             category: category,
-            documentType:
-                isReturn ? 'purchase_return' : 'purchase_invoice',
+            documentType: isReturn ? 'purchase_return' : 'purchase_invoice',
+            printerId: targetPrinterId,
           );
           return r.printed;
         } catch (e) {
-          debugPrint('[InvoiceGenerator] Purchase template failed, falling back: $e');
+          debugPrint(
+            '[InvoiceGenerator] Purchase template failed, falling back: $e',
+          );
         }
       }
     }
@@ -463,25 +471,20 @@ class InvoiceGenerator {
     String? orderType,
     String? orderNotes,
     String? customerName, // NEW: Table Name or Guest Name
+    int? printerId,
     IPrintersRepository? printersRepo,
     AppDatabase? db,
   }) async {
-    // Try template-based rendering first
     if (db != null) {
       final hasTemplate = await TemplatedInvoiceService.hasDefaultTemplate(
-        db, 'kitchen',
+        db,
+        'kitchen',
+        documentType: 'kitchen_order',
+        printerId: printerId,
       );
       if (hasTemplate) {
         try {
-          final itemsMaps = items.map((i) => <String, dynamic>{
-            'name': i.name, 'quantity': i.quantity,
-            'price': i.price, 'total': i.total, 'note': i.note ?? '',
-            'code': i.code, 'unit': i.unit, 'barcode': i.barcode,
-            'discount': i.discount, 'tax': i.tax,
-            // رايةُ **عرضٍ** لا بيانات — وكانت تسقط هنا صامتةً فيُطبع اسمُ
-            // التصنيف صنفاً بكمّية صفر. البلاغ: «*عرايس* بدل الصنف».
-            'isCategoryHeader': i.isCategoryHeader,
-          }).toList();
+          final itemsMaps = items.map(kitchenTemplateItemMap).toList();
           final r = await TemplatedInvoiceService.printWithTemplate(
             db: db,
             invoiceNumber: invoiceNumber ?? orderNumber,
@@ -504,7 +507,9 @@ class InvoiceGenerator {
             type: 'kitchen',
             category: 'kitchen',
             documentType: 'kitchen_order',
-            notes: orderNotes,  // RESTORED: User still wants general cart notes on kitchen receipt
+            printerId: printerId,
+            notes:
+                orderNotes, // RESTORED: User still wants general cart notes on kitchen receipt
             adhocCustomerName: null,
             adhocCustomerPhone: null,
             directPrint: true,
@@ -513,7 +518,9 @@ class InvoiceGenerator {
           );
           return r.printed;
         } catch (e) {
-          debugPrint('[InvoiceGenerator] Kitchen template failed, falling back: $e');
+          debugPrint(
+            '[InvoiceGenerator] Kitchen template failed, falling back: $e',
+          );
         }
       }
     }
@@ -555,14 +562,17 @@ class InvoiceGenerator {
     AppDatabase? db,
     String? partyCode,
     double openingBalance = 0,
+    int? printerId,
   }) async {
     final isSupplier = partyType == 'supplier' || partyType == 'مورد';
 
     if (db != null) {
       try {
-        final from = fromDate ??
+        final from =
+            fromDate ??
             (transactions.isEmpty ? DateTime.now() : transactions.first.date);
-        final to = toDate ??
+        final to =
+            toDate ??
             (transactions.isEmpty ? DateTime.now() : transactions.last.date);
 
         final snapshot = PartyStatementSnapshot(
@@ -588,6 +598,9 @@ class InvoiceGenerator {
           ],
         );
 
+        final targetPrinterId =
+            printerId ??
+            (await db.getActivePrinterByPurpose('pos_receipt'))?.id;
         final r = await TemplatedInvoiceService.printWithTemplate(
           db: db,
           invoiceNumber: '',
@@ -609,13 +622,16 @@ class InvoiceGenerator {
           type: 'statement',
           category: 'party_statement',
           documentType: 'party_statement',
+          printerId: targetPrinterId,
           statement: snapshot,
         );
         return r.printed;
       } catch (e) {
         // كشفٌ لا يُطبع أسوأُ من كشفٍ بالشكل القديم.
-        debugPrint('[InvoiceGenerator] statement template failed, '
-            'falling back: $e');
+        debugPrint(
+          '[InvoiceGenerator] statement template failed, '
+          'falling back: $e',
+        );
       }
     }
 

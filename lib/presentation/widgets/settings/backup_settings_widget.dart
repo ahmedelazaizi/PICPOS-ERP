@@ -10,6 +10,7 @@ import 'package:file_picker/file_picker.dart';
 import '../../../core/theme/app_colors.dart';
 
 import '../../../presentation/settings/providers/settings_controller.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Widget for managing database backups
 class BackupSettingsWidget extends ConsumerStatefulWidget {
@@ -202,7 +203,7 @@ class _BackupSettingsWidgetState extends ConsumerState<BackupSettingsWidget> {
             ),
             Text(
               label,
-              style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
             ),
           ],
         ),
@@ -243,7 +244,7 @@ class _BackupSettingsWidgetState extends ConsumerState<BackupSettingsWidget> {
       child: ListTile(
         leading: Icon(
           isLatest ? PhosphorIconsBold.star : PhosphorIconsBold.archive,
-          color: isLatest ? AppColors.warning : AppColors.textMuted,
+          color: isLatest ? AppColors.warning : context.picposMuted,
         ),
         title: Row(
           children: [
@@ -267,7 +268,7 @@ class _BackupSettingsWidgetState extends ConsumerState<BackupSettingsWidget> {
                 child:  Text(
                   tr('الأحدث'),
                   style: const TextStyle(
-                    fontSize: 10,
+                    fontSize: 11,
                     color: AppColors.warning,
                     fontWeight: FontWeight.bold,
                   ),

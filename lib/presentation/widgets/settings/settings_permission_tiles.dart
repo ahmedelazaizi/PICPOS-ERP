@@ -22,6 +22,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../permission_guard.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// «عطلات العمل» — `hr_manage`.
 ///
@@ -93,9 +94,11 @@ Widget buildCurrencyTileGuarded({
   if (locked) {
     return ListTile(
       enabled: false,
-      leading: const Icon(
-        PhosphorIconsBold.lockSimple,
-        color: AppColors.textMuted,
+      leading: Builder(
+        builder: (context) => Icon(
+          PhosphorIconsBold.lockSimple,
+          color: context.picposMuted,
+        ),
       ),
       title:  Text(tr('عملة النظام')),
       subtitle: Text(

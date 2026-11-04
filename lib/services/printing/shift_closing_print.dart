@@ -30,12 +30,19 @@ Future<bool> printShiftClosingSnapshot({
 }) async {
   if (db != null) {
     try {
-      if (await TemplatedInvoiceService.hasDefaultTemplate(db, 'shift_closing')) {
+      final printerId = (await db.getActivePrinterByPurpose('pos_receipt'))?.id;
+      if (await TemplatedInvoiceService.hasDefaultTemplate(
+        db,
+        'shift_closing',
+        documentType: 'shift_closing',
+        printerId: printerId,
+      )) {
         final r = await TemplatedInvoiceService.printWithTemplate(
           db: db,
           type: 'shift_closing',
           category: 'shift_closing',
           documentType: 'shift_closing',
+          printerId: printerId,
           // ⚠️ `printWithTemplate` افتراضُها `directPrint: false` — أي أنّها
           // تفتح ديالوجَ طباعة ويندوز. وكلُّ نظائرِها تمرّر `true`
           // (`printing_service.dart` للفواتير، و`invoice_generator.dart`)،

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 
 
@@ -108,7 +109,7 @@ class LabeledSwitch extends StatelessWidget {
           Icon(
             icon,
             size: 20,
-            color: value ? AppColors.primary : AppColors.textMuted,
+            color: value ? AppColors.primary : context.picposMuted,
           ),
           const SizedBox(width: 8),
         ],

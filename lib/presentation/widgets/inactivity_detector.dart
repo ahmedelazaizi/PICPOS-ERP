@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/providers/auth_providers.dart';
+import '../pos/logic/hold_cart_before_leaving.dart';
+import '../pos/providers/cart_controller.dart';
 import '../../services/session_timeout_service.dart'
     show sessionTimeoutProvider, kWarningSeconds;
 
@@ -187,6 +189,25 @@ class _InactivityDetectorState extends ConsumerState<InactivityDetector> {
 
     final auth = ref.read(authProvider);
     if (!auth.isAuthenticated) return;
+
+    // قرارُ مالكٍ: الخروجُ القسريّ وسلّةُ البيع عامرة ⇒ تعليقٌ تلقائيّ قبل
+    // مسح الحالة. الفشلُ يُسجَّل والسلّةُ تبقى (لا تُمسح) ثم يتم الخروج —
+    // الأمانُ لا ينتظر.
+    if (ref.read(cartControllerProvider).items.isNotEmpty) {
+      _holdCartThenSignOut();
+      return;
+    }
+    _signOut();
+  }
+
+  Future<void> _holdCartThenSignOut() async {
+    await holdSaleCartBeforeLeaving(ref, reason: 'inactivity');
+    if (!mounted) return;
+    if (!ref.read(authProvider).isAuthenticated) return;
+    _signOut();
+  }
+
+  void _signOut() {
 
     // Mirror the manual-logout cleanup in AppShell so the next user does not
     // inherit the previous one's nav items / permissions / branch scope.

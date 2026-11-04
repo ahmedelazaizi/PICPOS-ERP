@@ -9,7 +9,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class TouchKeyboardKey extends StatelessWidget {
   final String label;
@@ -33,7 +33,7 @@ class TouchKeyboardKey extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = foregroundColor ?? AppColors.textPrimary;
+    final fg = foregroundColor ?? context.picposText;
     final bg = backgroundColor ?? Theme.of(context).cardColor;
     return Expanded(
       flex: flex,
@@ -51,7 +51,7 @@ class TouchKeyboardKey extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.border, width: 0.5),
+                  border: Border.all(color: context.picposHairline, width: 0.5),
                 ),
                 child: icon != null
                     ? Icon(icon, color: fg, size: 20)

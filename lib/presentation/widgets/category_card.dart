@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/database/database.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Enhanced category card with hover effects and dynamic icons.
 ///
@@ -101,7 +102,7 @@ class _CategoryCardState extends State<CategoryCard> {
                         tr('مقفل'),
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 10,
+                          fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -136,7 +137,7 @@ class _CategoryCardState extends State<CategoryCard> {
                         tr('مستثنى'),
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 10,
+                          fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -155,7 +156,7 @@ class _CategoryCardState extends State<CategoryCard> {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.textMuted.withValues(alpha: 0.8),
+                    color: context.picposMuted.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child:  Row(
@@ -171,7 +172,7 @@ class _CategoryCardState extends State<CategoryCard> {
                         tr('مخفي'),
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 10,
+                          fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -251,7 +252,7 @@ class _CategoryCardState extends State<CategoryCard> {
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
                         color:
-                            widget.isLocked ? AppColors.textSecondary : null,
+                            widget.isLocked ? context.picposSecondary : null,
                         decoration: widget.isLocked
                             ? TextDecoration.lineThrough
                             : null,
@@ -305,13 +306,13 @@ class _CategoryCardState extends State<CategoryCard> {
         width: 28,
         height: 28,
         decoration: BoxDecoration(
-          color: AppColors.textMuted.withValues(alpha: 0.1),
+          color: context.picposMuted.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(6),
         ),
-        child: const Icon(
+        child: Icon(
           PhosphorIconsBold.dotsThreeVertical,
           size: 16,
-          color: AppColors.textSecondary,
+          color: context.picposSecondary,
         ),
       ),
       padding: EdgeInsets.zero,
@@ -475,7 +476,7 @@ class _ActionChipState extends State<_ActionChip> {
                 Text(
                   widget.label,
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: widget.color,
                   ),

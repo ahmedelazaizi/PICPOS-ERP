@@ -564,7 +564,7 @@ class _ReceiptVoucherDialogState extends ConsumerState<ReceiptVoucherDialog> {
                                           tr('شركة توصيل'),
                                           style: const TextStyle(
                                             color: Colors.white,
-                                            fontSize: 10,
+                                            fontSize: 11,
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -805,7 +805,7 @@ class _ReceiptVoucherDialogState extends ConsumerState<ReceiptVoucherDialog> {
               Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : AppColors.textSecondary,
+                  color: isSelected ? Colors.white : context.picposSecondary,
                   fontSize: 12,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),

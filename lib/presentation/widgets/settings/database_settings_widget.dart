@@ -11,6 +11,7 @@ import '../../../services/deployment/commit_result.dart';
 import '../../../services/deployment/mode_activator.dart';
 import '../../../services/network_service.dart';
 import '../../../core/config/brand.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Shows the full-screen database connection settings dialog.
 void showDatabaseSettingsDialog(BuildContext context) {
@@ -211,8 +212,8 @@ class _DatabaseSettingsDialogState
                               style: const TextStyle(
                                   fontSize: 18, fontWeight: FontWeight.bold)),
                           Text(tr('اختيار وضع الاتصال: محلي أو سيرفر'),
-                              style: const TextStyle(
-                                  fontSize: 12, color: AppColors.textSecondary)),
+                              style: TextStyle(
+                                  fontSize: 12, color: context.picposSecondary)),
                         ],
                       ),
                     ),
@@ -451,7 +452,7 @@ class _DatabaseSettingsDialogState
                         children: [
                           Icon(PhosphorIconsBold.desktop,
                               size: 64,
-                              color: AppColors.textSecondary.withAlpha(100)),
+                              color: context.picposSecondary.withAlpha(100)),
                           const SizedBox(height: 16),
                            Text(
                             tr('الوضع المحلي (الافتراضي)'),
@@ -464,7 +465,7 @@ class _DatabaseSettingsDialogState
                             textAlign: TextAlign.center,
                             style: TextStyle(
                                 fontSize: 13,
-                                color: AppColors.textSecondary.withAlpha(180)),
+                                color: context.picposSecondary.withAlpha(180)),
                           ),
                         ],
                       ),

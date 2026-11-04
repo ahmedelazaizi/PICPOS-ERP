@@ -414,7 +414,7 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
             ),
             const SizedBox(height: 4),
             Text(tr('تحديد الخزينة التي يتم توجيه كل طريقة دفع إليها تلقائياً'),
-                style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+                style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
             const Divider(height: 16),
             safesAsync.when(
               data: (safes) {
@@ -492,7 +492,7 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                 const Spacer(),
                 safesAsync.when(
                   data: (safes) => Text(tr('{p0} صندوق', {'p0': safes.length}),
-                      style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted)),
+                      style: GoogleFonts.cairo(fontSize: 12, color: context.picposMuted)),
                   loading: () => const SizedBox.shrink(),
                   error: (_, _) => const SizedBox.shrink(),
                 ),
@@ -510,13 +510,13 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(PhosphorIconsBold.vault, size: 48, color: AppColors.textMuted.withValues(alpha: 0.3)),
+                        Icon(PhosphorIconsBold.vault, size: 48, color: context.picposMuted.withValues(alpha: 0.3)),
                         const SizedBox(height: 12),
                         Text(tr('لا توجد صناديق بعد'),
-                            style: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 14)),
+                            style: GoogleFonts.cairo(color: context.picposMuted, fontSize: 14)),
                         const SizedBox(height: 4),
                         Text(tr('قم بإنشاء صندوق جديد من النموذج على اليمين'),
-                            style: GoogleFonts.cairo(color: AppColors.textMuted, fontSize: 11)),
+                            style: GoogleFonts.cairo(color: context.picposMuted, fontSize: 11)),
                       ],
                     ),
                   );
@@ -558,7 +558,7 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                               ),
                               child: Text(tr('افتراضي'),
                                   style: GoogleFonts.cairo(
-                                      color: AppColors.success, fontSize: 10, fontWeight: FontWeight.bold)),
+                                      color: AppColors.success, fontSize: 11, fontWeight: FontWeight.bold)),
                             ),
                           ],
                           if (!safe.isActive) ...[
@@ -566,19 +566,19 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: AppColors.textMuted.withValues(alpha: 0.1),
+                                color: context.picposMuted.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(tr('معطّل'),
                                   style: GoogleFonts.cairo(
-                                      color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold)),
+                                      color: context.picposMuted, fontSize: 11, fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ],
                       ),
                       subtitle: Text(
                         _buildSafeSubtitle(safe),
-                        style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
+                        style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
                       ),
                       trailing: PopupMenuButton<String>(
                         icon: const Icon(PhosphorIconsBold.dotsThreeVertical, size: 20),
@@ -607,7 +607,7 @@ class _SafeManagementScreenState extends ConsumerState<SafeManagementScreen> {
                               Icon(
                                 safe.isActive ? PhosphorIconsBold.eyeSlash : PhosphorIconsBold.eye,
                                 size: 16,
-                                color: safe.isActive ? AppColors.textMuted : AppColors.success,
+                                color: safe.isActive ? context.picposMuted : AppColors.success,
                               ),
                               const SizedBox(width: 8),
                               Text(safe.isActive ? tr('إلغاء التفعيل') : tr('تفعيل')),

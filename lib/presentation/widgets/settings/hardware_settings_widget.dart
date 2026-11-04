@@ -245,7 +245,7 @@ class _HardwareSettingsWidgetState extends ConsumerState<HardwareSettingsWidget>
       children: [
         SwitchListTile(title:  Text(tr('صوت عند المسح')), subtitle:  Text(tr('تشغيل صوت عند مسح باركود بنجاح')), value: _scannerSound, onChanged: (v) => setState(() => _scannerSound = v), contentPadding: EdgeInsets.zero),
         const Divider(),
-         Text(tr('ملاحظة: ماسح الباركود USB يعمل تلقائياً'), style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+         Text(tr('ملاحظة: ماسح الباركود USB يعمل تلقائياً'), style: TextStyle(color: context.picposMuted, fontSize: 12)),
       ],
     );
   }
@@ -284,7 +284,7 @@ class _HardwareSettingsWidgetState extends ConsumerState<HardwareSettingsWidget>
     return buildSectionCard(
       title: tr('درج النقد'), icon: PhosphorIconsBold.wallet, iconColor: AppColors.warning,
       children: [
-         Text(tr('درج النقد يتصل بالطابعة الحرارية عبر كابل RJ12. حدد الطابعة لإرسال أمر الفتح.'), style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+         Text(tr('درج النقد يتصل بالطابعة الحرارية عبر كابل RJ12. حدد الطابعة لإرسال أمر الفتح.'), style: TextStyle(fontSize: 12, color: context.picposMuted)),
         const SizedBox(height: 12),
         TextField(
           decoration:  InputDecoration(labelText: tr('اسم الطابعة (للدرج)'), hintText: tr('مثال: POS58 أو XP-58'), prefixIcon: const Icon(PhosphorIconsBold.printer)),

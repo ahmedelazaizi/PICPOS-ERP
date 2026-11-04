@@ -212,7 +212,7 @@ class _TreasuryMovementsListPicposState
                 widget.searchQuery.isNotEmpty
                     ? tr('لا توجد سندات مطابقة')
                     : AppLocalizations.of(context)!.noTransactions,
-                style: const TextStyle(color: AppColors.textMuted),
+                style: TextStyle(color: context.picposMuted),
               ),
             ),
           );
@@ -279,10 +279,10 @@ class _MovementsFrame extends StatelessWidget {
                 if (count != null)
                   Text(
                     tr('{count} حركة', {'count': count}),
-                    style: const TextStyle(
-                      fontSize: 10.5,
+                    style: TextStyle(
+                      fontSize: 11,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.textMuted,
+                      color: context.picposMuted,
                     ),
                   ),
               ],
@@ -366,10 +366,10 @@ class TreasuryMovementRowPicpos extends StatelessWidget {
                   time,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 10.5,
+                  style: TextStyle(
+                    fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textMuted,
+                    color: context.picposMuted,
                   ),
                 ),
               ],
@@ -382,10 +382,10 @@ class TreasuryMovementRowPicpos extends StatelessWidget {
               party,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
+                color: context.picposSecondary,
               ),
             ),
           ),
@@ -396,10 +396,10 @@ class TreasuryMovementRowPicpos extends StatelessWidget {
               safeName,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textMuted,
+                color: context.picposMuted,
               ),
             ),
           ),
@@ -422,7 +422,7 @@ class TreasuryMovementRowPicpos extends StatelessWidget {
           if (onPrint != null)
             IconButton(
               icon: const Icon(PhosphorIconsBold.printer, size: 18),
-              color: AppColors.textMuted,
+              color: context.picposMuted,
               visualDensity: VisualDensity.compact,
               tooltip: tr('طباعة السند'),
               onPressed: onPrint,

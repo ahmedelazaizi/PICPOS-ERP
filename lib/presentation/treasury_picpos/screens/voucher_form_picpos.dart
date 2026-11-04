@@ -911,7 +911,7 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
       decoration: BoxDecoration(
         color: context.picposField,
         borderRadius: BorderRadius.circular(8),
-        // ⚠️ `picposHairline` لا `AppColors.border`: الثاني لونُ الوضع
+        // ⚠️ `picposHairline` لا `context.picposHairline`: الثاني لونُ الوضع
         //    الفاتح وحدَه فيبقى فاتحاً في الغامق ويترك خطّاً أبيض.
         border: Border.all(color: context.picposHairline),
       ),
@@ -934,7 +934,7 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
                 ),
                 child: Text(widget.kind.chequeStatusLabel,
                     style: TextStyle(
-                        fontSize: 10, color: widget.kind.accent)),
+                        fontSize: 11, color: widget.kind.accent)),
               ),
               const Spacer(),
               IconButton(
@@ -1114,12 +1114,12 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
             const SizedBox(height: 8),
             if (_partyId == null)
               Text(tr('اختر {p0} أوّلاً.', {'p0': widget.kind.partyLabel}),
-                  style: const TextStyle(
-                      fontSize: 12, color: AppColors.textMuted))
+                  style: TextStyle(
+                      fontSize: 12, color: context.picposMuted))
             else if (invoices.isEmpty)
                Text(
                 tr('لا فواتيرَ مفتوحةً لهذا الطرف — ويُحفَظ السندُ على حسابه بلا توزيع.'),
-                style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 12, color: context.picposMuted),
               )
             else
               for (final inv in invoices) _allocationRow(inv),
@@ -1129,7 +1129,7 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
               //    فاتورةٍ بعينها حالةٌ مشروعةٌ تماماً (دفعةٌ تحت الحساب).
                Text(
                 tr('التوزيع اختياريّ — وما لا يُوزَّع يبقى على حساب الطرف.'),
-                style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 11, color: context.picposMuted),
               ),
             ],
           ],
@@ -1155,8 +1155,8 @@ class PicPosVoucherFormState extends State<PicPosVoucherForm> {
                         fontSize: 12, fontWeight: FontWeight.w700)),
                 Text(
                   tr('{p0} · الباقي {p1}', {'p0': _dateFmt.format(inv.date), 'p1': _money.format(remaining)}),
-                  style: const TextStyle(
-                      fontSize: 10.5, color: AppColors.textMuted),
+                  style: TextStyle(
+                      fontSize: 11, color: context.picposMuted),
                 ),
               ],
             ),

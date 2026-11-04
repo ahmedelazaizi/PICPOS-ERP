@@ -7,6 +7,7 @@ import '../../../core/permissions/permission_codes.dart';
 import '../../../data/providers/providers.dart';
 import '../../../domain/repositories/modifier_repository.dart';
 import '../permission_guard.dart';
+import 'package:picpos_erp/core/theme/readable_colors.dart';
 
 /// Modifier Groups Management Screen — Settings section (#15)
 ///
@@ -330,12 +331,12 @@ class _ModifierGroupCardState extends State<_ModifierGroupCard> {
                     color: typeColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Text(typeLabel, style: TextStyle(fontSize: 10, color: typeColor)),
+                  child: Text(typeLabel, style: TextStyle(fontSize: 11, color: readableOn(context, typeColor))),
                 ),
                 const SizedBox(width: 8),
                 if (g.isRequired) ...[
                   const Icon(PhosphorIconsBold.asteriskSimple, size: 12, color: AppColors.error),
-                   Text(tr(' مطلوب'), style: const TextStyle(fontSize: 10, color: AppColors.error)),
+                   Text(tr(' مطلوب'), style: TextStyle(fontSize: 11, color: readableOn(context, AppColors.error))),
                   const SizedBox(width: 8),
                 ],
                 Text(tr('{p0}-{p1} اختيار', {'p0': g.minSelect, 'p1': g.maxSelect}), style: theme.textTheme.bodySmall),

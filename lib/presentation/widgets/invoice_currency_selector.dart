@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 final _rateFmt = NumberFormat('#,##0.####');
 final _currFmt = NumberFormat('#,##0.00');
@@ -64,14 +65,14 @@ class InvoiceCurrencySelector extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(PhosphorIconsBold.currencyCircleDollar, size: 18, color: AppColors.textMuted),
+          Icon(PhosphorIconsBold.currencyCircleDollar, size: 18, color: context.picposMuted),
           const SizedBox(width: 8),
           // Currency dropdown
           DropdownButtonHideUnderline(
             child: DropdownButton<InvoiceCurrency?>(
               value: selected,
               isDense: true,
-              style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textPrimary),
+              style: GoogleFonts.cairo(fontSize: 12, color: context.picposText),
               items: [
                 DropdownMenuItem<InvoiceCurrency?>(
                   value: null,
@@ -95,11 +96,11 @@ class InvoiceCurrencySelector extends StatelessWidget {
               children: [
                 Text(
                   tr('سعر الصرف: {p0}', {'p0': _rateFmt.format(selected!.exchangeRate)}),
-                  style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted),
+                  style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
                 ),
                 Text(
                   '1 ${selected!.code} = ${_rateFmt.format(selected!.exchangeRate)} $baseCurrencyCode',
-                  style: GoogleFonts.cairo(fontSize: 9, color: AppColors.info),
+                  style: GoogleFonts.cairo(fontSize: 11, color: AppColors.info),
                 ),
               ],
             ),
@@ -122,7 +123,7 @@ class InvoiceCurrencySelector extends StatelessWidget {
                   ),
                   Text(
                     '≈ $baseCurrencyCode ${_currFmt.format(invoiceTotal! * selected!.exchangeRate)}',
-                    style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted),
+                    style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
                   ),
                 ],
               ),
@@ -157,7 +158,7 @@ class ExchangeRateBadge extends StatelessWidget {
       ),
       child: Text(
         '1 $fromCurrency = ${_rateFmt.format(rate)} $toCurrency',
-        style: GoogleFonts.cairo(fontSize: 9, color: AppColors.info),
+        style: GoogleFonts.cairo(fontSize: 11, color: AppColors.info),
       ),
     );
   }

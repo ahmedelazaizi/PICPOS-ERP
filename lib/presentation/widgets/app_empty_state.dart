@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Unified empty state widget used across all screens.
 ///
@@ -62,7 +63,7 @@ class AppEmptyState extends StatelessWidget {
               child: Icon(
                 icon,
                 size: iconSize,
-                color: AppColors.textMuted.withValues(alpha: 0.5),
+                color: context.picposMuted.withValues(alpha: 0.5),
               ),
             ),
             const SizedBox(height: 20),
@@ -71,7 +72,7 @@ class AppEmptyState extends StatelessWidget {
             Text(
               title,
               style: theme.textTheme.titleMedium?.copyWith(
-                color: AppColors.textMuted,
+                color: context.picposMuted,
                 fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.center,
@@ -83,7 +84,7 @@ class AppEmptyState extends StatelessWidget {
               Text(
                 subtitle!,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.textMuted.withValues(alpha: 0.7),
+                  color: context.picposMuted.withValues(alpha: 0.7),
                 ),
                 textAlign: TextAlign.center,
               ),

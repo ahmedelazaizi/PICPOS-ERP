@@ -16,6 +16,7 @@ import '../../widgets/permission_guard.dart';
 import '../widgets/picpos_cashier_closing_dialog.dart';
 import '../widgets/picpos_opening_balance_dialog.dart';
 import '../widgets/picpos_past_shifts_panel.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 // منطق منسوخ من shift_close_screen.dart (Task 10A) — أي إصلاح منطقي
 // يتصلّح في المصدر أولاً ثم patch (مصيدة النسخ §٥.٨).
@@ -182,8 +183,8 @@ class _ShiftClosePicposScreenState extends ConsumerState<ShiftClosePicposScreen>
                       if (!noOpenShift && state.resolvedShiftId != null)
                         Text(
                           tr('رقم الوردية: #{p0}', {'p0': state.resolvedShiftId}),
-                          style: const TextStyle(
-                            color: AppColors.textMuted,
+                          style: TextStyle(
+                            color: context.picposMuted,
                             fontSize: 13,
                           ),
                         ),

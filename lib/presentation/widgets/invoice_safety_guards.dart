@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../domain/entities/party_entity.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 final _currFmt = NumberFormat('#,##0.00');
 
@@ -79,8 +80,8 @@ class CreditLimitWarningBanner extends StatelessWidget {
                 Text(
                   tr('الحد: {p0} | الرصيد الحالي: {p1} | المتاح: {p2}', {'p0': _currFmt.format(customer!.creditLimit), 'p1': _currFmt.format(customer!.balance), 'p2': _currFmt.format(customer!.availableCredit)}),
                   style: GoogleFonts.cairo(
-                    fontSize: 10,
-                    color: AppColors.textMuted,
+                    fontSize: 11,
+                    color: context.picposMuted,
                   ),
                 ),
               ],
@@ -136,28 +137,28 @@ class InvoiceConfirmationDialog {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: context.picposField,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: context.picposHairline),
                 ),
                 child: Column(
                   children: [
                     if (customerName != null && customerName.isNotEmpty)
-                      _summaryRow(tr('العميل'), customerName),
-                    _summaryRow(tr('عدد الأصناف'), '$itemCount'),
-                    _summaryRow(tr('المبلغ الفرعي'), _currFmt.format(subtotal)),
+                      _summaryRow(context, tr('العميل'), customerName),
+                    _summaryRow(context, tr('عدد الأصناف'), '$itemCount'),
+                    _summaryRow(context, tr('المبلغ الفرعي'), _currFmt.format(subtotal)),
                     if (discount > 0)
-                      _summaryRow(tr('الخصم'), '- ${_currFmt.format(discount)}', valueColor: AppColors.error),
+                      _summaryRow(context, tr('الخصم'), '- ${_currFmt.format(discount)}', valueColor: AppColors.error),
                     if (tax > 0)
-                      _summaryRow(tr('الضريبة'), _currFmt.format(tax)),
+                      _summaryRow(context, tr('الضريبة'), _currFmt.format(tax)),
                     const Divider(height: 16),
-                    _summaryRow(tr('الإجمالي'), _currFmt.format(total),
+                    _summaryRow(context, tr('الإجمالي'), _currFmt.format(total),
                         isBold: true, valueColor: AppColors.primary),
                     const SizedBox(height: 4),
-                    _summaryRow(tr('طريقة الدفع'), paymentLabel),
+                    _summaryRow(context, tr('طريقة الدفع'), paymentLabel),
                     if (paymentMethod == 'multiple' && cashAmount != null && bankAmount != null) ...[
-                      _summaryRow(tr('  نقدي'), _currFmt.format(cashAmount)),
-                      _summaryRow(tr('  بنك'), _currFmt.format(bankAmount)),
+                      _summaryRow(context, tr('  نقدي'), _currFmt.format(cashAmount)),
+                      _summaryRow(context, tr('  بنك'), _currFmt.format(bankAmount)),
                     ],
                   ],
                 ),
@@ -184,19 +185,19 @@ class InvoiceConfirmationDialog {
     );
   }
 
-  static Widget _summaryRow(String label, String value, {bool isBold = false, Color? valueColor}) {
+  static Widget _summaryRow(BuildContext context, String label, String value, {bool isBold = false, Color? valueColor}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted)),
+          Text(label, style: GoogleFonts.cairo(fontSize: 12, color: context.picposMuted)),
           Text(
             value,
             style: GoogleFonts.cairo(
               fontSize: isBold ? 14 : 12,
               fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
-              color: valueColor ?? AppColors.textPrimary,
+              color: valueColor ?? context.picposText,
             ),
           ),
         ],
@@ -243,7 +244,7 @@ class DuplicateInvoiceGuard {
               const SizedBox(height: 8),
               Text(
                 tr('هل تريد المتابعة رغم ذلك؟'),
-                style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textMuted),
+                style: GoogleFonts.cairo(fontSize: 12, color: context.picposMuted),
               ),
             ],
           ),

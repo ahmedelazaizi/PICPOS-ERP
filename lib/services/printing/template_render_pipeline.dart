@@ -26,6 +26,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import '../../data/database/database.dart';
+import '../../domain/entities/shift_closing_snapshot.dart';
 import '../../domain/printing/party_statement_snapshot.dart';
 import '../../domain/printing/print_values.dart';
 import '../../domain/printing/template_document.dart';
@@ -56,6 +57,9 @@ class TemplateRenderPipeline {
 
     /// لقطةُ كشف الحساب حين يكون المطبوعُ كشفاً — تُسأل قبل مُحلِّل الفاتورة.
     PartyStatementSnapshot? statement,
+
+    /// لقطةُ إغلاق الوردية — تُسأل قبل مُحلِّل الفاتورة مثل مسار v1.
+    ShiftClosingSnapshot? shift,
   }) async {
     final document = buildDocument(
       template: template,
@@ -66,7 +70,12 @@ class TemplateRenderPipeline {
     final pages = LayoutEngine.paginate(
       document: document,
       rows: buildRows(items, document.table, payload.decimals),
-      values: buildValues(document, payload, statement: statement),
+      values: buildValues(
+        document,
+        payload,
+        statement: statement,
+        shift: shift,
+      ),
     );
 
     return PdfPainter.paint(
@@ -91,7 +100,11 @@ class TemplateRenderPipeline {
 
     if (visible.isNotEmpty && visible.every(_isPositioned)) {
       return _fromBands(
-          paper, visible, table, parseBandHeights(template.bandHeights));
+        paper,
+        visible,
+        table,
+        parseBandHeights(template.bandHeights),
+      );
     }
 
     // لا إحداثيّاتٍ بعد ⇒ يُشتقّ من التدفّق. مستندٌ مشتقٌّ خيرٌ من ورقةٍ
@@ -235,20 +248,20 @@ class TemplateRenderPipeline {
   }
 
   static LegacyElement _legacyOf(InvoiceTemplateElement e) => LegacyElement(
-        elementType: e.elementType,
-        content: e.content,
-        section: e.section,
-        sortOrder: e.sortOrder,
-        flexWidth: e.flexWidth,
-        fontSize: e.fontSize,
-        isBold: e.isBold,
-        isVisible: e.isVisible,
-        labelAr: e.labelAr,
-        labelEn: e.labelEn,
-        textAlign: e.textAlign,
-        fontColor: e.fontColor,
-        condition: e.condition,
-      );
+    elementType: e.elementType,
+    content: e.content,
+    section: e.section,
+    sortOrder: e.sortOrder,
+    flexWidth: e.flexWidth,
+    fontSize: e.fontSize,
+    isBold: e.isBold,
+    isVisible: e.isVisible,
+    labelAr: e.labelAr,
+    labelEn: e.labelEn,
+    textAlign: e.textAlign,
+    fontColor: e.fontColor,
+    condition: e.condition,
+  );
 
   // ═════════════════════════════════════════════════════════════════════════
   // الورق
@@ -262,8 +275,7 @@ class TemplateRenderPipeline {
 
     // العرضُ الصالحُ للطباعة على الحراريّ أقلُّ من عرض الورق: رأسُ الطباعة
     // ~٧٢مم من ٨٠، والباقي هامشٌ عتاديٌّ لا يُطبع فيه.
-    final widthMm =
-        isThermal ? template.paperWidth - 8 : template.paperWidth;
+    final widthMm = isThermal ? template.paperWidth - 8 : template.paperWidth;
 
     final margins = _marginsOf(template.margins, isThermal);
     final h = template.paperHeight;
@@ -311,7 +323,8 @@ class TemplateRenderPipeline {
     if (columns.isEmpty) return null;
 
     // العناوينُ الثنائيّةُ تُطفأ على الورق الضيّق — لا مكانَ لسطرين في ٥٨مم.
-    final bilingual = paper.widthMm >= narrowPaperMm &&
+    final bilingual =
+        paper.widthMm >= narrowPaperMm &&
         columns.any((c) => c.labelEn.isNotEmpty);
 
     // ⚠️ قيمةٌ واحدةٌ تُحسب مرّةً — لا `s!` بعد فحصٍ على تعبيرٍ آخر.
@@ -349,7 +362,9 @@ class TemplateRenderPipeline {
   }
 
   static List<TableColumn> _columnsFrom(
-      InvoiceTableSetting? s, TableKind kind) {
+    InvoiceTableSetting? s,
+    TableKind kind,
+  ) {
     final custom = _columnsFromJson(s?.columnsJson);
     if (custom != null) return custom;
 
@@ -370,79 +385,90 @@ class TemplateRenderPipeline {
     //    أدناه منقولةٌ منه حرفيّاً.
     return [
       TableColumn(
-          key: 'index',
-          labelAr: 'م',
-          labelEn: '#',
-          flex: 0.8,
-          decimals: 0,
-          visible: s?.showIndex ?? false),
+        key: 'index',
+        labelAr: 'م',
+        labelEn: '#',
+        flex: 0.8,
+        decimals: 0,
+        visible: s?.showIndex ?? false,
+      ),
       TableColumn(
-          key: 'name',
-          labelAr: 'الصنف',
-          labelEn: 'Description',
-          flex: 3.0,
-          align: ColumnAlign.start,
-          wrap: true,
-          visible: s?.showProductName ?? true),
+        key: 'name',
+        labelAr: 'الصنف',
+        labelEn: 'Description',
+        flex: 3.0,
+        align: ColumnAlign.start,
+        wrap: true,
+        visible: s?.showProductName ?? true,
+      ),
       TableColumn(
-          key: 'code',
-          labelAr: 'الكود',
-          labelEn: 'Code',
-          flex: 1.5,
-          visible: s?.showProductCode ?? false),
+        key: 'code',
+        labelAr: 'الكود',
+        labelEn: 'Code',
+        flex: 1.5,
+        visible: s?.showProductCode ?? false,
+      ),
       TableColumn(
-          key: 'unit',
-          labelAr: 'الوحدة',
-          labelEn: 'Unit',
-          flex: 1.0,
-          decimals: 0,
-          visible: s?.showUnit ?? false),
+        key: 'unit',
+        labelAr: 'الوحدة',
+        labelEn: 'Unit',
+        flex: 1.0,
+        decimals: 0,
+        visible: s?.showUnit ?? false,
+      ),
       TableColumn(
-          key: 'quantity',
-          labelAr: 'الكمية',
-          labelEn: 'Qty',
-          flex: 1.0,
-          visible: s?.showQuantity ?? true),
+        key: 'quantity',
+        labelAr: 'الكمية',
+        labelEn: 'Qty',
+        flex: 1.0,
+        visible: s?.showQuantity ?? true,
+      ),
       TableColumn(
-          key: 'price',
-          labelAr: 'السعر',
-          labelEn: 'Price',
-          flex: 1.2,
-          visible: s?.showUnitPrice ?? true),
+        key: 'price',
+        labelAr: 'السعر',
+        labelEn: 'Price',
+        flex: 1.2,
+        visible: s?.showUnitPrice ?? true,
+      ),
       TableColumn(
-          key: 'discount',
-          labelAr: 'الخصم',
-          labelEn: 'Disc.',
-          flex: 1.0,
-          visible: s?.showDiscount ?? false),
+        key: 'discount',
+        labelAr: 'الخصم',
+        labelEn: 'Disc.',
+        flex: 1.0,
+        visible: s?.showDiscount ?? false,
+      ),
       TableColumn(
-          key: 'tax',
-          labelAr: 'الضريبة',
-          labelEn: 'VAT',
-          flex: 1.0,
-          visible: s?.showTax ?? false),
+        key: 'tax',
+        labelAr: 'الضريبة',
+        labelEn: 'VAT',
+        flex: 1.0,
+        visible: s?.showTax ?? false,
+      ),
       TableColumn(
-          key: 'total',
-          labelAr: 'الإجمالي',
-          labelEn: 'Amount',
-          flex: 1.5,
-          visible: s?.showTotal ?? true),
+        key: 'total',
+        labelAr: 'الإجمالي',
+        labelEn: 'Amount',
+        flex: 1.5,
+        visible: s?.showTotal ?? true,
+      ),
       TableColumn(
-          key: 'barcode',
-          labelAr: 'الباركود',
-          labelEn: 'Barcode',
-          flex: 1.6,
-          decimals: 0,
-          visible: s?.showBarcode ?? false),
+        key: 'barcode',
+        labelAr: 'الباركود',
+        labelEn: 'Barcode',
+        flex: 1.6,
+        decimals: 0,
+        visible: s?.showBarcode ?? false,
+      ),
       TableColumn(
-          key: 'note',
-          labelAr: 'ملاحظة',
-          labelEn: 'Note',
-          flex: 2.0,
-          decimals: 0,
-          align: ColumnAlign.start,
-          wrap: true,
-          visible: s?.showNotes ?? false),
+        key: 'note',
+        labelAr: 'ملاحظة',
+        labelEn: 'Note',
+        flex: 2.0,
+        decimals: 0,
+        align: ColumnAlign.start,
+        wrap: true,
+        visible: s?.showNotes ?? false,
+      ),
     ];
   }
 
@@ -456,24 +482,49 @@ class TemplateRenderPipeline {
 
     return [
       TableColumn(
-          key: 'date', labelAr: 'التاريخ', labelEn: 'Date',
-          flex: flex('date', 1.1), decimals: 0),
+        key: 'date',
+        labelAr: 'التاريخ',
+        labelEn: 'Date',
+        flex: flex('date', 1.1),
+        decimals: 0,
+      ),
       TableColumn(
-          key: 'document', labelAr: 'المستند', labelEn: 'Document',
-          flex: flex('document', 1.1), decimals: 0),
+        key: 'document',
+        labelAr: 'المستند',
+        labelEn: 'Document',
+        flex: flex('document', 1.1),
+        decimals: 0,
+      ),
       TableColumn(
-          key: 'description', labelAr: 'البيان', labelEn: 'Description',
-          flex: flex('description', 2.4), decimals: 0,
-          align: ColumnAlign.start, wrap: true),
+        key: 'description',
+        labelAr: 'البيان',
+        labelEn: 'Description',
+        flex: flex('description', 2.4),
+        decimals: 0,
+        align: ColumnAlign.start,
+        wrap: true,
+      ),
       TableColumn(
-          key: 'debit', labelAr: 'مدين', labelEn: 'Debit',
-          flex: flex('debit', 1.1), align: ColumnAlign.end),
+        key: 'debit',
+        labelAr: 'مدين',
+        labelEn: 'Debit',
+        flex: flex('debit', 1.1),
+        align: ColumnAlign.end,
+      ),
       TableColumn(
-          key: 'credit', labelAr: 'دائن', labelEn: 'Credit',
-          flex: flex('credit', 1.1), align: ColumnAlign.end),
+        key: 'credit',
+        labelAr: 'دائن',
+        labelEn: 'Credit',
+        flex: flex('credit', 1.1),
+        align: ColumnAlign.end,
+      ),
       TableColumn(
-          key: 'balance', labelAr: 'الرصيد', labelEn: 'Balance',
-          flex: flex('balance', 1.2), align: ColumnAlign.end),
+        key: 'balance',
+        labelAr: 'الرصيد',
+        labelEn: 'Balance',
+        flex: flex('balance', 1.2),
+        align: ColumnAlign.end,
+      ),
     ];
   }
 
@@ -557,6 +608,7 @@ class TemplateRenderPipeline {
     TemplateDocument document,
     PrintPayload payload, {
     PartyStatementSnapshot? statement,
+    ShiftClosingSnapshot? shift,
   }) {
     final out = <String, String>{};
     for (final band in document.bands) {
@@ -564,9 +616,23 @@ class TemplateRenderPipeline {
         if (el.contentKey.isEmpty) continue;
         final key = el.contentKey;
 
+        if (shift != null) {
+          final v = resolveShiftClosingValue(
+            key,
+            shift,
+            decimals: payload.decimals,
+          );
+          if (v != null) {
+            out[key] = v;
+            continue;
+          }
+        }
         if (statement != null) {
-          final v = resolvePartyStatementValue(key, statement,
-              decimals: payload.decimals);
+          final v = resolvePartyStatementValue(
+            key,
+            statement,
+            decimals: payload.decimals,
+          );
           if (v != null) {
             out[key] = v;
             continue;
@@ -591,9 +657,7 @@ class TemplateRenderPipeline {
     final rows = <List<String>>[];
     for (var i = 0; i < items.length; i++) {
       final item = items[i];
-      rows.add([
-        for (final c in cols) _cell(c, item, i, decimals),
-      ]);
+      rows.add([for (final c in cols) _cell(c, item, i, decimals)]);
     }
     return rows;
   }

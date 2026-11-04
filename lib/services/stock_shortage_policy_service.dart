@@ -180,9 +180,9 @@ class StockShortagePolicyService {
     return _cachedGlobal!;
   }
 
-  /// The policy a SALE actually runs under — [resolveWith] plus the legacy
-  /// `enable_negative_sales` fallback for installs that never configured any
-  /// shortage-policy tier (Feature 009 / T025, Constitution I).
+  /// Resolves a SALE's terminal/branch/global policy from fresh settings,
+  /// then applies the legacy `enable_negative_sales` fallback when no tier was
+  /// configured (Feature 009 / T025, Constitution I).
   ///
   /// Single source for the sales orchestrator (which passes the allowance down
   /// to the sold item's own stock deduction) and the POS "out of stock" guard
@@ -193,11 +193,15 @@ class StockShortagePolicyService {
     int? terminalId,
     int? branchId,
   }) async {
-    final resolved = await resolveWith(
-      get: get,
-      terminalId: terminalId,
-      branchId: branchId,
-    );
+    // Sale authorization must reflect settings written by sync or another
+    // device immediately; the parsed UI cache can otherwise retain an old
+    // allow-negative value after a fresh block override is persisted.
+    final global = fromName(await get(_globalKey)) ?? defaultPolicy;
+    final branches = await _loadMapWith(get, _perBranchKey);
+    final terminals = await _loadMapWith(get, _perTerminalKey);
+    final resolved = (terminalId == null ? null : terminals[terminalId]) ??
+        (branchId == null ? null : branches[branchId]) ??
+        global;
     return await _legacyFallbackWith(get) ?? resolved;
   }
 

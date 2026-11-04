@@ -96,7 +96,7 @@ extension _SettingsPicposCoreSections on _SettingsPicposScreenState {
                 child: SettingsBlock(
                   title: tr('الشاشات المتقدمة'),
                   subtitle: tr('قاعدة البيانات، الربط، وأدوات الصيانة'),
-                  tint: AppColors.textMuted,
+                  tint: context.picposMuted,
                   child: _AdvancedTiles(onOpenConnections: () => setState(() => _selectedSectionId = linkedDevicesSectionId)),
                 ),
               ),
@@ -142,7 +142,7 @@ extension _SettingsPicposCoreSections on _SettingsPicposScreenState {
                 child: SettingsBlock(
                   title: tr('باركود الميزان'),
                   subtitle: tr('بادئةُ الملصق وتوزيعُ خاناته'),
-                  tint: AppColors.textMuted,
+                  tint: context.picposMuted,
                   child: const _ScaleBarcodeSettings(),
                 ),
               ),

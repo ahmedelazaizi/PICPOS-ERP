@@ -78,7 +78,7 @@ class _KdsSettingsWidgetState extends ConsumerState<KdsSettingsWidget> {
                   child:  Center(
                     child: Text(
                       tr('لا توجد محطات — أضف أول محطة (مثل: مطبخ، بار، حلويات)'),
-                      style: const TextStyle(color: AppColors.textMuted),
+                      style: TextStyle(color: context.picposMuted),
                     ),
                   ),
                 );
@@ -116,7 +116,7 @@ class _KdsSettingsWidgetState extends ConsumerState<KdsSettingsWidget> {
           const SizedBox(height: 4),
            Text(
             tr('عند إرسال الطلب للمطبخ، يتم توزيع الأصناف تلقائياً على المحطات حسب تصنيفها'),
-            style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 12, color: context.picposMuted),
           ),
           const SizedBox(height: 12),
           Consumer(
@@ -132,7 +132,7 @@ class _KdsSettingsWidgetState extends ConsumerState<KdsSettingsWidget> {
                       if (stations.isEmpty) {
                         return  Text(
                           tr('أضف محطات أولاً لبدء الربط'),
-                          style: const TextStyle(color: AppColors.textMuted),
+                          style: TextStyle(color: context.picposMuted),
                         );
                       }
 

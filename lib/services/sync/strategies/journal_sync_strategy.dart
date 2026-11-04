@@ -338,6 +338,12 @@ class JournalSyncStrategy extends SyncStrategy {
     return serverCostCenterId;
   }
 
+  Future<void> recalculateBalancesForAccounts(Iterable<int> accountIds) async {
+    for (final accountId in accountIds) {
+      await _recalculateAccountBalance(accountId);
+    }
+  }
+
   /// Recalculate account balance from all posted journal entries (IAS 1 compliant)
   /// Mirrors the logic in AccountingWritesMixin._updateAccountBalance
   Future<void> _recalculateAccountBalance(int accountId) async {
@@ -350,7 +356,8 @@ class JournalSyncStrategy extends SyncStrategy {
       query.addColumns([debitCol, creditCol]);
       query.where(
         db.journalEntryLines.accountId.equals(accountId) &
-        db.journalEntries.isPosted.equals(true),
+        db.journalEntries.isPosted.equals(true) &
+        db.journalEntries.isDeleted.equals(false),
       );
       final row = await query.getSingleOrNull();
       final totalDebit = row?.read(debitCol) ?? 0.0;

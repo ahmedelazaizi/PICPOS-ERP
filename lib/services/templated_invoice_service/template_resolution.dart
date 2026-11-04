@@ -14,36 +14,66 @@ abstract final class _TemplatedInvoiceResolution {
   /// والسقوطُ مضمون: المستوى الأخيرُ في السلسلة هو عينُ الافتراضيِّ
   /// بالفئة، فقاعدةٌ بلا رابطاتٍ تحسم كما كانت بالضبط — والبصماتُ السبعُ
   /// والعشرون هي البرهان.
+  /// سلسلةُ الحسم (روابط ثم الافتراضي بالفئة) — **المصدرُ الوحيد** للطباعة
+  /// وللبوّابة `hasDefaultTemplate`، فلا يختلف ما تعرضه الواجهة عمّا يُطبع.
+  static Future<InvoiceTemplateWithData?> resolveBound({
+    required AppDatabase db,
+    required String type,
+    required String category,
+    required String documentType,
+    int? branchId,
+    int? printerId,
+    String? locale,
+  }) async {
+    try {
+      final r = await db.resolveTemplateFor(
+        documentType: documentType,
+        category: category,
+        branchId: branchId,
+        printerId: printerId,
+        locale: locale,
+        paperType: type,
+      );
+      if (r.templateId != null) {
+        final data = await db.getTemplateWithData(r.templateId!);
+        if (data != null) {
+          unawaited(
+            DiagnosticLogger.log(
+              DiagnosticLogger.printOut,
+              'resolve level=${r.level} template=${r.templateId}',
+            ),
+          );
+          return data;
+        }
+      }
+    } catch (e) {
+      // حسمٌ منهارٌ يعني فاتورةً لا تُطبع. فالسلسلةُ تسقط ولا تُسقِط
+      // المطبوعَ معها.
+      debugPrint('[TemplatedInvoice] resolve failed, falling back: $e');
+    }
+    return null;
+  }
+
   static Future<InvoiceTemplateWithData?> _resolveTemplate({
     required AppDatabase db,
     required String type,
     required String category,
     String? documentType,
     int? branchId,
+    int? printerId,
     String? locale,
   }) async {
     if (documentType != null) {
-      try {
-        final r = await db.resolveTemplateFor(
-          documentType: documentType,
-          category: category,
-          branchId: branchId,
-          locale: locale,
-          paperType: type,
-        );
-        if (r.templateId != null) {
-          final data = await db.getTemplateWithData(r.templateId!);
-          if (data != null) {
-            unawaited(DiagnosticLogger.log(DiagnosticLogger.printOut,
-                'resolve level=${r.level} template=${r.templateId}'));
-            return data;
-          }
-        }
-      } catch (e) {
-        // حسمٌ منهارٌ يعني فاتورةً لا تُطبع. فالسلسلةُ تسقط ولا تُسقِط
-        // المطبوعَ معها.
-        debugPrint('[TemplatedInvoice] resolve failed, falling back: $e');
-      }
+      final data = await resolveBound(
+        db: db,
+        type: type,
+        category: category,
+        documentType: documentType,
+        branchId: branchId,
+        printerId: printerId,
+        locale: locale,
+      );
+      if (data != null) return data;
     }
     // ── السقوطُ الافتراضيّ ────────────────────────────────────────────
     //
@@ -66,20 +96,27 @@ abstract final class _TemplatedInvoiceResolution {
     required Uint8List bytes,
     required bool directPrint,
     required String category,
+    int? printerId,
   }) async {
     if (directPrint) {
       final printersRepo = PrintersRepositoryImpl(db);
-      final resolvedPrinter = category == 'kitchen'
+      final selectedDbPrinter = printerId == null
+          ? null
+          : await db.getPrinterById(printerId);
+      final resolvedPrinter = selectedDbPrinter != null
+          ? await PrinterResolver.resolveByPrinter(selectedDbPrinter)
+          : category == 'kitchen'
           ? await PrinterResolver.resolveByPurpose(printersRepo, 'kitchen')
           : await PrinterResolver.resolveReceiptPrinter(printersRepo);
 
       if (resolvedPrinter != null) {
-        debugPrint('[TemplatedInvoice] Printing ($category) to: ${resolvedPrinter.name}');
-        await Printing.directPrintPdf(
-          printer: resolvedPrinter,
-          onLayout: (_) => bytes,
+        debugPrint(
+          '[TemplatedInvoice] Printing ($category) to: ${resolvedPrinter.name}',
         );
-        return true;
+        return PdfComputeHelper.directPrintBytes(
+          printer: resolvedPrinter,
+          bytes: bytes,
+        );
       }
       debugPrint(
         '[TemplatedInvoice] No configured $category printer, showing print dialog',
@@ -105,9 +142,7 @@ abstract final class _TemplatedInvoiceResolution {
   /// ⚠️ **والمخطَّطان معاً**: القوالبُ الحديثةُ `variable`+`tax_amount`،
   /// و`a4_commercial` القديمُ نوعُه `tax` بلا `content`.
   static bool _isDocumentTaxField(InvoiceTemplateElement e) =>
-      e.elementType == 'tax' ||
-      e.content == 'tax' ||
-      e.content == 'tax_amount';
+      e.elementType == 'tax' || e.content == 'tax' || e.content == 'tax_amount';
 
   /// النسبةُ المئويّةُ من الإعداد — أو `null` إن تعذّرت القراءة.
   ///
@@ -203,36 +238,35 @@ abstract final class _TemplatedInvoiceResolution {
     String? companyNameEn,
     String? companyCrNumber,
     String locale = 'ar',
-  }) =>
-      pv.PrintPayload(
-        invoiceNumber: invoiceNumber,
-        date: date,
-        customerName: customerName,
-        customerPhone: customerPhone,
-        customerAddress: customerAddress,
-        adhocCustomerName: adhocCustomerName,
-        adhocCustomerPhone: adhocCustomerPhone,
-        companyName: companyName,
-        companyAddress: companyAddress,
-        companyPhone: companyPhone,
-        companyTaxId: companyTaxId,
-        companyNameEn: companyNameEn,
-        companyCrNumber: companyCrNumber,
-        locale: locale,
-        paymentMethod: paymentMethod,
-        cashierName: cashierName,
-        notes: notes,
-        subtotal: subtotal,
-        discount: discount,
-        tax: tax,
-        deliveryFee: deliveryFee,
-        total: total,
-        paid: paid,
-        remaining: total - paid,
-        orderNumber: orderNumber,
-        platformOrderNumber: platformOrderNumber,
-        cashAmount: cashAmount,
-        bankAmount: bankAmount,
-        decimals: _docDecimals,
-      );
+  }) => pv.PrintPayload(
+    invoiceNumber: invoiceNumber,
+    date: date,
+    customerName: customerName,
+    customerPhone: customerPhone,
+    customerAddress: customerAddress,
+    adhocCustomerName: adhocCustomerName,
+    adhocCustomerPhone: adhocCustomerPhone,
+    companyName: companyName,
+    companyAddress: companyAddress,
+    companyPhone: companyPhone,
+    companyTaxId: companyTaxId,
+    companyNameEn: companyNameEn,
+    companyCrNumber: companyCrNumber,
+    locale: locale,
+    paymentMethod: paymentMethod,
+    cashierName: cashierName,
+    notes: notes,
+    subtotal: subtotal,
+    discount: discount,
+    tax: tax,
+    deliveryFee: deliveryFee,
+    total: total,
+    paid: paid,
+    remaining: total - paid,
+    orderNumber: orderNumber,
+    platformOrderNumber: platformOrderNumber,
+    cashAmount: cashAmount,
+    bankAmount: bankAmount,
+    decimals: _docDecimals,
+  );
 }

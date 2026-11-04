@@ -162,6 +162,9 @@ class CfdCartData {
   final List<CfdCartItem> items;
   final double subtotal;
   final double discountPercent;
+
+  /// خصمُ الفاتورة المطبَّق بالمبلغ (يُعرض مبلغاً لا نسبة) حين يكون ثابتاً.
+  final double discountAmount;
   final double taxAmount;
   final double total;
   final String? customerName;
@@ -170,6 +173,7 @@ class CfdCartData {
     required this.items,
     required this.subtotal,
     required this.discountPercent,
+    this.discountAmount = 0,
     required this.taxAmount,
     required this.total,
     this.customerName,
@@ -189,6 +193,7 @@ class CfdCartData {
           .toList(),
       if (c.showSubtotal) 'subtotal': subtotal,
       if (c.showDiscount) 'discount': discountPercent,
+      if (c.showDiscount && discountAmount > 0) 'discountAmount': discountAmount,
       if (c.showTax) 'tax': taxAmount,
       if (c.showTotal) 'total': total,
       if (c.showCustomerName && customerName != null)

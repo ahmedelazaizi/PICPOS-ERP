@@ -23,6 +23,7 @@ import 'api/lan_pairing_client.dart';
 import 'api/api_rate_limiter.dart';
 import 'api/api_errors.dart';
 import 'deployment/provisioning_applier.dart';
+import 'deployment/reconcile_db_read_log.dart';
 import 'deployment/reconcile_result.dart';
 import 'deployment/settings_keys.dart';
 import 'mirror_state.dart';
@@ -30,6 +31,7 @@ import 'lan_tls/lan_tls_manager.dart';
 import 'lan_tls/lan_transport_controller.dart';
 import 'tls_trust.dart';
 import 'server_proxy.dart';
+import 'secure_token_store.dart';
 import 'sync/mirror_settings_keys.dart';
 import 'sync_service.dart';
 import '../core/config/brand.dart';
@@ -85,11 +87,9 @@ class NetworkService {
   static const _prefMode = 'network_mode';
   static const _prefServerAddress = 'network_server_address';
   static const _prefServerPort = 'network_server_port';
-  static const _prefApiToken = 'network_api_token';
   static const _prefTlsEnabled = 'network_tls_enabled';
   static const _prefTlsCertPath = 'network_tls_cert_path';
   static const _prefTlsKeyPath = 'network_tls_key_path';
-  static const _prefTlsKeyPassword = 'network_tls_key_password';
   /// هل الخادمُ **البعيد** يعمل بـTLS — علَمُ العميل لا الخادم.
   static const _prefRemoteTls = 'network_remote_tls';
 
@@ -262,7 +262,7 @@ class NetworkService {
     _tlsEnabled = prefs.getBool(_prefTlsEnabled) ?? false;
     _tlsCertPath = prefs.getString(_prefTlsCertPath);
     _tlsKeyPath = prefs.getString(_prefTlsKeyPath);
-    _tlsKeyPassword = prefs.getString(_prefTlsKeyPassword);
+    _tlsKeyPassword = await SecureTokenStore.instance.read(SecureTokenStore.tlsKeyPassword);
     lanTransport.load(prefs, customTlsEnabled: _tlsEnabled, certPath: _tlsCertPath, keyPath: _tlsKeyPath);
     _remoteServerIsTls = prefs.getBool(_prefRemoteTls) ?? false;
     _webAccessEnabled = prefs.getBool(_prefWebEnabled) ?? false;
@@ -286,7 +286,7 @@ class NetworkService {
     // "Missing or invalid Authorization header" until the user
     // re-paired. Mirror needs the same auth as client — both push to
     // the central HQ server through the same Bearer-token middleware.
-    final savedToken = prefs.getString(_prefApiToken);
+    final savedToken = await SecureTokenStore.instance.read(SecureTokenStore.apiToken);
     if (savedToken != null &&
         (_mode == NetworkMode.client || _mode == NetworkMode.mirror)) {
       ServerProxy.instance.setApiToken(savedToken);
@@ -326,11 +326,8 @@ class NetworkService {
     try {
       dbValue = (await db.getSettingValue('network_mode'))?.trim();
       if (dbValue?.isEmpty ?? false) dbValue = null;
-    } catch (e) {
-      unawaited(DiagnosticLogger.log(
-        'RECONCILE-FAIL',
-        'DB_READ_ERROR: $e',
-      ));
+    } catch (e, st) {
+      logReconcileDbReadFailure(e, st);
       return const ReconcileInconsistent(
         reasonAr: 'تعذّر قراءة إعدادات النظام. قد تكون قاعدة البيانات تالفة. '
             'تواصل مع الدعم الفنى مع تصوير هذه الشاشة.',
@@ -451,7 +448,7 @@ class NetworkService {
 
     await prefs.remove(_prefMode);
     await prefs.remove(_prefServerAddress);
-    await prefs.remove(_prefApiToken);
+    await SecureTokenStore.instance.delete(SecureTokenStore.apiToken);
     await prefs.remove('client_branch_id');
 
     _mode = NetworkMode.standalone;
@@ -593,7 +590,7 @@ class NetworkService {
       await prefs.setString(_prefTlsKeyPath, _tlsKeyPath!);
     }
     if (_tlsKeyPassword != null) {
-      await prefs.setString(_prefTlsKeyPassword, _tlsKeyPassword!);
+      await SecureTokenStore.instance.write(SecureTokenStore.tlsKeyPassword, _tlsKeyPassword!);
     }
   }
 
@@ -669,7 +666,7 @@ class NetworkService {
     await prefs.remove(_prefMode);
     await prefs.remove(_prefServerAddress);
     await prefs.remove(_prefServerPort);
-    await prefs.remove(_prefApiToken);
+    await SecureTokenStore.instance.delete(SecureTokenStore.apiToken);
     await prefs.remove('client_branch_id');
     // Write explicit standalone to prevent stale values
     await prefs.setString(_prefMode, 'standalone');
@@ -1101,15 +1098,12 @@ class NetworkService {
         final apiToken = data['apiToken'] as String?;
         if (apiToken != null) {
           ServerProxy.instance.setApiToken(apiToken);
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(_prefApiToken, apiToken);
           debugPrint('[NetworkService] ✅ API token extracted and persisted');
         } else {
           // A-SEC-1: the server only exposes the token during an operator-opened
           // pairing window. If this device has no token yet, pairing can't
           // complete — tell the operator to open the window on the server.
-          final prefs = await SharedPreferences.getInstance();
-          final existing = prefs.getString(_prefApiToken);
+          final existing = await SecureTokenStore.instance.read(SecureTokenStore.apiToken);
           if (existing == null || existing.isEmpty) {
             return {
               'success': false,

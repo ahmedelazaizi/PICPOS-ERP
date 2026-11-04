@@ -7,6 +7,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
 import '../../../services/api/table_bill_token.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// رقمُ جلسةِ الطاولة المختارة — ليقولَه النادلُ للضيف.
 ///
@@ -66,7 +67,7 @@ class TableSessionPinCard extends ConsumerWidget {
           ),
            Text(
             tr('قُلْه للضيف ليطلب الحساب من هاتفه'),
-            style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 11, color: context.picposMuted),
           ),
         ],
       ),

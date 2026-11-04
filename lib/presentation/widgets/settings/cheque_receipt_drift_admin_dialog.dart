@@ -20,6 +20,7 @@ import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
 import '../../../services/cheque_receipt_drift_audit_service.dart';
 import '../../../services/cheque_receipt_drift_repair_service.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 void showChequeReceiptDriftAdminDialog(BuildContext context) {
   showDialog(
@@ -300,7 +301,7 @@ class _ChequeReceiptDriftAdminDialogState
           Text(
             tr('كل سندات قبض الشيكات تم تسجيلها بقيد واحد لكل شيك.'),
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            style: TextStyle(fontSize: 12, color: context.picposSecondary),
           ),
         ],
       );
@@ -336,7 +337,7 @@ class _ChequeReceiptDriftAdminDialogState
         const SizedBox(height: 12),
          Text(
           tr('اضغط "تطبيق الإصلاح" لتصحيح أرصدة العملاء المتأثرين بقيد تسوية متوازن (لا يتم المساس بأرصدة الخزائن). يُطبَّق مرة واحدة فقط لكل جهاز.'),
-          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          style: TextStyle(fontSize: 12, color: context.picposSecondary),
         ),
         if (_lastResult != null) ...[
           const SizedBox(height: 8),
@@ -386,8 +387,8 @@ class _Stat extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: const TextStyle(
-                fontSize: 11, color: AppColors.textSecondary)),
+            style: TextStyle(
+                fontSize: 11, color: context.picposSecondary)),
         const SizedBox(height: 2),
         Text(
           value,

@@ -4,6 +4,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/database/database.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class SearchableUnitSelectionDialog extends StatefulWidget {
   final List<ProductUnit> units;
@@ -100,7 +101,7 @@ class _SearchableUnitSelectionDialogState extends State<SearchableUnitSelectionD
                           onTap: () => Navigator.pop(context, unit),
                           leading: Icon(
                             isSelected ? PhosphorIconsBold.checkCircle : PhosphorIconsBold.circle,
-                            color: isSelected ? AppColors.success : AppColors.textMuted,
+                            color: isSelected ? AppColors.success : context.picposMuted,
                           ),
                           title: Text(
                             unit.unitName,

@@ -28,7 +28,7 @@ class ResolutionChainPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final r = row;
     if (r == null) {
-      return  PicPosContentCard(
+      return PicPosContentCard(
         child: PicPosEmptyState(
           icon: PhosphorIconsBold.stack,
           title: tr('اختر مساراً'),
@@ -52,9 +52,7 @@ class ResolutionChainPanel extends StatelessWidget {
             subtitle: tr('تُجرَّب بالترتيب — أول قاعدة تُطابِق تفوز'),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final s in r.chain) _ChainStep(step: s),
-              ],
+              children: [for (final s in r.chain) _ChainStep(step: s)],
             ),
           ),
           _Section(
@@ -74,9 +72,7 @@ class ResolutionChainPanel extends StatelessWidget {
                   title: tr('طباعة مباشرة'),
                   sub: tr('بلا نافذة اختيار طابعة'),
                   value: r.directPrint ? tr('مُفعَّلة') : tr('معطَّلة'),
-                  tone: r.directPrint
-                      ? AppColors.success
-                      : context.picposMuted,
+                  tone: r.directPrint ? AppColors.success : context.picposMuted,
                 ),
                 _Behaviour(
                   icon: PhosphorIconsBold.ruler,
@@ -91,12 +87,16 @@ class ResolutionChainPanel extends StatelessWidget {
                   icon: PhosphorIconsBold.plugsConnected,
                   title: tr('مسار الطباعة'),
                   sub: tr('هل يمرّر منادٍ حيٌّ نوعَ هذا المستند؟'),
-                  value: TemplateResolver.wiredDocumentTypes
-                          .contains(r.documentType)
+                  value:
+                      TemplateResolver.wiredDocumentTypes.contains(
+                        r.documentType,
+                      )
                       ? tr('موصول')
                       : tr('غير موصول'),
-                  tone: TemplateResolver.wiredDocumentTypes
-                          .contains(r.documentType)
+                  tone:
+                      TemplateResolver.wiredDocumentTypes.contains(
+                        r.documentType,
+                      )
                       ? AppColors.success
                       : AppColors.warning,
                 ),
@@ -145,17 +145,23 @@ class _Section extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(title,
-                        style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w800,
-                            color: context.picposText)),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        color: context.picposText,
+                      ),
+                    ),
                     if (subtitle != null)
-                      Text(subtitle!,
-                          style: TextStyle(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w600,
-                              color: context.picposMuted)),
+                      Text(
+                        subtitle!,
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                          color: context.picposMuted,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -178,14 +184,14 @@ class _ChainStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final (icon, tone) = switch (step.state) {
       ResolutionStepState.matched => (
-          PhosphorIconsBold.checkCircle,
-          AppColors.success
-        ),
+        PhosphorIconsBold.checkCircle,
+        AppColors.success,
+      ),
       ResolutionStepState.missed => (PhosphorIconsBold.x, AppColors.error),
       ResolutionStepState.notTried => (
-          PhosphorIconsBold.dot,
-          context.picposMuted
-        ),
+        PhosphorIconsBold.dot,
+        context.picposMuted,
+      ),
     };
 
     return Padding(
@@ -226,16 +232,21 @@ class _ChainStep extends StatelessWidget {
                       const SizedBox(width: 7),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.success.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(999),
                         ),
-                        child:  Text(tr('المُطبَّق'),
-                            style: const TextStyle(
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.success)),
+                        child: Text(
+                          tr('المُطبَّق'),
+                          style: const TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.success,
+                          ),
+                        ),
                       ),
                     ],
                   ],
@@ -244,21 +255,23 @@ class _ChainStep extends StatelessWidget {
                 Text(
                   step.key,
                   style: TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: AppTypography.mono,
-                      height: 1.6,
-                      color: context.picposMuted),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: AppTypography.mono,
+                    height: 1.6,
+                    color: context.picposMuted,
+                  ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   _localizedStepResult(step),
                   style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: step.isWinner
-                          ? AppColors.success
-                          : context.picposMuted),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: step.isWinner
+                        ? AppColors.success
+                        : context.picposMuted,
+                  ),
                 ),
               ],
             ),
@@ -321,24 +334,35 @@ class _Behaviour extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(title,
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: context.picposText)),
-                Text(sub,
-                    style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        height: 1.45,
-                        color: context.picposMuted)),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: context.picposText,
+                  ),
+                ),
+                Text(
+                  sub,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    height: 1.45,
+                    color: context.picposMuted,
+                  ),
+                ),
               ],
             ),
           ),
           const SizedBox(width: 8),
-          Text(value,
-              style: TextStyle(
-                  fontSize: 11.5, fontWeight: FontWeight.w800, color: tone)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+              color: tone,
+            ),
+          ),
         ],
       ),
     );
@@ -369,11 +393,14 @@ class _Verdict extends StatelessWidget {
               Icon(PhosphorIconsBold.info, size: 15, color: tone),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(tr(row.health.label),
-                    style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w800,
-                        color: tone)),
+                child: Text(
+                  tr(row.health.label),
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    color: tone,
+                  ),
+                ),
               ),
             ],
           ),
@@ -381,10 +408,11 @@ class _Verdict extends StatelessWidget {
           Text(
             verdictBody(row),
             style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                height: 1.7,
-                color: context.picposText),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              height: 1.7,
+              color: context.picposText,
+            ),
           ),
         ],
       ),
@@ -397,18 +425,25 @@ class _Verdict extends StatelessWidget {
 /// ⚠️ ولا يُكتب فيه اسمُ مستندٍ بعينه: نصٌّ يقول «المرتجعُ يطبع قالبَ
 /// الفاتورة» يبقى معروضاً بعد أن يُصلَح المرتجعُ ويكذب.
 String verdictBody(PrintResolutionRow row) => switch (row.health) {
-      ResolutionHealth.builtIn =>
-        tr('لا قالبَ يطابق هذا المستند في أيٍّ من المستويات الخمسة، فتُستدعى الدالّةُ المدمجةُ في الكود ولا يملك المالكُ من شكلها شيئاً. العلاج: افتح المكتبة، واختر قالباً يناسب الورق، ثمّ «تفعيل كافتراضي» لهذا المستند.'),
-      ResolutionHealth.paperMismatch =>
-        tr('عرضُ القالب يتجاوز عرضَ الطابعة المربوطة، فيُقصّ المطبوعُ من الحافّة بلا رسالةِ خطأ — وعمودُ الإجمالي أوّلُ ما يضيع. العلاج: اربط قالباً بعرض الطابعة، أو غيّر الطابعةَ في الرابطة.'),
-      ResolutionHealth.collision =>
-        tr('لا رابطةَ لهذا المستند، فيرث افتراضيَّ فئتِه — ونوعٌ آخرُ يرث القالبَ نفسَه. فأيُّ تعديلٍ لأحدهما يقع على الآخر. العلاج: اربط لكلٍّ قالبَه صراحةً من المكتبة، فالرابطةُ تسبق الفئةَ في السلسلة.'),
-      ResolutionHealth.unwired =>
-        tr('القالبُ محسومٌ صحيحاً، لكنّ مسارَ طباعة هذا المستند لا يمرّ على منظومة القوالب بعد — فلا يصل التعديلُ الورقةَ مهما رُبط. وهذا نقصُ امتدادٍ مخطَّطٌ له، لا عطبُ إعداد.'),
-      ResolutionHealth.branchScoped =>
-        tr('رابطةٌ مقيَّدةٌ بفرعٍ تحسم هذا المستند، وهي أخصُّ من العامّة فتتقدّم عليها. أيُّ فرعٍ آخرَ يسقط للمستوى الأعمّ.'),
-      ResolutionHealth.categoryOnly =>
-        tr('لا رابطةَ صريحةٌ لهذا المستند، فيحسمه افتراضيُّ الفئة — وهو السلوكُ القائم قبل الرابطات ويعمل. وربطُه صراحةً يجعله محصَّناً من أيّ تبديلٍ لافتراضيِّ الفئة.'),
-      ResolutionHealth.bound =>
-        tr('رابطةٌ صريحةٌ تطابق هذا المستند، والقالبُ وعرضُ الطابعة متوافقان. أيُّ تعديلٍ يُحفَظ في المحرر يسري على هذا المسار مباشرةً.'),
-    };
+  ResolutionHealth.builtIn => tr(
+    'لا قالبَ يطابق هذا المستند في أيٍّ من المستويات الخمسة، فتُستدعى الدالّةُ المدمجةُ في الكود ولا يملك المالكُ من شكلها شيئاً. العلاج: افتح المكتبة، واختر قالباً يناسب الورق، ثمّ «تفعيل كافتراضي» لهذا المستند.',
+  ),
+  ResolutionHealth.paperMismatch => tr(
+    'عرضُ القالب يتجاوز عرضَ الطابعة المربوطة، فيُقصّ المطبوعُ من الحافّة بلا رسالةِ خطأ — وعمودُ الإجمالي أوّلُ ما يضيع. العلاج: اربط قالباً بعرض الطابعة، أو غيّر الطابعةَ في الرابطة.',
+  ),
+  ResolutionHealth.collision => tr(
+    'لا رابطةَ لهذا المستند، فيرث افتراضيَّ فئتِه — ونوعٌ آخرُ يرث القالبَ نفسَه. فأيُّ تعديلٍ لأحدهما يقع على الآخر. العلاج: اربط لكلٍّ قالبَه صراحةً من المكتبة، فالرابطةُ تسبق الفئةَ في السلسلة.',
+  ),
+  ResolutionHealth.unwired => tr(
+    'القالبُ محسومٌ صحيحاً، لكنّ مسارَ طباعة هذا المستند لا يمرّ على منظومة القوالب بعد — فلا يصل التعديلُ الورقةَ مهما رُبط. وهذا نقصُ امتدادٍ مخطَّطٌ له، لا عطبُ إعداد.',
+  ),
+  ResolutionHealth.branchScoped => tr(
+    'رابطةٌ مقيَّدةٌ بفرعٍ تحسم هذا المستند، وهي أخصُّ من العامّة فتتقدّم عليها. أيُّ فرعٍ آخرَ يسقط للمستوى الأعمّ.',
+  ),
+  ResolutionHealth.categoryOnly => tr(
+    'لا رابطةَ صريحةٌ لهذا المستند، فيحسمه افتراضيُّ الفئة — وهو السلوكُ القائم قبل الرابطات ويعمل. وربطُه صراحةً يجعله محصَّناً من أيّ تبديلٍ لافتراضيِّ الفئة.',
+  ),
+  ResolutionHealth.bound => tr(
+    'رابطةٌ صريحةٌ تطابق هذا المستند، والقالبُ وعرضُ الطابعة متوافقان. أيُّ تعديلٍ يُحفَظ في المحرر يسري على هذا المسار مباشرةً.',
+  ),
+};

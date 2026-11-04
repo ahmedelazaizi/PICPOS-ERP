@@ -1,4 +1,6 @@
 import 'dart:async' show unawaited;
+import 'dart:convert';
+import 'package:pdf/pdf.dart' show PdfPageFormat;
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart' as printing_pkg;
 import 'package:flutter/foundation.dart';
@@ -46,7 +48,40 @@ class PdfComputeHelper {
   /// و**لا** نداءَ لخطّاف التسجيل.
   @visibleForTesting
   static Future<bool> Function(Uint8List bytes, String? name)?
-      nativeLayoutOverride;
+  nativeLayoutOverride;
+
+  /// Native named-printer hand-off; injectable so routing can be verified
+  /// without a Windows queue or physical printer.
+  @visibleForTesting
+  static Future<bool> Function(printing_pkg.Printer printer, Uint8List bytes)?
+  directPrintOverride;
+
+  /// آخرُ مقاسِ ورقٍ طُلب من الطابعة (‏`null` = افتراضُ الحزمة A4/Letter).
+  ///
+  /// ⚠️ على Windows تبني `printing` بنيةَ `DEVMODE` من [format] لا من صفحات
+  /// الـPDF: غيابُه يطلب ورقةً قياسيّةً فيُرسم ملصقُ ٥٨×٤٠ صغيراً في ركنها
+  /// (‏رُصد حيّاً 2026-11-03). يُحفظ هنا ليُثبَت في الاختبار بلا طابعة.
+  @visibleForTesting
+  static PdfPageFormat? lastRequestedFormat;
+
+  /// [format] مقاسُ الورقة المطلوبُ من السائق — مرّره حين يكون المستندُ
+  /// بمقاسٍ غيرِ قياسيّ (ملصق)، وإلّا بقي سلوكُ الحزمة كما كان.
+  static Future<bool> directPrintBytes({
+    required printing_pkg.Printer printer,
+    required Uint8List bytes,
+    PdfPageFormat? format,
+    String? name,
+  }) async {
+    lastRequestedFormat = format;
+    final override = directPrintOverride;
+    if (override != null) return override(printer, bytes);
+    return await printing_pkg.Printing.directPrintPdf(
+      printer: printer,
+      onLayout: (_) async => bytes,
+      name: name ?? 'Document',
+      format: format ?? PdfPageFormat.standard,
+    );
+  }
 
   /// [documentLabel] اسمُ المستند كما يُقرأ في السجلّ. `null` ⇒ لا تسجيل —
   /// وهو الوضعُ الصحيحُ للفواتير، فـ`PrintingServiceImpl` يسجّلها بنفسه
@@ -60,9 +95,15 @@ class PdfComputeHelper {
     pw.Document pdf, {
     String? documentLabel,
     String? name,
+    PdfPageFormat? format,
   }) async {
     final Uint8List bytes = await saveToBytes(pdf);
-    return layoutBytes(bytes, documentLabel: documentLabel, name: name);
+    return layoutBytes(
+      bytes,
+      documentLabel: documentLabel,
+      name: name,
+      format: format,
+    );
   }
 
   /// نفسُ [layoutPdf] لبايتاتٍ جاهزة — القمعُ الوحيدُ لحوار الطباعة الأصليّ.
@@ -74,20 +115,31 @@ class PdfComputeHelper {
     Uint8List bytes, {
     String? documentLabel,
     String? name,
+    PdfPageFormat? format,
   }) async {
-    unawaited(DiagnosticLogger.log(
-        'PDF-PRINT', 'layoutPdf invoking native dialog (bytes=${bytes.length})'));
+    lastRequestedFormat = format;
+    unawaited(
+      DiagnosticLogger.log(
+        'PDF-PRINT',
+        'layoutPdf invoking native dialog (bytes=${bytes.length})',
+      ),
+    );
     try {
       final override = nativeLayoutOverride;
       final bool printed = override != null
           ? await override(bytes, name)
           : await printing_pkg.Printing.layoutPdf(
-              onLayout: (format) async => bytes,
+              onLayout: (_) async => bytes,
               name: name ?? 'Document',
+              format: format ?? PdfPageFormat.standard,
             );
       if (!printed) {
-        unawaited(DiagnosticLogger.log(
-            'PDF-PRINT', 'layoutPdf cancelled by user (no sheet, no audit)'));
+        unawaited(
+          DiagnosticLogger.log(
+            'PDF-PRINT',
+            'layoutPdf cancelled by user (no sheet, no audit)',
+          ),
+        );
         return false;
       }
       unawaited(DiagnosticLogger.log('PDF-PRINT', 'layoutPdf returned OK'));
@@ -98,15 +150,70 @@ class PdfComputeHelper {
           await hook(documentLabel);
         } catch (e) {
           unawaited(
-              DiagnosticLogger.log('PDF-PRINT', 'print-audit hook failed: $e'));
+            DiagnosticLogger.log('PDF-PRINT', 'print-audit hook failed: $e'),
+          );
         }
       }
       return true;
     } catch (e, st) {
-      unawaited(DiagnosticLogger.log(
-          'PDF-PRINT', 'layoutPdf threw: $e\n$st'));
+      unawaited(DiagnosticLogger.log('PDF-PRINT', 'layoutPdf threw: $e\n$st'));
       rethrow;
     }
+  }
+
+  static PdfPageFormat pageFormatForTemplate(
+    double widthMm,
+    String marginsJson,
+  ) {
+    final margins = _parseMargins(marginsJson);
+    const mm = PdfPageFormat.mm;
+    return PdfPageFormat(widthMm * mm, double.infinity,
+        marginTop: margins['top']! * mm,
+        marginRight: margins['right']! * mm,
+        marginBottom: margins['bottom']! * mm,
+        marginLeft: margins['left']! * mm);
+  }
+
+  static Map<String, double> _parseMargins(String json) {
+    try {
+      final margins = jsonDecode(json) as Map<String, dynamic>;
+      return {
+        'top': (margins['top'] as num?)?.toDouble() ?? 5,
+        'right': (margins['right'] as num?)?.toDouble() ?? 5,
+        'bottom': (margins['bottom'] as num?)?.toDouble() ?? 5,
+        'left': (margins['left'] as num?)?.toDouble() ?? 5,
+      };
+    } catch (_) {
+      return {'top': 5, 'right': 5, 'bottom': 5, 'left': 5};
+    }
+  }
+
+  /// Serialize once and return the final page format used for the MediaBox.
+  /// Continuous pages resolve their infinite height during layout/save.
+  static Future<({Uint8List bytes, PdfPageFormat format})> saveToBytesWithMediaBox(
+    pw.Document pdf,
+  ) async {
+    final bytes = await saveToBytes(pdf);
+    final pages = pdf.document.pdfPageList.pages;
+    if (pages.isEmpty) throw StateError('Cannot print a PDF without pages');
+    return (bytes: bytes, format: pages.last.pageFormat);
+  }
+
+  static Future<bool> directPrintDocument({
+    required printing_pkg.Printer printer,
+    required pw.Document pdf,
+  }) async {
+    final output = await saveToBytesWithMediaBox(pdf);
+    return directPrintBytes(
+      printer: printer,
+      bytes: output.bytes,
+      format: output.format,
+    );
+  }
+
+  static Future<bool> layoutPdfWithMediaBox(pw.Document pdf) async {
+    final output = await saveToBytesWithMediaBox(pdf);
+    return layoutBytes(output.bytes, format: output.format);
   }
 
   /// Save PDF to bytes on the main thread.

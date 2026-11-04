@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
+import 'package:picpos_erp/core/theme/readable_colors.dart';
 
 /// بطاقة مؤشّر أداء (KPI) موحّدة وقابلة للاستخدام في كل الداشبوردات.
 ///
@@ -37,41 +39,45 @@ class AppKpiCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isGradient = style == KpiStyle.gradient;
-    final fg = isGradient ? Colors.white : AppColors.textPrimary;
+    // الأبيض فوق التدرّج يحتاج خلفية أغمق من بعض ألوان المستدعين (سماوي...).
+    final base = isGradient ? _whiteSafe(color) : color;
+    final fg = isGradient ? Colors.white : context.picposText;
     final labelColor = isGradient
         ? Colors.white.withValues(alpha: 0.92)
-        : AppColors.textSecondary;
+        : context.picposSecondary;
     final subtitleColor = isGradient
         ? Colors.white.withValues(alpha: 0.78)
-        : AppColors.textMuted;
+        : context.picposMuted;
     final iconBg = isGradient
         ? Colors.white.withValues(alpha: 0.20)
         : color.withValues(alpha: 0.12);
-    final iconFg = isGradient ? Colors.white : color;
+    final iconFg = isGradient
+        ? Colors.white
+        : readableOn(context, color, on: context.picposCard);
 
     final card = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         gradient: isGradient
             ? LinearGradient(
-                colors: [color, Color.lerp(color, Colors.black, 0.22)!],
+                colors: [base, Color.lerp(base, Colors.black, 0.22)!],
                 begin: AlignmentDirectional.topEnd,
                 end: AlignmentDirectional.bottomStart,
               )
             : null,
-        color: isGradient ? null : Colors.white,
+        color: isGradient ? null : context.picposCard,
         borderRadius: BorderRadius.circular(10),
         border: isGradient
             ? null
             : Border(
                 right: BorderSide(color: color, width: 3),
-                top: const BorderSide(color: AppColors.border, width: 0.8),
-                bottom: const BorderSide(color: AppColors.border, width: 0.8),
-                left: const BorderSide(color: AppColors.border, width: 0.8),
+                top: BorderSide(color: context.picposHairline, width: 0.8),
+                bottom: BorderSide(color: context.picposHairline, width: 0.8),
+                left: BorderSide(color: context.picposHairline, width: 0.8),
               ),
         boxShadow: [
           BoxShadow(
-            color: (isGradient ? color : Colors.black)
+            color: (isGradient ? base : Colors.black)
                 .withValues(alpha: isGradient ? 0.22 : 0.04),
             blurRadius: isGradient ? 8 : 4,
             offset: const Offset(0, 2),
@@ -136,7 +142,7 @@ class AppKpiCard extends StatelessWidget {
                     subtitle!,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: subtitleColor, fontSize: 9.5, height: 1.15),
+                    style: TextStyle(color: subtitleColor, fontSize: 11, height: 1.15),
                   ),
                 ],
               ],
@@ -158,6 +164,27 @@ class AppKpiCard extends StatelessWidget {
   }
 }
 
+/// أقرب لونٍ لـ [c] (بالتغميق فقط) يقرأ عليه الأبيض 4.5:1 — للنص الثانوي
+/// (٧٨٪ أبيض) وللشريحة (أبيض على ٢٠٪ أبيض). المقروء أصلاً يُعاد كما هو.
+Color _whiteSafe(Color c) {
+  bool ok(Color b) =>
+      _ratio(Color.alphaBlend(Colors.white.withValues(alpha: 0.78), b), b) >=
+          4.5 &&
+      _ratio(Colors.white,
+              Color.alphaBlend(Colors.white.withValues(alpha: 0.2), b)) >=
+          4.5;
+  var out = c;
+  for (var i = 0; i < 30 && !ok(out); i++) {
+    out = Color.lerp(out, Colors.black, 0.05)!;
+  }
+  return out;
+}
+
+double _ratio(Color a, Color b) {
+  final la = a.computeLuminance(), lb = b.computeLuminance();
+  return (la > lb ? la + 0.05 : lb + 0.05) / (la > lb ? lb + 0.05 : la + 0.05);
+}
+
 class _TrendChip extends StatelessWidget {
   final double trend;
   final bool onGradient;
@@ -166,9 +193,11 @@ class _TrendChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final positive = trend >= 0;
+    final tone = positive ? AppColors.success : AppColors.error;
     final color = onGradient
         ? Colors.white
-        : (positive ? AppColors.success : AppColors.error);
+        : readableOn(context, tone,
+            on: Color.alphaBlend(tone.withValues(alpha: 0.10), context.picposCard));
     final bg = onGradient
         ? Colors.white.withValues(alpha: 0.20)
         : (positive ? AppColors.success : AppColors.error)
@@ -190,7 +219,7 @@ class _TrendChip extends StatelessWidget {
           const SizedBox(width: 2),
           Text(
             '${trend.abs().toStringAsFixed(1)}%',
-            style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w700),
+            style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700),
           ),
         ],
       ),

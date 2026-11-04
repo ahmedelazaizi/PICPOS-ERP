@@ -747,7 +747,7 @@ class _PaymentVoucherDialogPicposState extends ConsumerState<PaymentVoucherDialo
               Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : AppColors.textSecondary,
+                  color: isSelected ? Colors.white : context.picposSecondary,
                   fontSize: 12,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),

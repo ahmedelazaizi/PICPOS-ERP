@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../core/i18n/tr.dart';
-import '../core/theme/app_colors.dart';
+import '../core/theme/core_surface_colors.dart';
 
 /// Types of anomalies that can be detected
 enum AnomalyType {
@@ -185,7 +185,7 @@ class AnomalyAlertCard extends StatelessWidget {
           child: Icon(alert.type.icon, size: 20, color: alert.type.color),
         ),
         title: Text(alert.type.labelAr, style: GoogleFonts.cairo(fontWeight: FontWeight.w600, fontSize: 13)),
-        subtitle: Text(alert.message, style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+        subtitle: Text(alert.message, style: GoogleFonts.cairo(fontSize: 11, color: context.coreTextMuted)),
         trailing: onDismiss != null
             ? IconButton(
                 icon: const Icon(PhosphorIconsBold.x, size: 16),

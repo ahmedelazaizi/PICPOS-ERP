@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'package:drift/drift.dart' show GeneratedDatabase;
+import 'package:drift/drift.dart'
+    show GeneratedDatabase, SqlDialect, Variable;
 import 'package:flutter/foundation.dart';
 import '../core/logging/diagnostic_logger.dart';
 
@@ -10,8 +11,8 @@ import '../core/logging/diagnostic_logger.dart';
 /// "no such column", dropping the whole row. This filters a row down to the
 /// table's actual local columns (`PRAGMA table_info`, cached per session) and
 /// logs one SYNC-WARN line per table per session when keys are dropped.
-/// The delta-pull apply path is SQLite-only (client/mirror), so PRAGMA is the
-/// right introspection here.
+/// Column discovery: `PRAGMA table_info` on SQLite, `information_schema.columns`
+/// on PostgreSQL.
 class DeltaPullColumnFilter {
   final Map<String, Set<String>> _columns = {};
   final Set<String> _warned = {};
@@ -25,8 +26,20 @@ class DeltaPullColumnFilter {
   Future<Set<String>> _localColumns(GeneratedDatabase db, String table) async {
     final cached = _columns[table];
     if (cached != null) return cached;
-    final rows = await db.customSelect('PRAGMA table_info("$table")').get();
-    final cols = {for (final r in rows) r.read<String>('name')};
+    final Set<String> cols;
+    if (db.executor.dialect == SqlDialect.postgres) {
+      // PRAGMA is a 42601 syntax error on PG and would poison the open
+      // transaction; information_schema is the portable equivalent.
+      final rows = await db.customSelect(
+        'SELECT column_name FROM information_schema.columns '
+        'WHERE table_schema = current_schema() AND table_name = ?',
+        variables: [Variable<String>(table)],
+      ).get();
+      cols = {for (final r in rows) r.read<String>('column_name')};
+    } else {
+      final rows = await db.customSelect('PRAGMA table_info("$table")').get();
+      cols = {for (final r in rows) r.read<String>('name')};
+    }
     // Empty ⇒ unknown table: don't cache, don't filter.
     if (cols.isNotEmpty) _columns[table] = cols;
     return cols;

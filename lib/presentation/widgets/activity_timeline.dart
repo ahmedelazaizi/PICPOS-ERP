@@ -1,5 +1,6 @@
 import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
+import '../picpos_shell/picpos_surface.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/database/database.dart';
@@ -27,7 +28,7 @@ class ActivityTimeline extends StatelessWidget {
       return  Center(
         child: Text(
           tr('لا توجد عمليات مسجلة'),
-          style: const TextStyle(color: AppColors.textMuted),
+          style: TextStyle(color: context.picposMuted),
         ),
       );
     }
@@ -384,7 +385,7 @@ class _TimelineItemState extends State<_TimelineItem> {
       case 'category_delete':
         return AppColors.primary;
       default:
-        return AppColors.textMuted;
+        return context.picposMuted;
     }
   }
 
@@ -414,7 +415,7 @@ class _TimelineItemState extends State<_TimelineItem> {
                       '${log.createdAt.hour.toString().padLeft(2, '0')}:${log.createdAt.minute.toString().padLeft(2, '0')}',
                       style: TextStyle(
                         fontSize: 11,
-                        color: _isHovered ? color : AppColors.textMuted,
+                        color: _isHovered ? color : context.picposMuted,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -531,14 +532,14 @@ class _TimelineItemState extends State<_TimelineItem> {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColors.textMuted.withValues(alpha: 0.1),
+                              color: context.picposMuted.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
                               widget.entityLabel,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: AppColors.textMuted,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: context.picposMuted,
                               ),
                             ),
                           ),
@@ -582,34 +583,34 @@ class _TimelineItemState extends State<_TimelineItem> {
                       // User info
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             PhosphorIconsBold.user,
                             size: 12,
-                            color: AppColors.textMuted,
+                            color: context.picposMuted,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             log.userName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
-                              color: AppColors.textMuted,
+                              color: context.picposMuted,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           if (log.oldValue != null || log.newValue != null) ...[
                             const SizedBox(width: 12),
-                            const Icon(
+                            Icon(
                               PhosphorIconsBold.arrowRight,
                               size: 12,
-                              color: AppColors.textMuted,
+                              color: context.picposMuted,
                             ),
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
                                 '${log.oldValue ?? ""} → ${log.newValue ?? ""}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 11,
-                                  color: AppColors.textMuted,
+                                  color: context.picposMuted,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,

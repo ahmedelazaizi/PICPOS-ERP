@@ -12,7 +12,7 @@ extension _PosSettingsWidgetOtherSections on _PosSettingsWidgetState {
         if (!widget.picposChrome) ...[
           Text(
             tr('تحكم في مظهر أيقونات التصنيفات أسفل منطقة المنتجات'),
-            style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 12, color: context.picposMuted),
           ),
           const SizedBox(height: 12),
         ],
@@ -114,7 +114,7 @@ extension _PosSettingsWidgetOtherSections on _PosSettingsWidgetState {
         if (!widget.picposChrome) ...[
           Text(
             tr('تحكم في عدد وتباعد أيقونات المنتجات في الشبكة'),
-            style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 12, color: context.picposMuted),
           ),
           const SizedBox(height: 12),
         ],
@@ -288,7 +288,7 @@ extension _PosSettingsWidgetOtherSections on _PosSettingsWidgetState {
         if (!widget.picposChrome) ...[
           Text(
             tr('إعدادات تنظيم وتنسيق نقطة بيع الطاولات والصالة'),
-            style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 12, color: context.picposMuted),
           ),
           const SizedBox(height: 12),
         ],

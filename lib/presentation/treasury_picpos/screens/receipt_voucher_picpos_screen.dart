@@ -44,6 +44,7 @@ import '../../../services/client_write_interceptor.dart';
 import '../../widgets/permission_guard.dart';
 import '../voucher_sources.dart';
 import 'voucher_form_picpos.dart';
+import 'voucher_allocation_guard.dart';
 
 /// مراكزُ التكلفة النشطة — إلزاميّةٌ حين تكون معرَّفة.
 final _costCentersProvider = FutureProvider.autoDispose<List<CostCenter>>(
@@ -55,8 +56,7 @@ final _costCentersProvider = FutureProvider.autoDispose<List<CostCenter>>(
 final voucherOpenInvoicesProvider = FutureProvider.autoDispose
     .family<List<VoucherInvoiceOption>, ({int partyId, bool supplier})>(
         (ref, key) async {
-  final db = ref.watch(databaseProvider);
-  final rows = await db.getOpenInvoicesForParty(
+  final rows = await ref.watch(treasuryRepositoryProvider).getOpenInvoicesForParty(
     partyId: key.partyId,
     forSupplier: key.supplier,
   );
@@ -196,6 +196,49 @@ class _ReceiptVoucherPicposScreenState
       if (docSafeId == null) {
         _toast(tr('اختر الخزينة.'), ToastType.error);
         return;
+      }
+      if (v.allocations.isNotEmpty && !ref.read(isClientModeProvider)) {
+        try {
+          await preflightVoucherAllocations(
+            VoucherAllocationPreflightRequest(
+              voucherAmount: netAmount,
+              partyId: v.partyId,
+              forSupplier: false,
+              allocations: [
+                for (final allocation in v.allocations)
+                  (
+                    invoiceType: allocation.invoiceType,
+                    invoiceId: allocation.invoiceId,
+                    amount: allocation.amount,
+                  ),
+              ],
+            ),
+            (partyId, forSupplier) async {
+              final invoices = await ref
+                  .read(treasuryRepositoryProvider)
+                  .getOpenInvoicesForParty(
+                    partyId: partyId,
+                    forSupplier: forSupplier,
+                  );
+              return [
+                for (final invoice in invoices)
+                  VoucherInvoiceSnapshot(
+                    invoiceType: invoice.invoiceType,
+                    id: invoice.id,
+                    number: invoice.number,
+                    total: invoice.total,
+                    paid: invoice.paid,
+                  ),
+              ];
+            },
+          );
+        } on StateError catch (error) {
+          _toast(error.message, ToastType.error);
+          return;
+        } on ArgumentError catch (error) {
+          _toast('$error', ToastType.error);
+          return;
+        }
       }
       final category = v.partyId == null ? 'other' : 'customer_payment';
 

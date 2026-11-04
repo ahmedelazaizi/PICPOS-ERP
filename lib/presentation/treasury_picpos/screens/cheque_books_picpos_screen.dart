@@ -54,6 +54,7 @@ import '../../picpos_shell/picpos_data_table.dart';
 import '../../picpos_shell/picpos_kpi_row.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../widgets/permission_guard.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 const _err = Color(0xFFEF4444);
 const _warn = Color(0xFFF59E0B);
@@ -200,7 +201,7 @@ class _ChequeBooksPicposScreenState
               label: tr('انتهت أو أُلغيت'),
               value: _ar(books.where((b) => b.status != 'active').length),
               icon: PhosphorIconsBold.archive,
-              tint: AppColors.textMuted,
+              tint: context.picposMuted,
             ),
           ],
         ),
@@ -612,7 +613,7 @@ class _ChequeBookPanelState extends State<ChequeBookPanel> {
             isNew
                 ? tr('اترك «التالي» فارغاً ليبدأ من أوّل الدفتر — أو اكتبه إن كانت أوراقٌ منه قد صُرفت قبل تسجيله.')
                 : tr('المتبقّي {p0} شيكاً.', {'p0': _ar(left)}),
-            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 11, color: context.picposMuted),
           ),
           const SizedBox(height: 10),
           TextField(
@@ -679,7 +680,7 @@ class _ChequeBookPanelState extends State<ChequeBookPanel> {
             const SizedBox(height: 4),
              Text(
               tr('ولا حذفَ: الشيكات المصروفة منه تشير إليه، وحذفُه يُيتّمها.'),
-              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 11, color: context.picposMuted),
             ),
           ],
         ],

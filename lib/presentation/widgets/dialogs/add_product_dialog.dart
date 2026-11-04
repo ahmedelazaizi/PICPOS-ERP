@@ -237,19 +237,17 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                 Row(
                   children: [
                     Expanded(
-                      child: _buildCompactTextField(
+                      child: _buildPriceField(
                         _salePriceController,
                         tr('سعر البيع *'),
-                        isNumber: true,
                         icon: PhosphorIconsBold.currencyDollar,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: _buildCompactTextField(
+                      child: _buildPriceField(
                         _costPriceController,
                         tr('سعر التكلفة'),
-                        isNumber: true,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -292,34 +290,30 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                   Row(
                     children: [
                       Expanded(
-                        child: _buildCompactTextField(
+                        child: _buildPriceField(
                           _priceTalabatController,
                           tr('سعر طلبات'),
-                          isNumber: true,
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: _buildCompactTextField(
+                        child: _buildPriceField(
                           _priceCareemController,
                           tr('سعر كريم'),
-                          isNumber: true,
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: _buildCompactTextField(
+                        child: _buildPriceField(
                           _priceAshyaeController,
                           tr('سعر أشيائي'),
-                          isNumber: true,
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: _buildCompactTextField(
+                        child: _buildPriceField(
                           _wholesalePriceController,
                           tr('سعر الجملة'),
-                          isNumber: true,
                         ),
                       ),
                     ],
@@ -649,6 +643,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                                         child: _buildMiniTextField(
                                           _pricePerUnitController,
                                           tr('سعر الكيلو'),
+                                           nonNegativePrice: true,
                                         ),
                                       ),
                                       const SizedBox(width: 8),
@@ -854,6 +849,18 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
         tr('يرجى ملء الحقول المطلوبة (الاسم، السعر، التصنيف)'),
         type: ToastType.error,
       );
+      return;
+    }
+    if (ProductFormHelpers.hasInvalidPrices([
+      _salePriceController,
+      _costPriceController,
+      _wholesalePriceController,
+      _priceTalabatController,
+      _priceCareemController,
+      _priceAshyaeController,
+      _pricePerUnitController,
+      for (final row in _unitRows) row.salePriceController,
+    ])) {
       return;
     }
 
@@ -1341,19 +1348,31 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
       ProductFormHelpers.buildSectionHeader(title, icon, color);
 
   // ISS-13: Delegated to ProductFormHelpers
+  Widget _buildPriceField(TextEditingController controller, String label,
+          {IconData? icon}) =>
+      _buildCompactTextField(controller, label,
+          icon: icon, isNumber: true, nonNegativePrice: true);
+
   Widget _buildCompactTextField(
     TextEditingController controller,
     String label, {
     IconData? icon,
     bool isNumber = false,
+    bool nonNegativePrice = false,
   }) =>
       ProductFormHelpers.buildCompactTextField(controller, label,
-          icon: icon, isNumber: isNumber);
+          icon: icon,
+          isNumber: isNumber,
+          nonNegativePrice: nonNegativePrice,
+          onChanged: (_) => setState(() {}));
 
   // ISS-13: Delegated to ProductFormHelpers
   Widget _buildMiniTextField(
-      TextEditingController controller, String label) =>
-      ProductFormHelpers.buildMiniTextField(controller, label);
+      TextEditingController controller, String label,
+      {bool nonNegativePrice = false}) =>
+      ProductFormHelpers.buildMiniTextField(controller, label,
+          nonNegativePrice: nonNegativePrice,
+          onChanged: (_) => setState(() {}));
 
   /// Build multi-unit packaging section (up to 5 units per product)
   Widget _buildPackagingUnitsSection() {
@@ -1417,7 +1436,7 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                 // Column headers
                  Row(
                   children: [
-                    SizedBox(width: 40, child: Text(tr('افتراضي'), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
+                    SizedBox(width: 40, child: Text(tr('افتراضي'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold), textAlign: TextAlign.center)),
                     const SizedBox(width: 8),
                     Expanded(flex: 2, child: Text(tr('اسم الوحدة'), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
                     const SizedBox(width: 8),
@@ -1522,21 +1541,10 @@ class _AddProductDialogState extends ConsumerState<AddProductDialog> {
                         // المعامل، وهو السلوك الوحيد اللي كان متاحاً قبل كده.
                         Expanded(
                           child: SizedBox(
-                            height: 38,
-                            child: TextField(
-                              controller: row.salePriceController,
-                              keyboardType: const TextInputType.numberWithOptions(
-                                  decimal: true),
-                              decoration: InputDecoration(
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
-                                border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(6)),
-                                isDense: true,
-                                hintText: tr('سعر الوحدة'),
-                                hintStyle: const TextStyle(fontSize: 11),
-                              ),
-                              style: const TextStyle(fontSize: 12),
+                            child: _buildMiniTextField(
+                              row.salePriceController,
+                              tr('سعر الوحدة'),
+                              nonNegativePrice: true,
                             ),
                           ),
                         ),

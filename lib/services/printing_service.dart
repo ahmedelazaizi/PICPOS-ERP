@@ -4,6 +4,8 @@ import '../core/logging/app_logger.dart';
 import 'invoice_generator.dart';
 import 'templated_invoice_service.dart';
 import 'printing/printing_models.dart' as print_models;
+import 'printing/template_item_map.dart';
+import 'printing/document_print_route.dart';
 import '../data/services/receipt_qr_resolver.dart';
 import '../domain/models/receipt_qr_decision.dart';
 
@@ -22,6 +24,18 @@ abstract class IPrintingService {
   /// فـ`PdfComputeHelper.layoutPdf` يرجع ما ردّه الحوار). أمّا ما خرج من
   /// الطابعة بعد قبولها المهمّةَ فلا يراه النظام.
   Future<bool> printReceipt(int invoiceId);
+
+  /// طباعةُ **فاتورة بيعٍ محفوظة** من قائمة الفواتير أو تفاصيلها.
+  ///
+  /// تحسم نوعَ المستند `sales_invoice` على الطابعة المحسومة له
+  /// (‏`resolveDocumentPrinterId`): رابطةٌ صريحةٌ ⇒ قالبُها (‏A4 على طابعة A4)؛
+  /// ولا رابطة ⇒ [printReceipt] كما كان بالضبط (القالبُ الحراريُّ). ومستندُ
+  /// مرتجعٍ (‏`sale_type='return'`) يبقى على [printReceipt] أيضاً.
+  ///
+  /// كانت الشاشتان تناديان [printReceipt] مباشرةً، فلا تصل رابطةُ
+  /// `sales_invoice` الورقةَ أبداً — راجع `document_print_route.dart`.
+  /// نفسُ عقد القيمة: `false` = لم تخرج ورقة.
+  Future<bool> printSalesInvoiceDocument(int invoiceId);
 
   /// Print an A4 sales invoice (regular invoices screen).
   /// POS continues using [printReceipt] which outputs thermal 80mm.
@@ -112,7 +126,9 @@ class PrintingServiceImpl implements IPrintingService {
     try {
       final printData = await salesRepository.getSalesPrintData(invoiceId);
       if (printData == null) {
-        logger.warning('A4 print failed: data not found for invoice $invoiceId');
+        logger.warning(
+          'A4 print failed: data not found for invoice $invoiceId',
+        );
         return false;
       }
       final s = printData.receiptSettings;
@@ -121,13 +137,15 @@ class PrintingServiceImpl implements IPrintingService {
         date: printData.date,
         customerName: printData.customerName ?? printData.adhocCustomerName,
         items: printData.items
-            .map((i) => print_models.InvoiceItem(
-                  name: i.name,
-                  quantity: i.quantity,
-                  price: i.price,
-                  total: i.total,
-                  note: i.note,
-                ))
+            .map(
+              (i) => print_models.InvoiceItem(
+                name: i.name,
+                quantity: i.quantity,
+                price: i.price,
+                total: i.total,
+                note: i.note,
+              ),
+            )
             .toList(),
         subtotal: printData.subtotal,
         discount: printData.discount,
@@ -155,7 +173,12 @@ class PrintingServiceImpl implements IPrintingService {
       );
       return true;
     } catch (e, stack) {
-      logger.error('Failed to print A4 sales invoice', e, stack, 'PrintingService');
+      logger.error(
+        'Failed to print A4 sales invoice',
+        e,
+        stack,
+        'PrintingService',
+      );
       return false;
     }
   }
@@ -177,13 +200,15 @@ class PrintingServiceImpl implements IPrintingService {
         date: invoice.invoiceDate,
         supplierName: supplier?.name ?? 'غير محدد',
         items: items
-            .map((r) => print_models.InvoiceItem(
-                  name: r.product.name,
-                  quantity: r.item.quantity,
-                  price: r.item.unitCost,
-                  total: r.item.quantity * r.item.unitCost,
-                  barcode: r.product.barcode,
-                ))
+            .map(
+              (r) => print_models.InvoiceItem(
+                name: r.product.name,
+                quantity: r.item.quantity,
+                price: r.item.unitCost,
+                total: r.item.quantity * r.item.unitCost,
+                barcode: r.product.barcode,
+              ),
+            )
             .toList(),
         total: invoice.total,
         paid: invoice.paid,
@@ -200,9 +225,112 @@ class PrintingServiceImpl implements IPrintingService {
       );
       return true;
     } catch (e, stack) {
-      logger.error('Failed to print A4 purchase invoice', e, stack, 'PrintingService');
+      logger.error(
+        'Failed to print A4 purchase invoice',
+        e,
+        stack,
+        'PrintingService',
+      );
       return false;
     }
+  }
+
+  @override
+  Future<bool> printSalesInvoiceDocument(int invoiceId) async {
+    try {
+      final printData = await salesRepository.getSalesPrintData(invoiceId);
+      if (printData == null) {
+        logger.warning('Invoice print: data not found for invoice $invoiceId');
+        return false;
+      }
+      if (printData.saleType == 'return') return printReceipt(invoiceId);
+
+      final locale = await _invoiceLocale();
+      // ⚠️ **بلا فرع** كبقيّة منادي الطباعة: المستوى ١ يشترط تطابقَ الفرع
+      // حرفيّاً، فرابطةُ «طابعة A4 لكلّ الفروع» (‏branch_id = NULL) لا تطابق
+      // فاتورةً فرعُها 1 — وهو عينُ صفِّ sandbox (‏SINV-6 ‏branch_id=1).
+      final printerId = await resolveDocumentPrinterId(
+        db,
+        documentType: 'sales_invoice',
+        locale: locale,
+      );
+      final bound = await boundDocumentTemplate(
+        db,
+        documentType: 'sales_invoice',
+        category: 'invoice',
+        printerId: printerId,
+        locale: locale,
+      );
+      // لا رابطةَ صريحة ⇒ المسارُ القائمُ بحرفه (الإيصالُ الحراريّ).
+      if (bound == null) return printReceipt(invoiceId);
+
+      final s = printData.receiptSettings;
+      final r = await TemplatedInvoiceService.printWithTemplate(
+        db: db,
+        documentType: 'sales_invoice',
+        type: bound.template.type,
+        category: bound.template.templateCategory,
+        printerId: printerId,
+        locale: locale,
+        directPrint: true,
+        invoiceNumber: printData.invoiceNumber,
+        date: printData.date,
+        customerName: printData.customerName,
+        customerPhone: printData.customerPhone,
+        customerAddress: printData.customerAddress,
+        items: printData.items.map(generatorTemplateItemMapWithBarcode).toList(),
+        subtotal: printData.subtotal,
+        discount: printData.discount,
+        tax: printData.tax,
+        deliveryFee: printData.deliveryFee,
+        total: printData.total,
+        paid: printData.paid,
+        companyName: s.companyName,
+        companyAddress: s.companyAddress ?? '',
+        companyPhone: s.companyPhone ?? '',
+        companyTaxId: s.taxNumber,
+        logoBytes: s.logoImage,
+        paymentMethod: printData.paymentMethod,
+        cashierName: printData.cashierName,
+        notes: printData.notes,
+        adhocCustomerName: printData.adhocCustomerName,
+        adhocCustomerPhone: printData.adhocCustomerPhone,
+        salesType: printData.salesTypeText,
+        orderNumber:
+            printData.platformOrderNumber ?? printData.orderNumber?.toString(),
+        receiptQr: await resolveReceiptQrForSale(
+          db,
+          saleId: invoiceId,
+          sale: ReceiptSaleSummary.fromSale(
+            invoiceNumber: printData.invoiceNumber,
+            issuedAt: printData.date,
+            total: printData.total,
+            companyName: s.companyName,
+          ),
+        ),
+      );
+      if (!r.printed) return false;
+      await _logPrint(
+        action: 'print_invoice',
+        entityType: 'sales_invoice',
+        entityId: invoiceId,
+        description: 'طباعةُ فاتورة مبيعات رقم ${printData.invoiceNumber} '
+            'بقالب «${bound.template.name}»',
+        amount: printData.total,
+      );
+      return true;
+    } catch (e, stack) {
+      logger.error('Failed to print sales invoice', e, stack, 'PrintingService');
+      return false;
+    }
+  }
+
+  /// لغةُ المطبوع من `invoice_language` — `ar` ما لم تُضبط `en`.
+  Future<String> _invoiceLocale() async {
+    try {
+      if (await db.getSettingValue('invoice_language') == 'en') return 'en';
+    } catch (_) {}
+    return 'ar';
   }
 
   @override
@@ -211,7 +339,9 @@ class PrintingServiceImpl implements IPrintingService {
       final printData = await salesRepository.getSalesPrintData(invoiceId);
 
       if (printData == null) {
-        logger.warning('Printing failed: Print data not found for invoice $invoiceId');
+        logger.warning(
+          'Printing failed: Print data not found for invoice $invoiceId',
+        );
         return false;
       }
 
@@ -246,29 +376,20 @@ class PrintingServiceImpl implements IPrintingService {
         ),
       );
 
+      final selectedPrinter = await db.getActivePrinterByPurpose('pos_receipt');
       final hasTemplate = await TemplatedInvoiceService.hasDefaultTemplate(
         db,
         'thermal',
         category: 'receipt',
+        documentType: 'sales_receipt',
+        printerId: selectedPrinter?.id,
+        locale: locale,
       );
 
       if (hasTemplate) {
         try {
           final itemsMaps = printData.items
-              .map(
-                (item) => <String, dynamic>{
-                  'name': item.name,
-                  'quantity': item.quantity,
-                  'price': item.price,
-                  'total': item.total,
-                  'note': item.note ?? '',
-                  'code': item.code,
-                  'unit': item.unit,
-                  'barcode': item.barcode,
-                  'discount': item.discount,
-                  'tax': item.tax,
-                },
-              )
+              .map(generatorTemplateItemMapWithBarcode)
               .toList();
 
           final r = await TemplatedInvoiceService.printWithTemplate(
@@ -294,12 +415,15 @@ class PrintingServiceImpl implements IPrintingService {
             directPrint: true,
             category: 'receipt',
             documentType: 'sales_receipt',
+            printerId: selectedPrinter?.id,
             cashierName: printData.cashierName,
             notes: printData.notes,
             adhocCustomerName: printData.adhocCustomerName,
             adhocCustomerPhone: printData.adhocCustomerPhone,
             salesType: printData.salesTypeText,
-            orderNumber: printData.platformOrderNumber ?? printData.orderNumber?.toString(),
+            orderNumber:
+                printData.platformOrderNumber ??
+                printData.orderNumber?.toString(),
             locale: locale,
             receiptQr: receiptQr,
           );
@@ -310,7 +434,8 @@ class PrintingServiceImpl implements IPrintingService {
             action: printAction,
             entityType: 'sales_invoice',
             entityId: invoiceId,
-            description: 'طباعةُ $docLabel حراريّة رقم ${printData.invoiceNumber}',
+            description:
+                'طباعةُ $docLabel حراريّة رقم ${printData.invoiceNumber}',
             amount: printData.total,
           );
           return true;
@@ -323,13 +448,17 @@ class PrintingServiceImpl implements IPrintingService {
       final printed = await InvoiceGenerator.printThermalReceipt(
         invoiceNumber: printData.invoiceNumber,
         date: printData.date,
-        items: printData.items.map((i) => print_models.InvoiceItem(
-          name: i.name,
-          quantity: i.quantity,
-          price: i.price,
-          total: i.total,
-          note: i.note,
-        )).toList(),
+        items: printData.items
+            .map(
+              (i) => print_models.InvoiceItem(
+                name: i.name,
+                quantity: i.quantity,
+                price: i.price,
+                total: i.total,
+                note: i.note,
+              ),
+            )
+            .toList(),
         total: printData.total,
         paid: printData.paid,
         change: printData.paid - printData.total > 0

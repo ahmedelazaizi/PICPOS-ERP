@@ -10,6 +10,7 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import '../../../core/tax/tax_rate_policy.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/number_utils.dart';
 
 /// Shared building blocks for product add/edit forms.
 ///
@@ -41,6 +42,19 @@ class ProductFormHelpers {
     return baseSalePrice * factor;
   }
 
+  /// Reject negative product prices while permitting zero.
+  static String? validateNonNegativePrice(String? value) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) return null;
+    final parsed = NumberUtils.tryParseLocale(text);
+    if (parsed == null) return tr('يرجى إدخال سعر صحيح');
+    return parsed < 0 ? tr('لا يمكن أن يكون السعر سالباً') : null;
+  }
+
+  static bool hasInvalidPrices(Iterable<TextEditingController> controllers) =>
+      controllers.any((controller) =>
+          validateNonNegativePrice(controller.text) != null);
+
   /// Build a section header with icon and colored text.
   static Widget buildSectionHeader(
     String title,
@@ -71,9 +85,10 @@ class ProductFormHelpers {
     bool isNumber = false,
     ValueChanged<String>? onChanged,
     bool enabled = true,
+    bool nonNegativePrice = false,
   }) {
     return SizedBox(
-      height: 48,
+      height: nonNegativePrice ? null : 48,
       child: TextField(
         controller: controller,
         enabled: enabled,
@@ -84,6 +99,9 @@ class ProductFormHelpers {
           labelText: label,
           labelStyle: const TextStyle(fontSize: 12),
           prefixIcon: icon != null ? Icon(icon, size: 16) : null,
+          errorText: nonNegativePrice
+              ? validateNonNegativePrice(controller.text)
+              : null,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 12,
             vertical: 12,
@@ -168,9 +186,10 @@ class ProductFormHelpers {
     TextEditingController controller,
     String label, {
     ValueChanged<String>? onChanged,
+    bool nonNegativePrice = false,
   }) {
     return SizedBox(
-      height: 44,
+      height: nonNegativePrice ? null : 44,
       child: TextField(
         controller: controller,
         keyboardType: TextInputType.number,
@@ -179,6 +198,9 @@ class ProductFormHelpers {
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(fontSize: 11),
+          errorText: nonNegativePrice
+              ? validateNonNegativePrice(controller.text)
+              : null,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 10,
             vertical: 10,

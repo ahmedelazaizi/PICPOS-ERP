@@ -5,6 +5,7 @@ import 'base_generator.dart';
 import '../printing/pdf_compute_helper.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/config/brand.dart';
+import '../printing/report_pdf_generator.dart';
 
 /// Report Generator (A4 format)
 ///
@@ -42,6 +43,8 @@ class ReportGenerator extends BaseGenerator {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         textDirection: pw.TextDirection.rtl,
+        footer: (context) =>
+            ReportPdfGenerator.buildReportPageFooter(context, font: arabicFont),
         build: (context) => [
           _buildReportHeader(
             arabicFont,
@@ -101,6 +104,8 @@ class ReportGenerator extends BaseGenerator {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         textDirection: pw.TextDirection.rtl,
+        footer: (context) =>
+            ReportPdfGenerator.buildReportPageFooter(context, font: arabicFont),
         build: (context) => [
           _buildReportHeaderWithDateRange(
             arabicFont,
@@ -151,6 +156,8 @@ class ReportGenerator extends BaseGenerator {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         textDirection: pw.TextDirection.rtl,
+        footer: (context) =>
+            ReportPdfGenerator.buildReportPageFooter(context, font: arabicFont),
         build: (context) => [
           _buildReportHeaderWithDateRange(
             arabicFont,
@@ -212,6 +219,8 @@ class ReportGenerator extends BaseGenerator {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         textDirection: pw.TextDirection.rtl,
+        footer: (context) =>
+            ReportPdfGenerator.buildReportPageFooter(context, font: arabicFont),
         build: (context) => [
           _buildReportHeaderWithDateRange(
             arabicFont,
@@ -272,6 +281,8 @@ class ReportGenerator extends BaseGenerator {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         textDirection: pw.TextDirection.rtl,
+        footer: (context) =>
+            ReportPdfGenerator.buildReportPageFooter(context, font: arabicFont),
         build: (context) => [
           _buildReportHeaderWithDateRange(
             arabicFont,
@@ -547,6 +558,8 @@ class ReportGenerator extends BaseGenerator {
             _tableCell(font, 'سعر التكلفة', isHeader: true),
             _tableCell(font, 'القيمة', isHeader: true),
           ],
+
+          repeat: true,
         ),
         ...products.asMap().entries.map((entry) {
           final i = entry.key;
@@ -565,10 +578,15 @@ class ReportGenerator extends BaseGenerator {
               _tableCell(font, categoryName),
               _tableCell(font, p.currentStock.toStringAsFixed(0)),
               _tableCell(font, p.minStock.toStringAsFixed(0)),
-              _tableCell(font, p.costPrice.toStringAsFixed(AppConstants.decimalPlaces)),
               _tableCell(
                 font,
-                (p.currentStock * p.costPrice).toStringAsFixed(AppConstants.decimalPlaces),
+                p.costPrice.toStringAsFixed(AppConstants.decimalPlaces),
+              ),
+              _tableCell(
+                font,
+                (p.currentStock * p.costPrice).toStringAsFixed(
+                  AppConstants.decimalPlaces,
+                ),
               ),
             ],
           );
@@ -600,6 +618,8 @@ class ReportGenerator extends BaseGenerator {
             _tableCell(font, 'مصروفات', isHeader: true),
             _tableCell(font, 'الرصيد', isHeader: true),
           ],
+
+          repeat: true,
         ),
         ...transactions.map(
           (t) => pw.TableRow(
@@ -651,6 +671,8 @@ class ReportGenerator extends BaseGenerator {
             _tableCell(font, 'المتبقي', isHeader: true),
             _tableCell(font, 'طريقة الدفع', isHeader: true),
           ],
+
+          repeat: true,
         ),
         ...invoices.map((inv) {
           final remaining = inv.total - inv.paid;
@@ -661,9 +683,18 @@ class ReportGenerator extends BaseGenerator {
                 font,
                 '${inv.invoiceDate.day}/${inv.invoiceDate.month}/${inv.invoiceDate.year}',
               ),
-              _tableCell(font, inv.total.toStringAsFixed(AppConstants.decimalPlaces)),
-              _tableCell(font, inv.paid.toStringAsFixed(AppConstants.decimalPlaces)),
-              _tableCell(font, remaining.toStringAsFixed(AppConstants.decimalPlaces)),
+              _tableCell(
+                font,
+                inv.total.toStringAsFixed(AppConstants.decimalPlaces),
+              ),
+              _tableCell(
+                font,
+                inv.paid.toStringAsFixed(AppConstants.decimalPlaces),
+              ),
+              _tableCell(
+                font,
+                remaining.toStringAsFixed(AppConstants.decimalPlaces),
+              ),
               _tableCell(font, inv.paymentMethod == 'cash' ? 'نقدي' : 'آجل'),
             ],
           );
@@ -694,6 +725,8 @@ class ReportGenerator extends BaseGenerator {
             _tableCell(font, 'المدفوع', isHeader: true),
             _tableCell(font, 'المتبقي', isHeader: true),
           ],
+
+          repeat: true,
         ),
         ...invoices.map((inv) {
           final remaining = inv.total - inv.paid;
@@ -705,9 +738,18 @@ class ReportGenerator extends BaseGenerator {
                 font,
                 '${inv.invoiceDate.day}/${inv.invoiceDate.month}/${inv.invoiceDate.year}',
               ),
-              _tableCell(font, inv.total.toStringAsFixed(AppConstants.decimalPlaces)),
-              _tableCell(font, inv.paid.toStringAsFixed(AppConstants.decimalPlaces)),
-              _tableCell(font, remaining.toStringAsFixed(AppConstants.decimalPlaces)),
+              _tableCell(
+                font,
+                inv.total.toStringAsFixed(AppConstants.decimalPlaces),
+              ),
+              _tableCell(
+                font,
+                inv.paid.toStringAsFixed(AppConstants.decimalPlaces),
+              ),
+              _tableCell(
+                font,
+                remaining.toStringAsFixed(AppConstants.decimalPlaces),
+              ),
             ],
           );
         }),
@@ -737,6 +779,8 @@ class ReportGenerator extends BaseGenerator {
             _tableCell(font, 'المبيعات', isHeader: true),
             _tableCell(font, 'النسبة', isHeader: true),
           ],
+
+          repeat: true,
         ),
         ...categories.asMap().entries.map((entry) {
           final i = entry.key;
@@ -747,7 +791,10 @@ class ReportGenerator extends BaseGenerator {
             children: [
               _tableCell(font, '${i + 1}'),
               _tableCell(font, cat['name'] ?? '-'),
-              _tableCell(font, sales.toStringAsFixed(AppConstants.decimalPlaces)),
+              _tableCell(
+                font,
+                sales.toStringAsFixed(AppConstants.decimalPlaces),
+              ),
               _tableCell(font, '${percentage.toStringAsFixed(1)}%'),
             ],
           );

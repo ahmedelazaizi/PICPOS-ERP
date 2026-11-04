@@ -20,6 +20,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../widgets/notifications/notification_bell.dart';
+import '../picpos_shell/picpos_surface.dart';
 
 /// ما يحتاجه الشريطُ لرسم تابٍ واحد.
 @immutable
@@ -77,17 +78,17 @@ class ScreenTabsBar extends StatelessWidget {
               ),
             ),
           ),
-          child: compact ? _compactBarContent() : _regularBarContent(),
+          child: compact ? _compactBarContent(context) : _regularBarContent(context),
         );
       },
     );
   }
 
-  Widget _regularBarContent() {
+  Widget _regularBarContent(BuildContext context) {
     return Row(
       children: [
         const SizedBox(width: 6),
-        if (onHome != null) _homeButton(),
+        if (onHome != null) _homeButton(context),
         Expanded(
           // ⚠️ **والتمريرُ لازمٌ لا تحسين**: ثمانيةُ تابات بعناوينَ عربيّةٍ
           // تتجاوز عرضَ النافذة على شاشةٍ ١٣٦٦، و`Row` بلا تمريرٍ يرمي
@@ -101,13 +102,13 @@ class ScreenTabsBar extends StatelessWidget {
     );
   }
 
-  Widget _compactBarContent() {
+  Widget _compactBarContent(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
           const SizedBox(width: 6),
-          if (onHome != null) _homeButton(),
+          if (onHome != null) _homeButton(context),
           _tabRow(),
           const SizedBox(width: 8),
           const NotificationBell(),
@@ -134,11 +135,11 @@ class ScreenTabsBar extends StatelessWidget {
         ],
       );
 
-  Widget _homeButton() {
+  Widget _homeButton(BuildContext context) {
     return IconButton(
       onPressed: onHome,
       icon: const Icon(PhosphorIconsBold.house, size: 15),
-      color: AppColors.textMuted,
+      color: context.picposMuted,
       splashRadius: 15,
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
@@ -175,7 +176,7 @@ class _TabState extends State<_Tab> {
     // منطقة المحتوى لا في الشريط الجانبيّ، فيتبع الوضعَ الغامق.
     final idleInk =
         theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.75) ??
-            AppColors.textMuted;
+            context.picposMuted;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),

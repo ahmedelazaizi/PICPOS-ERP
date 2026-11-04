@@ -4,6 +4,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/date_utils.dart' as core_date_utils;
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// A card for displaying key performance indicators in reports
 ///
@@ -109,7 +110,7 @@ class ReportKpiCard extends StatelessWidget {
                     child: Text(
                       subtitle!,
                       style: TextStyle(
-                        fontSize: 9,
+                        fontSize: 11,
                         color: color.withValues(alpha: 0.7),
                         height: 1.15,
                       ),
@@ -143,7 +144,7 @@ class ReportKpiCard extends StatelessWidget {
           Text(
             arrow,
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 11,
               color: badgeColor,
               fontWeight: FontWeight.bold,
             ),
@@ -152,7 +153,7 @@ class ReportKpiCard extends StatelessWidget {
           Text(
             '$displayPercent%',
             style: TextStyle(
-              fontSize: 9,
+              fontSize: 11,
               color: badgeColor,
               fontWeight: FontWeight.w600,
             ),
@@ -363,15 +364,15 @@ class DateRangeFilter extends StatelessWidget {
       },
       selectedColor: AppColors.primary.withValues(alpha: 0.2),
       labelStyle: TextStyle(
-        color: isSelected ? AppColors.primary : AppColors.textPrimary,
+        color: isSelected ? AppColors.primary : context.picposText,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
         fontSize: 13,
       ),
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.picposField,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
         side: BorderSide(
-          color: isSelected ? AppColors.primary : AppColors.border,
+          color: isSelected ? AppColors.primary : context.picposHairline,
           width: isSelected ? 1.5 : 1,
         ),
       ),

@@ -11,6 +11,7 @@ import '../../../data/providers/providers.dart';
 import 'package:picpos_erp/l10n/app_localizations.dart';
 import '../../../../../../core/constants/app_constants.dart';
 import '../../../core/config/brand.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Feature 011 / Issue UX-SCROLL — converted from ConsumerWidget to
 /// ConsumerStatefulWidget so we can persist a ScrollController across
@@ -231,7 +232,7 @@ class _TreasuryTransactionsListState
                       _searchQuery.isNotEmpty || _typeFilter != 'all'
                           ? tr('لا توجد سندات مطابقة')
                           : AppLocalizations.of(context)!.noTransactions,
-                      style: const TextStyle(color: AppColors.textMuted),
+                      style: TextStyle(color: context.picposMuted),
                     ),
                   );
                 }
@@ -269,9 +270,9 @@ class _TreasuryTransactionsListState
                           Text(_getCategoryLabel(context, t.category)),
                           Text(
                             '${t.createdAt.day}/${t.createdAt.month}/${t.createdAt.year}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.textMuted,
+                              color: context.picposMuted,
                             ),
                           ),
                         ],

@@ -5,6 +5,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/i18n/locale_provider.dart';
 import '../../core/i18n/tr.dart';
 import '../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class UserLanguageToggle extends ConsumerWidget {
   const UserLanguageToggle({super.key});
@@ -45,12 +46,12 @@ class UserLanguageToggle extends ConsumerWidget {
     required bool selected,
   }) {
     return Expanded(
-      child: TextButton(
+      child: Builder(builder: (context) => TextButton(
         onPressed: selected
             ? null
             : () => ref.read(userLocaleProvider.notifier).setLocale(locale),
         style: TextButton.styleFrom(
-          foregroundColor: selected ? Colors.white : AppColors.textMuted,
+          foregroundColor: selected ? Colors.white : context.picposMuted,
           backgroundColor: selected
               ? AppColors.primary.withValues(alpha: 0.8)
               : Colors.transparent,
@@ -60,7 +61,7 @@ class UserLanguageToggle extends ConsumerWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
         ),
         child: Text(label, style: const TextStyle(fontSize: 11)),
-      ),
+      )),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Reusable confirmation dialog
 class ConfirmDialog extends StatelessWidget {
@@ -135,8 +136,8 @@ class InfoCard extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 title,
-                style: const TextStyle(
-                  color: AppColors.textSecondary,
+                style: TextStyle(
+                  color: context.picposSecondary,
                   fontSize: 13,
                 ),
               ),
@@ -220,11 +221,11 @@ class EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 64, color: AppColors.textMuted),
+          Icon(icon, size: 64, color: context.picposMuted),
           const SizedBox(height: 16),
           Text(
             message,
-            style: const TextStyle(fontSize: 16, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 16, color: context.picposMuted),
             textAlign: TextAlign.center,
           ),
           if (action != null) ...[const SizedBox(height: 24), action!],

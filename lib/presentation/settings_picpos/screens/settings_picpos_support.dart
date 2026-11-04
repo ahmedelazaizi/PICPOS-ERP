@@ -180,7 +180,7 @@ class _SectionHeader extends StatelessWidget {
               const SizedBox(height: 3),
               Text(
                 section.desc,
-                style: text.bodySmall?.copyWith(color: AppColors.textMuted),
+                style: text.bodySmall?.copyWith(color: context.picposMuted),
               ),
             ],
           ),
@@ -258,7 +258,7 @@ class _GuardedSectionRows extends ConsumerWidget {
             ),
             tint: state.value?[sections[i].settingKey] == true
                 ? AppColors.error
-                : AppColors.textMuted,
+                : context.picposMuted,
             onTap: () => _showSectionPasswordDialogFor(
               context,
               ref,

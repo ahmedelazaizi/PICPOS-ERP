@@ -11,6 +11,8 @@ import '../../../core/constants/app_constants.dart' hide InvoiceStatus;
 import '../../pos/providers/pos_closing_controller.dart';
 import '../../../data/providers/quick_sale_policy_providers.dart';
 import '../../../domain/models/quick_sale_policy.dart';
+import '../../../domain/models/quick_sale_shift_variance.dart';
+import 'shift_closing_summary_label.dart';
 
 // منطق منسوخ حرفياً من lib/presentation/pos/widgets/pos_cashier_closing_dialog.dart
 // (الأصل، ١٠٦٦ سطر — حوار مطابقة/إغلاق وردية الكاشير: مطابقة نقد/بنك/كليك/آجل،
@@ -182,7 +184,7 @@ class _PicposCashierClosingDialogState
               const Spacer(),
               Text(
                 '${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
-                style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 12, color: context.picposMuted),
               ),
             ],
           ),
@@ -224,8 +226,8 @@ class _PicposCashierClosingDialogState
                             const SizedBox(height: 8),
                              Text(
                               tr('افتح وردية جديدة من شاشة البيع السريع قبل محاولة إغلاقها. القيم التي تظهر هنا تُحسب فقط على معاملات الوردية الحالية لتمنع اختلاط أرقام ورديات سابقة.'),
-                              style: const TextStyle(
-                                color: AppColors.textMuted,
+                              style: TextStyle(
+                                color: context.picposMuted,
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -319,10 +321,10 @@ class _PicposCashierClosingDialogState
   /// for channels that don't apply (e.g. opening balance on bank/click).
   Widget _cell(double? value, {Color? color, bool emphasis = false, String prefix = ''}) {
     if (value == null) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         child: Text('—', textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+            style: TextStyle(fontSize: 12, color: context.picposMuted)),
       );
     }
     return Padding(
@@ -342,21 +344,15 @@ class _PicposCashierClosingDialogState
   Widget _labelCell(String text, {bool emphasis = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: emphasis ? FontWeight.bold : FontWeight.w500,
-        ),
-      ),
+      child: ShiftClosingSummaryLabel(text, emphasis: emphasis),
     );
   }
 
   TableRow _headerRow() {
-    const headerStyle = TextStyle(
+    final headerStyle = TextStyle(
       fontSize: 11,
       fontWeight: FontWeight.bold,
-      color: AppColors.textMuted,
+      color: context.picposMuted,
     );
     Widget h(String t, {Color? bg}) => Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
@@ -365,13 +361,13 @@ class _PicposCashierClosingDialogState
         );
     return TableRow(
       // PicPos chrome: خلفية محايدة من AppColors بدل Colors.grey الخام.
-      decoration: const BoxDecoration(color: AppColors.surface),
+      decoration: BoxDecoration(color: context.picposField),
       children: [
         h(tr('البند')),
         h(tr('نقد'), bg: AppColors.primary.withValues(alpha: 0.08)),
         h(tr('بنك'), bg: AppColors.info.withValues(alpha: 0.08)),
         h(tr('كليك'), bg: AppColors.warning.withValues(alpha: 0.08)),
-        h(tr('آجل'), bg: AppColors.textMuted.withValues(alpha: 0.08)),
+        h(tr('آجل'), bg: context.picposMuted.withValues(alpha: 0.08)),
         h(tr('الإجمالى')),
       ],
     );
@@ -392,11 +388,11 @@ class _PicposCashierClosingDialogState
   }) {
     final hideValue = !canViewDetails;
     Widget v(double? val) => hideValue
-        ? const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        ? Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
             child: Text('---',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                style: TextStyle(fontSize: 12, color: context.picposMuted)),
           )
         : _cell(val, color: color, emphasis: emphasis, prefix: prefix);
     return TableRow(
@@ -437,7 +433,7 @@ class _PicposCashierClosingDialogState
       color: AppColors.card,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: context.picposHairline),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -458,8 +454,8 @@ class _PicposCashierClosingDialogState
                   ),
                 ),
                 Text(shiftTimeText,
-                    style: const TextStyle(
-                        fontSize: 11, color: AppColors.textMuted)),
+                    style: TextStyle(
+                        fontSize: 11, color: context.picposMuted)),
               ],
             ),
             const Divider(height: 20),
@@ -529,8 +525,7 @@ class _PicposCashierClosingDialogState
                         a.salesCredit,
                     emphasis: true,
                     canViewDetails: canViewDetails,
-                    rowBackground:
-                        AppColors.primary.withValues(alpha: 0.04)),
+                    rowBackground: context.picposField),
 
                 // Returns per channel — negative outflow.
                 _dataRow(
@@ -576,7 +571,7 @@ class _PicposCashierClosingDialogState
                     canViewDetails: canViewDetails),
 
                 // Subtotal — total outflow per channel.
-                _dataRow(tr('إجمالى الخصم'),
+                _dataRow(tr('إجمالي المدفوعات من الصندوق'),
                     cash: a.totalOutflowCash,
                     bank: a.totalOutflowBank,
                     click: a.totalOutflowClick,
@@ -589,7 +584,7 @@ class _PicposCashierClosingDialogState
                     prefix: '-',
                     emphasis: true,
                     canViewDetails: canViewDetails,
-                    rowBackground: AppColors.error.withValues(alpha: 0.04)),
+                    rowBackground: context.picposField),
 
                 // The row the accountant cares about most — system
                 // expected balance per channel after all inflows and
@@ -606,8 +601,7 @@ class _PicposCashierClosingDialogState
                     emphasis: true,
                     color: AppColors.primary,
                     canViewDetails: canViewDetails,
-                    rowBackground:
-                        AppColors.primary.withValues(alpha: 0.08)),
+                    rowBackground: context.picposField),
               ],
             ),
 
@@ -630,14 +624,14 @@ class _PicposCashierClosingDialogState
                       padding: const EdgeInsets.symmetric(vertical: 2),
                       child: Row(
                         children: [
-                          const Icon(PhosphorIconsBold.caretLeft,
-                              size: 10, color: AppColors.textMuted),
+                          Icon(PhosphorIconsBold.caretLeft,
+                              size: 10, color: context.picposMuted),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(e.description,
-                                style: const TextStyle(
+                                style: TextStyle(
                                     fontSize: 11,
-                                    color: AppColors.textMuted),
+                                    color: context.picposMuted),
                                 overflow: TextOverflow.ellipsis),
                           ),
                           Container(
@@ -648,7 +642,7 @@ class _PicposCashierClosingDialogState
                               color: context.picposField,
                               borderRadius: BorderRadius.circular(3),
                               border:
-                                  Border.all(color: AppColors.border),
+                                  Border.all(color: context.picposHairline),
                             ),
                             child: Text(
                               e.safeType == 'bank'
@@ -656,9 +650,9 @@ class _PicposCashierClosingDialogState
                                   : (e.safeType == 'click'
                                       ? tr('كليك')
                                       : tr('نقد')),
-                              style: const TextStyle(
-                                  fontSize: 9,
-                                  color: AppColors.textMuted),
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  color: context.picposMuted),
                             ),
                           ),
                           Text(
@@ -683,8 +677,8 @@ class _PicposCashierClosingDialogState
               runSpacing: 4,
               children: [
                 _statChip(
-                    tr('إجمالى فواتير'),
-                    '${a.salesCount + a.returnsCount}',
+                    tr('فواتير بيع'),
+                    '${a.salesCount} · ${tr('مرتجعات')}: ${a.returnsCount}',
                     PhosphorIconsBold.receipt),
                 if (a.tableSalesCount > 0)
                   _statChip(tr('طاولات'), '${a.tableSalesCount}',
@@ -692,8 +686,6 @@ class _PicposCashierClosingDialogState
                 if (a.tableSalesCount > 0)
                   _statChip(tr('كاونتر'), '${a.counterSalesCount}',
                       PhosphorIconsBold.storefront),
-                _statChip(tr('مرتجعات'), '${a.returnsCount}',
-                    PhosphorIconsBold.arrowUDownLeft),
                 _statChip(tr('سندات قبض'), '${a.receiptCount}',
                     PhosphorIconsBold.arrowDown),
                 _statChip(tr('سندات صرف'), '${a.paymentCount}',
@@ -720,8 +712,8 @@ class _PicposCashierClosingDialogState
                     Expanded(
                       child: Text(
                         tr('عمود "آجل" عرض فقط — لا يُطلب جرد فعلى له (تحرك على ذمم العملاء بدون حركة نقدية).'),
-                        style: const TextStyle(
-                            fontSize: 10, color: AppColors.textMuted),
+                        style: TextStyle(
+                            fontSize: 11, color: context.picposMuted),
                       ),
                     ),
                   ],
@@ -746,16 +738,16 @@ class _PicposCashierClosingDialogState
       decoration: BoxDecoration(
         color: context.picposField,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 11, color: AppColors.textMuted),
+          Icon(icon, size: 11, color: context.picposMuted),
           const SizedBox(width: 3),
           Text('$label:',
-              style: const TextStyle(
-                  fontSize: 10, color: AppColors.textMuted)),
+              style: TextStyle(
+                  fontSize: 11, color: context.picposMuted)),
           const SizedBox(width: 2),
           Text(value,
               style: const TextStyle(
@@ -782,6 +774,7 @@ class _PicposCashierClosingDialogState
   Widget _buildReconciliationSection(bool canViewDetails, PosClosingState state) {
     // الكشفُ إمّا بضغطةِ الكاشير، وإمّا لأنّ السياسةَ لا تُخفي أصلاً.
     final revealed = state.isRevealed || !_blindClose;
+    final cashActualEntered = _actualCashController.text.trim().isNotEmpty;
     if (!canViewDetails) {
       return Card(
         // PicPos chrome: بطاقة مسطحة بحدود بدل اللون الرمادي الخام.
@@ -789,7 +782,7 @@ class _PicposCashierClosingDialogState
         color: context.picposField,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: AppColors.border),
+          side: BorderSide(color: context.picposHairline),
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -819,7 +812,7 @@ class _PicposCashierClosingDialogState
       color: context.picposField,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: context.picposHairline),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -833,11 +826,11 @@ class _PicposCashierClosingDialogState
               ],
             ),
             const Divider(),
-            _buildReconciliationRow(tr('النقدى الفعلى'), _actualCashController, state.cashVariance, PhosphorIconsBold.money, AppColors.primary, revealed),
+            _buildReconciliationRow(tr('النقدى الفعلى'), _actualCashController, state.cashVariance, PhosphorIconsBold.money, AppColors.primary, revealed && cashActualEntered),
             const SizedBox(height: 12),
-            _buildReconciliationRow(tr('البنك الفعلى'), _actualCardController, state.bankVariance, PhosphorIconsBold.creditCard, AppColors.info, revealed),
+            _buildReconciliationRow(tr('البنك الفعلى'), _actualCardController, state.bankVariance, PhosphorIconsBold.creditCard, AppColors.info, revealed && cashActualEntered),
             const SizedBox(height: 12),
-            _buildReconciliationRow(tr('كليك الفعلى'), _actualClickController, state.clickVariance, PhosphorIconsBold.deviceMobile, AppColors.warning, revealed),
+            _buildReconciliationRow(tr('كليك الفعلى'), _actualClickController, state.clickVariance, PhosphorIconsBold.deviceMobile, AppColors.warning, revealed && cashActualEntered),
             const SizedBox(height: 16),
             if (!revealed)
               SizedBox(
@@ -853,7 +846,8 @@ class _PicposCashierClosingDialogState
                   child:  Text(tr('إظهار النتائج والمطابقة')),
                 ),
               ),
-            if (revealed) _buildTotalVarianceStatus(state.totalVariance),
+            if (revealed && cashActualEntered)
+              _buildTotalVarianceStatus(state.totalVariance),
           ],
         ),
       ),
@@ -899,7 +893,7 @@ class _PicposCashierClosingDialogState
             width: 80,
             child: Column(
               children: [
-                 Text(tr('الفرق'), style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                 Text(tr('الفرق'), style: TextStyle(fontSize: 11, color: context.picposMuted)),
                 Text(
                   '${variance > 0 ? '+' : ''}${variance.toStringAsFixed(AppConstants.decimalPlaces)}',
                   style: TextStyle(
@@ -935,7 +929,7 @@ class _PicposCashierClosingDialogState
           Text(
             totalVar.abs() < 0.001
                 ? tr('المطابقة تمام ✓')
-                : (totalVar < 0 ? tr('نقص: {p0} {p1}', {'p0': totalVar.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}) : tr('زيادة: +{p0} {p1}', {'p0': totalVar.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn})),
+                : (totalVar < 0 ? tr('عجز: {p0} {p1}', {'p0': totalVar.abs().toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn}) : tr('فائض: +{p0} {p1}', {'p0': totalVar.toStringAsFixed(AppConstants.decimalPlaces), 'p1': AppConstants.currencySymbolEn})),
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color),
           ),
         ],
@@ -1045,8 +1039,8 @@ class _PicposCashierClosingDialogState
                   const SizedBox(height: 8),
                    Text(
                     tr('يُقبل من يملك صلاحية إغلاق الوردية.'),
-                    style: const TextStyle(
-                        fontSize: 11, color: AppColors.textSecondary),
+                    style: TextStyle(
+                        fontSize: 11, color: context.picposSecondary),
                   ),
                 ],
               ),
@@ -1102,16 +1096,13 @@ class _PicposCashierClosingDialogState
     );
   }
 
-  /// يطلب سببَ الفرق — `null` تعني إلغاءً أو سبباً فارغاً.
-  ///
-  /// حقلٌ حرٌّ لا قائمةُ أسبابٍ جاهزة: قائمةٌ قصيرةٌ تدفع الكاشيرَ لاختيار
-  /// أقربِ بندٍ لا لوصفِ ما حدث، فتُنتج بياناتٍ مرتّبةً بلا معنى.
+  /// يطلب سبباً مكتوباً للفرق؛ `null` تعني الإلغاء أو فراغ السبب.
   Future<String?> _promptVarianceReason(
     double difference,
-    double limit,
-  ) async {
+    double limit, {
+    required String? titleOverride,
+  }) async {
     final controller = TextEditingController();
-    final shortfall = difference < 0;
     final reason = await showDialog<String>(
       context: context,
       barrierDismissible: false,
@@ -1121,7 +1112,7 @@ class _PicposCashierClosingDialogState
           title: Row(children: [
             const Icon(PhosphorIconsBold.warning, color: AppColors.warning),
             const SizedBox(width: 8),
-            Text(shortfall ? tr('عجزٌ في الدرج') : tr('زيادةٌ في الدرج')),
+            Text(titleOverride ?? tr(quickSaleShiftDiffTitle(difference))),
           ]),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1215,22 +1206,18 @@ class _PicposCashierClosingDialogState
       }
     }
 
-    // §٤ `diffmax` — فرقٌ فوق الحدّ لا يمرّ بلا سببٍ مكتوب.
-    //
-    // ⚠️ **بالقيمة المطلقة**: العجزُ ٢٥ يحتاج سبباً كما تحتاجه الزيادةُ
-    // ٢٥، وإهمالُ الإشارة يُعفي العجزَ — وهو الأخطرُ محاسبيّاً: المالُ
-    // الناقصُ يمرّ بلا تفسير. والمنطقُ في `quickSaleShiftDiffNeedsReason`.
+    // diffmax يتطلب سبباً عند تجاوز الحد بالقيمة المطلقة.
     String? varianceReason;
-    // `await` لا قراءةً باردة: هذه دالّةٌ غيرُ متزامنةٍ أصلاً، والقراءةُ
-    // الباردةُ ترجع `null` قبل أن يسخن المزوِّدُ فيمرّ الفرقُ بلا سبب.
     final diffPolicy = await ref.read(quickSalePolicyProvider.future);
     if (mounted) {
       final limit = quickSaleShiftDiffLimit(diffPolicy);
-      // ⚠️ **أكبرُ القنوات لا مجموعُها.** المجموعُ يُقاصّ: عجزٌ نقديٌّ −٣٠٠
-      // وفائضُ بنكٍ +٣٠٠ يعطيان صفراً فيمرّ الإغلاقُ بلا سبب — بينما
-      // `closeShiftWithAudit` تُرحّل **النقديَّ وحدَه**، فتخرج ٣٠٠ من الدرج
-      // ومن الدفاتر بلا تفسير. (‏بلاغُ التدقيق المحاسبيّ 2026-08-30)
+      // أكبر قناة تحكم السبب؛ لا تُقاصّ القنوات لأن القيد يرحّل النقد وحده.
       final governing = quickSaleGoverningShiftDiff(
+        cash: state.cashVariance,
+        bank: state.bankVariance,
+        click: state.clickVariance,
+      );
+      final signedGoverning = quickSaleSignedGoverningShiftDiff(
         cash: state.cashVariance,
         bank: state.bankVariance,
         click: state.clickVariance,
@@ -1240,8 +1227,11 @@ class _PicposCashierClosingDialogState
         limit: limit,
       )) {
         varianceReason = await _promptVarianceReason(
-          governing,
+          signedGoverning,
           limit!,
+          titleOverride: _actualCashController.text.trim().isEmpty
+              ? tr('فرق يتجاوز الحد المسموح')
+              : null,
         );
         // إلغاءٌ أو سببٌ فارغ ⇒ لا تُغلَق الوردية. والسكوتُ هنا كان
         // سيجعل الحدَّ زينةً: يُعرَض ثمّ يُتخطّى بضغطةِ «إلغاء».
@@ -1255,12 +1245,23 @@ class _PicposCashierClosingDialogState
       kQuickSaleRows.firstWhere((r) => r.id == 'xrep'),
     );
     try {
-      await ref.read(posClosingControllerProvider.notifier).handleClosing(
+      final closed = await ref.read(posClosingControllerProvider.notifier).handleClosing(
         password: _passwordController.text,
         cardCode: _msrCardController.text,
         varianceReason: varianceReason,
         printReport: printReport,
       );
+      if (!closed) {
+        if (mounted) {
+          showPosToast(
+            context,
+            ref,
+            tr('رُفض إغلاق الوردية لأن فرق النقد يتجاوز الحد المسموح. عدّل النقدي الفعلي ثم أعد المحاولة.'),
+            type: PosNotificationType.error,
+          );
+        }
+        return;
+      }
 
       if (mounted) {
         // GAP-24: warn if variance JE failed (non-blocking — shift is already closed)

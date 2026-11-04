@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
+import 'package:picpos_erp/core/theme/readable_colors.dart';
 
 /// A single checklist item that can be auto-verified or manually checked.
 class ChecklistItem {
@@ -145,7 +147,7 @@ class _PeriodCloseChecklistState extends State<PeriodCloseChecklist> {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.border.withValues(alpha: 0.5)),
+        side: BorderSide(color: context.picposHairline.withValues(alpha: 0.5)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -154,7 +156,11 @@ class _PeriodCloseChecklistState extends State<PeriodCloseChecklist> {
           children: [
             Row(
               children: [
-                const Icon(PhosphorIconsBold.listChecks, size: 22, color: AppColors.primary),
+                Icon(PhosphorIconsBold.listChecks,
+                    size: 22,
+                    color: context.picposIsDark
+                        ? readableBrand(context)
+                        : AppColors.primary),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(widget.title, style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w700)),
@@ -172,7 +178,15 @@ class _PeriodCloseChecklistState extends State<PeriodCloseChecklist> {
                     style: GoogleFonts.cairo(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: allCompleted ? AppColors.success : AppColors.warning,
+                      color: readableOn(
+                          context,
+                          allCompleted ? AppColors.success : AppColors.warning,
+                          on: Color.alphaBlend(
+                              (allCompleted
+                                      ? AppColors.success
+                                      : AppColors.warning)
+                                  .withValues(alpha: 0.1),
+                              context.picposCard)),
                     ),
                   ),
                 ),
@@ -184,7 +198,7 @@ class _PeriodCloseChecklistState extends State<PeriodCloseChecklist> {
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: widget.items.isEmpty ? 0 : completedCount / widget.items.length,
-                backgroundColor: AppColors.border.withValues(alpha: 0.2),
+                backgroundColor: context.picposHairline.withValues(alpha: 0.2),
                 valueColor: AlwaysStoppedAnimation(allCompleted ? AppColors.success : AppColors.primary),
                 minHeight: 6,
               ),
@@ -216,6 +230,15 @@ class _PeriodCloseChecklistState extends State<PeriodCloseChecklist> {
   }
 
   Widget _buildChecklistItem(ChecklistItem item) {
+    final tone = item.isCompleted
+        ? AppColors.success
+        : item.errorMessage != null
+            ? AppColors.error
+            : null;
+    final bg = tone == null
+        ? context.picposCard
+        : Color.alphaBlend(tone.withValues(alpha: 0.05), context.picposCard);
+    Color ink(Color c) => readableOn(context, c, on: bg);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: InkWell(
@@ -226,18 +249,14 @@ class _PeriodCloseChecklistState extends State<PeriodCloseChecklist> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: item.isCompleted
-                ? AppColors.success.withValues(alpha: 0.05)
-                : item.errorMessage != null
-                    ? AppColors.error.withValues(alpha: 0.05)
-                    : Colors.white,
+            color: bg,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: item.isCompleted
                   ? AppColors.success.withValues(alpha: 0.3)
                   : item.errorMessage != null
                       ? AppColors.error.withValues(alpha: 0.3)
-                      : AppColors.border.withValues(alpha: 0.3),
+                      : context.picposHairline.withValues(alpha: 0.3),
             ),
           ),
           child: Row(
@@ -249,11 +268,11 @@ class _PeriodCloseChecklistState extends State<PeriodCloseChecklist> {
                   child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
                 )
               else if (item.isCompleted)
-                const Icon(PhosphorIconsBold.checkCircle, size: 20, color: AppColors.success)
+                Icon(PhosphorIconsBold.checkCircle, size: 20, color: ink(AppColors.success))
               else if (item.errorMessage != null)
-                const Icon(PhosphorIconsBold.warningCircle, size: 20, color: AppColors.error)
+                Icon(PhosphorIconsBold.warningCircle, size: 20, color: ink(AppColors.error))
               else
-                Icon(item.icon, size: 20, color: AppColors.textMuted),
+                Icon(item.icon, size: 20, color: ink(context.picposMuted)),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -265,14 +284,14 @@ class _PeriodCloseChecklistState extends State<PeriodCloseChecklist> {
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         decoration: item.isCompleted ? TextDecoration.lineThrough : null,
-                        color: item.isCompleted ? AppColors.textMuted : AppColors.textPrimary,
+                        color: item.isCompleted ? ink(context.picposMuted) : context.picposText,
                       ),
                     ),
                     Text(
                       item.errorMessage ?? item.description,
                       style: GoogleFonts.cairo(
                         fontSize: 11,
-                        color: item.errorMessage != null ? AppColors.error : AppColors.textMuted,
+                        color: ink(item.errorMessage != null ? AppColors.error : context.picposMuted),
                       ),
                     ),
                   ],

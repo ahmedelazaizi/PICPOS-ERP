@@ -67,7 +67,7 @@ class _WebAccessSettingsPanelState
       decoration: BoxDecoration(
         color: context.picposField,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,7 +86,7 @@ class _WebAccessSettingsPanelState
           ),
           Text(
             tr('يقدّم السيرفر نسخة الويب ويقبل كتابات جلسة المتصفح. مطفأ افتراضياً.'),
-            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 11, color: context.picposMuted),
           ),
           const SizedBox(height: 8),
           TextField(

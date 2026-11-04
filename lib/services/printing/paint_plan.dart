@@ -138,10 +138,9 @@ List<PaintOp> planPage(
   final ops = <PaintOp>[];
 
   /// في RTL تُقاس السيناتُ من اليمين، فالإحداثيُّ من اليسار هو ما تبقّى.
-  double left(double startMm, double widthMm) =>
-      direction == PaintDirection.rtl
-          ? page.widthMm - startMm - widthMm
-          : startMm;
+  double left(double startMm, double widthMm) => direction == PaintDirection.rtl
+      ? page.widthMm - startMm - widthMm
+      : startMm;
 
   for (final el in page.elements) {
     // الفراغُ لا يُرسم ولا يُنشئ عمليّة — يحجز مكانَه في التخطيط وكفى.
@@ -174,9 +173,9 @@ List<PaintOp> planPage(
           id: 'table${t}_h$i',
           kind: PaintKind.tableHeader,
           leftMm: left(c.xMm, c.wMm),
-          topMm: table.yMm,
+          topMm: table.yMm + c.topOffsetMm,
           widthMm: c.wMm,
-          heightMm: table.headerHeightMm,
+          heightMm: c.cellHeightMm ?? table.headerHeightMm,
           text: c.text,
           subText: table.bilingualHeaders ? c.subText : '',
           // ⚠️ ولولاه أخذت العمليّةُ افتراضَ `PaintOp` (‏١٠) فلا يصل مقاسُ
@@ -194,17 +193,23 @@ List<PaintOp> planPage(
       final row = table.rows[r];
       for (var i = 0; i < row.cells.length; i++) {
         final c = row.cells[i];
+        final numericLayout = _narrowNumericCellLayout(
+          pageWidthMm: page.widthMm,
+          cellWidthMm: c.wMm,
+          text: c.text,
+          baseFontSize: table.cellFontSize,
+        );
         ops.add(
           PaintOp(
             id: 'table${t}_r${row.sourceIndex}_c$i',
             kind: PaintKind.tableCell,
             leftMm: left(c.xMm, c.wMm),
-            topMm: row.yMm,
+            topMm: row.yMm + c.topOffsetMm,
             widthMm: c.wMm,
-            heightMm: row.heightMm,
-            text: c.text,
+            heightMm: c.cellHeightMm ?? row.heightMm,
+            text: numericLayout.$1,
             // نظيرُ الرأس: خطُّ الخليّة المخزَّنُ لم يكن يصل الورقةَ كذلك.
-            fontSize: table.cellFontSize,
+            fontSize: numericLayout.$2,
             align: _align(c.align),
             band: BandId.details,
           ),
@@ -214,6 +219,50 @@ List<PaintOp> planPage(
   }
 
   return List.unmodifiable(ops);
+}
+
+/// Long narrow values are reduced, never below 7pt; only values that still
+/// overflow at that floor receive a visible `...` truncation. Compact rows are
+/// selected by a separate conservative 7pt fit check; larger amounts stack.
+final _numericCellText = RegExp(r'^[0-9٠-٩۰-۹.,٬٫+\- ×]+$');
+const _narrowPageWidthThresholdMm = 52.0;
+const _numericGlyphWidthEm = 0.575;
+const _minimumNumericFontSize = 7.0;
+
+(String, double) _narrowNumericCellLayout({
+  required double pageWidthMm,
+  required double cellWidthMm,
+  required String text,
+  required double baseFontSize,
+}) {
+  final digitCount = text.runes
+      .where(
+        (r) =>
+            (r >= 48 && r <= 57) ||
+            (r >= 0x0660 && r <= 0x0669) ||
+            (r >= 0x06f0 && r <= 0x06f9),
+      )
+      .length;
+  if (pageWidthMm > _narrowPageWidthThresholdMm ||
+      digitCount < 8 ||
+      !_numericCellText.hasMatch(text)) {
+    return (text, baseFontSize);
+  }
+
+  final fitSize =
+      cellWidthMm * 2.8346 / (text.runes.length * _numericGlyphWidthEm);
+  final fontSize = fitSize < baseFontSize
+      ? fitSize.clamp(_minimumNumericFontSize, baseFontSize).toDouble()
+      : baseFontSize;
+  final capacity = (cellWidthMm * 2.8346 / (fontSize * _numericGlyphWidthEm))
+      .floor();
+  if (text.runes.length <= capacity) return (text, fontSize);
+
+  // At the hard limit, preserving an unfit numeral would recreate overlap;
+  // this explicit marker makes the exceptional truncation visible to operators.
+  final chars = text.runes.map(String.fromCharCode).toList();
+  final keep = (capacity - 3).clamp(0, chars.length).toInt();
+  return ('${chars.take(keep).join()}...', fontSize);
 }
 
 TextAlignSpec _align(ColumnAlign a) {

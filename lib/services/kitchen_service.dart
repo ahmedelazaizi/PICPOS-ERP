@@ -12,7 +12,12 @@ class KitchenService {
   final IPrintersRepository _printersRepo;
   final AppDatabase _db;
 
-  KitchenService(this._kitchenRepo, this._productRepo, this._printersRepo, this._db);
+  KitchenService(
+    this._kitchenRepo,
+    this._productRepo,
+    this._printersRepo,
+    this._db,
+  );
 
   // ملحوظة: `generateKitchenWorkOrder` كانت هنا وأُزيلت (2026-08-18).
   //
@@ -45,7 +50,9 @@ class KitchenService {
       for (final item in items) {
         final product = await _productRepo.getProductById(item.productId);
         if (product != null && product.categoryId != null) {
-          final category = await _productRepo.getCategoryById(product.categoryId!);
+          final category = await _productRepo.getCategoryById(
+            product.categoryId!,
+          );
           if (category?.printerId != null) {
             final printerId = category!.printerId!;
             if (!itemsByPrinter.containsKey(printerId)) {
@@ -65,7 +72,8 @@ class KitchenService {
       if (itemsByPrinter.isEmpty) return 0;
 
       // Use the actual invoice order number so kitchen receipt matches the invoice
-      final orderNumber = invoice.orderNumber?.toString() ?? invoice.invoiceNumber;
+      final orderNumber =
+          invoice.orderNumber?.toString() ?? invoice.invoiceNumber;
 
       int printedCount = 0;
       for (final entry in itemsByPrinter.entries) {
@@ -89,7 +97,8 @@ class KitchenService {
 
         try {
           await InvoiceGenerator.printWorkOrderReceipt(
-            orderNumber: '$orderNumber${itemsByPrinter.length > 1 ? '-${printedCount + 1}' : ''}',
+            orderNumber:
+                '$orderNumber${itemsByPrinter.length > 1 ? '-${printedCount + 1}' : ''}',
             date: DateTime.now(),
             categoryName: categoryName,
             items: invoiceItems,
@@ -97,11 +106,13 @@ class KitchenService {
             dailyOrderNumber: invoice.orderNumber,
             orderType: invoice.saleType,
             orderNotes: invoice.notes,
-            customerName: invoice.platformOrderNumber ?? (
-              (invoice.notes?.contains('|') ?? false)
-                ? invoice.notes!.split('|').last.trim()
-                : invoice.notes
-            ), // Often used for Table Name in restaurant mode
+            customerName:
+                invoice.platformOrderNumber ??
+                ((invoice.notes?.contains('|') ?? false)
+                    ? invoice.notes!.split('|').last.trim()
+                    : invoice
+                          .notes), // Often used for Table Name in restaurant mode
+            printerId: printerId,
             printersRepo: _printersRepo,
             db: _db,
           );

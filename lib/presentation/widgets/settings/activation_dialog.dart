@@ -233,7 +233,7 @@ class _ActivationDialogState extends ConsumerState<ActivationDialog> {
             children: [
                Text(
                 tr('للحصول على كود التفعيل، يرجى إرسال رقم تعريف الجهاز الموضح أدناه للمطور.'),
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                style: TextStyle(color: context.picposMuted, fontSize: 13),
               ),
               const SizedBox(height: 20),
               // Machine ID Field

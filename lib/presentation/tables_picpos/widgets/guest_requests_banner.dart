@@ -12,6 +12,7 @@ import '../../../services/guest_order_approval.dart';
 import '../../../services/guest_order_requests.dart';
 import '../../../services/network_service.dart';
 import '../../../services/server_proxy.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// شريطٌ يظهر **فقط** حين ينتظر طلبُ ضيفٍ اعتماداً.
 ///
@@ -157,7 +158,7 @@ class _RequestTileState extends ConsumerState<_RequestTile> {
             Text(
               '${r.at.hour.toString().padLeft(2, '0')}:'
               '${r.at.minute.toString().padLeft(2, '0')}',
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+              style: TextStyle(color: context.picposMuted, fontSize: 11),
             ),
           ],
         ),

@@ -6,6 +6,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
 import 'providers/notification_provider.dart';
 import 'notification_panel.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class NotificationBell extends ConsumerWidget {
   const NotificationBell({super.key});
@@ -18,7 +19,7 @@ class NotificationBell extends ConsumerWidget {
       alignment: Alignment.center,
       children: [
         IconButton(
-          icon: const Icon(PhosphorIconsRegular.bell, color: AppColors.textPrimary),
+          icon: Icon(PhosphorIconsRegular.bell, color: context.picposText),
           tooltip: tr('الإشعارات'),
           onPressed: () {
             // Open the notification panel
@@ -35,9 +36,9 @@ class NotificationBell extends ConsumerWidget {
                     child: Container(
                       width: 400,
                       height: double.infinity,
-                      decoration: const BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.only(
+                      decoration: BoxDecoration(
+                        color: context.picposField,
+                        borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(16),
                           bottomLeft: Radius.circular(16),
                         ),
@@ -75,7 +76,7 @@ class NotificationBell extends ConsumerWidget {
                     count > 99 ? '99+' : count.toString(),
                     style: GoogleFonts.jetBrainsMono(
                       color: Colors.white,
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

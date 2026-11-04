@@ -103,7 +103,7 @@ class _EnhancedNavItemState extends State<_EnhancedNavItem> {
                         ? AppColors.primary
                         : _isHovered
                         ? Colors.white
-                        : AppColors.textMuted,
+                        : context.picposMuted,
                     size: widget.isSelected ? 20 : 18,
                   ),
                 ),

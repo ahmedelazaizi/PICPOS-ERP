@@ -8,6 +8,7 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../domain/models/picpos_template_card.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../screens/template_library_picpos_screen.dart'
@@ -58,6 +59,14 @@ class TemplateGalleryCard extends StatelessWidget {
                     start: 0,
                     child: _Badge(text: card.paperLabel, tone: brand),
                   ),
+                  if (card.activeForPrint)
+                    PositionedDirectional(
+                      top: 0,
+                      end: 0,
+                      child: _Badge(
+                          text: tr('مُفعَّل للطباعة'),
+                          tone: AppColors.success),
+                    ),
                   if (card.layoutVersion < 2)
                     PositionedDirectional(
                       bottom: 0,

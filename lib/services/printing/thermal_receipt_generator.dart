@@ -134,11 +134,7 @@ class ThermalReceiptGenerator {
   }) async {
     await _initFont();
     final pdf = await BaseGenerator.newDocument();
-    final thermalFormat = PdfPageFormat(
-      paperWidthMm * PdfPageFormat.mm,
-      double.infinity,
-      marginAll: 4 * PdfPageFormat.mm,
-    );
+    final thermalFormat = PdfPageFormat(paperWidthMm * PdfPageFormat.mm, double.infinity, marginAll: 4 * PdfPageFormat.mm);
 
     final displayInvoiceNumber = invoiceNumber;
     final totals = ReceiptTotals.from(
@@ -234,7 +230,8 @@ class ThermalReceiptGenerator {
       ),
     );
 
-    final bytes = await pdf.save();
+    final output = await PdfComputeHelper.saveToBytesWithMediaBox(pdf);
+    final bytes = output.bytes;
     if (debugBuildOnly) return (bytes: bytes, printed: false);
 
     if (directPrint) {
@@ -243,14 +240,11 @@ class ThermalReceiptGenerator {
         resolvedPrinter = await PrinterResolver.resolveReceiptPrinter(printersRepo);
       }
       if (resolvedPrinter != null) {
-        await printing_pkg.Printing.directPrintPdf(
-          printer: resolvedPrinter,
-          onLayout: (format) async => bytes,
-        );
+        await PdfComputeHelper.directPrintBytes(printer: resolvedPrinter, bytes: bytes, format: output.format);
         return (bytes: bytes, printed: true);
       }
     }
-    return (bytes: bytes, printed: await PdfComputeHelper.layoutBytes(bytes));
+    return (bytes: bytes, printed: await PdfComputeHelper.layoutBytes(bytes, format: output.format));
   }
 
   /// Print thermal work order for the kitchen/preparation
@@ -268,14 +262,11 @@ class ThermalReceiptGenerator {
   }) async {
     await _initFont();
     final pdf = await BaseGenerator.newDocument();
+    const kitchenFormat = PdfPageFormat(80 * PdfPageFormat.mm, double.infinity, marginAll: 2 * PdfPageFormat.mm);
 
     pdf.addPage(
       pw.Page(
-        pageFormat: const PdfPageFormat(
-          80 * PdfPageFormat.mm,
-          double.infinity,
-          marginAll: 2 * PdfPageFormat.mm,
-        ),
+        pageFormat: kitchenFormat,
         textDirection: pw.TextDirection.rtl,
         build: (context) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.center,
@@ -459,19 +450,15 @@ class ThermalReceiptGenerator {
         ),
       ),
     );
-
     printing_pkg.Printer? resolvedPrinter;
     if (printersRepo != null) {
       resolvedPrinter = await PrinterResolver.resolveByPurpose(printersRepo, 'kitchen');
     }
 
     if (resolvedPrinter != null) {
-      await printing_pkg.Printing.directPrintPdf(
-        printer: resolvedPrinter,
-        onLayout: (format) async => pdf.save(),
-      );
+      await PdfComputeHelper.directPrintDocument(printer: resolvedPrinter, pdf: pdf);
     } else {
-      return PdfComputeHelper.layoutPdf(pdf);
+      return PdfComputeHelper.layoutPdfWithMediaBox(pdf);
     }
     // الإرسالُ المباشرُ إلى طابعةٍ مضبوطةٍ لا يُلغى من حوار.
     return true;
@@ -1212,14 +1199,7 @@ class ThermalReceiptGenerator {
     // marginRight is intentionally larger than marginLeft: Arabic labels start
     // from the right edge, and many thermal printers have a wider non-printable
     // dead zone on the right side. 8mm ensures labels don't get physically cut.
-    const pageFormat = PdfPageFormat(
-      thermalWidth,
-      double.infinity,
-      marginLeft: 4 * PdfPageFormat.mm,
-      marginRight: 8 * PdfPageFormat.mm,
-      marginTop: 2 * PdfPageFormat.mm,
-      marginBottom: 2 * PdfPageFormat.mm,
-    );
+    const pageFormat = PdfPageFormat(thermalWidth, double.infinity, marginLeft: 4 * PdfPageFormat.mm, marginRight: 8 * PdfPageFormat.mm, marginTop: 2 * PdfPageFormat.mm, marginBottom: 2 * PdfPageFormat.mm);
 
     final fs = fontScale.clamp(0.5, 2.0);
     // Font sizes reduced slightly so label + value fit comfortably on one line.
@@ -1374,19 +1354,15 @@ class ThermalReceiptGenerator {
         ),
       ),
     );
-
     printing_pkg.Printer? resolvedPrinter;
     if (printersRepo != null) {
       resolvedPrinter = await PrinterResolver.resolveReceiptPrinter(printersRepo);
     }
 
     if (resolvedPrinter != null) {
-      await printing_pkg.Printing.directPrintPdf(
-        printer: resolvedPrinter,
-        onLayout: (format) async => pdf.save(),
-      );
+      await PdfComputeHelper.directPrintDocument(printer: resolvedPrinter, pdf: pdf);
     } else {
-      return PdfComputeHelper.layoutPdf(pdf);
+      return PdfComputeHelper.layoutPdfWithMediaBox(pdf);
     }
     // الإرسالُ المباشرُ إلى طابعةٍ مضبوطةٍ لا يُلغى من حوار.
     return true;

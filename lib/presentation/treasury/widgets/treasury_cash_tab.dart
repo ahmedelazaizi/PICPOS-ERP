@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:picpos_erp/core/utils/friendly_error.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../domain/repositories/treasury_repository.dart';
 import 'treasury_safe_card.dart';
 import 'treasury_transactions_list.dart';
 
 import 'package:picpos_erp/l10n/app_localizations.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Feature 011 / Issue UX-SCROLL — converted to StatefulWidget so the
 /// safes-list ScrollController persists across stream re-emissions
@@ -62,10 +62,10 @@ class _TreasuryCashTabState extends State<TreasuryCashTab> {
                         .where((s) => s.safeType == 'cash')
                         .toList();
                     if (cashSafes.isEmpty) {
-                      return const Center(
+                      return Center(
                         child: Text(
                           'No cash safes',
-                          style: TextStyle(color: AppColors.textMuted),
+                          style: TextStyle(color: context.picposMuted),
                         ),
                       ); // Fallback or add to ARB if missed
                     }

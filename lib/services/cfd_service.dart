@@ -194,6 +194,8 @@ class CfdService {
           .toList(),
       subtotal: state.subtotal,
       discountPercent: state.discountPercent,
+      discountAmount:
+          state.invoiceDiscountAmount != null ? state.totals.invoiceDiscount : 0,
       taxAmount: state.totals.taxAmount,
       total: state.total,
       customerName: state.selectedCustomerName,

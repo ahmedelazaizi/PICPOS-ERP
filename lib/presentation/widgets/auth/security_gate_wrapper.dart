@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
 import 'dart:ui' as ui;
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class SecurityScreenGate extends ConsumerStatefulWidget {
   final String settingKey;
@@ -74,7 +75,7 @@ class _SecurityScreenGateState extends ConsumerState<SecurityScreenGate> {
             children: [
                Text(
                 tr('هذا القسم محمي بكلمة مرور. يرجى إدخالها للمتابعة.'),
-                style: const TextStyle(fontSize: 14, color: AppColors.textMuted),
+                style: TextStyle(fontSize: 14, color: context.picposMuted),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -131,7 +132,7 @@ class _SecurityScreenGateState extends ConsumerState<SecurityScreenGate> {
 
     // Lock screen UI
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.picposField,
       body: Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 400),
@@ -160,7 +161,7 @@ class _SecurityScreenGateState extends ConsumerState<SecurityScreenGate> {
                Text(
                 tr('يرجى إدخال كلمة المرور الخاصة بهذا القسم للوصول إليه.'),
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.textMuted),
+                style: TextStyle(color: context.picposMuted),
               ),
               const SizedBox(height: 32),
               SizedBox(

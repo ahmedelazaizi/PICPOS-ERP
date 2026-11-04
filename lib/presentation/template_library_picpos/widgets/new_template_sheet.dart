@@ -15,13 +15,24 @@ import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/repository_providers.dart';
 import '../../../data/providers/template_library_providers.dart';
 import '../../picpos_shell/picpos_surface.dart';
+import 'new_label_dialog.dart';
 
 /// يفتح لوحةَ النماذج الجاهزة. يُرجع مُعرِّفَ القالب المُنشَأ أو `null`.
-Future<int?> showNewTemplateSheet(BuildContext context, WidgetRef ref) =>
-    showDialog<int>(
-      context: context,
-      builder: (_) => const Dialog(child: _NewTemplateSheet()),
-    );
+Future<int?> showNewTemplateSheet(BuildContext context, WidgetRef ref) async {
+  final id = await showDialog<int>(
+    context: context,
+    builder: (_) => const Dialog(child: _NewTemplateSheet()),
+  );
+  // «ملصق باركود» ليس ملفّاً جاهزاً بل مقاسٌ يُكتب — حوارُه بسياق المكتبة،
+  // فسياقُ هذه اللوحة زال بإغلاقها.
+  if (id == _labelChoice) {
+    if (!context.mounted) return null;
+    return showNewLabelDialog(context, ref);
+  }
+  return id;
+}
+
+const _labelChoice = -1;
 
 class _NewTemplateSheet extends ConsumerStatefulWidget {
   const _NewTemplateSheet();
@@ -85,6 +96,32 @@ class _NewTemplateSheetState extends ConsumerState<_NewTemplateSheet> {
                     style: const TextStyle(
                         fontSize: 12, color: AppColors.error)),
               ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+              child: ListTile(
+                key: const Key('new-template-label'),
+                dense: true,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(color: context.picposBrandInk),
+                ),
+                leading: Icon(PhosphorIconsBold.barcode,
+                    size: 18, color: context.picposBrandInk),
+                title: Text(
+                  tr('ملصق باركود بمقاسٍ مخصّص'),
+                  style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: context.picposText),
+                ),
+                subtitle: Text(
+                  tr('قماشٌ حرٌّ بالمليمتر — يُطبع بمسار ملصقات الباركود'),
+                  style: TextStyle(fontSize: 10.5, color: context.picposMuted),
+                ),
+                trailing: const Icon(PhosphorIconsBold.caretLeft, size: 14),
+                onTap: () => Navigator.of(context).pop(_labelChoice),
+              ),
+            ),
             const SizedBox(height: 8),
             Expanded(
               child: ListView.separated(

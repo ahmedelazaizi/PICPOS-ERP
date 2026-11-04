@@ -11,6 +11,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:shelf/shelf.dart';
 import 'api_errors.dart';
+import 'sales_payment_rejection.dart';
 import 'ws_connection_guard.dart';
 import 'package:drift/drift.dart';
 import '../../core/logging/diagnostic_logger.dart';
@@ -19,10 +20,14 @@ import '../../data/database/database.dart';
 import '../../domain/models/exchange_sync_payload.dart';
 import '../../domain/models/return_original_link.dart' show SalesVoidBlockedException;
 import '../../domain/models/distribution_model.dart';
+import '../journal_entry_factory.dart' show ZeroCostException;
 import 'api_user_context.dart';
 import 'api_auth_middleware.dart';
 import '../stock_shortage_policy_service.dart';
 import 'api_handler_base.dart';
+import 'server_price_discount_guard.dart';
+import 'server_return_exchange_guard.dart';
+import 'server_invoice_number.dart';
 
 /// Handles all sales-related API endpoints.
 class ApiSalesHandler extends ApiHandlerBase {
@@ -173,28 +178,6 @@ class ApiSalesHandler extends ApiHandlerBase {
         }
       }
 
-      // Feature 054 (v134): invoice_number-based dedup REMOVED.
-      //
-      // The previous block here used `expectedServerInvoiceNumber`
-      // (e.g. "QS-POS-1") as the dedup key. That's fundamentally weak:
-      //   1. invoice_number is reset every time a client's local DB is
-      //      wiped — the next session generates POS-1 again with a
-      //      fresh globalId, but the SAME prefixed name collides with
-      //      a leftover row on the server.
-      //   2. Branches without a `code` fell back to "CLT{ipSuffix}-",
-      //      which collides across branches on the same IP suffix.
-      //
-      // Field repro (2026-05-14, supermarket): leftover QS-POS-1
-      // through QS-POS-40 from a prior session, plus orphaned cache
-      // entries in `processed_messages`, made today's 15 fresh sales
-      // (each with a NEW globalId) come back as `duplicate: true,
-      // serverId=<old>` — all 15 sales lost.
-      //
-      // `globalId` (UUIDv7) is the cryptographically unique key and
-      // is now the SOLE dedup path. The UNIQUE constraint on
-      // `sales_invoices.global_id` (Feature 007) prevents true
-      // duplicates from ever reaching the table.
-
       // Parse items. Each productId is resolved via productGlobalId when
       // the client sent one — this absorbs client/server id drift and also
       // prevents the server from silently inventing a new product row later
@@ -228,6 +211,10 @@ class ApiSalesHandler extends ApiHandlerBase {
           note: Value(m['note'] as String?),
         ));
       }
+
+      // S-03: price / discount policy is enforced here, not only in the UI.
+      final denied = await enforceSalePriceDiscountPolicy(request, db, data, items);
+      if (denied != null) return denied;
 
       final clientWarehouseId = parseInt(data['warehouseId']);
       if (clientWarehouseId == 0) throw Exception('Validation Error: Valid warehouseId is required.');
@@ -277,12 +264,18 @@ class ApiSalesHandler extends ApiHandlerBase {
         fallbackName: adhocName,
       );
 
+      final soldStockPolicy = await StockShortagePolicyService.resolveForSaleWith(
+        get: db.getSettingValue, branchId: clientBranchId);
+
       // Insert invoice + post accounting in ONE atomic transaction (P0-01 fix).
       // Previously: invoice committed first, accounting in a separate non-fatal
       // try/catch — a crash between the two left orphan invoices with no GL entry.
       // Now: both operations share a single db.transaction(); any accounting
       // failure rolls back the invoice as well. The client's outbox retries.
       final serverId = await db.transaction(() async {
+        // R4: another terminal's invoice may already hold this number.
+        expectedServerInvoiceNumber = await resolveServerInvoiceNumber(db,
+            desired: expectedServerInvoiceNumber, globalId: incomingGlobalId);
         final id = await db.createSalesInvoice(
           globalId: incomingGlobalId, // UUID-First: carry client identity through
           invoiceNumber: expectedServerInvoiceNumber,
@@ -296,11 +289,8 @@ class ApiSalesHandler extends ApiHandlerBase {
           paid: (parseDoubleNullable(data['paid']))?.toDouble() ?? 0,
            currencyId: parseIntNullable(data['currencyId'] ?? data['currency_id']),
            exchangeRate: parseDoubleNullable(data['exchangeRate'] ?? data['exchange_rate']),
-          // ⚠️ **بدونه يرحّل الخادمُ قيداً مخالفاً لقيد العميل.** الخادمُ
-          // يعيد بناءَ القيد من الحمولة، فغيابُ الفرق يجعله يرى `total > paid`
-          // فيفتح ذمّةً مدينةً لا وجودَ لها ويترك الفاتورةَ `pending` —
-          // بينما الفاتورةُ نفسُها على الجهاز مكتملةٌ ومتوازنة.
-          // و`?? 0` يُبقي عميلاً أقدمَ لا يرسل المفتاح على سلوكه حرفيّاً.
+          // ⚠️ بدونه يعيد الخادمُ بناءَ القيد بـ`total > paid` فيفتح ذمّةً وهميّةً
+          // ويترك الفاتورةَ `pending`. و`?? 0` لعميلٍ أقدمَ لا يرسل المفتاح.
           roundingAdjustment:
               (parseDoubleNullable(data['roundingAdjustment']))?.toDouble() ?? 0,
           paymentMethod: data['paymentMethod'] as String? ?? 'cash',
@@ -314,6 +304,8 @@ class ApiSalesHandler extends ApiHandlerBase {
           clickSafeId: parseIntNullable(data['clickSafeId']),
           saleType: data['saleType'] as String? ?? 'default',
           items: items,
+          allowNegativeStock:
+              soldStockPolicy == StockShortagePolicy.allowNegative,
           invoiceDate: clientInvoiceDate,
           costCenterId: clientCostCenterId,
           branchId: clientBranchId,
@@ -416,6 +408,16 @@ class ApiSalesHandler extends ApiHandlerBase {
       debugPrint('[API] postSale error: $e\n$st');
       await DiagnosticLogger.log('API-SALE',
           '❌ FAILED to persist client sale: $e');
+      if (e is SalesInsufficientStockException) {
+        return ApiErrors.fail(e, '', st: st, statusCode: 422,
+            code: 'INSUFFICIENT_STOCK');
+      }
+      if (e is ZeroCostException ||
+          (e.toString().contains('متعقّب للمخزون وتكلفته غير محددة') &&
+              await db.getSettingValue('zero_cost_policy') == 'block')) {
+        return ApiErrors.fail(e, '', st: st, statusCode: 422,
+            code: 'ZERO_COST_BLOCKED');
+      }
       return ApiErrors.fail(e, 'Failed to process sale', st: st);
     }
   }
@@ -595,6 +597,13 @@ class ApiSalesHandler extends ApiHandlerBase {
       // original genuinely can't be found (orphan return).
       final linkedOriginalId = original?.id ?? originalInvoiceId;
 
+      // Serialize returns per original invoice: remaining-qty check + insert.
+      final unlockReturn = await ReturnInvoiceLock.acquire(original?.id);
+      try {
+      final deniedReturn = await enforceReturnPolicy(request, db, data, items,
+          original: original);
+      if (deniedReturn != null) return deniedReturn;
+
       final serverId = await db.createSalesInvoice(
         invoiceNumber: data['invoiceNumber'] as String?,
         customerId: resolvedReturnCustomerId,
@@ -690,6 +699,9 @@ class ApiSalesHandler extends ApiHandlerBase {
 
       await db.resignSalesInvoice(serverId);
       return jsonResponse({'success': true, 'serverId': serverId});
+      } finally {
+        unlockReturn();
+      }
         },
       );
     } catch (e) {
@@ -702,27 +714,12 @@ class ApiSalesHandler extends ApiHandlerBase {
   // Exchange — المردودُ وبديلُه في معاملةٍ واحدة
   // ═══════════════════════════════════════════════════════════════
 
-  /// يفكّ حمولةَ الاستبدال **الواحدة** إلى مستندَين داخل معاملةٍ واحدة.
-  ///
-  /// **لماذا مسارٌ ثالثٌ لا نداءان لـ[postSalesReturn] و[postSale]:** النداءان
-  /// معاملتان منفصلتان، فسقوطُ الثاني يترك الأوّلَ مُودَعاً — وهي بعينِها
-  /// نافذةُ الانفصال التي أُنشئت الحمولةُ الواحدةُ لإغلاقها. وهنا كلُّ
-  /// الكتابات في `db.transaction` واحدة: تنجح كاملةً أو لا يبقى منها أثر.
-  ///
-  /// **ولا حسابَ ماليٌّ مكرَّر:** المالُ كلُّه يُحسب في طبقة `db.*` نفسِها
-  /// التي ينادينها المعالجان الآخران — `createSalesInvoice` و
-  /// `applyAutoDepleteForSale` و`autoPostCashSale` و`reverseSaleConsumption`.
-  /// المكرَّرُ هنا هو الفكُّ والحلُّ فقط، وكلاهما يمرّ بنفس المساعدات
-  /// المشتركة (`resolveProductId` · `resolvePartyId` · [_resolveWarehouseId] ·
-  /// [_resolveUserId]) فلا تنزلق نسختان من منطق الحلّ.
-  ///
-  /// **وشقوقُ المردود قائمةٌ لا مستندٌ واحد:** `processSalesReturn` على العميل
-  /// يقبل `isDamaged` للنداء كلِّه لا للسطر، فالوسمُ المختلط يُنتج سندَي
-  /// مردودٍ. وحقلٌ مفردٌ هنا كان سيُسقط الشقَّ الثاني صامتاً.
-  ///
-  /// **وعكسُ استهلاك BOM داخل المعاملة لا خارجَها:** في [postSalesReturn] هو
-  /// أفضلُ جهدٍ ملفوفٌ بـ`try/catch` لأن سندَ المردود كان قد أُودع فعلاً. هنا
-  /// لا شيءَ أُودع بعد، فالسقوطُ يُرجِع الكلَّ ولا يترك نصفَ استبدال.
+  /// يفكّ حمولةَ الاستبدال **الواحدة** إلى مستندَين في معاملةٍ واحدة (لا نداءَين
+  /// لـ[postSalesReturn] و[postSale]: سقوطُ الثاني كان سيترك الأوّلَ مُودَعاً).
+  /// المالُ يُحسب في طبقة `db.*` نفسِها، والحلُّ بالمساعدات المشتركة
+  /// (`resolveProductId` · `resolvePartyId` · [_resolveWarehouseId] · [_resolveUserId]).
+  /// شقّا المردود يُفكّان معاً (`isDamaged` للنداء كلِّه، فالوسمُ المختلط يُنتج سندَي
+  /// مردودٍ)، وعكسُ استهلاك BOM هنا بلا `try/catch` فيُرجِع السقوطُ الاستبدالَ كلَّه.
   Future<Response> postSalesExchange(Request request) async {
     try {
       // الاستبدالُ يرتجع **ويبيع** — فالصلاحيتان معاً لا إحداهما. ومن يملك
@@ -795,6 +792,16 @@ class ApiSalesHandler extends ApiHandlerBase {
           // نسخةٌ نهائيّةٌ كي يترقّى النوعُ داخل المُغلَقات.
           final original = lookedUp;
 
+          // Serialize returns per original invoice: check + insert.
+          final unlockExchange = await ReturnInvoiceLock.acquire(original?.id);
+          try {
+          final deniedExchange = await enforceExchangePolicy(request, db, data,
+              legs: rawLegs,
+              sale: saleData,
+              original: original,
+              parseItems: _parseExchangeItems);
+          if (deniedExchange != null) return deniedExchange;
+
           final serverId = await db.transaction(() async {
             for (final rawLeg in rawLegs) {
               await _applyExchangeReturnLeg(
@@ -851,6 +858,9 @@ class ApiSalesHandler extends ApiHandlerBase {
             'serverId': serverId,
             'exchangeKey': exchangeKey,
           });
+          } finally {
+            unlockExchange();
+          }
         },
       );
     } catch (e, st) {
@@ -1346,9 +1356,7 @@ class ApiSalesHandler extends ApiHandlerBase {
           // local collection context. addSalesPayment dedups on it.
           final paymentGlobalId = data['globalId'] as String?;
 
-          if (amount <= 0) {
-            return errorResponse('Invalid collection amount: $amount', statusCode: 400);
-          }
+          if (amount <= 0) return salesPaymentRejection('PAYMENT_NOT_POSITIVE');
 
           unawaited(DiagnosticLogger.log('API-SALE-PAYMENT',
               'POST /api/sales/payment received '
@@ -1378,6 +1386,9 @@ class ApiSalesHandler extends ApiHandlerBase {
             );
           }
           final invoice = lookup;
+          if (amount > invoice.total - invoice.paid) {
+            return salesPaymentRejection('PAYMENT_EXCEEDS_REMAINING');
+          }
 
           int? resolvedUserId;
           final rawUserId = parseIntNullable(data['userId']);
@@ -1411,6 +1422,8 @@ class ApiSalesHandler extends ApiHandlerBase {
     } on PermissionDeniedException catch (e) {
       return errorResponse(e.message, statusCode: 403);
     } catch (e, st) {
+      final rejection = salesPaymentRejectionFor(e);
+      if (rejection != null) return rejection;
       debugPrint('[API] postSalesPayment error: $e\n$st');
       final stackLines = st.toString().split('\n').take(10).join(' | ');
       unawaited(DiagnosticLogger.log('API-SALE-PAYMENT',

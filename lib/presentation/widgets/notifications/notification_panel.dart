@@ -5,8 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
+import 'package:picpos_erp/core/theme/readable_colors.dart';
 import '../../../../data/providers/providers.dart';
 import 'providers/notification_provider.dart';
+
+/// حبر الهوية: الفاتح `AppColors.primary` كما كان، والداكن أفتح قراءةً.
+Color _brand(BuildContext c) =>
+    c.picposIsDark ? readableBrand(c) : AppColors.primary;
 
 class NotificationPanel extends ConsumerWidget {
   const NotificationPanel({super.key});
@@ -21,22 +27,22 @@ class NotificationPanel extends ConsumerWidget {
         // Header
         Container(
           padding: const EdgeInsets.all(20),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: AppColors.border)),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: context.picposHairline)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 children: [
-                  const Icon(PhosphorIconsBold.bellRinging, color: AppColors.primary),
+                  Icon(PhosphorIconsBold.bellRinging, color: _brand(context)),
                   const SizedBox(width: 12),
                   Text(
                     tr('الإشعارات'),
                     style: GoogleFonts.cairo(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                      color: context.picposText,
                     ),
                   ),
                 ],
@@ -56,7 +62,7 @@ class NotificationPanel extends ConsumerWidget {
                       style: GoogleFonts.cairo(fontSize: 12),
                     ),
                     style: TextButton.styleFrom(
-                      foregroundColor: AppColors.primary,
+                      foregroundColor: _brand(context),
                     ),
                   ),
                   IconButton(
@@ -75,7 +81,7 @@ class NotificationPanel extends ConsumerWidget {
           child: notificationsAsync.when(
             data: (notifications) {
               if (notifications.isEmpty) {
-                return _buildEmptyState();
+                return _buildEmptyState(context);
               }
 
               return ListView.separated(
@@ -109,18 +115,18 @@ class NotificationPanel extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(PhosphorIconsRegular.bellSlash, size: 60, color: AppColors.textMuted.withValues(alpha: 0.5)),
+          Icon(PhosphorIconsRegular.bellSlash, size: 60, color: context.picposMuted.withValues(alpha: 0.5)),
           const SizedBox(height: 16),
           Text(
             tr('لا توجد إشعارات جديدة'),
             style: GoogleFonts.cairo(
               fontSize: 16,
-              color: AppColors.textMuted,
+              color: context.picposMuted,
             ),
           ),
         ],
@@ -172,6 +178,14 @@ class _NotificationTile extends StatelessWidget {
         iconData = PhosphorIconsFill.info;
         break;
     }
+    // الحبرُ يُقاس على خلفية الصف المصبوغة فعلاً (غير المقروء) لا على الكرت.
+    final rowBg = isRead
+        ? context.picposCard
+        : Color.alphaBlend(iconColor.withValues(alpha: 0.05), context.picposCard);
+    final iconBgSolid =
+        Color.alphaBlend(iconColor.withValues(alpha: 0.1), rowBg);
+    final iconInk = readableOn(context, iconColor, on: iconBgSolid);
+    final mutedInk = readableOn(context, context.picposMuted, on: rowBg);
 
     return InkWell(
       onTap: onTap,
@@ -187,7 +201,7 @@ class _NotificationTile extends StatelessWidget {
                 color: iconColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(iconData, color: iconColor, size: 20),
+              child: Icon(iconData, color: iconInk, size: 20),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -202,7 +216,7 @@ class _NotificationTile extends StatelessWidget {
                           notification.title as String,
                           style: GoogleFonts.cairo(
                             fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
-                            color: AppColors.textPrimary,
+                            color: context.picposText,
                             fontSize: 14,
                           ),
                         ),
@@ -222,7 +236,7 @@ class _NotificationTile extends StatelessWidget {
                   Text(
                     notification.body as String,
                     style: GoogleFonts.cairo(
-                      color: AppColors.textSecondary,
+                      color: context.picposSecondary,
                       fontSize: 13,
                       height: 1.4,
                     ),
@@ -231,7 +245,7 @@ class _NotificationTile extends StatelessWidget {
                   Text(
                     _formatTimeAgo(notification.createdAt as DateTime),
                     style: GoogleFonts.cairo(
-                      color: AppColors.textMuted,
+                      color: mutedInk,
                       fontSize: 11,
                     ),
                   ),

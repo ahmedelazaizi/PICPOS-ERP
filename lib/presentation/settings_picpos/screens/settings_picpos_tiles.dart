@@ -1,5 +1,9 @@
 part of 'settings_picpos_screen.dart';
 
+/// بلاطةُ المصمّم القديم للملصقات — مُخفاةٌ بعد التكافؤ (قرار المالك
+/// 2026-11-03). ثابتٌ لا حذف: الشاشةُ ومنطقُها باقيان.
+const bool _kLegacyLabelDesignerTileVisible = false;
+
 /// مربّعاتُ «المستخدمون والأدوار».
 ///
 /// الحارسُ على الضغطة لا على العرض — لنفس سببِ [_DeviceTiles]، وبنفس
@@ -168,26 +172,47 @@ class _DeviceTiles extends ConsumerWidget {
             ),
           ),
         ),
-        // ⚠️ **السطحُ القديمُ باقٍ عن قصدٍ لا عن إهمال**: هو الوحيدُ الذي
-        //    يحرّر **ملصقاتِ الباركود** (‏`templateCategory == 'barcode'`)،
-        //    والمكتبةُ تُرشِّحها والمحرّرُ الجديدُ لا يخدمها. فإخفاؤه كان
-        //    سيُلغي الطريقَ الوحيدَ لتعديل الملصقات.
-        //
-        //    وتحريرُ قوالب الفواتير مدخلُه **المكتبة**: المحرّرُ الجديدُ يفتح
-        //    على قالبٍ بعينه (`templateId`)، فلا معنى لفتحه بلا اختيار.
+        // ملصقاتُ الباركود مدخلُها **المكتبة** بتبويبها: «قماشُ الملصق» في
+        // المحرّر الجديد يحرّرها بأعمدة راسم الملصقات، و«ملصق جديد» يُنشئها
+        // بمقاسٍ مخصّص. وتحريرُ قوالب الفواتير مدخلُه المكتبةُ كذلك: المحرّرُ
+        // يفتح على قالبٍ بعينه (`templateId`)، فلا معنى لفتحه بلا اختيار.
         SettingsTile(
           icon: PhosphorIconsBold.barcode,
-          title: tr('مصمّم ملصقات الباركود'),
-          sub: tr('السطحُ القديم — ملصقاتُ الباركود وقوالبُها'),
+          title: tr('مكتبة ملصقات الباركود'),
+          sub: tr('إنشاءُ الملصقات وتحريرُها بقماشٍ حرٍّ بالمليمتر'),
           meta: tr('الملصقات'),
           tint: AppColors.info,
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => const InvoiceDesignerScreen(picposChrome: true),
+              builder: (_) => const TemplateLibraryPicposScreen(
+                  initialFilter: TemplateFilter.barcode),
             ),
           ),
         ),
+        // ⚠️ **مُخفى عن الواجهة بعد التكافؤ — قرار المالك 2026-11-03.**
+        //    كان «مصمّمُ ملصقات الباركود» (السطحُ القديم) الطريقَ الوحيدَ إلى
+        //    الملصقات، لأنّ المكتبةَ كانت تستبعدها والمحرّرَ الجديدَ لا
+        //    يخدمها. صار لهما تبويبٌ في المكتبة وقماشٌ في المحرّر، ونجحت
+        //    اختباراتُ التكافؤ (‏الستّةُ المبذورةُ تُفتح بلا فقد، والحفظُ
+        //    يكتب أعمدةَ الراسم و`layout_version` لا يُلمس) — فأُخفيت البلاطة.
+        //    والكودُ **باقٍ لا يُحذف**: `InvoiceDesignerScreen` ومنطقُه كما هما،
+        //    وإعادتُها رفعُ [_kLegacyLabelDesignerTileVisible] وحدَه.
+        //    التقرير: `docs/plans/2026-11-03-barcode-label-editor-migration.md`.
+        if (_kLegacyLabelDesignerTileVisible)
+          SettingsTile(
+            icon: PhosphorIconsBold.barcode,
+            title: tr('مصمّم ملصقات الباركود'),
+            sub: tr('السطحُ القديم — ملصقاتُ الباركود وقوالبُها'),
+            meta: tr('الملصقات'),
+            tint: AppColors.info,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const InvoiceDesignerScreen(picposChrome: true),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -295,13 +320,10 @@ class _AdvancedTiles extends ConsumerWidget {
 /// حوارُ وضع الشبكة — يُفتح من قسم «ربط التطبيقات والأجهزة» وحده.
 Future<void> _showNetworkModeDialog(BuildContext context) => showDialog<void>(
       context: context,
-      builder: (ctx) => Dialog(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 720),
-          child: const SingleChildScrollView(
-            padding: EdgeInsets.all(16),
-            child: _NetworkModeSettings(),
-          ),
-        ),
+      builder: (ctx) => PicPosDialog(
+        icon: PhosphorIconsBold.wifiHigh,
+        title: tr('وضع التشغيل'),
+        width: 560,
+        body: const [_NetworkModeSettings()],
       ),
     );

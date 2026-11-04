@@ -109,7 +109,9 @@ class PrinterResolver {
   }
 
   /// Resolve by a specific database printer entity
-  static Future<printing_pkg.Printer?> resolveByPrinter(Printer dbPrinter) async {
+  static Future<printing_pkg.Printer?> resolveByPrinter(
+    Printer dbPrinter,
+  ) async {
     try {
       final systemPrinters = await printing_pkg.Printing.listPrinters();
       if (systemPrinters.isEmpty) return null;
@@ -128,9 +130,27 @@ class PrinterResolver {
           )
           .firstOrNull;
 
-      return matched ?? await _getSystemDefault();
+      // A saved USB target is often the Windows queue name while the app's
+      // friendly printer name differs (e.g. Microsoft PDF 80mm vs Microsoft
+      // Print to PDF). Match that target before refusing the configured route.
+      final target = dbPrinter.port?.trim().toLowerCase();
+      if (matched == null && target != null && target.isNotEmpty) {
+        matched = systemPrinters
+            .where(
+              (sp) =>
+                  sp.name.toLowerCase() == target ||
+                  sp.url.toLowerCase() == target ||
+                  sp.name.toLowerCase().contains(target) ||
+                  sp.url.toLowerCase().contains(target),
+            )
+            .firstOrNull;
+      }
+
+      // Never silently redirect an explicitly selected printer to the system
+      // default: callers can report the unresolved configured destination.
+      return matched;
     } catch (_) {
-      return _getSystemDefault();
+      return null;
     }
   }
 

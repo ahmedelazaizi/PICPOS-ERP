@@ -5,6 +5,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Settings widget for configuring and managing fingerprint attendance devices.
 ///
@@ -280,7 +281,7 @@ class _FingerprintSettingsWidgetState
       title:  Text(tr('أجهزة الحضور والبصمة')),
       subtitle:  Text(
         tr('اضغط لإعداد جهاز البصمة'),
-        style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+        style: TextStyle(color: context.picposMuted, fontSize: 12),
       ),
       initiallyExpanded: _isExpanded,
       onExpansionChanged: (v) => setState(() => _isExpanded = v),

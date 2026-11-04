@@ -339,6 +339,7 @@ extension OfflineSyncWorkerDrain on OfflineSyncWorker {
             // The admin can manually retry from the sync management dialog
             // after fixing the underlying data issue (e.g. re-sync users).
             final isPermanentError =
+                isPermanentSalesRejection(errorStr) ||
                 errorStr.contains('Strict Mapping Violation') ||
                 errorStr.contains('not found on server') ||
                 errorStr.contains('Validation Error: Valid userId') ||

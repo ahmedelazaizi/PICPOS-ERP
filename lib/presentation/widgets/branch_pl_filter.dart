@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// A compact filter bar for branch and cost center selection on financial reports
 class BranchPLFilterBar extends StatelessWidget {
@@ -33,20 +34,20 @@ class BranchPLFilterBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         border: Border(
-          bottom: BorderSide(color: AppColors.border.withValues(alpha: 0.3)),
+          bottom: BorderSide(color: context.picposHairline.withValues(alpha: 0.3)),
         ),
       ),
       child: Directionality(
         textDirection: TextDirection.rtl,
         child: Row(
           children: [
-            const Icon(PhosphorIconsBold.funnelSimple, size: 16, color: AppColors.textMuted),
+            Icon(PhosphorIconsBold.funnelSimple, size: 16, color: context.picposMuted),
             const SizedBox(width: 8),
             // Branch Filter
             if (branches.isNotEmpty) ...[
-              _filterDropdown<int?>(
+              _filterDropdown<int?>(context: context,
                 label: tr('الفرع'),
                 value: selectedBranchId,
                 items: [
@@ -62,7 +63,7 @@ class BranchPLFilterBar extends StatelessWidget {
             ],
             // Cost Center Filter
             if (costCenters.isNotEmpty) ...[
-              _filterDropdown<int?>(
+              _filterDropdown<int?>(context: context,
                 label: tr('مركز التكلفة'),
                 value: selectedCostCenterId,
                 items: [
@@ -93,7 +94,7 @@ class BranchPLFilterBar extends StatelessWidget {
     );
   }
 
-  Widget _filterDropdown<T>({
+  Widget _filterDropdown<T>({required BuildContext context,
     required String label,
     required T value,
     required List<DropdownMenuItem<T>> items,
@@ -103,13 +104,13 @@ class BranchPLFilterBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<T>(
           value: value,
-          hint: Text(label, style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
-          style: GoogleFonts.cairo(fontSize: 12, color: AppColors.textPrimary),
+          hint: Text(label, style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
+          style: GoogleFonts.cairo(fontSize: 12, color: context.picposText),
           isDense: true,
           items: items,
           onChanged: onChanged,

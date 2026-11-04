@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../domain/repositories/treasury_repository.dart';
 import 'treasury_safe_card.dart';
 import 'treasury_transactions_list.dart';
 
 import 'package:picpos_erp/l10n/app_localizations.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Feature 011 / Issue UX-SCROLL — same conversion as TreasuryCashTab.
 class TreasuryBankTab extends StatefulWidget {
@@ -61,7 +61,7 @@ class _TreasuryBankTabState extends State<TreasuryBankTab> {
                       return Center(
                         child: Text(
                           AppLocalizations.of(context)!.noBankAccounts,
-                          style: const TextStyle(color: AppColors.textMuted),
+                          style: TextStyle(color: context.picposMuted),
                         ),
                       );
                     }

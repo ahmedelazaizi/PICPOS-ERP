@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../core/theme/app_colors.dart';
+import '../core/theme/core_surface_colors.dart';
 
 final _currFmt = NumberFormat('#,##0.00');
 final _pctFmt = NumberFormat('#,##0.0');
@@ -304,7 +305,7 @@ class PeriodComparisonCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(comparison.metricName,
-              style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+              style: GoogleFonts.cairo(fontSize: 11, color: context.coreTextMuted)),
           const SizedBox(height: 4),
           Text('$currencySymbol ${_currFmt.format(comparison.currentValue)}',
               style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w700)),
@@ -328,7 +329,7 @@ class PeriodComparisonCard extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 'عن الفترة السابقة',
-                style: GoogleFonts.cairo(fontSize: 9, color: AppColors.textMuted),
+                style: GoogleFonts.cairo(fontSize: 11, color: context.coreTextMuted),
               ),
             ],
           ),

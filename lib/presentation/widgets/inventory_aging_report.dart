@@ -9,6 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 final _currFmt = NumberFormat('#,##0.00');
 
@@ -102,7 +103,7 @@ class InventoryAgingReportWidget extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: AppColors.border.withValues(alpha: 0.3)),
+        side: BorderSide(color: context.picposHairline.withValues(alpha: 0.3)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -117,7 +118,7 @@ class InventoryAgingReportWidget extends StatelessWidget {
                     style: GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.w700)),
                 const Spacer(),
                 Text(tr('{p0} صنف', {'p0': summary.totalItems}),
-                    style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+                    style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
               ],
             ),
             const SizedBox(height: 16),
@@ -132,14 +133,14 @@ class InventoryAgingReportWidget extends StatelessWidget {
                   children: [
                     SizedBox(
                       width: 80,
-                      child: Text(bucket, style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted)),
+                      child: Text(bucket, style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted)),
                     ),
                     Expanded(
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(3),
                         child: LinearProgressIndicator(
                           value: pct / 100,
-                          backgroundColor: AppColors.border.withValues(alpha: 0.15),
+                          backgroundColor: context.picposHairline.withValues(alpha: 0.15),
                           valueColor: AlwaysStoppedAnimation(
                             items.isNotEmpty ? items.first.ageColor : Colors.grey,
                           ),
@@ -160,7 +161,7 @@ class InventoryAgingReportWidget extends StatelessWidget {
                       width: 40,
                       child: Text(
                         '${pct.toStringAsFixed(0)}%',
-                        style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted),
+                        style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
                         textAlign: TextAlign.end,
                       ),
                     ),

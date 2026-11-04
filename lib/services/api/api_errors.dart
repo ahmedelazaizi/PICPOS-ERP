@@ -83,6 +83,7 @@ class ApiErrors {
     String prefix, {
     StackTrace? st,
     int statusCode = 500,
+    String? code,
   }) {
     if (isInternal(e)) {
       final id = newRequestId();
@@ -90,7 +91,11 @@ class ApiErrors {
       return _json(statusCode, {'error': internalCode, 'request_id': id});
     }
     if (st != null) debugPrint('[API] $prefix: $e\n$st');
-    return _json(statusCode, {'error': '$prefix: $e'});
+    final message = prefix.isEmpty ? e.toString() : '$prefix: $e';
+    return _json(statusCode, {
+      ...?(code == null ? null : <String, dynamic>{'success': false, 'code': code}),
+      'error': message,
+    });
   }
 
   /// بديل `{'success': false, 'error': e.toString()}`.

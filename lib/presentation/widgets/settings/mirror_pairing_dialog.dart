@@ -17,9 +17,9 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../services/mirror_pairing_service.dart';
 import '../../../services/network_service.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class MirrorPairingDialog extends StatefulWidget {
   const MirrorPairingDialog({super.key});
@@ -122,7 +122,7 @@ class _MirrorPairingDialogState extends State<MirrorPairingDialog> {
           children: [
              Text(
               tr('وضع المرآة: نسخة محلية متصلة بـ HQ-Server. الكتابة تُرسَل فوراً للسيرفر وتُعرَض على الجهاز. متاح لحساب المدير فقط.'),
-              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+              style: TextStyle(fontSize: 11, color: context.picposMuted),
             ),
             const SizedBox(height: 14),
             TextField(

@@ -6,6 +6,7 @@ import '../../../core/auth/password_policy.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/providers.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Dialog to force user to change their password on first login or after reset.
 ///
@@ -120,7 +121,7 @@ class _ForceChangePasswordDialogState extends ConsumerState<ForceChangePasswordD
             children: [
                Text(
                 tr('يجب عليك تغيير كلمة المرور الافتراضية للمتابعة.'),
-                style: const TextStyle(color: AppColors.textMuted),
+                style: TextStyle(color: context.picposMuted),
               ),
               const SizedBox(height: 24),
               if (_errorMessage != null)

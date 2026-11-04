@@ -25,6 +25,7 @@ import 'treasury_picpos_tokens.dart';
 import 'package:picpos_erp/l10n/app_localizations.dart';
 import '../../../data/providers/providers.dart';
 import '../../../core/constants/app_constants.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class TreasuryMetricsPanelPicpos extends ConsumerWidget {
   const TreasuryMetricsPanelPicpos({super.key, this.split});
@@ -231,7 +232,7 @@ class PicPosTreasurySplitChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelColor = onDark ? Colors.white70 : AppColors.textMuted;
+    final labelColor = onDark ? Colors.white70 : context.picposMuted;
     final valueColor =
         onDark ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color;
     final chipBg = onDark
@@ -304,7 +305,7 @@ class PicPosTreasurySplitChips extends StatelessWidget {
                       Text(
                         s.percentLabel,
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 11,
                           fontWeight: FontWeight.w800,
                           color: labelColor,
                         ),

@@ -40,7 +40,7 @@ extension _SettingsPicposAbout on _SettingsPicposScreenState {
             ),
              Text(
               tr('نظام الكاشير المتكامل'),
-              style: const TextStyle(color: AppColors.textMuted),
+              style: TextStyle(color: context.picposMuted),
             ),
             const SizedBox(height: 8),
             // ⚠️ **كان نصّاً ثابتاً `'الإصدار 1.0.0'`** — بلاغُ المالك
@@ -57,8 +57,8 @@ extension _SettingsPicposAbout on _SettingsPicposScreenState {
             // تقعان فعلاً بين إصدارَين تجريبيَّين، والرقمُ وحدَه لا يفرّقهما.
             Text(
               tr('الإصدار {p0} ({p1})', {'p0': AppConstants.appVersion, 'p1': AppConstants.appBuildNumber}),
-              style: const TextStyle(
-                color: AppColors.textMuted,
+              style: TextStyle(
+                color: context.picposMuted,
                 fontSize: 12,
               ),
             ),
@@ -125,9 +125,9 @@ extension _SettingsPicposAbout on _SettingsPicposScreenState {
                 ],
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 '© 2026 ${Brand.vendorName}',
-                style: TextStyle(color: AppColors.textMuted, fontSize: 10),
+                style: TextStyle(color: context.picposMuted, fontSize: 11),
               ),
             ],
           ],
@@ -322,7 +322,7 @@ extension _SettingsPicposAbout on _SettingsPicposScreenState {
           const SizedBox(width: 4),
           Text(
             label,
-            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 11, color: context.picposMuted),
           ),
         ],
       ),

@@ -73,12 +73,11 @@ class TemplatedInvoiceService {
     required List<Map<String, dynamic>> items,
     InvoiceTableSetting? settings,
     double paperWidthMm = 79,
-  }) =>
-      _TemplatedItemsTable.debugRenderItemsTable(
-        items: items,
-        settings: settings,
-        paperWidthMm: paperWidthMm,
-      );
+  }) => _TemplatedItemsTable.debugRenderItemsTable(
+    items: items,
+    settings: settings,
+    paperWidthMm: paperWidthMm,
+  );
 
   /// إضافاتُ كلّ البنود مجموعةً بلا تكرار — فارغةٌ حين لا إضافات.
   static String extractItemAdditions(List<Map<String, dynamic>> items) =>
@@ -105,7 +104,41 @@ class TemplatedInvoiceService {
     AppDatabase db,
     String type, {
     String? category,
+    String? documentType,
+    int? branchId,
+    int? printerId,
+    String locale = 'ar',
   }) async {
+    // القالبُ الفعّال = ما تحسمه الطباعةُ فعلاً: الروابطُ (`template_bindings`)
+    // أولاً ثم `is_default`. بدون هذا يُطبع بالمولّد الثابت صامتاً لمن ربط
+    // قالباً بنوع مستندٍ ولا افتراضيَّ له بالفئة. `locale` افتراضُه كـ
+    // `printWithTemplate` كي يتطابق الحسمان. لا نستنتج طابعةً إلا لفئات
+    // المسارات المباشرة التي تستخدمها فعلاً؛ فالمعاينات والكشوف قد لا تختار
+    // جهازاً بعد.
+    final printerPurpose = category == 'kitchen'
+        ? 'kitchen'
+        : (category == 'receipt' ||
+              category == 'sales_return' ||
+              category == 'shift_closing')
+        ? 'pos_receipt'
+        : null;
+    final effectivePrinterId =
+        printerId ??
+        (printerPurpose == null
+            ? null
+            : (await db.getActivePrinterByPurpose(printerPurpose))?.id);
+    if (documentType != null) {
+      final bound = await _TemplatedInvoiceResolution.resolveBound(
+        db: db,
+        type: type,
+        category: category ?? type,
+        documentType: documentType,
+        branchId: branchId,
+        printerId: effectivePrinterId,
+        locale: locale,
+      );
+      if (bound != null) return true;
+    }
     if (category != null) {
       // When a specific category is requested, only check that category.
       // Do NOT fall back to any thermal template — kitchen ≠ receipt.
@@ -148,11 +181,13 @@ class TemplatedInvoiceService {
     String? orderNumber,
     String? platformOrderNumber,
     String locale = 'ar',
+
     /// مبلغا الاسترداد في مرتجع المبيعات — يحلّان `cash_amount` و
     /// `bank_amount`. كانا يُرجعان `''` دائماً («حقولٌ لم تصل الخدمةَ بعد»)،
     /// فمرتجعٌ نصفُه نقدٌ ونصفُه بنكيٌّ يُطبع بلا تفصيلٍ للاسترداد.
     double? cashAmount,
     double? bankAmount,
+
     /// لقطةُ إقفال الوردية — تُمرَّر حين يكون المطبوعُ تقريرَ وردية
     /// (`type: 'shift_closing'`)، فتُحلّ بها عناصرُ `shift_*` التي يعرضها
     /// محرّرُ القوالب. `null` لكلّ مطبوعٍ آخر.
@@ -174,6 +209,9 @@ class TemplatedInvoiceService {
     /// فرعُ المستند — رابطةٌ مخصَّصةٌ لفرعٍ تتقدّم على العامّة.
     int? branchId,
 
+    /// الطابعةُ المختارة — تتيح للمستوى الأخصّ في سلسلة الحسم أن يفوز.
+    int? printerId,
+
     /// قرارُ رمز الإيصال — ضريبيٌّ أو غيرُ ضريبيٍّ أو لا شيء.
     ///
     /// `null` تُبقي السلوكَ القديم (رقمُ الفاتورة) للمستندات التي ليست إيصالَ
@@ -190,8 +228,7 @@ class TemplatedInvoiceService {
     /// يتحرّك سطرٌ واحدٌ في الراسم.
     ///
     /// ولا يغيّر هذا المطبوعَ بحرف: نفسُ الوثيقةِ تُبنى في الحالتين.
-    @visibleForTesting
-    bool debugBuildOnly = false,
+    @visibleForTesting bool debugBuildOnly = false,
   }) async {
     await _initFont();
 
@@ -199,10 +236,23 @@ class TemplatedInvoiceService {
     // الإعداد وتحرّرهما «معلومات الشركة»). تُقرأ هنا لا في كلّ منادٍ: عشراتُ
     // المنادين يمرّرون الاسمَ والرقمَ الضريبيَّ ولا أحدَ منهم يعرف هذين.
     // الفارغُ يبقى فارغاً فلا يُطبع شيء.
-    final companyNameEn =
-        (await db.getSettingValue(kCompanyNameEnSetting))?.trim();
-    final companyCrNumber =
-        (await db.getSettingValue(kCompanyCrNumberSetting))?.trim();
+    final companyNameEn = (await db.getSettingValue(
+      kCompanyNameEnSetting,
+    ))?.trim();
+    final companyCrNumber = (await db.getSettingValue(
+      kCompanyCrNumberSetting,
+    ))?.trim();
+
+    // إن لم يمرّر المنادي المعرّف، استعمل الطابعة الفعلية التي سيختارها
+    // الدفع المباشر. بذلك لا يسقط ربط الطابعة في المنادين الأقدم الذين لا
+    // يملكون معلومة الطابعة على واجهتهم.
+    final effectivePrinterId =
+        printerId ??
+        (directPrint
+            ? (await db.getActivePrinterByPurpose(
+                category == 'kitchen' ? 'kitchen' : 'pos_receipt',
+              ))?.id
+            : null);
 
     // Derive lookup type from category: kitchen templates have type='kitchen'
     final InvoiceTemplateWithData? templateData;
@@ -212,6 +262,7 @@ class TemplatedInvoiceService {
       category: category,
       documentType: documentType,
       branchId: branchId,
+      printerId: effectivePrinterId,
       locale: locale,
     );
 
@@ -220,16 +271,21 @@ class TemplatedInvoiceService {
     }
 
     // أيُّ قالبٍ أخرج هذا المستند — أوّلُ سؤالٍ عند أيّ بلاغِ طباعة.
-    unawaited(DiagnosticLogger.log(
+    unawaited(
+      DiagnosticLogger.log(
         DiagnosticLogger.printOut,
         'renderer=TemplatedInvoiceService type=$type category=$category '
         'template="${templateData.template.name}" '
         'paper=${templateData.template.paperWidth}mm '
         'elements=${templateData.elements.length} '
-        'shift=${shift != null}'));
+        'shift=${shift != null}',
+      ),
+    );
 
-    final elements =
-        await _TemplatedInvoiceResolution._withTaxRateLabels(db, orderElementsForPrint(templateData.elements));
+    final elements = await _TemplatedInvoiceResolution._withTaxRateLabels(
+      db,
+      orderElementsForPrint(templateData.elements),
+    );
 
     debugPrint(
       '[TemplatedInvoice] Template: "${templateData.template.name}", elements: ${elements.length}, items: ${items.length}',
@@ -286,6 +342,7 @@ class TemplatedInvoiceService {
         direction: locale == 'en' ? PaintDirection.ltr : PaintDirection.rtl,
         logoBytes: logoBytes,
         statement: statement,
+        shift: shift,
       );
       if (debugBuildOnly) return (bytes: bytes, printed: false);
       final printed = await _TemplatedInvoiceResolution._pushToPrinter(
@@ -293,6 +350,7 @@ class TemplatedInvoiceService {
         bytes: bytes,
         directPrint: directPrint,
         category: category,
+        printerId: effectivePrinterId,
       );
       return (bytes: bytes, printed: printed);
     }
@@ -305,8 +363,9 @@ class TemplatedInvoiceService {
     // The remaining 8mm is non-printable hardware margin (4mm each side).
     final paperWidthMm = templateData.template.paperWidth;
     final printableWidthMm = paperWidthMm <= 80
-        ? paperWidthMm - 8  // 80mm → 72mm actual printable
-        : paperWidthMm;      // A4 stays as-is
+        ? paperWidthMm -
+              8 // 80mm → 72mm actual printable
+        : paperWidthMm; // A4 stays as-is
     final canvasWidth = printableWidthMm * mmToPoints;
     final ts = templateData.tableSettings;
     _docDecimals = _resolveDocDecimals(ts);
@@ -318,7 +377,8 @@ class TemplatedInvoiceService {
     // Text wraps naturally — no clipping, fits within paper size.
 
     // --- Helper to resolve element type (wraps static) ---
-    String resolveType(InvoiceTemplateElement element) => _TemplatedInvoiceValues._resolveType(element);
+    String resolveType(InvoiceTemplateElement element) =>
+        _TemplatedInvoiceValues._resolveType(element);
 
     pw.Widget buildFlowWidget(InvoiceTemplateElement element) {
       final resolvedType = resolveType(element);
@@ -387,8 +447,10 @@ class TemplatedInvoiceService {
     // ── Group elements: consecutive inline (flexWidth < 100) → row ──
     // التسلسلُ يُحسم في `layoutSequenceForPrint` — بذرةٌ خالصةٌ تُقاس آلياً.
     // و`null` فيه = جدولُ الأصناف المُقحَم استدلالاً (قوالبُ بلا عنصرِ جدول).
-    final layoutSequence =
-        layoutSequenceForPrint(elements, hasItems: items.isNotEmpty);
+    final layoutSequence = layoutSequenceForPrint(
+      elements,
+      hasItems: items.isNotEmpty,
+    );
 
     final contentWidgets = <pw.Widget>[];
     int i = 0;
@@ -397,11 +459,13 @@ class TemplatedInvoiceService {
       final el = layoutSequence[i];
 
       if (el == null) {
-        contentWidgets.add(_TemplatedItemsTable._buildItemsTable(
-          items,
-          ts,
-          pw.TextStyle(font: _arabicFont, fontSize: ts?.fontSize ?? 9),
-        ));
+        contentWidgets.add(
+          _TemplatedItemsTable._buildItemsTable(
+            items,
+            ts,
+            pw.TextStyle(font: _arabicFont, fontSize: ts?.fontSize ?? 9),
+          ),
+        );
         i++;
         continue;
       }
@@ -431,9 +495,7 @@ class TemplatedInvoiceService {
             ),
           );
         } catch (e) {
-          debugPrint(
-            '[TemplatedInvoice] ❌ Row group FAILED: $e',
-          );
+          debugPrint('[TemplatedInvoice] ❌ Row group FAILED: $e');
         }
         i += group.length;
       } else {
@@ -456,10 +518,11 @@ class TemplatedInvoiceService {
       pdf,
       content: contentWidgets,
       canvasWidth: canvasWidth,
-      canvasHeightPts: _TemplatedInvoiceLayout._pageHeightPoints(templateData.template),
+      canvasHeightPts: _TemplatedInvoiceLayout._pageHeightPoints(
+        templateData.template,
+      ),
       marginPts: marginMm * mmToPoints,
-      direction:
-          locale == 'en' ? pw.TextDirection.ltr : pw.TextDirection.rtl,
+      direction: locale == 'en' ? pw.TextDirection.ltr : pw.TextDirection.rtl,
     );
 
     // البايتاتُ تُحسب مرّةً واحدةً ثم تُقدَّم لكلِّ مسارٍ — بدلَ استدعاء
@@ -472,6 +535,7 @@ class TemplatedInvoiceService {
       bytes: bytes,
       directPrint: directPrint,
       category: category,
+      printerId: effectivePrinterId,
     );
     return (bytes: bytes, printed: printed);
   }
@@ -479,8 +543,7 @@ class TemplatedInvoiceService {
   /// Print order of the template elements (see template_layout.dart).
   static List<InvoiceTemplateElement> orderElementsForPrint(
     List<InvoiceTemplateElement> all,
-  ) =>
-      _TemplatedInvoiceLayout.orderElementsForPrint(all);
+  ) => _TemplatedInvoiceLayout.orderElementsForPrint(all);
 
   /// عددُ صفحات مستندٍ بأصنافٍ معلومة — للقياس الآليّ للتقسيم.
   @visibleForTesting
@@ -518,8 +581,10 @@ class TemplatedInvoiceService {
   static List<InvoiceTemplateElement?> layoutSequenceForPrint(
     List<InvoiceTemplateElement> ordered, {
     required bool hasItems,
-  }) =>
-      _TemplatedInvoiceLayout.layoutSequenceForPrint(ordered, hasItems: hasItems);
+  }) => _TemplatedInvoiceLayout.layoutSequenceForPrint(
+    ordered,
+    hasItems: hasItems,
+  );
 
   /// كودُ طريقة الدفع → تسميتُه العربية.
   ///
@@ -547,28 +612,39 @@ class TemplatedInvoiceService {
 
   /// طباعة ملصقات باركود باستخدام القالب المحفوظ
   /// Prints barcode labels using a saved barcode template design.
-  /// Each label is laid out according to the template's paper size,
-  /// with multiple labels arranged in a grid on A4 pages.
+  /// Every copy is a PDF page with the template's physical label dimensions.
   static Future<bool> printBarcodeWithTemplate({
     required AppDatabase db,
     required String barcodeValue,
     required String productName,
     String? productCode,
     double? price,
+    double? weight,
+    double? total,
+    DateTime? packDate,
     String? companyName,
     int copies = 1,
     bool directPrint = true,
     int? templateId,
-  }) =>
-      _TemplatedBarcodeLabels.printBarcodeWithTemplate(
-        db: db,
-        barcodeValue: barcodeValue,
-        productName: productName,
-        productCode: productCode,
-        price: price,
-        companyName: companyName,
-        copies: copies,
-        directPrint: directPrint,
-        templateId: templateId,
-      );
+    @visibleForTesting bool debugBuildOnly = false,
+    @visibleForTesting void Function(Uint8List bytes)? onDebugBytes,
+    @visibleForTesting
+    Future<bool> Function(Uint8List bytes, String name)? pdfSender,
+  }) => _TemplatedBarcodeLabels.printBarcodeWithTemplate(
+    db: db,
+    barcodeValue: barcodeValue,
+    productName: productName,
+    productCode: productCode,
+    price: price,
+    weight: weight,
+    total: total,
+    packDate: packDate,
+    companyName: companyName,
+    copies: copies,
+    directPrint: directPrint,
+    templateId: templateId,
+    debugBuildOnly: debugBuildOnly,
+    onDebugBytes: onDebugBytes,
+    pdfSender: pdfSender,
+  );
 }

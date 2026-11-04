@@ -9,6 +9,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../services/client_write_interceptor.dart';
 
 import '../../settings/providers/settings_controller.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Widget for customizing receipt/invoice print settings
 class ReceiptSettingsWidget extends ConsumerStatefulWidget {
@@ -326,7 +327,7 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
                   margin: const EdgeInsetsDirectional.only(end: 16),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: context.picposHairline),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
@@ -588,7 +589,7 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
           decoration: BoxDecoration(
             color: isSelected ? AppColors.primary.withValues(alpha: 0.1) : null,
             border: Border.all(
-              color: isSelected ? AppColors.primary : AppColors.border,
+              color: isSelected ? AppColors.primary : context.picposHairline,
               width: isSelected ? 2 : 1,
             ),
             borderRadius: BorderRadius.circular(8),
@@ -597,7 +598,7 @@ class _ReceiptSettingsWidgetState extends ConsumerState<ReceiptSettingsWidget> {
             children: [
               Icon(
                 icon,
-                color: isSelected ? AppColors.primary : AppColors.textMuted,
+                color: isSelected ? AppColors.primary : context.picposMuted,
               ),
               const SizedBox(height: 4),
               Text(

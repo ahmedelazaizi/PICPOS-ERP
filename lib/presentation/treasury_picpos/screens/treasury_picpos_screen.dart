@@ -37,6 +37,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
+import '../widgets/cash_box_ledger_reconciliation_card.dart';
 // لوحُ المقاييس صار فوركاً في PicPos (قرارُ المالك 2026-08-22) — يضيف شريطَ
 // تقسيم الرصيد، وشاشةُ UralCash تبقى على الأصل.
 import '../widgets/treasury_metrics_panel_picpos.dart';
@@ -58,6 +59,7 @@ import '../../screens/treasury_screen.dart' show safeTransactionsProvider;
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 // نمطُ ديالوجات PicPos — غلافُ الحوارات المشترك.
 import '../../picpos_shell/picpos_dialog.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// شاشة الصناديق والخزينة بهوية PicPos. تُختار بالعلامة في app_main_screen
 /// (`Brand.isPicPos`). تعيد استخدام نفس `scopedSafesProvider`/
@@ -70,6 +72,24 @@ import '../../picpos_shell/picpos_dialog.dart';
 /// البحث بمنطق التصفية والمسح، التبويبات الخمسة (نقدي/بنوك/كليك/إغلاق
 /// يومي/تحليل تدفقات) وكل محتواها، حوار الإغلاق اليومي، حوار مراجعة
 /// الأرصدة.
+String cashFlowCategoryLabel(String category) => switch (category) {
+      'sales' => tr('مبيعات'),
+      'return' || 'sales_return' => tr('مرتجع'),
+      'purchase_return' => tr('مرتجع مشتريات'),
+      'expense' || 'delivery_recon' => tr('مصروفات'),
+      'salary' || 'salaries' => tr('رواتب'),
+      'payment' => tr('سندات صرف'),
+      'supplier_payment' => tr('موردين'),
+      'receipt' => tr('سندات قبض'),
+      'customer_payment' => tr('عملاء'),
+      'transfer' => tr('تحويل'),
+      'purchase' => tr('مشتريات'),
+      'advance' || 'employee_advance' => tr('سلف'),
+      'loan' => tr('قروض'),
+      'shift_closing' || 'closing' => tr('إغلاق الوردية'),
+      _ => category,
+    };
+
 class TreasuryPicposScreen extends ConsumerStatefulWidget {
   const TreasuryPicposScreen({super.key});
 
@@ -287,23 +307,12 @@ class _CashFlowTab extends ConsumerWidget {
         if (list.isEmpty) {
           return Center(
             child: Text(tr('لا توجد حركات مالية'),
-                style: GoogleFonts.cairo(color: AppColors.textMuted)),
+                style: GoogleFonts.cairo(color: context.picposMuted)),
           );
         }
 
         final cashFlowUseCase = ref.read(getCashFlowStatementUseCaseProvider);
         final result = cashFlowUseCase.executeFromTransactions(list);
-
-        final catLabels = <String, String>{
-          'customer_payment': tr('عملاء'),
-          'supplier_payment': tr('موردين'),
-          'sales': tr('مبيعات'),
-          'purchase': tr('مشتريات'),
-          'expense': tr('مصروفات'),
-          'salary': tr('رواتب'),
-          'advance': tr('سلف'),
-          'loan': tr('قروض'),
-        };
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -313,15 +322,15 @@ class _CashFlowTab extends ConsumerWidget {
               // KPI Row
               Row(
                 children: [
-                  _flowCard(tr('إجمالي الواردات'), result.totalInflows,
+                  _flowCard(context, tr('إجمالي الواردات'), result.totalInflows,
                       PhosphorIconsBold.arrowCircleDown,
                       const Color(0xFF059669)),
                   const SizedBox(width: 16),
-                  _flowCard(tr('إجمالي الصادرات'), result.totalOutflows,
+                  _flowCard(context, tr('إجمالي الصادرات'), result.totalOutflows,
                       PhosphorIconsBold.arrowCircleUp,
                       const Color(0xFFDC2626)),
                   const SizedBox(width: 16),
-                  _flowCard(tr('صافي التدفق'), result.netFlow,
+                  _flowCard(context, tr('صافي التدفق'), result.netFlow,
                       PhosphorIconsBold.arrowsLeftRight,
                       result.netFlow >= 0
                           ? const Color(0xFF059669)
@@ -337,7 +346,7 @@ class _CashFlowTab extends ConsumerWidget {
                         fontSize: 14, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
                 ...result.inflowsByCategory.entries.map((e) => _catBar(
-                      catLabels[e.key] ?? e.key,
+                      cashFlowCategoryLabel(e.key),
                       e.value,
                       result.totalInflows,
                       const Color(0xFF059669),
@@ -352,7 +361,7 @@ class _CashFlowTab extends ConsumerWidget {
                         fontSize: 14, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
                 ...result.outflowsByCategory.entries.map((e) => _catBar(
-                      catLabels[e.key] ?? e.key,
+                      cashFlowCategoryLabel(e.key),
                       e.value,
                       result.totalOutflows,
                       const Color(0xFFDC2626),
@@ -365,8 +374,7 @@ class _CashFlowTab extends ConsumerWidget {
     );
   }
 
-  Widget _flowCard(
-      String title, double amount, IconData icon, Color color) {
+  Widget _flowCard(BuildContext context, String title, double amount, IconData icon, Color color) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -387,7 +395,7 @@ class _CashFlowTab extends ConsumerWidget {
                     color: color)),
             Text(title,
                 style: GoogleFonts.cairo(
-                    fontSize: 11, color: AppColors.textMuted)),
+                    fontSize: 11, color: context.picposMuted)),
           ],
         ),
       ),
@@ -423,7 +431,7 @@ class _CashFlowTab extends ConsumerWidget {
                 '${value.toStringAsFixed(0)} (${(pct * 100).toStringAsFixed(0)}%)',
                 textAlign: TextAlign.end,
                 style: GoogleFonts.cairo(
-                    fontSize: 10, fontWeight: FontWeight.w600)),
+                    fontSize: 11, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -454,6 +462,7 @@ class _ReconciliationDialogState extends ConsumerState<_ReconciliationDialog> {
     final service = ref.read(reconciliationServiceProvider);
     final reports = await service.runFullReconciliation(autoFix: autoFix);
     if (mounted) {
+      ref.invalidate(cashBoxLedgerReconciliationProvider); // «إعادة الفحص»
       setState(() {
         _reports = reports;
         _loading = false;
@@ -561,7 +570,10 @@ class _ReconciliationDialogState extends ConsumerState<_ReconciliationDialog> {
         // Reports table
         Expanded(
           child: ListView(
-            children: _reports!.map((report) => _buildReportCard(report)).toList(),
+            children: [
+              ..._reports!.map((report) => _buildReportCard(report)),
+              const CashBoxLedgerReconciliationCard(), // المرحلة 7: 1111 والأستاذ
+            ],
           ),
         ),
       ],
@@ -581,14 +593,14 @@ class _ReconciliationDialogState extends ConsumerState<_ReconciliationDialog> {
         title: Text(report.entityType, style: GoogleFonts.cairo(fontWeight: FontWeight.w600)),
         subtitle: Text(
           tr('تم فحص {p0} — {p1} فرق{p2}', {'p0': report.totalChecked, 'p1': report.discrepanciesFound, 'p2': report.fixed > 0 ? tr(' — تم إصلاح {p0}', {'p0': report.fixed}) : ''}),
-          style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
+          style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
         ),
         children: report.discrepancies.map((d) => ListTile(
           dense: true,
           title: Text(d.entityName, style: GoogleFonts.cairo(fontSize: 12)),
           subtitle: Text(
             tr('مخزّن: {p0} | محسوب: {p1} | فرق: {p2}', {'p0': d.cachedValue.toStringAsFixed(AppConstants.decimalPlaces), 'p1': d.calculatedValue.toStringAsFixed(AppConstants.decimalPlaces), 'p2': d.difference.toStringAsFixed(AppConstants.decimalPlaces)}),
-            style: GoogleFonts.cairo(fontSize: 10, color: AppColors.error),
+            style: GoogleFonts.cairo(fontSize: 11, color: AppColors.error),
           ),
         )).toList(),
       ),

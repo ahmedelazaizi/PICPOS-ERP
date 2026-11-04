@@ -128,10 +128,12 @@ class TemplatePdfRenderer {
     bool directPrint = false,
     IPrintersRepository? printersRepo,
   }) async {
-    final pdfBytes = await generatePdf(
+    final pdfOutput = await _generatePdfWithMediaBox(
       templateData: templateData,
       invoiceData: invoiceData,
     );
+    final pdfBytes = pdfOutput.bytes;
+    final pageFormat = pdfOutput.format;
 
     if (directPrint || printersRepo != null) {
       printing_pkg.Printer? resolvedPrinter;
@@ -140,37 +142,35 @@ class TemplatePdfRenderer {
             await PrinterResolver.resolveReceiptPrinter(printersRepo);
       }
       if (resolvedPrinter != null) {
-        await printing_pkg.Printing.directPrintPdf(
-          printer: resolvedPrinter,
-          onLayout: (format) async => pdfBytes,
-        );
+        await PdfComputeHelper.directPrintBytes(printer: resolvedPrinter, bytes: pdfBytes, format: pageFormat);
         return true;
       }
     }
-    return PdfComputeHelper.layoutBytes(pdfBytes);
+    return PdfComputeHelper.layoutBytes(pdfBytes, format: pageFormat);
   }
 
   /// Generate PDF bytes from template.
   static Future<Uint8List> generatePdf({
     required InvoiceTemplateWithData templateData,
     required TemplateInvoiceData invoiceData,
-  }) async {
+  }) async =>
+      (await _generatePdfWithMediaBox(
+        templateData: templateData,
+        invoiceData: invoiceData,
+      )).bytes;
+
+  static Future<({Uint8List bytes, PdfPageFormat format})>
+      _generatePdfWithMediaBox({
+        required InvoiceTemplateWithData templateData,
+        required TemplateInvoiceData invoiceData,
+      }) async {
     final font = await _initFont();
     final pdf = await BaseGenerator.newDocument();
     final template = templateData.template;
 
-    // Paper dimensions (mm to points)
-    const mmToPt = 72.0 / 25.4;
-    final paperWidth = (template.paperWidth) * mmToPt;
-    final margins = _parseMargins(template.margins);
-
-    final pageFormat = PdfPageFormat(
-      paperWidth,
-      double.infinity,
-      marginTop: margins['top']! * mmToPt,
-      marginRight: margins['right']! * mmToPt,
-      marginBottom: margins['bottom']! * mmToPt,
-      marginLeft: margins['left']! * mmToPt,
+    final pageFormat = PdfComputeHelper.pageFormatForTemplate(
+      template.paperWidth,
+      template.margins,
     );
 
     // Sort elements by Y, then X
@@ -236,7 +236,11 @@ class TemplatePdfRenderer {
       ),
     );
 
-    return pdf.save();
+    final bytes = await pdf.save();
+    return (
+      bytes: bytes,
+      format: pdf.document.pdfPageList.pages.last.pageFormat,
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -875,20 +879,6 @@ class TemplatePdfRenderer {
   // ═══════════════════════════════════════════════════════════════════════════
   // HELPERS
   // ═══════════════════════════════════════════════════════════════════════════
-
-  static Map<String, double> _parseMargins(String json) {
-    try {
-      final m = jsonDecode(json) as Map<String, dynamic>;
-      return {
-        'top': (m['top'] as num?)?.toDouble() ?? 5,
-        'right': (m['right'] as num?)?.toDouble() ?? 5,
-        'bottom': (m['bottom'] as num?)?.toDouble() ?? 5,
-        'left': (m['left'] as num?)?.toDouble() ?? 5,
-      };
-    } catch (_) {
-      return {'top': 5, 'right': 5, 'bottom': 5, 'left': 5};
-    }
-  }
 
   static PdfColor _parseColor(String hex) {
     try {

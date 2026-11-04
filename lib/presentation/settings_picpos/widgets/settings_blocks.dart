@@ -142,7 +142,7 @@ class SettingsBlock extends StatelessWidget {
                           child: Text(
                             subtitle!,
                             style: text.labelSmall
-                                ?.copyWith(color: AppColors.textMuted),
+                                ?.copyWith(color: context.picposMuted),
                           ),
                         ),
                     ],
@@ -278,7 +278,7 @@ class _ChoiceCard<T> extends StatelessWidget {
                     shape: BoxShape.circle,
                     border: Border.all(
                       color:
-                          selected ? AppColors.primary : AppColors.textMuted,
+                          selected ? AppColors.primary : context.picposMuted,
                       width: 2,
                     ),
                   ),
@@ -313,7 +313,7 @@ class _ChoiceCard<T> extends StatelessWidget {
             Text(
               option.sub,
               style: text.labelSmall?.copyWith(
-                color: AppColors.textMuted,
+                color: context.picposMuted,
                 height: 1.5,
               ),
             ),
@@ -394,7 +394,7 @@ class SettingsValueRow extends StatelessWidget {
                       child: Text(
                         sub!,
                         style: text.labelSmall
-                            ?.copyWith(color: AppColors.textMuted),
+                            ?.copyWith(color: context.picposMuted),
                       ),
                     ),
                 ],
@@ -426,8 +426,8 @@ class SettingsValueRow extends StatelessWidget {
               ),
             if (onTap != null) ...[
               const SizedBox(width: 9),
-              const Icon(PhosphorIconsBold.caretLeft,
-                  size: 13, color: AppColors.textMuted),
+              Icon(PhosphorIconsBold.caretLeft,
+                  size: 13, color: context.picposMuted),
             ],
           ],
         ),
@@ -492,7 +492,7 @@ class SettingsSwitchRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, size: 19, color: AppColors.textMuted),
+          Icon(icon, size: 19, color: context.picposMuted),
           const SizedBox(width: 13),
           Expanded(
             child: Column(
@@ -508,7 +508,7 @@ class SettingsSwitchRow extends StatelessWidget {
                     child: Text(
                       sub!,
                       style: text.labelSmall
-                          ?.copyWith(color: AppColors.textMuted),
+                          ?.copyWith(color: context.picposMuted),
                     ),
                   ),
               ],
@@ -647,13 +647,13 @@ class _Tile extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: text.labelSmall
-                            ?.copyWith(color: AppColors.textMuted),
+                            ?.copyWith(color: context.picposMuted),
                       ),
                     ],
                   ),
                 ),
-                const Icon(PhosphorIconsBold.caretLeft,
-                    size: 14, color: AppColors.textMuted),
+                Icon(PhosphorIconsBold.caretLeft,
+                    size: 14, color: context.picposMuted),
               ],
             ),
             const SizedBox(height: 12),
@@ -676,7 +676,7 @@ class _Tile extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: text.labelSmall?.copyWith(
-                      color: tile.dot ?? AppColors.textMuted,
+                      color: tile.dot ?? context.picposMuted,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -753,7 +753,7 @@ class SettingsDangerRow extends StatelessWidget {
                           color: AppColors.error)),
                   Text(sub,
                       style: text.labelSmall
-                          ?.copyWith(color: AppColors.textMuted)),
+                          ?.copyWith(color: context.picposMuted)),
                 ],
               ),
             ),

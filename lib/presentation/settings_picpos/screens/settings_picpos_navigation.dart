@@ -51,7 +51,7 @@ extension _SettingsPicposNavigation on _SettingsPicposScreenState {
       children: [
         Text(
           tr('{p0} قسم مطابق', {'p0': matches.length}),
-          style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+          style: TextStyle(fontSize: 11, color: context.picposMuted),
         ),
         const SizedBox(height: 10),
         for (final s in matches)

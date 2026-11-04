@@ -41,6 +41,18 @@ extension AuditLevelX on AuditLevel {
   }
 }
 
+class _Pending {
+  _Pending(this.event, this.level, this.payload, this.userId, this.userName,
+      this.entityType, this.entityId);
+  final String event;
+  final AuditLevel level;
+  final Map<String, dynamic>? payload;
+  final int? userId;
+  final String userName;
+  final String entityType;
+  final int? entityId;
+}
+
 class AuditLog {
   static ActivityLogger? _logger;
 
@@ -49,6 +61,31 @@ class AuditLog {
   /// swallows events to `debugPrint` so early-boot errors don't crash.
   static void configure(ActivityLogger logger) {
     _logger = logger;
+    // Flush critical events recorded before the sink existed (e.g. the
+    // CLI recovery flags run before this point in main.dart).
+    final pending = List<_Pending>.of(_pending);
+    _pending.clear();
+    for (final p in pending) {
+      // ignore: discarded_futures
+      record(p.event,
+          level: p.level,
+          payload: p.payload,
+          userId: p.userId,
+          userName: p.userName,
+          entityType: p.entityType,
+          entityId: p.entityId);
+    }
+  }
+
+  /// Critical events recorded before [configure]; bounded.
+  static final List<_Pending> _pending = [];
+  static const int _maxPending = 50;
+
+  /// Test hook: forget the sink and any buffered events.
+  @visibleForTesting
+  static void resetForTest() {
+    _logger = null;
+    _pending.clear();
   }
 
   /// Records an audit event. Non-throwing by design — audit failures
@@ -72,7 +109,13 @@ class AuditLog {
     // development / crash reports even before configure() ran.
     debugPrint('[AUDIT][${level.label}] $event '
         '${payload == null ? '' : jsonEncode(payload)}');
-    if (logger == null) return;
+    if (logger == null) {
+      if (level == AuditLevel.critical && _pending.length < _maxPending) {
+        _pending.add(_Pending(event, level, payload, userId, userName,
+            entityType, entityId));
+      }
+      return;
+    }
     try {
       await logger.log(
         userId: userId,

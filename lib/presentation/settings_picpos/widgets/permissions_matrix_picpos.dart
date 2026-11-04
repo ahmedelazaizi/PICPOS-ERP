@@ -524,7 +524,7 @@ class _PermissionsMatrixDialogState
           Text(
             '${_roleCount(r.id)}',
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: FontWeight.w700,
               color: context.picposMuted,
             ),
@@ -943,7 +943,7 @@ class _PermissionsMatrixDialogState
     }
     if (name.contains('محاسب')) return const Color(0xFF8B5CF6);
     if (name.contains('مدير')) return const Color(0xFF4A80E8);
-    return AppColors.textMuted;
+    return context.picposMuted;
   }
 
   IconData _categoryIcon(String category) {

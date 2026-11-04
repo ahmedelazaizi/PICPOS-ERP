@@ -31,7 +31,7 @@ import '../pos/providers/cart_controller.dart';
 import '../pos/providers/cfd_controller.dart';
 import '../../core/navigation/dirty_screens_registry.dart';
 import 'app_shell_close_action.dart';
-import '../pos/logic/open_shift_gate.dart';
+import 'app_shell_cart_gate.dart';
 import '../widgets/inactivity_detector.dart';
 import '../../main_desktop.dart'
     if (dart.library.html) '../../main_web.dart'
@@ -39,6 +39,7 @@ import '../../main_desktop.dart'
 import 'screen_breadcrumbs.dart';
 import 'screen_tabs_bar.dart';
 import '../widgets/user_language_selector.dart';
+import 'theme_toggle_tile.dart';
 import '../../core/i18n/locale_provider.dart';
 import '../widgets/sync_management_dialog.dart';
 import '../widgets/sync_status_badge.dart';
@@ -46,6 +47,7 @@ import '../widgets/mirror_badge.dart';
 import '../widgets/mirror_status_strip.dart';
 import '../widgets/shell_banners.dart';
 import '../../services/mirror_state.dart';
+import '../picpos_shell/picpos_surface.dart';
 
 part 'nav_widgets.dart';
 
@@ -249,72 +251,8 @@ class _AppShellState extends ConsumerState<AppShell> {
     }
   }
 
-  void _showLogoutConfirmation() async {
-    // الوردية بتتبلّغ مش بتتمنع: تفضل مفتوحة والكاشير يكمّلها لما يرجع، أو
-    // اللي عنده `pos_shift_close` يقفلها من شاشة الورديات المفتوحة.
-    //
-    // قبل كده كان هنا إغلاق إجباري بلا تجاوز ولا للأدمن. المستخدم راجع القرار
-    // وطلب إلغاءه؛ الانضباط اتنقل لشاشة الورديات المتروكة بدل المنع.
-    await notifyOpenShift(
-      context: context,
-      ref: ref,
-      reason: tr('قبل تسجيل الخروج'),
-    );
-
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      builder: (context) => Directionality(
-        textDirection: Directionality.of(context),
-        child: AlertDialog(
-          title:  Row(
-            children: [
-              const Icon(PhosphorIconsBold.signOut, color: AppColors.error),
-              const SizedBox(width: 8),
-              Text(tr('تسجيل الخروج')),
-            ],
-          ),
-          content:  Text(tr('هل تريد تسجيل الخروج من النظام؟')),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child:  Text(tr('إلغاء')),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-              onPressed: () async {
-                Navigator.pop(context);
-                // #Forensic Log: Logout
-                final auth = ref.read(authProvider);
-                try {
-                  final logger = ref.read(activityLoggerProvider);
-                  await logger.logLogout(
-                    auth.user?.id ?? 0,
-                    auth.user?.displayName ?? 'Unknown',
-                  );
-                } catch (e) {
-                  debugPrint('[ActivityLog] Error: $e');
-                }
-                // Clear cart before logout
-                ref.read(cartControllerProvider.notifier).clearCart();
-                // Invalidate all user-scoped providers so the next login starts
-                // with a clean state rather than briefly showing the previous
-                // user's nav items / permissions.
-                ref.invalidate(userNavItemsProvider);
-                ref.invalidate(userAllowedScreensProvider);
-                ref.invalidate(currentUserPermissionsProvider);
-                ref.invalidate(userRoleProvider);
-                ref.invalidate(activeBranchIdProvider);
-                ref.read(authProvider.notifier).logout();
-                // Navigation handled reactively by MaterialApp.home watching authProvider
-              },
-              child:  Text(tr('خروج')),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  void _showLogoutConfirmation() =>
+      showLogoutConfirmation(context, ref, () => mounted);
 
   /// #3: manual «إغلاق البرنامج» — see app_shell_close_action.dart.
   void _showExitConfirmation() => runCloseAppAction(
@@ -603,14 +541,14 @@ class _AppShellState extends ConsumerState<AppShell> {
           decoration: InputDecoration(
             isDense: true,
             hintText: tr('ابحث عن شاشة أو ما بداخلها…'),
-            hintStyle: const TextStyle(
-              color: AppColors.textMuted,
+            hintStyle: TextStyle(
+              color: context.picposMuted,
               fontSize: 12,
             ),
-            prefixIcon: const Icon(
+            prefixIcon: Icon(
               PhosphorIconsBold.magnifyingGlass,
               size: 15,
-              color: AppColors.textMuted,
+              color: context.picposMuted,
             ),
             prefixIconConstraints:
                 const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -618,7 +556,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                 ? null
                 : IconButton(
                     icon: const Icon(PhosphorIconsBold.x, size: 13),
-                    color: AppColors.textMuted,
+                    color: context.picposMuted,
                     splashRadius: 14,
                     padding: EdgeInsets.zero,
                     constraints:
@@ -680,14 +618,14 @@ class _AppShellState extends ConsumerState<AppShell> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(PhosphorIconsBold.magnifyingGlass,
-                color: AppColors.textMuted, size: 22),
+            Icon(PhosphorIconsBold.magnifyingGlass,
+                color: context.picposMuted, size: 22),
             const SizedBox(height: 8),
             Text(
               tr('لا شاشةَ بهذا الاسم'),
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: AppColors.textMuted.withValues(alpha: 0.9),
+                color: context.picposMuted.withValues(alpha: 0.9),
                 fontSize: 12,
               ),
             ),
@@ -722,7 +660,7 @@ class _AppShellState extends ConsumerState<AppShell> {
               NavSearchKind.report => PhosphorIconsBold.fileText,
             },
             size: isReport ? 15 : 17,
-            color: isSelected ? AppColors.primary : AppColors.textMuted,
+            color: isSelected ? AppColors.primary : context.picposMuted,
           ),
           title: Text(
             // ⚠️ **تسميةُ النتيجة لا تسميةُ الشاشة.** كلُّ مداخل التقارير
@@ -739,9 +677,9 @@ class _AppShellState extends ConsumerState<AppShell> {
               ? null
               : Text(
                   tr(groupLabel),
-                  style: const TextStyle(
-                    color: AppColors.textMuted,
-                    fontSize: 10.5,
+                  style: TextStyle(
+                    color: context.picposMuted,
+                    fontSize: 11,
                   ),
                 ),
           onTap: () {
@@ -1250,7 +1188,7 @@ class _AppShellState extends ConsumerState<AppShell> {
                             CircleAvatar(
                               radius: 18,
                               backgroundColor: role == null
-                                  ? AppColors.textMuted
+                                  ? context.picposMuted
                                   : _getRoleColor(role.name),
                               child: Icon(
                                 role == null
@@ -1277,8 +1215,8 @@ class _AppShellState extends ConsumerState<AppShell> {
                                     ),
                                     Text(
                                       role == null ? '' : trData(role.name),
-                                      style: const TextStyle(
-                                        color: AppColors.textMuted,
+                                      style: TextStyle(
+                                        color: context.picposMuted,
                                         fontSize: 11,
                                       ),
                                     ),
@@ -1286,9 +1224,9 @@ class _AppShellState extends ConsumerState<AppShell> {
                                 ),
                               ),
                               IconButton(
-                                icon: const Icon(
+                                icon: Icon(
                                   PhosphorIconsBold.signOut,
-                                  color: AppColors.textMuted,
+                                  color: context.picposMuted,
                                   size: 20,
                                 ),
                                 onPressed: _showLogoutConfirmation,
@@ -1315,59 +1253,8 @@ class _AppShellState extends ConsumerState<AppShell> {
                       child: UserLanguageToggle(),
                     ),
 
-                  // Dark Mode Toggle (Sprint 18)
-                  if (_isExpanded)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      child: Consumer(
-                        builder: (context, ref, _) {
-                          final themeMode = ref.watch(themeModeProvider);
-                          final isDark = themeMode == ThemeMode.dark;
-                          return InkWell(
-                            borderRadius: BorderRadius.circular(8),
-                            onTap: () => ref.read(themeModeProvider.notifier).setDarkMode(!isDark),
-                            child: Container(
-                              height: 36,
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.06),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    isDark ? PhosphorIconsBold.sun : PhosphorIconsBold.moon,
-                                    color: isDark ? AppColors.warning : AppColors.textMuted,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      isDark ? tr('الوضع الفاتح') : tr('الوضع الداكن'),
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    height: 20,
-                                    width: 34,
-                                    child: Switch(
-                                      value: isDark,
-                                      onChanged: (v) => ref.read(themeModeProvider.notifier).setDarkMode(v),
-                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                      activeThumbColor: AppColors.warning,
-                                      inactiveThumbColor: AppColors.textMuted,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
+                  // Dark Mode Toggle — expanded: label+switch; collapsed: icon only.
+                  ThemeToggleTile(expanded: _isExpanded),
 
                   // Collapse / Hide Buttons (#12)
                   Row(
@@ -1405,16 +1292,16 @@ class _AppShellState extends ConsumerState<AppShell> {
                               child:  Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     PhosphorIconsBold.arrowUDownLeft,
-                                    color: AppColors.textMuted,
+                                    color: context.picposMuted,
                                     size: 14,
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
                                     tr('إخفاء'),
-                                    style: const TextStyle(
-                                      color: AppColors.textMuted,
+                                    style: TextStyle(
+                                      color: context.picposMuted,
                                       fontSize: 11,
                                     ),
                                   ),
@@ -1534,7 +1421,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     if (role == 'مدير النظام') return AppColors.error;
     if (role == 'مدير') return AppColors.warning;
     if (role == 'كاشير') return AppColors.info;
-    return AppColors.textMuted;
+    return context.picposMuted;
   }
 
   IconData _getRoleIcon(String? role) {

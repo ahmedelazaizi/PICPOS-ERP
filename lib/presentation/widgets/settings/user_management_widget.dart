@@ -162,7 +162,7 @@ class _UserManagementWidgetState extends ConsumerState<UserManagementWidget> {
       child: Text(
         text,
         style: TextStyle(
-          fontSize: 10,
+          fontSize: 11,
           color: color,
           fontWeight: FontWeight.bold,
         ),

@@ -8,6 +8,7 @@ import '../../data/providers/providers.dart';
 import '../../services/delta_pull_service.dart';
 import '../../services/sync/sync_worker.dart';
 import '../../services/sync_event_bus.dart';
+import 'package:picpos_erp/core/theme/readable_colors.dart';
 
 class SyncManagementDialog extends ConsumerStatefulWidget {
   const SyncManagementDialog({super.key});
@@ -369,7 +370,7 @@ class _OutboxTab extends ConsumerWidget {
               ),
               child: Text(
                 category,
-                style: TextStyle(fontSize: 10, color: statusColor, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 11, color: readableOn(context, statusColor), fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(width: 4),
@@ -384,7 +385,7 @@ class _OutboxTab extends ConsumerWidget {
               ),
               child:  Text(
                 tr('فشل نهائي'),
-                style: const TextStyle(fontSize: 10, color: AppColors.error, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 11, color: AppColors.error, fontWeight: FontWeight.bold),
               ),
             ),
         ],

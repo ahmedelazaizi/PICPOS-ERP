@@ -63,9 +63,9 @@ class TreasuryTabBarPicpos extends StatelessWidget {
                 style: const TextStyle(fontSize: 12),
                 decoration: InputDecoration(
                   hintText: searchHint ?? tr('بحث في الخزينة (سندات، صناديق)...'),
-                  hintStyle: const TextStyle(
+                  hintStyle: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textMuted,
+                    color: context.picposMuted,
                   ),
                   prefixIcon: const Icon(Icons.search, size: 16),
                   prefixIconConstraints: const BoxConstraints(
@@ -116,7 +116,7 @@ class _Tab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = active ? AppColors.primary : AppColors.textMuted;
+    final fg = active ? AppColors.primary : context.picposMuted;
 
     return InkWell(
       onTap: onTap,

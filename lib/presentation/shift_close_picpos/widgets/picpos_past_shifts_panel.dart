@@ -281,7 +281,7 @@ class _PicposPastShiftsPanelState
         else if (_shifts.isEmpty)
            _Notice(
             icon: PhosphorIconsBold.calendarX,
-            color: AppColors.textMuted,
+            color: context.picposMuted,
             text: tr('لا توجد ورديات في الفترة المحددة'),
           )
         else
@@ -349,7 +349,7 @@ class _ShiftTile extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-        color: isEven ? AppColors.card : AppColors.surface,
+        color: isEven ? AppColors.card : context.picposField,
         child: Row(
           children: [
             Container(
@@ -357,10 +357,10 @@ class _ShiftTile extends StatelessWidget {
               alignment: Alignment.center,
               child: Text(
                 '#${shift.id}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
-                  color: AppColors.textMuted,
+                  color: context.picposMuted,
                 ),
               ),
             ),
@@ -378,8 +378,8 @@ class _ShiftTile extends StatelessWidget {
                   Text(
                     '${fmt.format(shift.startTime)}'
                     '${shift.endTime != null ? '  ←  ${fmt.format(shift.endTime!)}' : ''}',
-                    style: const TextStyle(
-                        fontSize: 11, color: AppColors.textMuted),
+                    style: TextStyle(
+                        fontSize: 11, color: context.picposMuted),
                   ),
                 ],
               ),
@@ -399,12 +399,12 @@ class _ShiftTile extends StatelessWidget {
             if (!isOpen && shift.closingSnapshot == null)
                Tooltip(
                 message: tr('بدون لقطة أصلية — التقرير هيتعاد احتسابه'),
-                child: const Icon(PhosphorIconsBold.arrowsClockwise,
-                    size: 13, color: AppColors.textMuted),
+                child: Icon(PhosphorIconsBold.arrowsClockwise,
+                    size: 13, color: context.picposMuted),
               ),
             const SizedBox(width: 6),
-            const Icon(PhosphorIconsBold.caretLeft,
-                size: 14, color: AppColors.textMuted),
+            Icon(PhosphorIconsBold.caretLeft,
+                size: 14, color: context.picposMuted),
           ],
         ),
       ),
@@ -502,7 +502,7 @@ class _ShiftReportDialog extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: context.picposField,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: context.picposHairline),
                   ),
                   child: Wrap(
                     spacing: 24,
@@ -627,7 +627,7 @@ class _Meta extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+            style: TextStyle(fontSize: 11, color: context.picposMuted)),
         const SizedBox(height: 2),
         Text(value,
             style:
@@ -670,9 +670,9 @@ class _ReconHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const style = TextStyle(
-        fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textMuted);
-    return  Padding(
+    final style = TextStyle(
+        fontSize: 11, fontWeight: FontWeight.bold, color: context.picposMuted);
+    return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
         children: [
@@ -714,7 +714,7 @@ class _ReconRow extends StatelessWidget {
   Widget build(BuildContext context) {
     const cell = TextStyle(fontSize: 12);
     final varianceColor = unavailable
-        ? AppColors.textMuted
+        ? context.picposMuted
         : (variance.abs() < 0.01
             ? AppColors.success
             : (variance < 0 ? AppColors.error : AppColors.info));

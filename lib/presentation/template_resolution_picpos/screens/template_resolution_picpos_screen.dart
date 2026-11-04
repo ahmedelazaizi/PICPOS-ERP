@@ -26,6 +26,7 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_section_header.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../widgets/resolution_chain_panel.dart';
+import '../widgets/printer_binding_actions.dart';
 
 /// عرضُ لوحة السلسلة — ‏٤٣٠ في التصميم. وتحتَ [_twoPaneMinWidth] تُطوى
 /// وتبقى الجدولُ وحدَه: جدولُ ستّةِ أعمدةٍ لا يقلّ عن ٥٦٠ مقروءاً.
@@ -43,20 +44,31 @@ class TemplateResolutionPicposScreen extends ConsumerWidget {
     final branches = ref.watch(resolutionBranchOptionsProvider);
     final branchId = ref.watch(resolutionBranchProvider);
     final locale = ref.watch(resolutionLocaleProvider);
+    final printerId = ref.watch(resolutionPrinterProvider);
+    final printerOptions =
+        ref.watch(resolutionPrinterOptionsProvider).value ?? const [];
 
     final healthy = rows.where((r) => !r.health.needsAttention).length;
     final broken = rows.where((r) => r.health.needsAttention).length;
 
     return PicPosScreenScaffold(
       title: tr('حسم القوالب والطابعات'),
-      subtitle: tr('أي مستند ← أي قالب ← أي طابعة · المفتاح: نوع المستند + الفرع + الطابعة + اللغة'),
+      subtitle: tr(
+        'أي مستند ← أي قالب ← أي طابعة · المفتاح: نوع المستند + الفرع + الطابعة + اللغة',
+      ),
       icon: PhosphorIconsBold.gitFork,
       headerActions: [
         _HeaderStat(label: tr('مسارات الطباعة'), value: '${rows.length}'),
         _HeaderStat(
-            label: tr('حسم سليم'), value: '$healthy', tone: AppColors.success),
+          label: tr('حسم سليم'),
+          value: '$healthy',
+          tone: AppColors.success,
+        ),
         _HeaderStat(
-            label: tr('يحتاج معالجة'), value: '$broken', tone: AppColors.error),
+          label: tr('يحتاج معالجة'),
+          value: '$broken',
+          tone: AppColors.error,
+        ),
       ],
       subHeader: PicPosFilterStrip(
         children: [
@@ -68,7 +80,27 @@ class TemplateResolutionPicposScreen extends ConsumerWidget {
               onTap: () =>
                   ref.read(resolutionBranchProvider.notifier).set(b.id),
             ),
-          for (final l in  [
+          DropdownButton<int?>(
+            value: printerId,
+            underline: const SizedBox.shrink(),
+            hint: Text(tr('كل الطابعات')),
+            items: [
+              DropdownMenuItem<int?>(
+                value: null,
+                child: Text(tr('كل الطابعات')),
+              ),
+              for (final printer in printerOptions)
+                DropdownMenuItem<int?>(
+                  value: printer.id,
+                  child: Text(
+                    '${printer.name} · ${printer.paperWidthMm == null ? tr('عرض غير معروف') : '${printer.paperWidthMm} مم'}',
+                  ),
+                ),
+            ],
+            onChanged: (id) =>
+                ref.read(resolutionPrinterProvider.notifier).set(id),
+          ),
+          for (final l in [
             (code: 'ar', label: tr('عربي')),
             (code: 'en', label: 'English'),
           ])
@@ -95,6 +127,15 @@ class TemplateResolutionPicposScreen extends ConsumerWidget {
               selectedType: selected?.documentType,
               onSelect: (t) =>
                   ref.read(selectedDocumentTypeProvider.notifier).set(t),
+              onBind: (row) => openPrinterBinding(
+                context: context,
+                ref: ref,
+                row: row,
+                branchId: branchId,
+                locale: locale,
+              ),
+              onRemove: (row) =>
+                  removePrinterBinding(context: context, ref: ref, row: row),
             );
 
             if (box.maxWidth < _twoPaneMinWidth) return table;
@@ -134,18 +175,24 @@ class _HeaderStat extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label,
-              style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                  color: context.picposMuted)),
-          Text(value,
-              style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  height: 1.2,
-                  fontFeatures: const [FontFeature.tabularFigures()],
-                  color: tone ?? context.picposText)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+              color: context.picposMuted,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              height: 1.2,
+              fontFeatures: const [FontFeature.tabularFigures()],
+              color: tone ?? context.picposText,
+            ),
+          ),
         ],
       ),
     );
@@ -157,16 +204,20 @@ class _ResolutionTable extends StatelessWidget {
     required this.rows,
     required this.selectedType,
     required this.onSelect,
+    required this.onBind,
+    required this.onRemove,
   });
 
   final List<PrintResolutionRow> rows;
   final String? selectedType;
   final ValueChanged<String> onSelect;
+  final ValueChanged<PrintResolutionRow> onBind;
+  final ValueChanged<PrintResolutionRow> onRemove;
 
   @override
   Widget build(BuildContext context) {
     if (rows.isEmpty) {
-      return  PicPosEmptyState(
+      return PicPosEmptyState(
         icon: PhosphorIconsBold.gitFork,
         title: tr('لا مسارَ طباعةٍ مسجَّل'),
         hint: tr('أنواعُ المستندات تُعلَن في `TemplateResolver.documentTypes`'),
@@ -190,6 +241,8 @@ class _ResolutionTable extends StatelessWidget {
                 row: rows[i],
                 selected: rows[i].documentType == selectedType,
                 onTap: () => onSelect(rows[i].documentType),
+                onBind: () => onBind(rows[i]),
+                onRemove: () => onRemove(rows[i]),
               ),
             ),
           ),
@@ -200,7 +253,7 @@ class _ResolutionTable extends StatelessWidget {
 }
 
 /// نِسَبُ الأعمدة — نفسُ `grid-template-columns` في التصميم.
-const _columnFlex = <int>[19, 14, 19, 15, 9, 12];
+const _columnFlex = <int>[17, 12, 17, 13, 6, 9, 17];
 
 class _TableHead extends StatelessWidget {
   const _TableHead();
@@ -214,6 +267,7 @@ class _TableHead extends StatelessWidget {
       tr('الطابعة'),
       tr('النُّسخ'),
       tr('الحالة'),
+      tr('إجراءات'),
     ];
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
@@ -230,9 +284,10 @@ class _TableHead extends StatelessWidget {
                 titles[i],
                 textAlign: i == 4 ? TextAlign.center : TextAlign.start,
                 style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: context.picposMuted),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: context.picposMuted,
+                ),
               ),
             ),
         ],
@@ -246,11 +301,15 @@ class _ResolutionRowTile extends StatelessWidget {
     required this.row,
     required this.selected,
     required this.onTap,
+    required this.onBind,
+    required this.onRemove,
   });
 
   final PrintResolutionRow row;
   final bool selected;
   final VoidCallback onTap;
+  final VoidCallback onBind;
+  final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -288,7 +347,14 @@ class _ResolutionRowTile extends StatelessWidget {
               flex: _columnFlex[1],
               child: _TwoLine(
                 top: row.category,
-                bottom: row.paperLabel,
+                bottom:
+                    '${row.paperLabel} · ${row.branchId == null ? tr('كل الفروع') : tr('فرع {id}', {'id': row.branchId})} · ${row.locale == null
+                        ? tr('كل اللغات')
+                        : row.locale == 'ar'
+                        ? tr('عربي')
+                        : row.locale == 'en'
+                        ? 'English'
+                        : row.locale}',
                 topMono: true,
               ),
             ),
@@ -324,10 +390,11 @@ class _ResolutionRowTile extends StatelessWidget {
                 '${row.copies}',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                    color: context.picposText),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                  color: context.picposText,
+                ),
               ),
             ),
             Expanded(
@@ -335,8 +402,10 @@ class _ResolutionRowTile extends StatelessWidget {
               child: Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: tone.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(999),
@@ -344,11 +413,32 @@ class _ResolutionRowTile extends StatelessWidget {
                   child: Text(
                     tr(row.health.label),
                     style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w800,
-                        color: tone),
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                      color: tone,
+                    ),
                   ),
                 ),
+              ),
+            ),
+            Expanded(
+              flex: _columnFlex[6],
+              child: Wrap(
+                spacing: 2,
+                children: [
+                  TextButton.icon(
+                    onPressed: onBind,
+                    icon: const Icon(Icons.print_outlined, size: 14),
+                    label: Text(tr('ربط بطابعة'), maxLines: 1),
+                  ),
+                  if (row.printerId != null)
+                    IconButton(
+                      tooltip: tr('إزالة الربط'),
+                      visualDensity: VisualDensity.compact,
+                      onPressed: onRemove,
+                      icon: const Icon(Icons.link_off, size: 16),
+                    ),
+                ],
               ),
             ),
           ],
@@ -422,11 +512,11 @@ Color resolutionTone(BuildContext context, ResolutionHealth health) =>
     };
 
 IconData _healthIcon(ResolutionHealth health) => switch (health) {
-      ResolutionHealth.builtIn => PhosphorIconsBold.prohibit,
-      ResolutionHealth.paperMismatch => PhosphorIconsBold.warning,
-      ResolutionHealth.collision => PhosphorIconsBold.warningOctagon,
-      ResolutionHealth.unwired => PhosphorIconsBold.hourglass,
-      ResolutionHealth.branchScoped => PhosphorIconsBold.storefront,
-      ResolutionHealth.categoryOnly => PhosphorIconsBold.stack,
-      ResolutionHealth.bound => PhosphorIconsBold.checkCircle,
-    };
+  ResolutionHealth.builtIn => PhosphorIconsBold.prohibit,
+  ResolutionHealth.paperMismatch => PhosphorIconsBold.warning,
+  ResolutionHealth.collision => PhosphorIconsBold.warningOctagon,
+  ResolutionHealth.unwired => PhosphorIconsBold.hourglass,
+  ResolutionHealth.branchScoped => PhosphorIconsBold.storefront,
+  ResolutionHealth.categoryOnly => PhosphorIconsBold.stack,
+  ResolutionHealth.bound => PhosphorIconsBold.checkCircle,
+};

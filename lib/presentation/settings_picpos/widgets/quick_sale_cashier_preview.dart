@@ -120,7 +120,7 @@ class QuickSaleCashierPreview extends StatelessWidget {
             ),
             child: Text(_tag,
                 style: const TextStyle(
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF9EC1FF))),
           ),
@@ -190,14 +190,14 @@ class QuickSaleCashierPreview extends StatelessWidget {
                   child: Text(line.$1,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 10.5, color: _ink)),
+                      style: const TextStyle(fontSize: 11, color: _ink)),
                 ),
                 Text(line.$2,
-                    style: const TextStyle(fontSize: 10.5, color: _muted)),
+                    style: const TextStyle(fontSize: 11, color: _muted)),
                 const SizedBox(width: 10),
                 Text(line.$3,
                     style: const TextStyle(
-                        fontSize: 10.5,
+                        fontSize: 11,
                         fontWeight: FontWeight.w800,
                         color: _ink)),
               ]),
@@ -206,7 +206,7 @@ class QuickSaleCashierPreview extends StatelessWidget {
           Row(children: [
             Expanded(
               child: Text(tr('الخصم ({cap}٪)', {'cap': cap}),
-                  style: const TextStyle(fontSize: 10.5, color: _muted)),
+                  style: const TextStyle(fontSize: 11, color: _muted)),
             ),
              Text(tr('−١٩٥.٠٠'),
                 style: const TextStyle(
@@ -257,7 +257,7 @@ class QuickSaleCashierPreview extends StatelessWidget {
             Text(label,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                    fontSize: 9, fontWeight: FontWeight.w700, color: tint)),
+                    fontSize: 11, fontWeight: FontWeight.w700, color: tint)),
           ]),
         ),
       );
@@ -373,16 +373,16 @@ class QuickSaleCashierPreview extends StatelessWidget {
                 child: Text(line.$1,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 9, color: Colors.black87)),
+                    style: const TextStyle(fontSize: 11, color: Colors.black87)),
               ),
               Text(line.$3,
-                  style: const TextStyle(fontSize: 9, color: Colors.black87)),
+                  style: const TextStyle(fontSize: 11, color: Colors.black87)),
             ]),
           const Divider(height: 10),
            Row(children: [
             Expanded(
                 child: Text(tr('المطلوب'),
-                    style: const TextStyle(fontSize: 10, color: Colors.black))),
+                    style: const TextStyle(fontSize: 11, color: Colors.black))),
             Text(tr('١,٤١٣.٦٠'),
                 style: const TextStyle(
                     fontSize: 11,
@@ -395,7 +395,7 @@ class QuickSaleCashierPreview extends StatelessWidget {
       Text(
         auto ? tr('{p0} · تلقائي — قالب {p1}', {'p0': _opt('copies'), 'p1': _opt('tpl')})
             : tr('بانتظار نقرة الكاشير'),
-        style: const TextStyle(fontSize: 10.5, color: _muted),
+        style: const TextStyle(fontSize: 11, color: _muted),
       ),
       const SizedBox(height: 8),
       Row(children: [
@@ -426,7 +426,7 @@ class QuickSaleCashierPreview extends StatelessWidget {
             Text(label,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                    fontSize: 8.5,
+                    fontSize: 11,
                     color: on ? const Color(0xFF9EC1FF) : _muted)),
           ]),
         ),
@@ -442,7 +442,7 @@ class QuickSaleCashierPreview extends StatelessWidget {
               fontSize: 13, fontWeight: FontWeight.w800, color: Colors.white)),
       const SizedBox(height: 2),
        Text(tr('أحمد فؤاد · ٦س ١٢د'),
-          style: const TextStyle(fontSize: 10.5, color: _muted)),
+          style: const TextStyle(fontSize: 11, color: _muted)),
       const SizedBox(height: 10),
       for (final stat in [
         (tr('مبيعات الوردية'), tr('٤٢,٩١٠')),
@@ -453,7 +453,7 @@ class QuickSaleCashierPreview extends StatelessWidget {
           child: Row(children: [
             Expanded(
               child: Text(stat.$1,
-                  style: const TextStyle(fontSize: 10.5, color: _muted)),
+                  style: const TextStyle(fontSize: 11, color: _muted)),
             ),
             Text(stat.$2,
                 style: const TextStyle(
@@ -464,7 +464,7 @@ class QuickSaleCashierPreview extends StatelessWidget {
         ),
       if (blind)
          Text(tr('إغلاق أعمى — المتوقع مخفيٌّ حتى يُدخِل الكاشير العدّة'),
-            style: const TextStyle(fontSize: 9.5, height: 1.5, color: _muted)),
+            style: const TextStyle(fontSize: 11, height: 1.5, color: _muted)),
       const SizedBox(height: 8),
       if (_on('quickclose'))
         Container(

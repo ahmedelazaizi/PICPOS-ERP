@@ -241,20 +241,21 @@ class TemplateResolver {
     int? quickSaleTemplateId,
     int? categoryDefaultTemplateId,
   }) {
-    final mine =
-        bindings.where((b) => b.documentType == documentType).toList();
+    final mine = bindings.where((b) => b.documentType == documentType).toList();
 
     // المستوياتُ الأربعةُ الأولى — من الأخصِّ للأعمّ.
     // الشرطُ في كلٍّ منها: الحقلُ المحدَّدُ يطابق، والحقلُ المعمَّمُ `null`.
     // فالرابطةُ لا تُحسب في مستوىً أعمَّ من درجتها ولا أخصَّ منها.
     for (var level = 1; level <= 4; level++) {
-      final matches = mine.where((b) => _matchesLevel(
-            b,
-            level,
-            branchId: branchId,
-            printerId: printerId,
-            locale: locale,
-          ));
+      final matches = mine.where(
+        (b) => _matchesLevel(
+          b,
+          level,
+          branchId: branchId,
+          printerId: printerId,
+          locale: locale,
+        ),
+      );
 
       if (matches.isEmpty) continue;
 
@@ -301,8 +302,7 @@ class TemplateResolver {
   }) {
     switch (level) {
       case 1: // مستند + فرع + طابعة + لغة
-        return b.branchId != null &&
-            b.branchId == branchId &&
+        return b.branchId == branchId &&
             b.printerId != null &&
             b.printerId == printerId &&
             b.locale != null &&
@@ -345,8 +345,7 @@ class TemplateResolver {
     int? quickSaleTemplateId,
     int? categoryDefaultTemplateId,
   }) {
-    final mine =
-        bindings.where((b) => b.documentType == documentType).toList();
+    final mine = bindings.where((b) => b.documentType == documentType).toList();
 
     // ── نجمةٌ وشَرطةٌ ليستا سواءً ────────────────────────────────────────
     // `*` = **المستوى** يعمّم هذا الحقل، فأيُّ قيمةٍ تمرّ.
@@ -389,17 +388,20 @@ class TemplateResolver {
     int? winnerTemplate;
 
     for (var level = 1; level <= 4 && winner == 0; level++) {
-      final matches = mine.where((r) => _matchesLevel(
-            r,
-            level,
-            branchId: branchId,
-            printerId: printerId,
-            locale: locale,
-          ));
+      final matches = mine.where(
+        (r) => _matchesLevel(
+          r,
+          level,
+          branchId: branchId,
+          printerId: printerId,
+          locale: locale,
+        ),
+      );
       if (matches.isEmpty) continue;
       winner = level;
-      winnerTemplate =
-          matches.reduce((a, c) => c.priority > a.priority ? c : a).templateId;
+      winnerTemplate = matches
+          .reduce((a, c) => c.priority > a.priority ? c : a)
+          .templateId;
     }
 
     if (winner == 0 && quickSaleTemplateId != null) {
@@ -425,8 +427,8 @@ class TemplateResolver {
           state: level == winner
               ? ResolutionStepState.matched
               : level < winner
-                  ? ResolutionStepState.missed
-                  : ResolutionStepState.notTried,
+              ? ResolutionStepState.missed
+              : ResolutionStepState.notTried,
           templateId: level == winner ? winnerTemplate : null,
         ),
     ];
@@ -436,10 +438,11 @@ class TemplateResolver {
   static List<BindingRule> conflictsWith(
     BindingRule incoming,
     List<BindingRule> existing,
-  ) =>
-      existing
-          .where((b) =>
-              b.conflictKey == incoming.conflictKey &&
-              b.templateId != incoming.templateId)
-          .toList(growable: false);
+  ) => existing
+      .where(
+        (b) =>
+            b.conflictKey == incoming.conflictKey &&
+            b.templateId != incoming.templateId,
+      )
+      .toList(growable: false);
 }

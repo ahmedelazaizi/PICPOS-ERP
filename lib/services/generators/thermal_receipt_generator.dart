@@ -157,6 +157,7 @@ class ThermalReceiptGenerator extends BaseGenerator {
       ),
     );
 
+    final printOutput = await PdfComputeHelper.saveToBytesWithMediaBox(pdf);
     // Resolve printer from Repository config, fallback to system default
     Printer? resolvedPrinter;
     if (printersRepo != null) {
@@ -165,9 +166,10 @@ class ThermalReceiptGenerator extends BaseGenerator {
 
     if (resolvedPrinter != null) {
       debugPrint('[ThermalReceipt] Printing to: ${resolvedPrinter.name}');
-      await Printing.directPrintPdf(
+      await PdfComputeHelper.directPrintBytes(
         printer: resolvedPrinter,
-        onLayout: (format) async => pdf.save(),
+        bytes: printOutput.bytes,
+        format: printOutput.format,
       );
       // Auto-open cash drawer after print
       await CashDrawerService().openDrawer(printerName: resolvedPrinter.name);
@@ -178,14 +180,15 @@ class ThermalReceiptGenerator extends BaseGenerator {
         final fallback =
             printers.where((p) => p.isDefault).firstOrNull ?? printers.first;
         debugPrint('[ThermalReceipt] Fallback to: ${fallback.name}');
-        await Printing.directPrintPdf(
+        await PdfComputeHelper.directPrintBytes(
           printer: fallback,
-          onLayout: (format) async => pdf.save(),
+          bytes: printOutput.bytes,
+          format: printOutput.format,
         );
         await CashDrawerService().openDrawer(printerName: fallback.name);
       } else {
         debugPrint('[ThermalReceipt] No printers, showing dialog');
-        return PdfComputeHelper.layoutPdf(pdf);
+        return PdfComputeHelper.layoutBytes(printOutput.bytes, format: printOutput.format);
       }
     }
     // الإرسالُ المباشرُ إلى طابعةٍ مضبوطةٍ لا يُلغى من حوار.

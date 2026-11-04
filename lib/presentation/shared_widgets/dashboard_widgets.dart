@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
-/// Summary card widget - const optimized
+/// Summary card widget - optimized
 ///
 /// Reusable dashboard summary card with icon, title, and value
 class SummaryCard extends StatelessWidget {
@@ -53,19 +54,19 @@ class SummaryCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   if (onTap != null)
-                    const Icon(
+                    Icon(
                       PhosphorIconsBold.arrowRight,
                       size: 16,
-                      color: AppColors.textMuted,
+                      color: context.picposMuted,
                     ),
                 ],
               ),
               const SizedBox(height: 12),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.textMuted,
+                  color: context.picposMuted,
                 ),
               ),
               const SizedBox(height: 4),
@@ -105,7 +106,7 @@ class AlertBadge extends StatelessWidget {
         count > 99 ? '99+' : count.toString(),
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -148,7 +149,7 @@ class StatusDot extends StatelessWidget {
   }
 }
 
-/// Empty state widget - const optimized
+/// Empty state widget - optimized
 class EmptyStateWidget extends StatelessWidget {
   final IconData icon;
   final String message;
@@ -172,12 +173,12 @@ class EmptyStateWidget extends StatelessWidget {
           Icon(
             icon,
             size: 64,
-            color: AppColors.textMuted.withValues(alpha: 0.5),
+            color: context.picposMuted.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(
             message,
-            style: const TextStyle(fontSize: 16, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 16, color: context.picposMuted),
             textAlign: TextAlign.center,
           ),
           if (actionLabel != null && onAction != null) ...[

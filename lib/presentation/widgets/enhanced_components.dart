@@ -149,7 +149,7 @@ class EnhancedCategoryFilter extends StatelessWidget {
       items.add(_buildCategoryItem(
         context: context,
         id: cat.id,
-        name: cat.name,
+        name: trData(cat.name),
         icon: cat.icon,
         color: cat.color ?? AppColors.primary,
         isSelected: selectedId == cat.id,
@@ -256,7 +256,7 @@ class EnhancedCategoryFilter extends StatelessWidget {
                       ? _categoryLabelDark
                       : (isSelected
                           ? AppColors.primary
-                          : AppColors.textSecondary),
+                          : context.picposSecondary),
                   letterSpacing: -0.2,
                 ),
                 // سطران لا سطر — بلاغُ المالك 2026-08-29 بالصورة: «صناعة
@@ -461,8 +461,8 @@ class _EnhancedSummaryCardState extends State<EnhancedSummaryCard> {
                       style: TextStyle(
                         fontSize: 12,
                         color: isDark
-                            ? AppColors.textMuted
-                            : AppColors.textSecondary,
+                            ? context.picposMuted
+                            : context.picposSecondary,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -481,8 +481,8 @@ class _EnhancedSummaryCardState extends State<EnhancedSummaryCard> {
                         style: TextStyle(
                           fontSize: 11,
                           color: isDark
-                              ? AppColors.textMuted
-                              : AppColors.textSecondary,
+                              ? context.picposMuted
+                              : context.picposSecondary,
                         ),
                       ),
                     ],
@@ -568,7 +568,7 @@ class _EnhancedTableRowState extends State<EnhancedTableRow> {
 
     Color bgColor;
     if (widget.isHeader) {
-      bgColor = isDark ? AppColors.secondaryDark : AppColors.surface;
+      bgColor = isDark ? AppColors.secondaryDark : context.picposField;
     } else if (_isHovered) {
       bgColor = isDark
           ? AppColors.primary.withValues(alpha: 0.1)
@@ -596,7 +596,7 @@ class _EnhancedTableRowState extends State<EnhancedTableRow> {
             color: bgColor,
             border: Border(
               bottom: BorderSide(
-                color: isDark ? AppColors.borderDark : AppColors.border,
+                color: isDark ? AppColors.borderDark : context.picposHairline,
                 width: 0.5,
               ),
             ),
@@ -658,7 +658,7 @@ class SectionHeader extends StatelessWidget {
               style: TextStyle(
                 fontSize: fontSize,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : AppColors.textPrimary,
+                color: isDark ? Colors.white : context.picposText,
               ),
             ),
           ),
@@ -724,10 +724,10 @@ class EmptyStateWidget extends StatelessWidget {
             const SizedBox(height: 20),
             Text(
               message,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: context.picposText,
               ),
               textAlign: TextAlign.center,
             ),
@@ -735,9 +735,9 @@ class EmptyStateWidget extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 description!,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
-                  color: AppColors.textMuted,
+                  color: context.picposMuted,
                 ),
                 textAlign: TextAlign.center,
               ),

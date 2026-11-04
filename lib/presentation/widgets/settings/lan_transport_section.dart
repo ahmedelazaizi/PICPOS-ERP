@@ -46,7 +46,7 @@ class _LanTransportSectionState extends State<LanTransportSection> {
         if (!legacy && _fingerprint != null) ...[
           const SizedBox(height: 4),
           Text(tr('بصمة شهادة الخادم (SHA-256)'), style: const TextStyle(fontSize: 11)),
-          SelectableText(_fingerprint!, style: const TextStyle(fontSize: 10, fontFamily: 'monospace')),
+          SelectableText(_fingerprint!, style: const TextStyle(fontSize: 11, fontFamily: 'monospace')),
         ],
         SwitchListTile(
           dense: true,

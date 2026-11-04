@@ -3,6 +3,56 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:picpos_erp/core/theme/app_colors.dart';
 
+/// حوارُ منعٍ عند التنقّل عن البيع أو تسجيل الخروج وسلّةُ البيع غير فارغة.
+/// خياران فقط (قرارُ مالكٍ): [holdLabel] «تعليق الفاتورة ثم المتابعة» ⇒ `true`،
+/// أو «إلغاء والبقاء» ⇒ `false` (وكذلك الإغلاق بالنقر خارجاً). لا خيارَ
+/// متابعةٍ بلا تعليق أو تفريغ. التعليقُ نفسُه يجريه المستدعي.
+Future<bool> showCartNotEmptyBlockedDialog(
+  BuildContext context, {
+  required String title,
+  required String holdLabel,
+}) async {
+  final proceed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => Directionality(
+      textDirection: TextDirection.rtl,
+      child: AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(
+              PhosphorIconsBold.shoppingCartSimple,
+              color: AppColors.warning,
+              size: 28,
+            ),
+            const SizedBox(width: 10),
+            Flexible(child: Text(title)),
+          ],
+        ),
+        content: Text(
+          tr('السلة غير فارغة: أكمل البيع أو أفرغ السلة'),
+          style: const TextStyle(height: 1.6),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(tr('إلغاء والبقاء')),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.warning,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(holdLabel),
+          ),
+        ],
+      ),
+    ),
+  );
+  return proceed ?? false;
+}
+
 /// يعرض حواراً يمنع إغلاقَ البرنامج بسبب أصنافٍ في سلة البيع.
 ///
 /// زرٌّ واحدٌ عمداً — لا «أغلق على أي حال» (طلبُ مالكٍ 2026-08-17: منعٌ لا

@@ -1,6 +1,7 @@
 import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// يُصدَّر كي تُعلن الشاشاتُ عرضَ عمودٍ بعينه دون أن تستورد الحزمةَ كلُّ
 /// واحدةٍ بنفسها. عمودُ أزرارِ الإجراءات يحتاجه تحديداً: الأزرارُ عرضٌ
@@ -59,7 +60,7 @@ class AppDataTable extends StatelessWidget {
       );
     }
 
-    final styledRows = zebra ? _applyZebraStripes(rows) : rows;
+    final styledRows = zebra ? _applyZebraStripes(rows, context.picposField) : rows;
 
     // Cluster 024 / Issue 1 (perf) — switch from Flutter's stock DataTable
     // to DataTable2 (data_table_2 package). Stock DataTable builds every
@@ -123,7 +124,7 @@ class AppDataTable extends StatelessWidget {
 
   /// يضيف تظليل بالتناوب لتمييز الصفوف. لا يتجاوز أي تظليل اختاره المستخدم
   /// (الصفوف المختارة تحتفظ بلونها الأصلي).
-  List<DataRow> _applyZebraStripes(List<DataRow> source) {
+  List<DataRow> _applyZebraStripes(List<DataRow> source, Color zebra) {
     return List<DataRow>.generate(source.length, (i) {
       final row = source[i];
       // إذا الصف عنده color مخصص (مثل تمييز الصفوف الملغية) سيبه على حاله
@@ -139,7 +140,7 @@ class AppDataTable extends StatelessWidget {
           if (states.contains(WidgetState.hovered)) {
             return AppColors.primary.withValues(alpha: 0.04);
           }
-          return AppColors.surface.withValues(alpha: 0.5);
+          return zebra.withValues(alpha: 0.5);
         }),
         cells: row.cells,
       );

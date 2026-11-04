@@ -202,10 +202,10 @@ class TreasuryActionCardPicpos extends StatelessWidget {
                       subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 10.5,
+                      style: TextStyle(
+                        fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textMuted,
+                        color: context.picposMuted,
                       ),
                     ),
                   ],

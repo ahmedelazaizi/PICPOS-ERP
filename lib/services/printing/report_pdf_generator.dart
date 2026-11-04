@@ -4,10 +4,14 @@ import 'package:pdf/widgets.dart' as pw;
 import 'printing_models.dart';
 import '../../core/constants/app_constants.dart';
 import 'pdf_compute_helper.dart';
+import 'barcode_label_printer.dart';
+import 'barcode_label_spec.dart';
 import 'package:intl/intl.dart';
 import '../generators/base_generator.dart' hide InvoiceItem, StatementItem;
 import '../../core/config/brand.dart';
 import '../../domain/printing/company_identity.dart';
+import '../../core/i18n/tr.dart';
+import 'financial_statement_pdf_sections.dart';
 
 class ReportPdfGenerator {
   static pw.Font? _arabicFont;
@@ -37,27 +41,29 @@ class ReportPdfGenerator {
     String title = 'فاتورة مبيعات',
     String? printedBy,
   }) async {
-    return PdfComputeHelper.layoutPdf(await buildSalesInvoiceDocument(
-      invoiceNumber: invoiceNumber,
-      date: date,
-      customerName: customerName,
-      items: items,
-      subtotal: subtotal,
-      discount: discount,
-      tax: tax,
-      total: total,
-      paid: paid,
-      companyName: companyName,
-      companyAddress: companyAddress,
-      companyPhone: companyPhone,
-      companyTaxId: companyTaxId,
-      companyNameEn: companyNameEn,
-      companyCrNumber: companyCrNumber,
-      locale: locale,
-      notes: notes,
-      title: title,
-      printedBy: printedBy,
-    ));
+    return PdfComputeHelper.layoutPdf(
+      await buildSalesInvoiceDocument(
+        invoiceNumber: invoiceNumber,
+        date: date,
+        customerName: customerName,
+        items: items,
+        subtotal: subtotal,
+        discount: discount,
+        tax: tax,
+        total: total,
+        paid: paid,
+        companyName: companyName,
+        companyAddress: companyAddress,
+        companyPhone: companyPhone,
+        companyTaxId: companyTaxId,
+        companyNameEn: companyNameEn,
+        companyCrNumber: companyCrNumber,
+        locale: locale,
+        notes: notes,
+        title: title,
+        printedBy: printedBy,
+      ),
+    );
   }
 
   /// Builds the A4 sales-invoice document. Split out of [printSalesInvoice] so
@@ -158,14 +164,7 @@ class ReportPdfGenerator {
           pw.SizedBox(height: 20),
           // Last element in `build`, so it flows onto whatever page the table
           // ends on (or its own) instead of being laid out off-page.
-          _buildTotalsSection(
-            subtotal,
-            discount,
-            tax,
-            total,
-            paid,
-            remaining,
-          ),
+          _buildTotalsSection(subtotal, discount, tax, total, paid, remaining),
         ],
       ),
     );
@@ -178,7 +177,8 @@ class ReportPdfGenerator {
     int? pagesCount,
   }) {
     final now = DateTime.now();
-    final dateStr = '${now.year}/${now.month.toString().padLeft(2, '0')}/${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+    final dateStr =
+        '${now.year}/${now.month.toString().padLeft(2, '0')}/${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
     return pw.Column(
       children: [
         pw.Divider(),
@@ -233,16 +233,18 @@ class ReportPdfGenerator {
     String? companyName,
     bool isReturn = false,
   }) async {
-    return PdfComputeHelper.layoutPdf(await buildPurchaseInvoiceDocument(
-      invoiceNumber: invoiceNumber,
-      date: date,
-      supplierName: supplierName,
-      items: items,
-      total: total,
-      paid: paid,
-      companyName: companyName,
-      isReturn: isReturn,
-    ));
+    return PdfComputeHelper.layoutPdf(
+      await buildPurchaseInvoiceDocument(
+        invoiceNumber: invoiceNumber,
+        date: date,
+        supplierName: supplierName,
+        items: items,
+        total: total,
+        paid: paid,
+        companyName: companyName,
+        isReturn: isReturn,
+      ),
+    );
   }
 
   /// Builds the A4 purchase-invoice document. Same MultiPage rationale as
@@ -338,7 +340,7 @@ class ReportPdfGenerator {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         textDirection: pw.TextDirection.rtl,
-        margin: const pw.EdgeInsets.fromLTRB(24, 24, 24, 36),
+        margin: const pw.EdgeInsets.fromLTRB(18, 14, 18, 22),
         // رأس الصفحة يتكرّر على **كل** صفحة — كشف من عدة صفحات كانت صفحاته
         // التالية تخرج بلا أي هوية للشركة.
         header: (context) => _buildCompanyLetterhead(header),
@@ -350,7 +352,7 @@ class ReportPdfGenerator {
           pw.SizedBox(height: 12),
           _buildBalanceBox(currentBalance),
           pw.SizedBox(height: 12),
-          _buildStatementTable(transactions, layout, totals),
+          ..._buildStatementTable(transactions, layout, totals),
         ],
       ),
     );
@@ -387,7 +389,10 @@ class ReportPdfGenerator {
             pw.Text(
               c.secondaryNameLine,
               style: pw.TextStyle(
-                  font: _arabicFont, fontSize: 11, color: PdfColors.grey800),
+                font: _arabicFont,
+                fontSize: 11,
+                color: PdfColors.grey800,
+              ),
             ),
           if (c.hasContactInfo)
             pw.Padding(
@@ -395,16 +400,43 @@ class ReportPdfGenerator {
               child: pw.Text(
                 c.contactLine,
                 style: pw.TextStyle(
-                    font: _arabicFont, fontSize: 9, color: PdfColors.grey800),
+                  font: _arabicFont,
+                  fontSize: 9,
+                  color: PdfColors.grey800,
+                ),
               ),
             ),
           if (c.taxLine.isNotEmpty)
             pw.Text(
               c.taxLine,
               style: pw.TextStyle(
-                  font: _arabicFont, fontSize: 9, color: PdfColors.grey800),
+                font: _arabicFont,
+                fontSize: 9,
+                color: PdfColors.grey800,
+              ),
             ),
         ],
+      ),
+    );
+  }
+
+  /// Shared page counter for every A4 multi-page report.
+  /// `tr` is intentionally evaluated at build time so runtime locale changes
+  /// are respected and the Arabic-capable report font is used for both RTL/LTR.
+  static pw.Widget buildReportPageFooter(pw.Context context, {pw.Font? font}) {
+    final label = tr('صفحة {p0} من {p1}', {
+      'p0': context.pageNumber,
+      'p1': context.pagesCount,
+    });
+    return pw.Directionality(
+      textDirection: pw.TextDirection.rtl,
+      child: pw.Align(
+        alignment: pw.Alignment.center,
+        child: pw.Text(
+          label,
+          textDirection: pw.TextDirection.rtl,
+          style: pw.TextStyle(font: font ?? _arabicFont, fontSize: 8),
+        ),
       ),
     );
   }
@@ -415,7 +447,8 @@ class ReportPdfGenerator {
     pw.Context context,
     DateTime printedAt,
   ) {
-    final stamp = '${printedAt.year}/${printedAt.month}/${printedAt.day} '
+    final stamp =
+        '${printedAt.year}/${printedAt.month}/${printedAt.day} '
         '${printedAt.hour.toString().padLeft(2, '0')}:'
         '${printedAt.minute.toString().padLeft(2, '0')}';
     return pw.Container(
@@ -429,20 +462,24 @@ class ReportPdfGenerator {
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
+          buildReportPageFooter(context),
           pw.Text(
-            'صفحة ${context.pageNumber} من ${context.pagesCount}',
+            c.hasContactInfo
+                ? '${c.displayName}  ·  ${c.contactLine}'
+                : c.displayName,
             style: pw.TextStyle(
-                font: _arabicFont, fontSize: 8, color: PdfColors.grey700),
-          ),
-          pw.Text(
-            c.hasContactInfo ? '${c.displayName}  ·  ${c.contactLine}' : c.displayName,
-            style: pw.TextStyle(
-                font: _arabicFont, fontSize: 8, color: PdfColors.grey700),
+              font: _arabicFont,
+              fontSize: 8,
+              color: PdfColors.grey700,
+            ),
           ),
           pw.Text(
             'طُبع في $stamp',
             style: pw.TextStyle(
-                font: _arabicFont, fontSize: 8, color: PdfColors.grey700),
+              font: _arabicFont,
+              fontSize: 8,
+              color: PdfColors.grey700,
+            ),
           ),
         ],
       ),
@@ -468,6 +505,10 @@ class ReportPdfGenerator {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         textDirection: pw.TextDirection.rtl,
+        // The audit's 300-item report exceeds the package's 20-page default
+        // after reserving room for each repeated header and footer.
+        maxPages: 40,
+        footer: buildReportPageFooter,
         build: (context) => [
           _buildReportHeader('تقرير أرصدة المخزون', now, companyName),
           pw.SizedBox(height: 10),
@@ -499,6 +540,7 @@ class ReportPdfGenerator {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         textDirection: pw.TextDirection.rtl,
+        footer: buildReportPageFooter,
         build: (context) => [
           _buildReportHeader(
             'تقرير حركة الخزينة',
@@ -545,6 +587,7 @@ class ReportPdfGenerator {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         textDirection: pw.TextDirection.rtl,
+        footer: buildReportPageFooter,
         build: (context) => [
           _buildReportHeader(
             'تقرير المبيعات التفصيلي',
@@ -579,6 +622,7 @@ class ReportPdfGenerator {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4.landscape,
         textDirection: pw.TextDirection.rtl,
+        footer: buildReportPageFooter,
         build: (context) => [
           _buildReportHeader('سجل الأصول الثابتة', now, companyName),
           pw.SizedBox(height: 10),
@@ -587,9 +631,18 @@ class ReportPdfGenerator {
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              _sumCol('إجمالي التكلفة', totalCost.toStringAsFixed(AppConstants.decimalPlaces)),
-              _sumCol('مجمع الإهلاك', totalDepreciation.toStringAsFixed(AppConstants.decimalPlaces)),
-              _sumCol('صافي القيمة الدفترية', totalBookValue.toStringAsFixed(AppConstants.decimalPlaces)),
+              _sumCol(
+                'إجمالي التكلفة',
+                totalCost.toStringAsFixed(AppConstants.decimalPlaces),
+              ),
+              _sumCol(
+                'مجمع الإهلاك',
+                totalDepreciation.toStringAsFixed(AppConstants.decimalPlaces),
+              ),
+              _sumCol(
+                'صافي القيمة الدفترية',
+                totalBookValue.toStringAsFixed(AppConstants.decimalPlaces),
+              ),
               _sumCol('عدد الأصول', assets.length.toString()),
             ],
           ),
@@ -617,6 +670,7 @@ class ReportPdfGenerator {
                   _tableCell('القيمة الدفترية', isHeader: true),
                   _tableCell('الحالة', isHeader: true),
                 ],
+                repeat: true,
               ),
               ...assets.map((asset) {
                 final cost = asset.purchasePrice as double;
@@ -626,10 +680,18 @@ class ReportPdfGenerator {
                   children: [
                     _tableCell(asset.code),
                     _tableCell(asset.name),
-                    _tableCell(DateFormat('yyyy/MM/dd').format(asset.purchaseDate)),
-                    _tableCell(cost.toStringAsFixed(AppConstants.decimalPlaces)),
-                    _tableCell(accDep.toStringAsFixed(AppConstants.decimalPlaces)),
-                    _tableCell(bookVal.toStringAsFixed(AppConstants.decimalPlaces)),
+                    _tableCell(
+                      DateFormat('yyyy/MM/dd').format(asset.purchaseDate),
+                    ),
+                    _tableCell(
+                      cost.toStringAsFixed(AppConstants.decimalPlaces),
+                    ),
+                    _tableCell(
+                      accDep.toStringAsFixed(AppConstants.decimalPlaces),
+                    ),
+                    _tableCell(
+                      bookVal.toStringAsFixed(AppConstants.decimalPlaces),
+                    ),
                     _tableCell(asset.status == 'active' ? 'نشط' : 'مستبعد'),
                   ],
                 );
@@ -657,10 +719,24 @@ class ReportPdfGenerator {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         textDirection: pw.TextDirection.rtl,
+        footer: buildReportPageFooter,
         build: (context) => [
-          _buildReportHeader('دفتر الأستاذ التحليلي', now, companyName, from: fromDate, to: toDate),
+          _buildReportHeader(
+            'دفتر الأستاذ التحليلي',
+            now,
+            companyName,
+            from: fromDate,
+            to: toDate,
+          ),
           pw.SizedBox(height: 10),
-          pw.Text('الحساب: $accountName', style: pw.TextStyle(font: _arabicFont, fontSize: 14, fontWeight: pw.FontWeight.bold)),
+          pw.Text(
+            'الحساب: $accountName',
+            style: pw.TextStyle(
+              font: _arabicFont,
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
           pw.Divider(),
           pw.SizedBox(height: 10),
           pw.Table(
@@ -684,20 +760,37 @@ class ReportPdfGenerator {
                   _tableCell('دائن', isHeader: true),
                   _tableCell('الرصيد', isHeader: true),
                 ],
+                repeat: true,
               ),
               ...data.map((row) {
                 final isOpening = row['is_opening'] == true;
                 final date = row['entry_date'];
-                final dateStr = date is DateTime ? DateFormat('yyyy/MM/dd').format(date) : '';
+                final dateStr = date is DateTime
+                    ? DateFormat('yyyy/MM/dd').format(date)
+                    : '';
                 return pw.TableRow(
-                  decoration: isOpening ? const pw.BoxDecoration(color: PdfColors.blue50) : null,
+                  decoration: isOpening
+                      ? const pw.BoxDecoration(color: PdfColors.blue50)
+                      : null,
                   children: [
                     _tableCell(dateStr),
                     _tableCell(row['entry_number']?.toString() ?? ''),
                     _tableCell(row['description']?.toString() ?? ''),
-                    _tableCell((row['debit'] as double? ?? 0).toStringAsFixed(AppConstants.decimalPlaces)),
-                    _tableCell((row['credit'] as double? ?? 0).toStringAsFixed(AppConstants.decimalPlaces)),
-                    _tableCell((row['balance'] as double? ?? 0).toStringAsFixed(AppConstants.decimalPlaces)),
+                    _tableCell(
+                      (row['debit'] as double? ?? 0).toStringAsFixed(
+                        AppConstants.decimalPlaces,
+                      ),
+                    ),
+                    _tableCell(
+                      (row['credit'] as double? ?? 0).toStringAsFixed(
+                        AppConstants.decimalPlaces,
+                      ),
+                    ),
+                    _tableCell(
+                      (row['balance'] as double? ?? 0).toStringAsFixed(
+                        AppConstants.decimalPlaces,
+                      ),
+                    ),
                   ],
                 );
               }),
@@ -724,10 +817,16 @@ class ReportPdfGenerator {
     String locale = 'ar',
   }) {
     final nameAr = comp ?? Brand.documentCompanyFallback;
-    final mainName =
-        companyMainName(nameAr: nameAr, nameEn: nameEn, locale: locale);
-    final secondName =
-        companySecondaryName(nameAr: nameAr, nameEn: nameEn, locale: locale);
+    final mainName = companyMainName(
+      nameAr: nameAr,
+      nameEn: nameEn,
+      locale: locale,
+    );
+    final secondName = companySecondaryName(
+      nameAr: nameAr,
+      nameEn: nameEn,
+      locale: locale,
+    );
     final crLine = companyCrLine(crNumber, locale: locale);
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -892,6 +991,7 @@ class ReportPdfGenerator {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         textDirection: pw.TextDirection.rtl,
+        footer: buildReportPageFooter,
         build: (context) => [
           _buildReportHeader(
             title,
@@ -940,6 +1040,7 @@ class ReportPdfGenerator {
                   _tableCell('القيمة', isHeader: true),
                   _tableCell('النسبة', isHeader: true),
                 ],
+                repeat: true,
               ),
               ...categories.asMap().entries.map((entry) {
                 final val = entry.value['total'] as double;
@@ -988,6 +1089,7 @@ class ReportPdfGenerator {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         textDirection: pw.TextDirection.rtl,
+        footer: buildReportPageFooter,
         build: (context) => [
           _buildReportHeader(
             title,
@@ -1002,9 +1104,15 @@ class ReportPdfGenerator {
           if (statementType == 'trial_balance')
             _buildTrialBalanceContent(data.cast<Map<String, dynamic>>()),
           if (statementType == 'income_statement')
-            _buildIncomeStatementContent(data[0] as Map<String, dynamic>),
+            FinancialStatementPdfSections.income(
+              data[0] as Map<String, dynamic>,
+              _arabicFont,
+            ),
           if (statementType == 'balance_sheet')
-            _buildBalanceSheetContent(data[0] as Map<String, dynamic>),
+            FinancialStatementPdfSections.balanceSheet(
+              data[0] as Map<String, dynamic>,
+              _arabicFont,
+            ),
         ],
       ),
     );
@@ -1027,6 +1135,7 @@ class ReportPdfGenerator {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         textDirection: pw.TextDirection.rtl,
+        footer: buildReportPageFooter,
         build: (context) => [
           _buildReportHeader('محضر جرد وإقفال الخزينة', now, companyName),
           if (employeeName != null)
@@ -1047,8 +1156,14 @@ class ReportPdfGenerator {
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                _sumCol('رصيد النظام', totalSystem.toStringAsFixed(AppConstants.decimalPlaces)),
-                _sumCol('الرصيد الفعلي', totalActual.toStringAsFixed(AppConstants.decimalPlaces)),
+                _sumCol(
+                  'رصيد النظام',
+                  totalSystem.toStringAsFixed(AppConstants.decimalPlaces),
+                ),
+                _sumCol(
+                  'الرصيد الفعلي',
+                  totalActual.toStringAsFixed(AppConstants.decimalPlaces),
+                ),
                 _sumCol(
                   'الفارق',
                   totalVariance.toStringAsFixed(AppConstants.decimalPlaces),
@@ -1069,15 +1184,26 @@ class ReportPdfGenerator {
                   _tableCell('الفعلي', isHeader: true),
                   _tableCell('الفارق', isHeader: true),
                 ],
+                repeat: true,
               ),
               ...safeData.map(
                 (safe) => pw.TableRow(
                   children: [
                     _tableCell(safe['name']),
-                    _tableCell((safe['system'] as double).toStringAsFixed(AppConstants.decimalPlaces)),
-                    _tableCell((safe['actual'] as double).toStringAsFixed(AppConstants.decimalPlaces)),
                     _tableCell(
-                      (safe['variance'] as double).toStringAsFixed(AppConstants.decimalPlaces),
+                      (safe['system'] as double).toStringAsFixed(
+                        AppConstants.decimalPlaces,
+                      ),
+                    ),
+                    _tableCell(
+                      (safe['actual'] as double).toStringAsFixed(
+                        AppConstants.decimalPlaces,
+                      ),
+                    ),
+                    _tableCell(
+                      (safe['variance'] as double).toStringAsFixed(
+                        AppConstants.decimalPlaces,
+                      ),
                       color: (safe['variance'] as double) < 0
                           ? PdfColors.red
                           : null,
@@ -1090,73 +1216,27 @@ class ReportPdfGenerator {
         ],
       ),
     );
-    return PdfComputeHelper.layoutPdf(pdf, documentLabel: 'تقرير إغلاق الخزينة');
+    return PdfComputeHelper.layoutPdf(
+      pdf,
+      documentLabel: 'تقرير إغلاق الخزينة',
+    );
   }
 
+  /// يفوّض إلى المولّد الموحّد: المقاس هو المقاس النشط المحفوظ (الافتراضي 50×25).
   static Future<bool> printBarcodeLabel({
     required String barcodeValue,
     required String productName,
     double? price,
     int copies = 1,
-  }) async {
-    await _initFont();
-    final pdf = await BaseGenerator.newDocument();
-    const labelWidth = 50.0 * PdfPageFormat.mm;
-    const labelHeight = 25.0 * PdfPageFormat.mm;
-    const labelFormat = PdfPageFormat(
-      labelWidth,
-      labelHeight,
-      marginAll: 2 * PdfPageFormat.mm,
-    );
-
-    for (int i = 0; i < copies; i++) {
-      pdf.addPage(
-        pw.Page(
-          pageFormat: labelFormat,
-          // The only page in this file that omitted textDirection, so Arabic
-          // product names printed as disconnected, reversed glyphs on shelf
-          // labels — the one print an operator reads dozens of times a day.
-          textDirection: pw.TextDirection.rtl,
-          build: (context) => pw.Column(
-            mainAxisAlignment: pw.MainAxisAlignment.center,
-            children: [
-              pw.Text(
-                productName,
-                style: pw.TextStyle(
-                  font: _arabicFont,
-                  fontSize: 7,
-                  fontWeight: pw.FontWeight.bold,
-                ),
-                textAlign: pw.TextAlign.center,
-                maxLines: 1,
-              ),
-              pw.SizedBox(height: 2),
-              pw.BarcodeWidget(
-                data: barcodeValue,
-                barcode: pw.Barcode.code128(),
-                width: labelWidth - 10,
-                height: 15,
-                drawText: true,
-                textStyle: const pw.TextStyle(fontSize: 5),
-              ),
-              if (price != null)
-                pw.Text(
-                  // Was the literal 'JOD'. The label ignored the company's
-                  // configured currency, so every non-Jordanian install
-                  // printed the wrong unit on its shelf tags.
-                  '${price.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbol}',
-                  style: pw.TextStyle(
-                    font: _arabicFont,
-                    fontSize: 8,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-            ],
-          ),
-        ),
-      );
-    }
-    return PdfComputeHelper.layoutPdf(pdf, documentLabel: 'ملصق باركود');
+  }) {
+    return BarcodeLabelPrinter.print([
+      BarcodeLabelItem(
+        name: productName,
+        barcode: barcodeValue,
+        price: price,
+        copies: copies,
+      ),
+    ]);
   }
 
   static String _fmtNum(dynamic val) {
@@ -1180,6 +1260,7 @@ class ReportPdfGenerator {
             _tableCell('رصيد مدين', isHeader: true),
             _tableCell('رصيد دائن', isHeader: true),
           ],
+          repeat: true,
         ),
         ...data.map(
           (row) => pw.TableRow(
@@ -1196,109 +1277,6 @@ class ReportPdfGenerator {
             ],
           ),
         ),
-      ],
-    );
-  }
-
-  static pw.Widget _buildIncomeStatementContent(Map<String, dynamic> data) {
-    final revenueDetails = (data['revenueDetails'] as List?) ?? [];
-    final expenseDetails = (data['expenseDetails'] as List?) ?? [];
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text('الإيرادات', style: pw.TextStyle(font: _arabicFont, fontSize: 13, fontWeight: pw.FontWeight.bold)),
-        pw.SizedBox(height: 5),
-        ...revenueDetails.map((item) => pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-          children: [
-            pw.Text(_fmtNum(item['amount']), style: pw.TextStyle(font: _arabicFont, fontSize: 11)),
-            pw.Text(item['name']?.toString() ?? '-', style: pw.TextStyle(font: _arabicFont, fontSize: 11)),
-          ],
-        )),
-        pw.Divider(),
-        pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-          pw.Text(_fmtNum(data['totalRevenue']), style: pw.TextStyle(font: _arabicFont, fontSize: 12, fontWeight: pw.FontWeight.bold)),
-          pw.Text('إجمالي الإيرادات', style: pw.TextStyle(font: _arabicFont, fontSize: 12, fontWeight: pw.FontWeight.bold)),
-        ]),
-        pw.SizedBox(height: 15),
-        pw.Text('المصروفات', style: pw.TextStyle(font: _arabicFont, fontSize: 13, fontWeight: pw.FontWeight.bold)),
-        pw.SizedBox(height: 5),
-        ...expenseDetails.map((item) => pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-          children: [
-            pw.Text(_fmtNum(item['amount']), style: pw.TextStyle(font: _arabicFont, fontSize: 11)),
-            pw.Text(item['name']?.toString() ?? '-', style: pw.TextStyle(font: _arabicFont, fontSize: 11)),
-          ],
-        )),
-        pw.Divider(),
-        pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-          pw.Text(_fmtNum(data['totalExpenses']), style: pw.TextStyle(font: _arabicFont, fontSize: 12, fontWeight: pw.FontWeight.bold)),
-          pw.Text('إجمالي المصروفات', style: pw.TextStyle(font: _arabicFont, fontSize: 12, fontWeight: pw.FontWeight.bold)),
-        ]),
-        pw.SizedBox(height: 15),
-        pw.Container(
-          padding: const pw.EdgeInsets.all(8),
-          decoration: pw.BoxDecoration(color: PdfColors.grey100, borderRadius: pw.BorderRadius.circular(4)),
-          child: pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-            pw.Text(_fmtNum(data['netProfit']), style: pw.TextStyle(font: _arabicFont, fontSize: 14, fontWeight: pw.FontWeight.bold)),
-            pw.Text('صافي الربح', style: pw.TextStyle(font: _arabicFont, fontSize: 14, fontWeight: pw.FontWeight.bold)),
-          ]),
-        ),
-      ],
-    );
-  }
-
-  static pw.Widget _buildBalanceSheetContent(Map<String, dynamic> data) {
-    final assetDetails = (data['assetDetails'] as List?) ?? [];
-    final liabilityDetails = (data['liabilityDetails'] as List?) ?? [];
-    final equityDetails = (data['equityDetails'] as List?) ?? [];
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text('الأصول', style: pw.TextStyle(font: _arabicFont, fontSize: 13, fontWeight: pw.FontWeight.bold)),
-        pw.SizedBox(height: 5),
-        ...assetDetails.map((item) => pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-          children: [
-            pw.Text(_fmtNum(item['balance']), style: pw.TextStyle(font: _arabicFont, fontSize: 11)),
-            pw.Text(item['name']?.toString() ?? '-', style: pw.TextStyle(font: _arabicFont, fontSize: 11)),
-          ],
-        )),
-        pw.Divider(),
-        pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-          pw.Text(_fmtNum(data['totalAssets']), style: pw.TextStyle(font: _arabicFont, fontSize: 12, fontWeight: pw.FontWeight.bold)),
-          pw.Text('إجمالي الأصول', style: pw.TextStyle(font: _arabicFont, fontSize: 12, fontWeight: pw.FontWeight.bold)),
-        ]),
-        pw.SizedBox(height: 15),
-        pw.Text('الخصوم', style: pw.TextStyle(font: _arabicFont, fontSize: 13, fontWeight: pw.FontWeight.bold)),
-        pw.SizedBox(height: 5),
-        ...liabilityDetails.map((item) => pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-          children: [
-            pw.Text(_fmtNum(item['balance']), style: pw.TextStyle(font: _arabicFont, fontSize: 11)),
-            pw.Text(item['name']?.toString() ?? '-', style: pw.TextStyle(font: _arabicFont, fontSize: 11)),
-          ],
-        )),
-        pw.Divider(),
-        pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-          pw.Text(_fmtNum(data['totalLiabilities']), style: pw.TextStyle(font: _arabicFont, fontSize: 12, fontWeight: pw.FontWeight.bold)),
-          pw.Text('إجمالي الخصوم', style: pw.TextStyle(font: _arabicFont, fontSize: 12, fontWeight: pw.FontWeight.bold)),
-        ]),
-        pw.SizedBox(height: 15),
-        pw.Text('حقوق الملكية', style: pw.TextStyle(font: _arabicFont, fontSize: 13, fontWeight: pw.FontWeight.bold)),
-        pw.SizedBox(height: 5),
-        ...equityDetails.map((item) => pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-          children: [
-            pw.Text(_fmtNum(item['balance']), style: pw.TextStyle(font: _arabicFont, fontSize: 11)),
-            pw.Text(item['name']?.toString() ?? '-', style: pw.TextStyle(font: _arabicFont, fontSize: 11)),
-          ],
-        )),
-        pw.Divider(),
-        pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [
-          pw.Text(_fmtNum(data['totalEquity']), style: pw.TextStyle(font: _arabicFont, fontSize: 12, fontWeight: pw.FontWeight.bold)),
-          pw.Text('إجمالي حقوق الملكية', style: pw.TextStyle(font: _arabicFont, fontSize: 12, fontWeight: pw.FontWeight.bold)),
-        ]),
       ],
     );
   }
@@ -1376,69 +1354,92 @@ class ReportPdfGenerator {
   /// credit total and no closing balance, while the Excel export from the same
   /// screen did. Column widths and the font now come from
   /// [StatementColumnLayout], which shrinks the type rather than clipping data.
-  static pw.Widget _buildStatementTable(
+  static List<pw.Widget> _buildStatementTable(
     List<StatementItem> items,
     StatementColumnLayout layout,
     StatementTotals totals,
   ) {
     final showDoc = layout.showDocumentColumn;
-    final fs = layout.fontSize;
-
+    final fontSize = layout.fontSize;
     final widths = <int, pw.TableColumnWidth>{};
-    var col = 0;
-    widths[col++] = pw.FlexColumnWidth(layout.dateFlex.toDouble());
-    if (showDoc) {
-      widths[col++] = pw.FlexColumnWidth(layout.documentFlex.toDouble());
-    }
-    widths[col++] = pw.FlexColumnWidth(layout.descriptionFlex.toDouble());
-    for (var i = 0; i < 3; i++) {
-      widths[col++] = pw.FlexColumnWidth(layout.amountFlex.toDouble());
+    var column = 0;
+    widths[column++] = pw.FlexColumnWidth(layout.dateFlex.toDouble());
+    if (showDoc)
+      widths[column++] = pw.FlexColumnWidth(layout.documentFlex.toDouble());
+    widths[column++] = pw.FlexColumnWidth(layout.descriptionFlex.toDouble());
+    for (var index = 0; index < 3; index++) {
+      widths[column++] = pw.FlexColumnWidth(layout.amountFlex.toDouble());
     }
 
-    String money(double v) => v.toStringAsFixed(AppConstants.decimalPlaces);
+    String money(double amount) =>
+        amount.toStringAsFixed(AppConstants.decimalPlaces);
 
-    return pw.Table(
-      border: pw.TableBorder.all(color: PdfColors.grey400),
-      columnWidths: widths,
+    final heading = pw.TableRow(
+      decoration: const pw.BoxDecoration(color: PdfColors.grey200),
       children: [
-        pw.TableRow(
-          decoration: const pw.BoxDecoration(color: PdfColors.grey200),
-          children: [
-            _statementCell('التاريخ', fs, isHeader: true),
-            if (showDoc) _statementCell('رقم المستند', fs, isHeader: true),
-            _statementCell('البيان', fs, isHeader: true),
-            _statementCell('مدين', fs, isHeader: true),
-            _statementCell('دائن', fs, isHeader: true),
-            _statementCell('الرصيد', fs, isHeader: true),
-          ],
-        ),
-        ...items.map(
-          (t) => pw.TableRow(
+        _statementCell('التاريخ', fontSize, isHeader: true),
+        if (showDoc) _statementCell('رقم المستند', fontSize, isHeader: true),
+        _statementCell('البيان', fontSize, isHeader: true),
+        _statementCell('مدين', fontSize, isHeader: true),
+        _statementCell('دائن', fontSize, isHeader: true),
+        _statementCell('الرصيد', fontSize, isHeader: true),
+      ],
+      repeat: true,
+    );
+    final body = items
+        .map(
+          (transaction) => pw.TableRow(
             children: [
               _statementCell(
-                  '${t.date.day}/${t.date.month}/${t.date.year}', fs),
-              if (showDoc) _statementCell(t.documentNumber ?? '-', fs),
-              _statementCell(t.description, fs),
-              _statementCell(t.debit > 0 ? money(t.debit) : '-', fs),
-              _statementCell(t.credit > 0 ? money(t.credit) : '-', fs),
-              _statementCell(money(t.balance), fs),
+                '${transaction.date.day}/${transaction.date.month}/${transaction.date.year}',
+                fontSize,
+              ),
+              if (showDoc)
+                _statementCell(transaction.documentNumber ?? '-', fontSize),
+              _statementCell(transaction.description, fontSize),
+              _statementCell(
+                transaction.debit > 0 ? money(transaction.debit) : '-',
+                fontSize,
+              ),
+              _statementCell(
+                transaction.credit > 0 ? money(transaction.credit) : '-',
+                fontSize,
+              ),
+              _statementCell(money(transaction.balance), fontSize),
             ],
           ),
-        ),
-        // صف الإجماليات — محسوب على كل الحركات لا على الصفحة الظاهرة.
-        pw.TableRow(
-          decoration: const pw.BoxDecoration(color: PdfColors.grey300),
-          children: [
-            _statementCell('', fs),
-            if (showDoc) _statementCell('', fs),
-            _statementCell('الإجمالي', fs, isHeader: true),
-            _statementCell(money(totals.totalDebit), fs, isHeader: true),
-            _statementCell(money(totals.totalCredit), fs, isHeader: true),
-            _statementCell(money(totals.closingBalance), fs, isHeader: true),
-          ],
-        ),
+        )
+        .toList();
+    final total = pw.TableRow(
+      decoration: const pw.BoxDecoration(color: PdfColors.grey300),
+      children: [
+        _statementCell('', fontSize),
+        if (showDoc) _statementCell('', fontSize),
+        _statementCell('الإجمالي', fontSize, isHeader: true),
+        _statementCell(money(totals.totalDebit), fontSize, isHeader: true),
+        _statementCell(money(totals.totalCredit), fontSize, isHeader: true),
+        _statementCell(money(totals.closingBalance), fontSize, isHeader: true),
       ],
     );
+    pw.Table table(List<pw.TableRow> rows) => pw.Table(
+      border: pw.TableBorder.all(color: PdfColors.grey400),
+      columnWidths: widths,
+      children: [heading, ...rows],
+    );
+
+    if (items.length <= 25)
+      return [
+        table([...body, total]),
+      ];
+    final splitAt = items.length - 4;
+    return [
+      table(body.take(splitAt).toList()),
+      pw.Wrap(
+        children: [
+          table([...body.skip(splitAt), total]),
+        ],
+      ),
+    ];
   }
 
   /// خلية كشف الحساب بحجم خط مُمرَّر — `_tableCell` يثبّت الحجم، فلا يسمح
@@ -1449,7 +1450,7 @@ class ReportPdfGenerator {
     bool isHeader = false,
   }) {
     return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 4),
+      padding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 2),
       child: pw.Text(
         text,
         style: pw.TextStyle(
@@ -1480,6 +1481,7 @@ class ReportPdfGenerator {
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         textDirection: pw.TextDirection.rtl,
+        footer: buildReportPageFooter,
         build: (context) => [
           _buildReportHeader(
             'تقرير المشتريات التفصيلي',
@@ -1512,7 +1514,11 @@ class ReportPdfGenerator {
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
         children: [
-          _sumCol('إجمالي المشتريات', total.toStringAsFixed(AppConstants.decimalPlaces), isBold: true),
+          _sumCol(
+            'إجمالي المشتريات',
+            total.toStringAsFixed(AppConstants.decimalPlaces),
+            isBold: true,
+          ),
           _sumCol('عدد الفواتير', '$count'),
         ],
       ),
@@ -1533,22 +1539,21 @@ class ReportPdfGenerator {
             _tableCell('المدفوع', isHeader: true),
             _tableCell('الحالة', isHeader: true),
           ],
+          repeat: true,
         ),
-        ...invoices.map(
-          (item) {
-            final inv = item.invoice;
-            return pw.TableRow(
-              children: [
-                _tableCell(inv.invoiceNumber),
-                _tableCell('${inv.invoiceDate.day}/${inv.invoiceDate.month}'),
-                _tableCell(item.supplierName ?? '-'),
-                _tableCell(inv.total.toStringAsFixed(AppConstants.decimalPlaces)),
-                _tableCell(inv.paid.toStringAsFixed(AppConstants.decimalPlaces)),
-                _tableCell((inv.total - inv.paid) <= 0 ? 'مسددة' : 'آجلة'),
-              ],
-            );
-          },
-        ),
+        ...invoices.map((item) {
+          final inv = item.invoice;
+          return pw.TableRow(
+            children: [
+              _tableCell(inv.invoiceNumber),
+              _tableCell('${inv.invoiceDate.day}/${inv.invoiceDate.month}'),
+              _tableCell(item.supplierName ?? '-'),
+              _tableCell(inv.total.toStringAsFixed(AppConstants.decimalPlaces)),
+              _tableCell(inv.paid.toStringAsFixed(AppConstants.decimalPlaces)),
+              _tableCell((inv.total - inv.paid) <= 0 ? 'مسددة' : 'آجلة'),
+            ],
+          );
+        }),
       ],
     );
   }
@@ -1584,16 +1589,37 @@ class ReportPdfGenerator {
     final typeLabel = isAutoPosted ? 'تلقائي' : 'يدوي';
     String refLabel = '';
     switch (referenceType) {
-      case 'sale': refLabel = 'مبيعات'; break;
-      case 'purchase': case 'purchase_invoice': refLabel = 'مشتريات'; break;
-      case 'receipt': refLabel = 'تحصيل'; break;
-      case 'payment': refLabel = 'سداد'; break;
-      case 'return': refLabel = 'مرتجع'; break;
-      case 'fiscal_close': refLabel = 'إقفال'; break;
-      case 'manufacturing': refLabel = 'تصنيع'; break;
-      case 'daily': refLabel = 'يومية'; break;
-      case 'adjustment': refLabel = 'تسوية'; break;
-      case 'salary': refLabel = 'رواتب'; break;
+      case 'sale':
+        refLabel = 'مبيعات';
+        break;
+      case 'purchase':
+      case 'purchase_invoice':
+        refLabel = 'مشتريات';
+        break;
+      case 'receipt':
+        refLabel = 'تحصيل';
+        break;
+      case 'payment':
+        refLabel = 'سداد';
+        break;
+      case 'return':
+        refLabel = 'مرتجع';
+        break;
+      case 'fiscal_close':
+        refLabel = 'إقفال';
+        break;
+      case 'manufacturing':
+        refLabel = 'تصنيع';
+        break;
+      case 'daily':
+        refLabel = 'يومية';
+        break;
+      case 'adjustment':
+        refLabel = 'تسوية';
+        break;
+      case 'salary':
+        refLabel = 'رواتب';
+        break;
     }
 
     pdf.addPage(
@@ -1640,8 +1666,9 @@ class ReportPdfGenerator {
                                   (branchColorHex & 0x00FFFFFF) | 0x1F000000,
                                 )
                               : PdfColors.grey200,
-                          borderRadius:
-                              const pw.BorderRadius.all(pw.Radius.circular(8)),
+                          borderRadius: const pw.BorderRadius.all(
+                            pw.Radius.circular(8),
+                          ),
                           border: pw.Border.all(
                             color: branchColorHex != null
                                 ? PdfColor.fromInt(branchColorHex)
@@ -1724,24 +1751,31 @@ class ReportPdfGenerator {
                     _tableCell('مدين', isHeader: true),
                     _tableCell('دائن', isHeader: true),
                   ],
+                  repeat: true,
                 ),
-                ...lines.map((line) => pw.TableRow(
-                  children: [
-                    _tableCell(line['account_code']?.toString() ?? ''),
-                    _tableCell(line['account_name']?.toString() ?? ''),
-                    _tableCell(line['description']?.toString() ?? ''),
-                    _tableCell(
-                      (line['debit'] as double? ?? 0) > 0
-                          ? (line['debit'] as double).toStringAsFixed(AppConstants.decimalPlaces)
-                          : '',
-                    ),
-                    _tableCell(
-                      (line['credit'] as double? ?? 0) > 0
-                          ? (line['credit'] as double).toStringAsFixed(AppConstants.decimalPlaces)
-                          : '',
-                    ),
-                  ],
-                )),
+                ...lines.map(
+                  (line) => pw.TableRow(
+                    children: [
+                      _tableCell(line['account_code']?.toString() ?? ''),
+                      _tableCell(line['account_name']?.toString() ?? ''),
+                      _tableCell(line['description']?.toString() ?? ''),
+                      _tableCell(
+                        (line['debit'] as double? ?? 0) > 0
+                            ? (line['debit'] as double).toStringAsFixed(
+                                AppConstants.decimalPlaces,
+                              )
+                            : '',
+                      ),
+                      _tableCell(
+                        (line['credit'] as double? ?? 0) > 0
+                            ? (line['credit'] as double).toStringAsFixed(
+                                AppConstants.decimalPlaces,
+                              )
+                            : '',
+                      ),
+                    ],
+                  ),
+                ),
                 // Totals row
                 pw.TableRow(
                   decoration: const pw.BoxDecoration(color: PdfColors.grey200),
@@ -1749,9 +1783,16 @@ class ReportPdfGenerator {
                     _tableCell('', isHeader: true),
                     _tableCell('الإجمالي', isHeader: true),
                     _tableCell(''),
-                    _tableCell(totalDebit.toStringAsFixed(AppConstants.decimalPlaces), isHeader: true),
-                    _tableCell(totalCredit.toStringAsFixed(AppConstants.decimalPlaces), isHeader: true),
+                    _tableCell(
+                      totalDebit.toStringAsFixed(AppConstants.decimalPlaces),
+                      isHeader: true,
+                    ),
+                    _tableCell(
+                      totalCredit.toStringAsFixed(AppConstants.decimalPlaces),
+                      isHeader: true,
+                    ),
                   ],
+                  repeat: true,
                 ),
               ],
             ),
@@ -1846,7 +1887,10 @@ class ReportPdfGenerator {
         children: [
           _sumCol('عدد الأصناف', '$total'),
           _sumCol('أصناف منخفضة', '$low', color: PdfColors.red),
-          _sumCol('قيمة المخزون', '${value.toStringAsFixed(AppConstants.decimalPlaces)} JOD'),
+          _sumCol(
+            'قيمة المخزون',
+            '${value.toStringAsFixed(AppConstants.decimalPlaces)} JOD',
+          ),
         ],
       ),
     );
@@ -1879,6 +1923,7 @@ class ReportPdfGenerator {
             _tableCell('التكلفة', isHeader: true),
             _tableCell('القيمة', isHeader: true),
           ],
+          repeat: true,
         ),
         ...products.asMap().entries.map((entry) {
           final p = entry.value;
@@ -1892,8 +1937,14 @@ class ReportPdfGenerator {
               _tableCell(cat),
               _tableCell(p.currentStock.toStringAsFixed(0)),
               _tableCell(p.minStock.toStringAsFixed(0)),
-              _tableCell(p.costPrice.toStringAsFixed(AppConstants.decimalPlaces)),
-              _tableCell((p.currentStock * p.costPrice).toStringAsFixed(AppConstants.decimalPlaces)),
+              _tableCell(
+                p.costPrice.toStringAsFixed(AppConstants.decimalPlaces),
+              ),
+              _tableCell(
+                (p.currentStock * p.costPrice).toStringAsFixed(
+                  AppConstants.decimalPlaces,
+                ),
+              ),
             ],
           );
         }),
@@ -1917,10 +1968,25 @@ class ReportPdfGenerator {
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
         children: [
-          _sumCol('رصيد افتتاحي', open.toStringAsFixed(AppConstants.decimalPlaces)),
-          _sumCol('مقبوضات', inVal.toStringAsFixed(AppConstants.decimalPlaces), color: PdfColors.green),
-          _sumCol('مدفوعات', outVal.toStringAsFixed(AppConstants.decimalPlaces), color: PdfColors.red),
-          _sumCol('رصيد ختامي', close.toStringAsFixed(AppConstants.decimalPlaces), isBold: true),
+          _sumCol(
+            'رصيد افتتاحي',
+            open.toStringAsFixed(AppConstants.decimalPlaces),
+          ),
+          _sumCol(
+            'مقبوضات',
+            inVal.toStringAsFixed(AppConstants.decimalPlaces),
+            color: PdfColors.green,
+          ),
+          _sumCol(
+            'مدفوعات',
+            outVal.toStringAsFixed(AppConstants.decimalPlaces),
+            color: PdfColors.red,
+          ),
+          _sumCol(
+            'رصيد ختامي',
+            close.toStringAsFixed(AppConstants.decimalPlaces),
+            isBold: true,
+          ),
         ],
       ),
     );
@@ -1939,6 +2005,7 @@ class ReportPdfGenerator {
             _tableCell('الرصيد', isHeader: true),
             _tableCell('البيان', isHeader: true),
           ],
+          repeat: true,
         ),
         ...txs.map(
           (t) => pw.TableRow(
@@ -1946,7 +2013,9 @@ class ReportPdfGenerator {
               _tableCell('${t.createdAt.day}/${t.createdAt.month}'),
               _tableCell(t.transactionType == 'receipt' ? 'قبض' : 'صرف'),
               _tableCell(t.amount.toStringAsFixed(AppConstants.decimalPlaces)),
-              _tableCell(t.balanceAfter.toStringAsFixed(AppConstants.decimalPlaces)),
+              _tableCell(
+                t.balanceAfter.toStringAsFixed(AppConstants.decimalPlaces),
+              ),
               _tableCell(t.description ?? '-'),
             ],
           ),
@@ -1966,7 +2035,11 @@ class ReportPdfGenerator {
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
         children: [
-          _sumCol('إجمالي المبيعات', sales.toStringAsFixed(AppConstants.decimalPlaces), isBold: true),
+          _sumCol(
+            'إجمالي المبيعات',
+            sales.toStringAsFixed(AppConstants.decimalPlaces),
+            isBold: true,
+          ),
           // B11 REP-1 (spec 149): mirrors the on-screen relabel in
           // sales_report_screen.dart — this is the sales-level profit
           // (revenue − discount − COGS − tax), not the GL-sourced company
@@ -2016,6 +2089,7 @@ class ReportPdfGenerator {
             if (hasReturns) _tableCell('المرتجع', isHeader: true),
             _tableCell('الحالة', isHeader: true),
           ],
+          repeat: true,
         ),
         ...invoices.map(
           (inv) => pw.TableRow(
@@ -2027,8 +2101,9 @@ class ReportPdfGenerator {
               if (hasReturns)
                 _tableCell(
                   returnedOf(inv) > 0
-                      ? returnedOf(inv)
-                          .toStringAsFixed(AppConstants.decimalPlaces)
+                      ? returnedOf(
+                          inv,
+                        ).toStringAsFixed(AppConstants.decimalPlaces)
                       : '—',
                 ),
               _tableCell(inv.paymentMethod == 'cash' ? 'نقدي' : 'آجل'),
@@ -2176,7 +2251,8 @@ class ReportPdfGenerator {
                 ),
                 pw.BarcodeWidget(
                   barcode: pw.Barcode.qrCode(),
-                  data: 'CHK:$checkNumber|AMT:$amount|DATE:${df.format(checkDate)}',
+                  data:
+                      'CHK:$checkNumber|AMT:$amount|DATE:${df.format(checkDate)}',
                   width: 60,
                   height: 60,
                 ),
@@ -2189,7 +2265,10 @@ class ReportPdfGenerator {
             // Title
             pw.Center(
               child: pw.Container(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 30, vertical: 8),
+                padding: const pw.EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 8,
+                ),
                 decoration: pw.BoxDecoration(
                   color: isReceived ? PdfColors.green50 : PdfColors.red50,
                   border: pw.Border.all(
@@ -2212,7 +2291,10 @@ class ReportPdfGenerator {
 
             // Details table
             _voucherRow('$partyLabel:', drawerName),
-            _voucherRow('المبلغ:', '${amount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}'),
+            _voucherRow(
+              'المبلغ:',
+              '${amount.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolAr}',
+            ),
             _voucherRow('تاريخ الشيك:', df.format(checkDate)),
             if (dueDate != null)
               _voucherRow('تاريخ الاستحقاق:', df.format(dueDate)),
@@ -2262,8 +2344,10 @@ class ReportPdfGenerator {
                       child: pw.SizedBox(height: 40),
                     ),
                     pw.SizedBox(height: 4),
-                    pw.Text('توقيع المسلِّم',
-                        style: pw.TextStyle(font: _arabicFont, fontSize: 10)),
+                    pw.Text(
+                      'توقيع المسلِّم',
+                      style: pw.TextStyle(font: _arabicFont, fontSize: 10),
+                    ),
                   ],
                 ),
                 pw.Column(
@@ -2276,8 +2360,10 @@ class ReportPdfGenerator {
                       child: pw.SizedBox(height: 40),
                     ),
                     pw.SizedBox(height: 4),
-                    pw.Text('توقيع المستلِم',
-                        style: pw.TextStyle(font: _arabicFont, fontSize: 10)),
+                    pw.Text(
+                      'توقيع المستلِم',
+                      style: pw.TextStyle(font: _arabicFont, fontSize: 10),
+                    ),
                   ],
                 ),
                 pw.Column(
@@ -2290,8 +2376,10 @@ class ReportPdfGenerator {
                       child: pw.SizedBox(height: 40),
                     ),
                     pw.SizedBox(height: 4),
-                    pw.Text('المدير المالي',
-                        style: pw.TextStyle(font: _arabicFont, fontSize: 10)),
+                    pw.Text(
+                      'المدير المالي',
+                      style: pw.TextStyle(font: _arabicFont, fontSize: 10),
+                    ),
                   ],
                 ),
               ],
@@ -2312,15 +2400,20 @@ class ReportPdfGenerator {
         children: [
           pw.SizedBox(
             width: 130,
-            child: pw.Text(label,
-                style: pw.TextStyle(
-                    font: _arabicFont,
-                    fontSize: 13,
-                    fontWeight: pw.FontWeight.bold)),
+            child: pw.Text(
+              label,
+              style: pw.TextStyle(
+                font: _arabicFont,
+                fontSize: 13,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
           ),
           pw.Expanded(
-            child: pw.Text(value,
-                style: pw.TextStyle(font: _arabicFont, fontSize: 13)),
+            child: pw.Text(
+              value,
+              style: pw.TextStyle(font: _arabicFont, fontSize: 13),
+            ),
           ),
         ],
       ),
@@ -2329,15 +2422,24 @@ class ReportPdfGenerator {
 
   static String _getCheckStatusLabel(String status) {
     switch (status) {
-      case 'pending': return 'معلق';
-      case 'in_portfolio': return 'في الحافظة';
-      case 'deposited': return 'مودع';
-      case 'deposited_for_collection': return 'برسم التحصيل';
-      case 'cashed': return 'محصّل';
-      case 'bounced': return 'مرتد';
-      case 'endorsed': return 'مظهّر';
-      case 'cancelled': return 'ملغي';
-      default: return status;
+      case 'pending':
+        return 'معلق';
+      case 'in_portfolio':
+        return 'في الحافظة';
+      case 'deposited':
+        return 'مودع';
+      case 'deposited_for_collection':
+        return 'برسم التحصيل';
+      case 'cashed':
+        return 'محصّل';
+      case 'bounced':
+        return 'مرتد';
+      case 'endorsed':
+        return 'مظهّر';
+      case 'cancelled':
+        return 'ملغي';
+      default:
+        return status;
     }
   }
 }

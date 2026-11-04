@@ -28,8 +28,10 @@ import '../../picpos_shell/picpos_empty_state.dart';
 import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../../print_test_picpos/widgets/sheet_preview_view.dart';
+import '../label/label_editor_view.dart';
 import '../widgets/editor_canvas.dart';
 import '../widgets/editor_outline_panel.dart';
+import '../widgets/editor_panel_parts.dart';
 import '../widgets/editor_properties_panel.dart';
 
 const double _outlineWidth = 300;
@@ -47,9 +49,20 @@ const _papers = <({String label, double w, double? h})>[
 ];
 
 class TemplateEditorPicposScreen extends ConsumerStatefulWidget {
-  const TemplateEditorPicposScreen({super.key, required this.templateId});
+  const TemplateEditorPicposScreen({
+    super.key,
+    required this.templateId,
+    this.labelMode = false,
+  });
 
   final int templateId;
+
+  /// «قماشُ الملصق» لقالبٍ من فئة `barcode` — بدل محرّر النطاقات.
+  ///
+  /// ⚠️ **يُقرَّر قبل أيِّ قراءة**: محرّرُ النطاقات يهاجر القالبَ عند فتحه
+  /// (‏`migrateTemplateLayout`) فيكتب `x_mm` ويرفع `layout_version` — وراسمُ
+  /// الملصقات لا يقرأ أيّاً منهما. فالملصقُ لا يمرّ بذلك المسار إطلاقاً.
+  final bool labelMode;
 
   @override
   ConsumerState<TemplateEditorPicposScreen> createState() =>
@@ -63,6 +76,7 @@ class _TemplateEditorPicposScreenState
   @override
   void initState() {
     super.initState();
+    if (widget.labelMode) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(editorTemplateIdProvider.notifier).set(widget.templateId);
     });
@@ -70,6 +84,8 @@ class _TemplateEditorPicposScreenState
 
   @override
   Widget build(BuildContext context) {
+    if (widget.labelMode) return LabelEditorView(templateId: widget.templateId);
+
     // يُبقي المزوِّدَ الأساسَ حيّاً كي تُبذَر الحالةُ عند وصوله.
     final initial = ref.watch(editorInitialStateProvider);
     final state = ref.watch(templateEditorProvider);
@@ -403,72 +419,8 @@ class _Toolbar extends StatelessWidget {
   }
 }
 
-class _Chip extends StatelessWidget {
-  const _Chip({
-    required this.on,
-    required this.onTap,
-    this.label,
-    this.icon,
-  });
-
-  final bool on;
-  final VoidCallback onTap;
-  final String? label;
-  final IconData? icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final tone = on ? context.picposBrandInk : context.picposMuted;
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        height: 30,
-        padding: const EdgeInsets.symmetric(horizontal: 11),
-        decoration: BoxDecoration(
-          border: Border.all(
-              color: on ? context.picposBrandInk : context.picposHairline,
-              width: 1.5),
-          color: on
-              ? context.picposBrandInk.withValues(alpha: 0.08)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(9),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) Icon(icon, size: 13, color: tone),
-            if (icon != null && label != null) const SizedBox(width: 5),
-            if (label != null)
-              Text(label!,
-                  style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w800,
-                      color: tone)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Badge extends StatelessWidget {
-  const _Badge({required this.label, required this.tone});
-
-  final String label;
-  final Color tone;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-        decoration: BoxDecoration(
-          color: tone.withValues(alpha: 0.14),
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Text(label,
-            style: TextStyle(
-                fontSize: 10, fontWeight: FontWeight.w800, color: tone)),
-      );
-}
+typedef _Chip = EditorChip;
+typedef _Badge = EditorBadge;
 
 class _CanvasPane extends ConsumerWidget {
   const _CanvasPane({required this.state, required this.editor});

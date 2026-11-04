@@ -71,7 +71,7 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
                       const SizedBox(height: 8),
                        Text(
                         tr('لا توجد خزائن حالية تتطلب إقفال مباشر. الأرصدة مصفرة (تم إقفالها مسبقاً عبر ورديات الكاشير).'),
-                        style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+                        style: TextStyle(color: context.picposMuted, fontSize: 14),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -185,8 +185,8 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
                   ),
                   Text(
                     safe.safeType == 'bank' ? tr('حساب بنكي') : tr('خزينة نقدية'),
-                    style: const TextStyle(
-                      color: AppColors.textMuted,
+                    style: TextStyle(
+                      color: context.picposMuted,
                       fontSize: 12,
                     ),
                   ),
@@ -199,7 +199,7 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
                 children: [
                    Text(
                     tr('رصيد النظام'),
-                    style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                    style: TextStyle(fontSize: 12, color: context.picposMuted),
                   ),
                   Text(
                     '${systemBalance.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',
@@ -237,7 +237,7 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
                 children: [
                    Text(
                     tr('الفارق'),
-                    style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                    style: TextStyle(fontSize: 12, color: context.picposMuted),
                   ),
                   Text(
                     '${variance > 0 ? '+' : ''}${variance.toStringAsFixed(AppConstants.decimalPlaces)}',
@@ -289,7 +289,7 @@ class _TreasuryClosingScreenState extends ConsumerState<TreasuryClosingScreen> {
               children: [
                  Text(
                   tr('إجمالي الفوارق'),
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+                  style: TextStyle(color: context.picposMuted, fontSize: 14),
                 ),
                 Text(
                   '${totalVariance.toStringAsFixed(AppConstants.decimalPlaces)} ${AppConstants.currencySymbolEn}',

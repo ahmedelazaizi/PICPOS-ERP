@@ -23,6 +23,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_colors.dart';
 import 'treasury_picpos_tokens.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class TreasurySafeCardPicpos extends StatelessWidget {
   const TreasurySafeCardPicpos({
@@ -56,7 +57,7 @@ class TreasurySafeCardPicpos extends StatelessWidget {
     // (`balance > 0 ? color : textMuted`) منقولاً كما هو. التصميمُ يلوّن
     // بالنوع دائماً لأن عيّنتَه كلُّها موجبة؛ وصندوقٌ سالبٌ بلونٍ أخضرَ
     // يُقرأ سليماً وهو ليس كذلك.
-    final balanceColor = balance > 0 ? tint : AppColors.textMuted;
+    final balanceColor = balance > 0 ? tint : context.picposMuted;
 
     final subtitle = branchName == null
         ? TreasuryPicposTokens.labelFor(safeType)
@@ -118,10 +119,10 @@ class TreasurySafeCardPicpos extends StatelessWidget {
                       subtitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 10.5,
+                      style: TextStyle(
+                        fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textMuted,
+                        color: context.picposMuted,
                       ),
                     ),
                   ],
@@ -168,7 +169,7 @@ class _DefaultBadge extends StatelessWidget {
       child:  Text(
         tr('افتراضي'),
         style: const TextStyle(
-          fontSize: 9.5,
+          fontSize: 11,
           fontWeight: FontWeight.w800,
           color: AppColors.primary,
         ),

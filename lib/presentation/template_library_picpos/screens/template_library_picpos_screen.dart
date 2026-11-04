@@ -25,6 +25,7 @@ import '../../picpos_shell/picpos_screen_scaffold.dart';
 import '../../picpos_shell/picpos_section_header.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import '../widgets/template_detail_panel.dart';
+import '../widgets/new_label_dialog.dart';
 import '../widgets/new_template_sheet.dart';
 import '../widgets/template_gallery_card.dart';
 
@@ -34,7 +35,11 @@ const double _detailPanelWidth = 340;
 const double _twoPaneMinWidth = 900;
 
 class TemplateLibraryPicposScreen extends ConsumerStatefulWidget {
-  const TemplateLibraryPicposScreen({super.key});
+  const TemplateLibraryPicposScreen({super.key, this.initialFilter});
+
+  /// المرشّحُ عند الفتح — بلاطةُ «ملصقات الباركود» تفتح على مرشّحها.
+  /// `null` يُبقي آخرَ مرشّحٍ اختاره المستخدم.
+  final TemplateFilter? initialFilter;
 
   @override
   ConsumerState<TemplateLibraryPicposScreen> createState() =>
@@ -44,6 +49,17 @@ class TemplateLibraryPicposScreen extends ConsumerStatefulWidget {
 class _TemplateLibraryPicposScreenState
     extends ConsumerState<TemplateLibraryPicposScreen> {
   final _searchCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    final f = widget.initialFilter;
+    if (f != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) ref.read(templateFilterProvider.notifier).set(f);
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -65,10 +81,20 @@ class _TemplateLibraryPicposScreenState
       subtitle: _subtitleFor(all),
       icon: PhosphorIconsBold.books,
       headerActions: [
+        // في مرشّح الملصقات «قالب جديد» ملصقٌ بمقاسٍ مخصّص — لا قائمةُ فواتير.
         FilledButton.icon(
-          onPressed: () => showNewTemplateSheet(context, ref),
-          icon: const Icon(PhosphorIconsBold.filePlus, size: 17),
-          label:  Text(tr('قالب جديد')),
+          key: const Key('library-new-template'),
+          onPressed: () => active == TemplateFilter.barcode
+              ? showNewLabelDialog(context, ref)
+              : showNewTemplateSheet(context, ref),
+          icon: Icon(
+              active == TemplateFilter.barcode
+                  ? PhosphorIconsBold.barcode
+                  : PhosphorIconsBold.filePlus,
+              size: 17),
+          label: Text(active == TemplateFilter.barcode
+              ? tr('ملصق جديد')
+              : tr('قالب جديد')),
         ),
       ],
       headerSearch: TextField(
@@ -154,6 +180,8 @@ class _TemplateLibraryPicposScreenState
         return PhosphorIconsBold.scroll;
       case TemplateFilter.report:
         return PhosphorIconsBold.chartBar;
+      case TemplateFilter.barcode:
+        return PhosphorIconsBold.barcode;
     }
   }
 }
@@ -187,6 +215,13 @@ class _Gallery extends StatelessWidget {
             title: tr('النماذج'),
             subtitle: tr('{p0} معروضاً', {'p0': cards.length}),
             icon: PhosphorIconsBold.gridFour,
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              tr('المكتبة: اختيار نموذج جاهز وربطه بنوع المستند. المصمم: تعديل أو إنشاء تصميم. النموذج المُفعَّل للطباعة هو المربوط بنوع المستند.'),
+              style: TextStyle(fontSize: 11.5, color: context.picposMuted),
+            ),
           ),
           Expanded(
             child: LayoutBuilder(

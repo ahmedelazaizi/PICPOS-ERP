@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// A keyboard shortcut definition for the help panel
 class HelpShortcut {
@@ -121,7 +122,7 @@ class HelpPanelOverlay extends StatelessWidget {
                           ),
                           Text(
                             screenName,
-                            style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
+                            style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
                           ),
                         ],
                       ),
@@ -156,7 +157,7 @@ class HelpPanelOverlay extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            ...entry.value.map((s) => _shortcutRow(s)),
+                            ...entry.value.map((s) => _shortcutRow(context, s)),
                           ],
                         );
                       }).toList(),
@@ -167,25 +168,25 @@ class HelpPanelOverlay extends StatelessWidget {
               // Footer hint
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: const BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+                decoration: BoxDecoration(
+                  color: context.picposField,
+                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _keyBadge('F1'),
+                    _keyBadge(context, 'F1'),
                     const SizedBox(width: 6),
                     Text(
                       tr('أو'),
-                      style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
+                      style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
                     ),
                     const SizedBox(width: 6),
-                    _keyBadge('Esc'),
+                    _keyBadge(context, 'Esc'),
                     const SizedBox(width: 6),
                     Text(
                       tr('للإغلاق'),
-                      style: GoogleFonts.cairo(fontSize: 11, color: AppColors.textMuted),
+                      style: GoogleFonts.cairo(fontSize: 11, color: context.picposMuted),
                     ),
                   ],
                 ),
@@ -197,7 +198,7 @@ class HelpPanelOverlay extends StatelessWidget {
     );
   }
 
-  Widget _shortcutRow(HelpShortcut shortcut) {
+  Widget _shortcutRow(BuildContext context, HelpShortcut shortcut) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
@@ -206,7 +207,7 @@ class HelpPanelOverlay extends StatelessWidget {
             width: 100,
             child: Align(
               alignment: AlignmentDirectional.centerStart,
-              child: _keyBadge(shortcut.keys),
+              child: _keyBadge(context, shortcut.keys),
             ),
           ),
           const SizedBox(width: 12),
@@ -221,13 +222,13 @@ class HelpPanelOverlay extends StatelessWidget {
     );
   }
 
-  Widget _keyBadge(String key) {
+  Widget _keyBadge(BuildContext context, String key) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.picposField,
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: context.picposHairline),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -241,7 +242,7 @@ class HelpPanelOverlay extends StatelessWidget {
         style: GoogleFonts.jetBrainsMono(
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
+          color: context.picposText,
         ),
       ),
     );

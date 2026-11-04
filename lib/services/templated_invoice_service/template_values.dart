@@ -44,111 +44,27 @@ abstract final class _TemplatedInvoiceValues {
   static final _additionPrice = RegExp(r'\s+[\d.,]+\s*\S*$');
 
   static String extractItemAdditions(List<Map<String, dynamic>> items) {
-    return _joinUnique(_noteParts(items)
-        .where((p) => p.startsWith('+'))
-        .map((p) => p.substring(1).replaceAll(_additionPrice, '').trim()));
+    return _joinUnique(
+      _noteParts(items)
+          .where((p) => p.startsWith('+'))
+          .map((p) => p.substring(1).replaceAll(_additionPrice, '').trim()),
+    );
   }
 
   static String extractItemOptions(List<Map<String, dynamic>> items) {
-    return _joinUnique(_noteParts(items)
-        .where((p) => p.startsWith('(') && p.endsWith(')'))
-        .map((p) {
-      final inner = p.substring(1, p.length - 1);
-      final colon = inner.indexOf(':');
-      return (colon >= 0 ? inner.substring(colon + 1) : inner).trim();
-    }));
+    return _joinUnique(
+      _noteParts(items).where((p) => p.startsWith('(') && p.endsWith(')')).map((
+        p,
+      ) {
+        final inner = p.substring(1, p.length - 1);
+        final colon = inner.indexOf(':');
+        return (colon >= 0 ? inner.substring(colon + 1) : inner).trim();
+      }),
+    );
   }
 
-  static String? resolveShiftValue(String type, ShiftClosingSnapshot s) {
-    String n(double v) => v.toStringAsFixed(_docDecimals);
-
-    switch (type) {
-      case 'shift_invoice_count':
-        return s.invoiceCount.toString();
-      case 'shift_total_sales':
-        return n(s.totalSales);
-      case 'shift_system_cash':
-        return n(s.systemCash);
-      case 'shift_actual_cash':
-        return n(s.actualCash);
-      case 'shift_cash_variance':
-        return n(s.cashVariance);
-      case 'shift_system_card':
-        return n(s.systemCard);
-      case 'shift_actual_card':
-        return n(s.actualCard);
-      case 'shift_card_variance':
-        return n(s.cardVariance);
-
-      // §٥-٢ (بلاغٌ ميدانيّ 2026-08-11): «كليك» قناةُ دفعٍ كاملةٌ في اللقطة
-      // وتدخل في `shift_total_system` و`shift_total_actual` تحت — وكانت
-      // غائبةً عن **كلّ** طبقات القالب: لا حالةَ هنا، ولا عنصرَ في لوحة
-      // المصمّم، ولا صفَّ في القالب المبذور. فالمطبوعُ يعرض النقدَ والبطاقةَ
-      // ويطبع إجمالياً يشملها: المرصود `240,000 + 120,000` بإجمالي
-      // `560,000`. والقارئُ يجمع ما يراه فلا يطابق، فيظنّ العطبَ في الحساب.
-      case 'shift_system_click':
-        return n(s.systemClick);
-      case 'shift_actual_click':
-        return n(s.actualClick);
-      case 'shift_click_variance':
-        return n(s.clickVariance);
-
-      case 'shift_total_variance':
-        return n(s.totalVariance);
-      case 'shift_total_expenses':
-        return n(s.totalExpenses);
-      case 'shift_cash_refunds':
-        return n(s.cashRefunds);
-
-      // ── بنودُ «الحركة» الباقيةُ من الشاشة (بلاغ المالك 2026-08-12) ──
-      // شاشةُ `picpos_past_shifts_panel` تقرأ اللقطةَ مباشرةً فتعرض ستّةَ
-      // بنود؛ ثلاثةٌ منها لم يكن لها مفتاحٌ هنا فسقطت من الورقة وحدَها.
-      // والمشغّلُ يقارن الاثنين — بندٌ على الشاشة وغائبٌ عن المطبوع يُقرأ
-      // نقصاً في المطبوع لا نقصاً في القالب.
-      case 'shift_opening_balance':
-        return n(s.openingBalance);
-      case 'shift_cash_income':
-        return n(s.cashIncome);
-
-      // ⚠️ الآجلُ **للتوضيح لا للتسوية**: مبيعاتٌ لم تُقبَض، فلا خزنةَ
-      // تحمله. ضمُّه إلى `shift_total_system` كان يخلق عجزاً وهمياً بقيمته
-      // في كلّ ورديةٍ فيها بيعٌ آجل. يُعرض ويبقى خارج المجاميع.
-      case 'shift_credit_sales':
-        return n(s.creditSales);
-      case 'shift_credit_count':
-        return s.creditSalesCount.toString();
-
-      // مجاميعُ مشتقّة — لا حقلَ لها في اللقطة. تُجمع من الثلاثة (نقد ·
-      // بطاقة · كليك) لا من `totalSales`: الأخيرُ مبيعاتٌ والأولُ متحصَّل،
-      // ويفترقان بالآجل والمصروفات.
-      case 'shift_total_system':
-        return n(s.systemCash + s.systemCard + s.systemClick);
-      case 'shift_total_actual':
-        return n(s.actualCash + s.actualCard + s.actualClick);
-
-      case 'shift_status':
-        // أهمُّ سطرٍ في التقرير — الفرقُ ينطق بكلمته لا برقمه وحدَه.
-        if (s.totalVariance.abs() < 0.001) return 'مطابق';
-        return s.totalVariance < 0
-            ? 'عجز: ${n(s.totalVariance)}'
-            : 'زيادة: +${n(s.totalVariance)}';
-
-      case 'shift_number':
-        // لا رقمَ ورديةٍ في اللقطة — الموظّفُ والوقتُ هما ما يميّزها للقارئ.
-        final who = s.employeeName?.trim();
-        final when = s.closedAt;
-        if (who != null && who.isNotEmpty && when != null) {
-          return '$who — ${when.day}/${when.month}/${when.year}';
-        }
-        return who?.isNotEmpty == true ? who! : '—';
-
-      case 'shift_closing':
-        return 'تقرير إغلاق الوردية';
-
-      default:
-        return null;
-    }
-  }
+  static String? resolveShiftValue(String type, ShiftClosingSnapshot s) =>
+      pv.resolveShiftClosingValue(type, s, decimals: _docDecimals);
 
   /// تفويضٌ — انظر `_getDataValue`.
   static String _getLabel(String type) => pv.contentLabel(type);
@@ -251,36 +167,35 @@ abstract final class _TemplatedInvoiceValues {
     String? platformOrderNumber,
     double? cashAmount,
     double? bankAmount,
-  }) =>
-      pv.resolveContentValue(
-        type,
-        pv.PrintPayload(
-          invoiceNumber: invoiceNumber,
-          date: date,
-          customerName: customerName,
-          customerPhone: customerPhone,
-          customerAddress: customerAddress,
-          adhocCustomerName: adhocCustomerName,
-          adhocCustomerPhone: adhocCustomerPhone,
-          companyName: companyName,
-          companyAddress: companyAddress,
-          companyPhone: companyPhone,
-          companyTaxId: companyTaxId,
-          paymentMethod: paymentMethod,
-          cashierName: cashierName,
-          notes: notes,
-          subtotal: subtotal,
-          discount: discount,
-          tax: tax,
-          deliveryFee: deliveryFee,
-          total: total,
-          paid: paid,
-          remaining: remaining,
-          orderNumber: orderNumber,
-          platformOrderNumber: platformOrderNumber,
-          cashAmount: cashAmount,
-          bankAmount: bankAmount,
-          decimals: _docDecimals,
-        ),
-      );
+  }) => pv.resolveContentValue(
+    type,
+    pv.PrintPayload(
+      invoiceNumber: invoiceNumber,
+      date: date,
+      customerName: customerName,
+      customerPhone: customerPhone,
+      customerAddress: customerAddress,
+      adhocCustomerName: adhocCustomerName,
+      adhocCustomerPhone: adhocCustomerPhone,
+      companyName: companyName,
+      companyAddress: companyAddress,
+      companyPhone: companyPhone,
+      companyTaxId: companyTaxId,
+      paymentMethod: paymentMethod,
+      cashierName: cashierName,
+      notes: notes,
+      subtotal: subtotal,
+      discount: discount,
+      tax: tax,
+      deliveryFee: deliveryFee,
+      total: total,
+      paid: paid,
+      remaining: remaining,
+      orderNumber: orderNumber,
+      platformOrderNumber: platformOrderNumber,
+      cashAmount: cashAmount,
+      bankAmount: bankAmount,
+      decimals: _docDecimals,
+    ),
+  );
 }

@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/permissions/permission_codes.dart';
 import '../../data/providers/providers.dart';
 import '../../services/manager_approval_cache.dart';
 import 'manager_approval_dialog.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// النص اللي بيتعرض بدل المبلغ لما صلاحية العرض ناقصة.
 const String kMaskedValuePlaceholder = '••••';
@@ -38,7 +38,7 @@ class PermissionMaskedText extends StatelessWidget {
       fallback: Text(
         kMaskedValuePlaceholder,
         style: (style ?? const TextStyle()).copyWith(
-          color: AppColors.textMuted,
+          color: context.picposMuted,
         ),
       ),
       child: Text(text, style: style),

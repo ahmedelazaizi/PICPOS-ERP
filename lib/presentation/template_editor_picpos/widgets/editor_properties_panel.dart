@@ -19,6 +19,7 @@ import '../../picpos_shell/picpos_empty_state.dart';
 import '../../picpos_shell/picpos_section_header.dart';
 import '../../picpos_shell/picpos_surface.dart';
 import 'editor_canvas.dart' show bandLabel, bandTint;
+import 'editor_panel_parts.dart';
 
 /// جاهزاتُ الشرط — «`field op value` فقط، لا مفسّرَ تعابيرَ كامل».
 const conditionPresets = <String>[
@@ -725,32 +726,10 @@ class _ColumnRowState extends State<_ColumnRow> {
 // لبِناتٌ صغيرة
 // ═══════════════════════════════════════════════════════════════════════════
 
-class _Section extends StatelessWidget {
-  const _Section({required this.title, required this.child});
-
-  final String title;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 13),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: context.picposHairline)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(title,
-                style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: context.picposMuted)),
-            const SizedBox(height: 9),
-            child,
-          ],
-        ),
-      );
-}
+typedef _Section = EditorPanelSection;
+typedef _Stepper = EditorStepper;
+typedef _Toggle = EditorToggle;
+typedef _MiniButton = EditorMiniButton;
 
 class _Field extends StatelessWidget {
   const _Field({
@@ -787,134 +766,6 @@ class _Field extends StatelessWidget {
           border: const OutlineInputBorder(),
         ),
       );
-}
-
-/// ± بخطوةٍ ثابتة — بالمليمتر أو بالنقطة.
-class _Stepper extends StatelessWidget {
-  const _Stepper({
-    required this.label,
-    required this.value,
-    required this.onDelta,
-    this.step = 1,
-    this.decimals = 1,
-  });
-
-  final String label;
-  final double value;
-  final ValueChanged<double> onDelta;
-  final double step;
-  final int decimals;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                  color: context.picposMuted)),
-        ),
-        _MiniButton(
-            icon: PhosphorIconsBold.minus, onTap: () => onDelta(-step)),
-        SizedBox(
-          width: 40,
-          child: Text(
-            value.toStringAsFixed(decimals),
-            textAlign: TextAlign.center,
-            style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w800,
-                fontFeatures: const [FontFeature.tabularFigures()],
-                color: context.picposText),
-          ),
-        ),
-        _MiniButton(icon: PhosphorIconsBold.plus, onTap: () => onDelta(step)),
-      ],
-    );
-  }
-}
-
-class _MiniButton extends StatelessWidget {
-  const _MiniButton({required this.icon, required this.onTap});
-
-  final IconData icon;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) => InkWell(
-        onTap: onTap,
-        child: Container(
-          width: 24,
-          height: 24,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            border: Border.all(color: context.picposHairline),
-            borderRadius: BorderRadius.circular(7),
-          ),
-          child: Icon(icon,
-              size: 11,
-              color: onTap == null
-                  ? context.picposHairline
-                  : context.picposText),
-        ),
-      );
-}
-
-class _Toggle extends StatelessWidget {
-  const _Toggle({
-    required this.icon,
-    required this.on,
-    required this.onTap,
-    this.label,
-    this.wide = false,
-  });
-
-  final IconData icon;
-  final bool on;
-  final VoidCallback onTap;
-  final String? label;
-  final bool wide;
-
-  @override
-  Widget build(BuildContext context) {
-    final tone = on ? context.picposBrandInk : context.picposMuted;
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        height: 30,
-        width: wide ? double.infinity : null,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(
-          border: Border.all(
-              color: on ? context.picposBrandInk : context.picposHairline,
-              width: 1.5),
-          color: on
-              ? context.picposBrandInk.withValues(alpha: 0.08)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: wide ? MainAxisSize.max : MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 13, color: tone),
-            if (label != null) ...[
-              const SizedBox(width: 5),
-              Text(label!,
-                  style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: tone)),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _OptionRow extends StatelessWidget {

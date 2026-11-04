@@ -1086,7 +1086,7 @@ class _NonToggleablePermissionTile extends StatelessWidget {
                 Text(
                   reason,
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 11,
                     color: Colors.grey.shade400,
                   ),
                 ),

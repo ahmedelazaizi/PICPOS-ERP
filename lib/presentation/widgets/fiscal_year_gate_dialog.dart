@@ -7,6 +7,7 @@ import '../../core/config/brand.dart';
 import '../../core/config/business_profile_provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/providers/providers.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Shows a blocking dialog when no fiscal year covers the current date.
 /// The user must enter the developer/admin password to proceed to the
@@ -227,7 +228,7 @@ class _FiscalYearGateContentState
               Text(
                 tr('أدخل كلمة مرور المطور للانتقال لإدارة السنوات المالية:'),
                 style: GoogleFonts.cairo(
-                    fontSize: 12, color: AppColors.textSecondary),
+                    fontSize: 12, color: context.picposSecondary),
               ),
               const SizedBox(height: 8),
               TextField(
@@ -282,12 +283,12 @@ class _FiscalYearGateContentState
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          Icon(icon, size: 14, color: AppColors.textSecondary),
+          Icon(icon, size: 14, color: context.picposSecondary),
           const SizedBox(width: 6),
           Text(
             text,
             style: GoogleFonts.cairo(
-                fontSize: 12, color: AppColors.textSecondary),
+                fontSize: 12, color: context.picposSecondary),
           ),
         ],
       ),

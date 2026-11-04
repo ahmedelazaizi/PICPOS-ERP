@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../core/theme/app_colors.dart';
+import '../core/theme/core_surface_colors.dart';
 
 final _currFmt = NumberFormat('#,##0.00');
 final _pctFmt = NumberFormat('#,##0.0');
@@ -116,9 +117,9 @@ class ProfitMarginAnalysisWidget extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _summaryCol('إيرادات', analysis.totalRevenue, AppColors.primary),
-                _summaryCol('تكلفة', analysis.totalCost, AppColors.textMuted),
-                _summaryCol('ربح', analysis.totalProfit,
+                _summaryCol(context, 'إيرادات', analysis.totalRevenue, AppColors.primary),
+                _summaryCol(context, 'تكلفة', analysis.totalCost, context.coreTextMuted),
+                _summaryCol(context, 'ربح', analysis.totalProfit,
                     analysis.totalProfit >= 0 ? AppColors.success : AppColors.error),
               ],
             ),
@@ -132,10 +133,10 @@ class ProfitMarginAnalysisWidget extends StatelessWidget {
     );
   }
 
-  Widget _summaryCol(String label, double value, Color color) {
+  Widget _summaryCol(BuildContext context, String label, double value, Color color) {
     return Column(
       children: [
-        Text(label, style: GoogleFonts.cairo(fontSize: 10, color: AppColors.textMuted)),
+        Text(label, style: GoogleFonts.cairo(fontSize: 11, color: context.coreTextMuted)),
         Text('$currencySymbol ${_currFmt.format(value)}',
             style: GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.w700, color: color)),
       ],

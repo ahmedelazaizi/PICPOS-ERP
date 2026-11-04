@@ -228,6 +228,7 @@ class AccountingService {
     required double paid,
     required double remaining,
     double? invoiceTotal,
+    double salesDiscount = 0,
 
     /// فرقُ تقريب الإجماليّ — يُمرَّر كما هو إلى المصنع.
     double roundingAdjustment = 0,
@@ -252,6 +253,7 @@ class AccountingService {
     paid: paid,
     remaining: remaining,
     invoiceTotal: invoiceTotal,
+    salesDiscount: salesDiscount,
     roundingAdjustment: roundingAdjustment,
     paymentMethod: paymentMethod,
     deliveryFee: deliveryFee,

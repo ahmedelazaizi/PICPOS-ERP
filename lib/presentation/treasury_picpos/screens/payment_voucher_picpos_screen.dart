@@ -39,6 +39,7 @@ import 'cheque_books_picpos_screen.dart' show chequeBooksListProvider;
 import 'receipt_voucher_picpos_screen.dart' show voucherOpenInvoicesProvider;
 import '../voucher_sources.dart';
 import 'voucher_form_picpos.dart';
+import 'voucher_allocation_guard.dart';
 
 final _costCentersProvider = FutureProvider.autoDispose<List<CostCenter>>(
     (ref) => ref.watch(accountingRepositoryProvider).getActiveCostCenters());
@@ -149,6 +150,49 @@ class _PaymentVoucherPicposScreenState
     _drawn = const [];
     try {
       final amount = v.grossAmount;
+      if (v.allocations.isNotEmpty && !ref.read(isClientModeProvider)) {
+        try {
+          await preflightVoucherAllocations(
+            VoucherAllocationPreflightRequest(
+              voucherAmount: amount,
+              partyId: v.partyId,
+              forSupplier: true,
+              allocations: [
+                for (final allocation in v.allocations)
+                  (
+                    invoiceType: allocation.invoiceType,
+                    invoiceId: allocation.invoiceId,
+                    amount: allocation.amount,
+                  ),
+              ],
+            ),
+            (partyId, forSupplier) async {
+              final invoices = await ref
+                  .read(treasuryRepositoryProvider)
+                  .getOpenInvoicesForParty(
+                    partyId: partyId,
+                    forSupplier: forSupplier,
+                  );
+              return [
+                for (final invoice in invoices)
+                  VoucherInvoiceSnapshot(
+                    invoiceType: invoice.invoiceType,
+                    id: invoice.id,
+                    number: invoice.number,
+                    total: invoice.total,
+                    paid: invoice.paid,
+                  ),
+              ];
+            },
+          );
+        } on StateError catch (error) {
+          _toast(error.message, ToastType.error);
+          return;
+        } on ArgumentError catch (error) {
+          _toast('$error', ToastType.error);
+          return;
+        }
+      }
 
       // E3 — ورقةُ دفتر السندات تُفحَص قبل أيّ كتابة (وقبل سحب الشيكات).
       final db = ref.read(databaseProvider);

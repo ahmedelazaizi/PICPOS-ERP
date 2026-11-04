@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_dynamic_calls
 import 'package:drift/drift.dart';
 import 'package:picpos_erp/data/database/database.dart';
+import 'package:picpos_erp/services/sync/host_owned_setting_keys.dart';
 import 'package:picpos_erp/services/sync/sync_strategy.dart';
 
 class SettingSyncStrategy extends SyncStrategy {
@@ -19,7 +20,8 @@ class SettingSyncStrategy extends SyncStrategy {
     // إعدادات خاصة بالجهاز أو الفرع لا يجب طمسها من السيرفر الرئيسي
     // القائمةُ ثابتٌ مُصدَّرٌ في ذيل الملفّ — يقرؤها الكاتبُ أيضاً.
     for (final entry in settingsMap.entries) {
-      if (!isDeviceLocalSettingKey(entry.key)) {
+      if (!isDeviceLocalSettingKey(entry.key) &&
+          !isHostOwnedSettingKey(entry.key)) {
         await db.setSetting(entry.key, entry.value?.toString() ?? '');
       }
     }

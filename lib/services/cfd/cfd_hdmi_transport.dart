@@ -392,7 +392,9 @@ class CfdHdmiTransport implements CfdTransport {
             if (data.subtotal !== undefined) {
                 totalsHtml += '<div class="total-row"><span>المجموع</span><span>' + Number(data.subtotal).toFixed(3) + '</span></div>';
             }
-            if (data.discount && data.discount > 0) {
+            if (data.discountAmount && data.discountAmount > 0) {
+                totalsHtml += '<div class="total-row"><span>الخصم</span><span>-' + Number(data.discountAmount).toFixed(3) + '</span></div>';
+            } else if (data.discount && data.discount > 0) {
                 totalsHtml += '<div class="total-row"><span>الخصم</span><span>-' + Number(data.discount).toFixed(2) + '%</span></div>';
             }
             if (data.tax && data.tax > 0) {

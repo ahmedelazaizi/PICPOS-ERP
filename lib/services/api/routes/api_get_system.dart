@@ -216,7 +216,9 @@ extension ApiHandlerSystemGets on ApiHandler {
 
   Future<Response> _getFiscalYears(Request request) async {
     try {
-      final years = await _db.select(_db.fiscalYears).get();
+      final years = await (_db.select(_db.fiscalYears)
+            ..where((year) => year.deletedAt.isNull()))
+          .get();
       final jsonList = years
           .map((f) => <String, dynamic>{
                 'id': f.id,
@@ -241,7 +243,14 @@ extension ApiHandlerSystemGets on ApiHandler {
 
   Future<Response> _getAccountingPeriods(Request request) async {
     try {
-      final rows = await _db.select(_db.accountingPeriods).get();
+      final visibleYearIds = (await (_db.select(_db.fiscalYears)
+                ..where((year) => year.deletedAt.isNull()))
+              .get())
+          .map((year) => year.id)
+          .toSet();
+      final rows = await (_db.select(_db.accountingPeriods)
+            ..where((period) => period.fiscalYearId.isIn(visibleYearIds)))
+          .get();
       final jsonList = rows.map((p) => <String, dynamic>{
         'id': p.id,
         'fiscalYearId': p.fiscalYearId,

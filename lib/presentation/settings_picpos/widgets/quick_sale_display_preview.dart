@@ -128,7 +128,7 @@ class QuickSaleDisplayPreview extends StatelessWidget {
             ),
             child:  Text(tr('مقياس ٥٠٪'),
                 style: const TextStyle(
-                    fontSize: 9.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF9EC1FF))),
           ),
@@ -147,7 +147,7 @@ class QuickSaleDisplayPreview extends StatelessWidget {
           const Icon(PhosphorIconsBold.bell, size: 11, color: Color(0xFFF59E0B)),
           const SizedBox(width: 6),
           Text(tr('الفرع الرئيسي'),
-              style: const TextStyle(fontSize: 8.5, color: _muted)),
+              style: const TextStyle(fontSize: 11, color: _muted)),
         ]),
       );
 
@@ -162,7 +162,7 @@ class QuickSaleDisplayPreview extends StatelessWidget {
           const Icon(PhosphorIconsBold.barcode, size: 12, color: _muted),
           const SizedBox(width: 7),
           Text(tr('امسح الباركود…'),
-              style: const TextStyle(fontSize: 9, color: _muted)),
+              style: const TextStyle(fontSize: 11, color: _muted)),
         ]),
       );
 

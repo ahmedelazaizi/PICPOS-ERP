@@ -9,6 +9,7 @@ import '../../../domain/repositories/treasury_repository.dart';
 import '../screens/treasury_closing_screen.dart';
 import 'package:picpos_erp/l10n/app_localizations.dart';
 import '../../../../../../core/constants/app_constants.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 class TreasuryClosingTab extends StatefulWidget {
   final AsyncValue<List<SafeData>> safes;
@@ -252,7 +253,7 @@ class _SafeClosingCard extends StatelessWidget {
                         fontFeatures: const [FontFeature.tabularFigures()],
                         color: hasBalance
                             ? AppColors.success
-                            : AppColors.textMuted,
+                            : context.picposMuted,
                       ),
                     ),
                   ],

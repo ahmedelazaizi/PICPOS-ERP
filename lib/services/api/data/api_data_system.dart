@@ -40,13 +40,25 @@ extension ApiDataSystemRoutes on ApiDataHandler {
       final blocked = <String>[];
       final allowed = <String, String>{};
       incoming.forEach((k, v) {
-        if (isDeviceLocalSettingKey(k) || isServerSecretSettingKey(k)) {
+        if (isDeviceLocalSettingKey(k) ||
+            isServerSecretSettingKey(k) ||
+            isHostOwnedSettingKey(k)) {
           blocked.add(k);
         } else {
           allowed[k] = v;
         }
       });
       if (blocked.isNotEmpty) {
+        // S-01: مفاتيح الخادم/الترخيص المحجوبة تُدقَّق عند المحاولة.
+        final hostOwned = blocked.where(isHostOwnedSettingKey).toList();
+        if (hostOwned.isNotEmpty) {
+          unawaited(AuditLog.record(
+            'settings_host_owned_write_blocked',
+            level: AuditLevel.critical,
+            payload: {'keys': hostOwned},
+            userId: ApiUserCtx.userIdOf(request),
+          ));
+        }
         unawaited(DiagnosticLogger.log(
           'API-SETTINGS',
           '⛔ رُفض ${blocked.length} مفتاحاً يخصُّ الجهاز: '
@@ -278,7 +290,11 @@ extension ApiDataSystemRoutes on ApiDataHandler {
       final dir = Directory(backupDir);
       if (!await dir.exists()) await dir.create(recursive: true);
 
-      final backupPath = '$backupDir/backup_${clientName}_$timestamp.sqlite';
+      // S-02: الاسم مُعقَّم والمسار المُحلَّل يجب أن يقع داخل مجلد النسخ.
+      final backupPath = resolveBackupFilePath(backupDir, clientName, timestamp);
+      if (backupPath == null) {
+        return jsonResponse({'error': 'Invalid clientName'}, statusCode: 400);
+      }
       await File(backupPath).writeAsBytes(dbBytes);
 
       debugPrint(

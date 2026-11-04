@@ -16,7 +16,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:picpos_erp/core/utils/friendly_error.dart';
 
-import '../../../core/theme/app_colors.dart';
 import '../../../data/providers/providers.dart';
 import 'treasury_movements_list_picpos.dart';
 import '../../picpos_shell/picpos_surface.dart';
@@ -158,7 +157,7 @@ class _SafesPaneState extends State<_SafesPane> {
             widget.searchQuery.isNotEmpty
                 ? tr('لا توجد صناديق مطابقة')
                 : widget.emptyLabel,
-            style: const TextStyle(color: AppColors.textMuted),
+            style: TextStyle(color: context.picposMuted),
           ),
         ),
       _ => ListView.separated(
@@ -208,10 +207,10 @@ class _SafesPaneState extends State<_SafesPane> {
                 const Spacer(),
                 Text(
                   tr('{p0} صندوق', {'p0': visible.length}),
-                  style: const TextStyle(
-                    fontSize: 10.5,
+                  style: TextStyle(
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
-                    color: AppColors.textMuted,
+                    color: context.picposMuted,
                   ),
                 ),
               ],

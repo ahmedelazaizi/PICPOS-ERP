@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/permissions/permission_codes.dart';
 import 'permission_guard.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// أكواد رؤية أرقام فواتير المبيعات — **كلاهما معاً** (AUTHZ-004).
 ///
@@ -33,7 +33,7 @@ class AllPermissionsMaskedText extends StatelessWidget {
       allOf: allOf,
       fallback: Text(
         kMaskedValuePlaceholder,
-        style: (style ?? const TextStyle()).copyWith(color: AppColors.textMuted),
+        style: (style ?? const TextStyle()).copyWith(color: context.picposMuted),
       ),
       child: Text(text, style: style),
     );
@@ -60,7 +60,7 @@ class AnyPermissionMaskedText extends StatelessWidget {
       anyOf: anyOf,
       fallback: Text(
         kMaskedValuePlaceholder,
-        style: (style ?? const TextStyle()).copyWith(color: AppColors.textMuted),
+        style: (style ?? const TextStyle()).copyWith(color: context.picposMuted),
       ),
       child: Text(text, style: style),
     );

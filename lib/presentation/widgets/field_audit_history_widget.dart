@@ -161,7 +161,7 @@ class _ValueBox extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(fontSize: 10, color: textColor.withValues(alpha: 0.7))),
+          Text(label, style: TextStyle(fontSize: 11, color: textColor.withValues(alpha: 0.7))),
           Text(
             value,
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: textColor),

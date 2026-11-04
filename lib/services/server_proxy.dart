@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'tls_trust.dart';
 import 'api/client_schema_gate.dart';
@@ -13,7 +12,7 @@ import '../core/logging/diagnostic_logger.dart';
 import 'network_service.dart';
 import 'device_identity_service.dart';
 import 'legacy_identifiers.dart';
-import 'storage_key_migration.dart';
+import 'secure_token_store.dart';
 import '../core/config/brand.dart';
 import '../domain/models/voucher_book.dart';
 import 'approval/approval_proof_carrier.dart';
@@ -39,14 +38,9 @@ class ServerProxy {
   /// default is 8 s; tests on slow runners may raise it (injectable, not a setting).
   static Duration requestTimeout = const Duration(seconds: 8);
 
-  /// PHASE-12 (S4): Secure storage for API token
-  static const _storage = FlutterSecureStorage();
-  static const _tokenKey = 'picpos_api_token';
-
-  /// Secure-storage view with the old-name → new-name migration
-  /// (`StorageKeyMigration`): reads fall back to the old key and copy it,
-  /// writes/deletes cover both names so a stale token can't resurrect.
-  static const _tokenStore = FlutterSecureSecretStore(_storage);
+  /// S-04: the token lives in secure storage only (SecureTokenStore migrates
+  /// and removes any legacy plaintext SharedPreferences copy). The old-name
+  /// → new-name secure-key migration (`StorageKeyMigration`) is preserved.
   static String get _oldTokenKey => LegacyIdentifiers.apiTokenStorageKey;
 
   /// API authentication token (received from health check handshake)
@@ -55,81 +49,31 @@ class ServerProxy {
   /// Public getter for the API token
   String? get apiToken => _apiToken;
 
-  /// Set the API token after successful health check handshake
-  /// PHASE-12: Also persists to secure storage AND SharedPreferences so the
-  /// two restore paths (here and NetworkService.init) stay in sync.
+  /// Set the API token after successful health check handshake and persist
+  /// it (secure storage; prefs only as a fallback when that is unavailable).
   void setApiToken(String? token) {
     _apiToken = token;
     if (token != null && token.isNotEmpty) {
-      unawaited(StorageKeyMigration.write(
-        _tokenStore,
-        newKey: _tokenKey,
-        oldKey: _oldTokenKey,
-        value: token,
-      ).catchError((Object _) {}));
-      // Mirror to SharedPreferences with the key NetworkService also writes
-      // to. Without this mirror, a token saved by setApiToken() would never
-      // appear in prefs, so NetworkService.init() couldn't restore it on the
-      // next boot — the client would show
-      //   ❌ fetchUsers returned null — token missing or server down
-      // until the user manually triggered a /api/health handshake.
-      unawaited(_writeTokenToPrefs(token));
+      unawaited(SecureTokenStore.instance
+          .write(SecureTokenStore.apiToken, token,
+              legacySecureKey: _oldTokenKey)
+          .catchError((Object _) {}));
     } else {
-      unawaited(StorageKeyMigration.delete(
-        _tokenStore,
-        newKey: _tokenKey,
-        oldKey: _oldTokenKey,
-      ).catchError((Object _) {}));
-      unawaited(_clearTokenFromPrefs());
+      unawaited(SecureTokenStore.instance
+          .delete(SecureTokenStore.apiToken, legacySecureKey: _oldTokenKey)
+          .catchError((Object _) {}));
     }
   }
 
-  Future<void> _writeTokenToPrefs(String token) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('network_api_token', token);
-    } catch (_) {}
-  }
-
-  Future<void> _clearTokenFromPrefs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('network_api_token');
-    } catch (_) {}
-  }
-
-  /// PHASE-12: Restore token from secure storage on app startup.
-  /// Falls back to SharedPreferences (the key NetworkService writes after
-  /// /api/health) when secure storage is empty — covers the case where the
-  /// secure-storage entry was wiped by an OS update or by switching user
-  /// profiles, but the prefs copy is still intact.
+  /// PHASE-12: Restore token from secure storage on app startup. A legacy
+  /// plaintext prefs copy is migrated into secure storage and removed.
   Future<void> restoreToken() async {
     if (_apiToken != null && _apiToken!.isNotEmpty) return;
     try {
-      _apiToken = await StorageKeyMigration.read(
-        _tokenStore,
-        newKey: _tokenKey,
-        oldKey: _oldTokenKey,
-      );
+      _apiToken = await SecureTokenStore.instance
+          .read(SecureTokenStore.apiToken, legacySecureKey: _oldTokenKey);
     } catch (_) {}
-    if (_apiToken == null || _apiToken!.isEmpty) {
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        final fromPrefs = prefs.getString('network_api_token');
-        if (fromPrefs != null && fromPrefs.isNotEmpty) {
-          _apiToken = fromPrefs;
-          // Mirror back into secure storage so both paths converge.
-          unawaited(StorageKeyMigration.write(
-            _tokenStore,
-            newKey: _tokenKey,
-            oldKey: _oldTokenKey,
-            value: fromPrefs,
-          ).catchError((Object _) {}));
-        }
-      } catch (_) {}
-    }
   }
-
   // ═══════════════════════════════════════════════════════════════
   // Spec 151 (P1-8) — signed per-user session tokens
   // ═══════════════════════════════════════════════════════════════

@@ -3,14 +3,7 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 // يتصلّح في المصدر أولاً ثم يُنقل بـ patch لهذا الملف (مصيدة النسخ §٥.٨). لا
 // يُنسخ أبداً من D:\URAL-ERP.
 //
-// الشاشة الأصل (lib/presentation/screens/users_management_screen.dart)
-// مونوليث 869 سطر بلا `part` files. الفورك هنا ينسخ منطق الـ State كاملاً
-// حرفياً بلا أي تعديل منطقي: تعيين الدور/الشاشة الافتراضية/حد الخصم الأقصى،
-// تفعيل/تعطيل المستخدم، قفل/فك القفل، الحذف (تعطيل+قفل ناعم)، شارة الفرع،
-// ألوان/أيقونات الأدوار، وقائمة المستخدمين بالكامل (`_buildUsersList` عبر
-// `ExpansionTile` لكل مستخدم بكل ما فيها من حقول وأزرار). يتغيّر بس اسم الكلاس
-// وطبقة العرض الخارجية (PicPosScreenScaffold بدل Scaffold+AppBar يدوي؛ زر
-// إضافة مستخدم انتقل من AppBar actions إلى headerActions).
+// الأصل: users_management_screen.dart — يُنسخ منطق الـ State حرفياً؛ يتغيّر الاسم وطبقة العرض (PicPosScreenScaffold).
 //
 // REUSE (import لا نسخ): `allUsersProvider`/`allRolesProvider`/
 // `allUserBranchNamesProvider`/`authProvider`/`authRepositoryProvider`/
@@ -39,6 +32,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../../core/auth/bootstrap_admin.dart';
 import '../../../core/permissions/permission_codes.dart';
 import '../../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 import '../../../core/widgets/shimmer_loading.dart';
 
 import '../../../data/providers/providers.dart';
@@ -294,10 +288,10 @@ class _UsersManagementPicposScreenState
                       '@${user.username}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 10.5,
+                      style: TextStyle(
+                        fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textMuted,
+                        color: context.picposMuted,
                       ),
                     ),
                   ],
@@ -314,7 +308,7 @@ class _UsersManagementPicposScreenState
                 child: Text(
                   stLabel,
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: stColor,
                   ),
@@ -333,13 +327,13 @@ class _UsersManagementPicposScreenState
           _userMetaLine(
             PhosphorIconsBold.buildings,
             branchLabel,
-            AppColors.textMuted,
+            context.picposMuted,
           ),
           const SizedBox(height: 6),
           _userMetaLine(
             PhosphorIconsBold.house,
             tr('الشاشة الافتراضية: {p0}', {'p0': defaultScreenLabel(user.defaultScreen)}),
-            AppColors.textMuted,
+            context.picposMuted,
           ),
           const Spacer(),
           Row(
@@ -376,10 +370,10 @@ class _UsersManagementPicposScreenState
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  icon: const Icon(
+                  icon: Icon(
                     PhosphorIconsBold.dotsThreeVertical,
                     size: 13,
-                    color: AppColors.textMuted,
+                    color: context.picposMuted,
                   ),
                   onSelected: (v) => _onUserMenu(v, userWithRole, roles),
                   itemBuilder: (_) => [
@@ -446,7 +440,7 @@ class _UsersManagementPicposScreenState
             style: TextStyle(
               fontSize: 11.5,
               fontWeight: bold ? FontWeight.w700 : FontWeight.w600,
-              color: bold ? null : AppColors.textMuted,
+              color: bold ? null : context.picposMuted,
             ),
           ),
         ),
@@ -695,13 +689,13 @@ class _UsersManagementPicposScreenState
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(PhosphorIconsBold.lockKey,
-                    size: 48, color: AppColors.textMuted),
+                Icon(PhosphorIconsBold.lockKey,
+                    size: 48, color: context.picposMuted),
                 const SizedBox(height: 16),
                 Text(
                   message,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: AppColors.textMuted),
+                  style: TextStyle(color: context.picposMuted),
                 ),
               ],
             ),

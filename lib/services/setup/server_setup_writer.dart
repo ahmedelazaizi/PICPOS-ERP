@@ -412,12 +412,11 @@ class ServerSetupWriter {
   }
 
   Future<void> _fiscalYear(AppDatabase db, int year) async {
-    final years = await db.getFiscalYears();
-    if (years.any((y) => y.name.trim() == '$year')) return;
     final start = DateTime(year, 1, 1);
-    final end = DateTime(year, 12, 31);
-    final id =
-        await db.createFiscalYear(name: '$year', startDate: start, endDate: end);
+    final end = DateTime(year, 12, 31, 23, 59, 59, 999);
+    final id = await db.ensureFiscalYear(
+      name: '$year', startDate: start, endDate: end,
+    );
     await db.generatePeriodsForYear(id, start, end);
   }
 }

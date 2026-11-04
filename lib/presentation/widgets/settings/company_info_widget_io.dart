@@ -413,17 +413,17 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
                         return  Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(
+                            Icon(
                               PhosphorIconsBold.uploadSimple,
                               size: 32,
-                              color: AppColors.textMuted,
+                              color: context.picposMuted,
                             ),
                             const SizedBox(height: 8),
                             Text(
                               tr('اضغط لاختيار'),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: AppColors.textMuted,
+                                color: context.picposMuted,
                               ),
                             ),
                           ],
@@ -450,7 +450,7 @@ class _CompanyInfoWidgetState extends ConsumerState<CompanyInfoWidget> {
           const SizedBox(height: 8),
            Text(
             tr('يظهر الشعار على الفواتير والإيصالات'),
-            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+            style: TextStyle(fontSize: 11, color: context.picposMuted),
           ),
         ],
       ),

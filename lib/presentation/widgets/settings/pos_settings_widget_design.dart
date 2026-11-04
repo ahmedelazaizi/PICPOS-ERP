@@ -39,7 +39,7 @@ extension _PosSettingsWidgetDesign on _PosSettingsWidgetState {
                   child: Text(
                     tr('أقسام الحوار'),
                     style: TextStyle(
-                      fontSize: 10.5,
+                      fontSize: 11,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 0.4,
                       color: context.picposMuted,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
+import 'package:picpos_erp/core/theme/readable_colors.dart';
 
 /// Reusable summary card widget for statistics display
 /// Used across Dashboard, Inventory, Purchases, and Treasury screens
@@ -43,7 +44,7 @@ class SummaryCard extends StatelessWidget {
               color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: Icon(icon, color: readableOn(context, color), size: 24),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -52,9 +53,9 @@ class SummaryCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textMuted,
+                    color: context.picposMuted,
                   ),
                 ),
                 Text(
@@ -62,7 +63,7 @@ class SummaryCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: color,
+                    color: readableOn(context, color),
                   ),
                 ),
               ],
@@ -119,7 +120,7 @@ class SummaryCardCompact extends StatelessWidget {
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: 11,
                   color: color.withValues(alpha: 0.7),
                 ),
               ),

@@ -7,12 +7,16 @@ import '../data/database/database.dart';
 import '../core/logging/diagnostic_logger.dart';
 import 'conflict_resolution_service.dart';
 import 'delta_pull_column_filter.dart';
+import 'delta_upsert_sql.dart';
 import 'id_namespace_service.dart';
 import 'api/client_schema_gate.dart';
 import 'delta_pull_failure_tracker.dart';
 import 'sync/user_credential_merge.dart';
 import 'server_proxy.dart';
 import 'sync_event_bus.dart';
+import 'sync/strategies/journal_sync_strategy.dart';
+
+part 'delta_pull_journal_soft_delete.dart';
 
 /// P3.1 + P4.3 — Delta Pull Service
 ///
@@ -1065,19 +1069,12 @@ class DeltaPullService {
 
     // Soft-delete: server marks rows with deleted_at instead of hard-deleting.
     if (row['deleted_at'] != null) {
-      try {
-        await _db!.customStatement(
-          'UPDATE $table SET deleted_at = ? WHERE id = ?',
-          [row['deleted_at'], localId],
-        );
-      } catch (error, stack) {
-        await DiagnosticLogger.logError(
-          'SYNC-PULL',
-          'soft-delete apply failed for $table id=$localId',
-          error,
-          stack,
-        );
-      }
+      await _applyIncomingSoftDelete(
+        _db!,
+        table,
+        localId,
+        row['deleted_at'],
+      );
       return;
     }
 
@@ -1193,13 +1190,11 @@ class DeltaPullService {
           _db!, row, localId ?? (row['id'] as int? ?? 0));
     }
 
-    // Normal path: server row wins — INSERT OR REPLACE by id.
-    final cols = row.keys.join(', ');
-    final placeholders = List.filled(row.length, '?').join(', ');
+    // Normal path: server row wins — UPSERT by id (R5).
     var applied = false;
     try {
       await _db!.customStatement(
-        'INSERT OR REPLACE INTO $table ($cols) VALUES ($placeholders)',
+        deltaUpsertSql(table, row),
         row.values.toList(),
       );
       applied = true;

@@ -77,104 +77,124 @@ class _RecoveryCodeDialogState extends State<RecoveryCodeDialog> {
   bool _saved = false;
   String? _note;
 
+  /// X/رجوع/Escape: الإغلاق المباشر ممكن بعد تأكيد الحفظ؛ وقبله يُسأل المستخدم
+  /// «هل حفظت رمز الاسترداد؟» ولا يُغلق إلا بالتأكيد (يعيد `true` كالزر «تم»).
+  Future<void> _onPopBlocked(bool didPop, Object? result) async {
+    if (didPop) return;
+    final navigator = Navigator.of(context);
+    if (_saved) {
+      navigator.pop(true);
+      return;
+    }
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => PicPosDialog(
+        key: const Key('dbenc_code_close_confirm'),
+        icon: PhosphorIconsBold.lockKey,
+        accent: AppColors.warning,
+        title: tr('رمز استرداد قاعدة البيانات'),
+        width: 420,
+        onCancel: () => Navigator.pop(ctx, false),
+        body: [
+          Text(tr('هل حفظت رمز الاسترداد؟')),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                key: const Key('dbenc_code_close_no'),
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(tr('لا')),
+              ),
+              const SizedBox(width: 9),
+              FilledButton(
+                key: const Key('dbenc_code_close_yes'),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(tr('نعم')),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+    if (ok == true && mounted) navigator.pop(true);
+  }
+
   @override
   Widget build(BuildContext context) => PopScope(
         canPop: false,
-        child: Dialog(
+        onPopInvokedWithResult: _onPopBlocked,
+        child: PicPosDialog(
           key: const Key('dbenc_code_dialog'),
-          insetPadding: const EdgeInsets.all(24),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(tr('رمز استرداد قاعدة البيانات'),
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 10),
-                  Text(
-                    tr('يظهر هذا الرمز مرة واحدة فقط. هو الطريقة الوحيدة لفتح قاعدتك إن فُقد مفتاح التشفير من هذا الحساب. احفظه خارج هذا الجهاز.'),
-                    style: const TextStyle(height: 1.6),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.warning.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: SelectableText(
-                      widget.code,
-                      key: const Key('dbenc_code_text'),
-                      textDirection: TextDirection.ltr,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontFamily: 'Consolas',
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(spacing: 8, runSpacing: 8, children: [
-                    OutlinedButton.icon(
-                      key: const Key('dbenc_code_copy'),
-                      icon: const Icon(Icons.copy, size: 18),
-                      label: Text(tr('نسخ')),
-                      onPressed: () {
-                        unawaited(Clipboard.setData(ClipboardData(text: widget.code))
-                            .catchError((_) {}));
-                        setState(() => _note = tr('تم النسخ'));
-                      },
-                    ),
-                    OutlinedButton.icon(
-                      key: const Key('dbenc_code_print'),
-                      icon: const Icon(Icons.print_outlined, size: 18),
-                      label: Text(tr('طباعة')),
-                      onPressed: () async {
-                        try {
-                          await (widget.onPrint ?? printRecoveryCode)(
-                              widget.code);
-                        } catch (_) {
-                          if (mounted) {
-                            setState(() => _note = tr('تعذّرت الطباعة'));
-                          }
-                        }
-                      },
-                    ),
-                  ]),
-                  if (_note != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6),
-                      child: Text(_note!, style: const TextStyle(fontSize: 12)),
-                    ),
-                  const SizedBox(height: 8),
-                  CheckboxListTile(
-                    key: const Key('dbenc_code_saved'),
-                    contentPadding: EdgeInsets.zero,
-                    controlAffinity: ListTileControlAffinity.leading,
-                    value: _saved,
-                    onChanged: (v) => setState(() => _saved = v == true),
-                    title: Text(tr('حفظتُ الرمز في مكان آمن')),
-                  ),
-                  const SizedBox(height: 4),
-                  FilledButton(
-                    key: const Key('dbenc_code_done'),
-                    onPressed: _saved ? () => Navigator.pop(context, true) : null,
-                    child: Text(tr('تم')),
-                  ),
-                ],
+          icon: PhosphorIconsBold.lockKey,
+          accent: AppColors.warning,
+          title: tr('رمز استرداد قاعدة البيانات'),
+          width: 560,
+          body: [
+            Text(
+              tr('يظهر هذا الرمز مرة واحدة فقط. هو الطريقة الوحيدة لفتح قاعدتك إن فُقد مفتاح التشفير من هذا الحساب. احفظه خارج هذا الجهاز.'),
+              style: const TextStyle(height: 1.6),
+            ),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: SelectableText(
+                widget.code,
+                key: const Key('dbenc_code_text'),
+                textDirection: TextDirection.ltr,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontFamily: 'Consolas',
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.2,
+                ),
               ),
             ),
-          ),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              OutlinedButton.icon(
+                key: const Key('dbenc_code_copy'),
+                icon: const Icon(Icons.copy, size: 18),
+                label: Text(tr('نسخ')),
+                onPressed: () {
+                  unawaited(Clipboard.setData(ClipboardData(text: widget.code))
+                      .catchError((_) {}));
+                  setState(() => _note = tr('تم النسخ'));
+                },
+              ),
+              OutlinedButton.icon(
+                key: const Key('dbenc_code_print'),
+                icon: const Icon(Icons.print_outlined, size: 18),
+                label: Text(tr('طباعة')),
+                onPressed: () async {
+                  try {
+                    await (widget.onPrint ?? printRecoveryCode)(widget.code);
+                  } catch (_) {
+                    if (mounted) {
+                      setState(() => _note = tr('تعذّرت الطباعة'));
+                    }
+                  }
+                },
+              ),
+            ]),
+            if (_note != null)
+              Text(_note!, style: const TextStyle(fontSize: 12)),
+            CheckboxListTile(
+              key: const Key('dbenc_code_saved'),
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+              value: _saved,
+              onChanged: (v) => setState(() => _saved = v == true),
+              title: Text(tr('حفظتُ الرمز في مكان آمن')),
+            ),
+            FilledButton(
+              key: const Key('dbenc_code_done'),
+              onPressed: _saved ? () => Navigator.pop(context, true) : null,
+              child: Text(tr('تم')),
+            ),
+          ],
         ),
       );
 }
@@ -334,7 +354,7 @@ class _PortableExportDialogState extends State<PortableExportDialog> {
         icon: PhosphorIconsBold.export,
         accent: AppColors.primary,
         title: tr('تصدير نسخة محمولة بكلمة مرور'),
-        width: 520,
+        width: 560,
         onCancel: () => Navigator.pop(context),
         primaryAction: PicPosDialogAction(
           label: tr('اختيار المجلد وتصدير'),

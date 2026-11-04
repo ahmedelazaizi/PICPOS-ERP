@@ -23,20 +23,20 @@ Color _dropdownHairline(BuildContext context) {
 
 Color _dropdownText(BuildContext context) => Brand.isPicPos
     ? context.picposText
-    : Theme.of(context).textTheme.bodyMedium?.color ?? AppColors.textPrimary;
+    : Theme.of(context).textTheme.bodyMedium?.color ?? context.picposText;
 
 Color _dropdownMuted(BuildContext context) {
   if (Brand.isPicPos) return context.picposMuted;
   return Theme.of(context).brightness == Brightness.dark
       ? Colors.white70
-      : AppColors.textMuted;
+      : context.picposMuted;
 }
 
 Color _dropdownSecondary(BuildContext context) {
   if (Brand.isPicPos) return context.picposSecondary;
   return Theme.of(context).brightness == Brightness.dark
       ? Colors.white70
-      : AppColors.textSecondary;
+      : context.picposSecondary;
 }
 
 /// A dropdown widget with search functionality for large lists
@@ -519,7 +519,7 @@ class AccountSearchableDropdown extends StatelessWidget {
             child: Text(
               a.code,
               style: GoogleFonts.jetBrainsMono(
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: AppColors.primary,
               ),

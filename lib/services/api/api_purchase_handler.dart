@@ -23,6 +23,9 @@ import '../offline_sync_worker.dart' show kDuplicateSupplierInvoiceNoCode;
 import 'api_user_context.dart';
 import 'api_handler_base.dart';
 
+part 'api_purchase_return_cap.dart';
+part 'api_purchase_handler_helpers.dart';
+
 /// Handles purchase CRUD API endpoints.
 class ApiPurchaseHandler extends ApiHandlerBase {
   ApiPurchaseHandler(super.db, super.wsClients);
@@ -30,27 +33,6 @@ class ApiPurchaseHandler extends ApiHandlerBase {
   // ═══════════════════════════════════════════════════════════════
   // FK Resolution Helpers (Client SQLite IDs → Server PostgreSQL IDs)
   // ═══════════════════════════════════════════════════════════════
-
-  /// Resolve a client-provided warehouseId to a valid server warehouseId.
-  Future<int> _resolveWarehouseId(int clientWarehouseId, {int? branchId}) async {
-    final existing = await (db.select(db.warehouses)
-          ..where((w) => w.id.equals(clientWarehouseId)))
-        .getSingleOrNull();
-    if (existing == null) {
-      throw Exception('Strict Mapping Violation: Warehouse ID $clientWarehouseId not found on server.');
-    }
-    // L4 (2026-04-28): Authorization check — when client declares its branch,
-    // ensure the warehouse belongs to that branch. Prevents cross-branch
-    // operations from a compromised cashier device.
-    if (branchId != null && existing.branchId != null && existing.branchId != branchId) {
-      throw Exception(
-        'Authorization Error: warehouse $clientWarehouseId belongs to branch '
-        '${existing.branchId} but client declared branch $branchId. '
-        'Cross-branch operation denied.',
-      );
-    }
-    return clientWarehouseId;
-  }
 
   /// Resolve a client-provided userId to a valid server userId.
   /// Primary: exact ID match. Fallback: username lookup (handles client/server
@@ -430,6 +412,7 @@ class ApiPurchaseHandler extends ApiHandlerBase {
       double totalVatReturn = 0;
 
       await db.transaction(() async {
+        await _validateCumulativePurchaseReturn(invoice.id, items);
         final returnVoucherNumber = await db.generateInvoiceNumber('PRET-');
         bool isFullReturn = true;
 
@@ -944,6 +927,7 @@ class ApiPurchaseHandler extends ApiHandlerBase {
 
         // ── Step B: Recreate the return with the new items
         //     (mirrors postPurchaseReturn's transaction body) ──
+        await _validateCumulativePurchaseReturn(invoice.id, items);
         bool isFullReturn = true;
         for (final item in items) {
           final resolvedPid = await resolveProductId(

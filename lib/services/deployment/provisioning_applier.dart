@@ -14,6 +14,7 @@
 //  * no record and setup unfinished -> nothing (first run).
 library;
 
+import 'package:postgres/postgres.dart' as pg;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/logging/diagnostic_logger.dart';
@@ -50,10 +51,10 @@ abstract final class ProvisioningApplier {
   static Future<AdoptReport> ensure(AppDatabase db) async {
     try {
       return last = await _ensure(db);
-    } catch (e) {
+    } catch (e, st) {
       // Never block a boot on the adopter itself: reconcile then judges the
       // raw keys exactly as before.
-      await DiagnosticLogger.log('ADOPT-FAIL', '$e');
+      await DiagnosticLogger.log('ADOPT-FAIL', describeFailureForLog(e, st));
       return last = const AdoptReport();
     }
   }
@@ -160,3 +161,69 @@ abstract final class ProvisioningApplier {
     return out;
   }
 }
+
+/// سقفُ سطرِ التشخيص الواحد: ما زاد يُقطع فيبقى سطرُ السجلّ بحجمٍ معقول.
+const int _failureLogMaxChars = 2000;
+
+/// عددُ إطاراتِ `StackTrace` المُسجَّلة (الأعلى هو الأحدث).
+const int _failureLogStackFrames = 12;
+
+/// نصُّ تشخيصِ استثناءٍ لسطرٍ واحدٍ في [DiagnosticLogger]. **تشخيصٌ فقط**: لا
+/// يغيّر ما يُرجَع أو يُرمى. يذكر نوعَ الاستثناء ونصَّه الكامل، وإن كان
+/// `ServerException` من حزمة `postgres` فموضعَ الخطأ داخل الجملة ورقمَ السطر.
+///
+/// الحزمةُ **لا تحمل نصَّ الجملة ولا قيمَ args**. الجملةُ الفاشلةُ وargs تكتبها
+/// `_PgCompatInterceptor._logFailed` في `Documents/server_errors.log` حين تمرّ
+/// الجملةُ عبر Drift، فالسطرُ يُشير إلى ذلك الملف. `position` فهرسٌ داخل الجملة
+/// التي وصلت للخادم (قد يختلف عن النص المسجَّل إن أُعيدت كتابةُ الـ placeholders).
+///
+/// ما يُكتب من نصّ SQL (`internalQuery` و`where`) تُخفى منه القيمُ النصيّةُ
+/// الطويلة (انظر [_redactSqlLiterals]) لأنّ tokens وكلماتِ المرور تُمرَّر قيماً.
+///
+/// لا يرمي أبداً: يُستدعى داخل `catch`، ولا يجوز أن يُعطّل الإقلاعَ.
+String describeFailureForLog(Object e, StackTrace st) {
+  try {
+    final b = StringBuffer('type=${e.runtimeType}; msg=${_oneLine('$e')}');
+    if (e is pg.ServerException) {
+      final pgParts = <String>[
+        if (e.position != null) 'position=${e.position}',
+        if (e.internalPosition != null) 'internalPosition=${e.internalPosition}',
+        if (e.lineNumber != null) 'line=${e.lineNumber}',
+        if (e.routineName != null) 'routine=${e.routineName}',
+        if (e.fileName != null) 'file=${e.fileName}',
+        if (e.trace != null) 'where=${_oneLine(_redactSqlLiterals(e.trace!))}',
+        if (e.internalQuery != null)
+          'internalQuery=${_oneLine(_redactSqlLiterals(e.internalQuery!))}',
+      ];
+      if (pgParts.isNotEmpty) b.write('; pg{${pgParts.join(' ')}}');
+    }
+    b.write('; sql+args: Documents/server_errors.log ("PG FAIL" block)');
+    final frames = st.toString().split('\n').take(_failureLogStackFrames);
+    b.write('; stack=${_oneLine(frames.join('\n'))}');
+    return _clip(b.toString());
+  } catch (_) {
+    return 'type=${e.runtimeType}; (failure description unavailable)';
+  }
+}
+
+/// يخفي القيمَ النصيّةَ الطويلةَ داخل نصِّ SQL (`'…'`) ويُبقي القصيرةَ (حرفان
+/// فأقلّ): `','` يبقى ليُفهَم موضعُ الخطأ، و`'tok-…'` يصير `'<N chars>'`.
+String _redactSqlLiterals(String sql) => sql.replaceAllMapped(
+      RegExp(r"'((?:[^']|'')*)'"),
+      (m) {
+        final body = m.group(1)!;
+        return body.length <= 2 ? m.group(0)! : "'<${body.length} chars>'";
+      },
+    );
+
+/// سطرٌ واحد: أسطرُ الاستثناء/الإطارات تُدمج بـ` | ` كي يبقى سطرُ السجلّ سطراً.
+String _oneLine(String s) => s
+    .split('\n')
+    .map((l) => l.trim())
+    .where((l) => l.isNotEmpty)
+    .join(' | ');
+
+String _clip(String s) => s.length <= _failureLogMaxChars
+    ? s
+    : '${s.substring(0, _failureLogMaxChars)}'
+        '...(+${s.length - _failureLogMaxChars})';

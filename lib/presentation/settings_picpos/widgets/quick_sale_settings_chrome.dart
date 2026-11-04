@@ -227,7 +227,7 @@ class _KeyBadge extends StatelessWidget {
         child: Text(
           value,
           style: TextStyle(
-            fontSize: 9.5,
+            fontSize: 11,
             fontWeight: FontWeight.w700,
             fontFamily: AppTypography.mono,
             color: context.picposMuted,
@@ -254,7 +254,7 @@ class _PermissionBadge extends StatelessWidget {
       child: Text(
         label,
         style: const TextStyle(
-          fontSize: 9.5,
+          fontSize: 11,
           fontWeight: FontWeight.w800,
           color: _violet,
         ),
@@ -390,7 +390,7 @@ class QuickSaleGroupCard extends StatelessWidget {
                     Text(
                       note!,
                       style: TextStyle(
-                        fontSize: 10.5,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: context.picposMuted,
                       ),
@@ -481,7 +481,7 @@ class QuickSaleNavTile extends StatelessWidget {
                   Text(
                     tr('{p0} إعداد', {'p0': _ar(settingCount)}),
                     style: TextStyle(
-                      fontSize: 10.5,
+                      fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: context.picposMuted,
                     ),

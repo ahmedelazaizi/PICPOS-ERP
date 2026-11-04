@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:picpos_erp/core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Standard confirmation dialog for the UralCash ERP system.
 /// Optimized for P1 remediation to provide a high-fidelity, consistent UI.
@@ -55,7 +56,7 @@ class AppConfirmDialog extends StatelessWidget {
           children: [
             Text(
               message,
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+              style: TextStyle(color: context.picposSecondary, fontSize: 14),
               textAlign: TextAlign.center,
             ),
             if (customContent != null) ...[

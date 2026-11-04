@@ -2,6 +2,7 @@ import 'package:picpos_erp/core/i18n/tr.dart';
 import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import '../../core/theme/app_colors.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// Category icons for selection
 /// Maps icon names to PhosphorIcons for display in categories
@@ -101,7 +102,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: context.picposHairline),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -135,8 +136,8 @@ class _CategoryIconPickerState extends State<CategoryIconPicker> {
                         : tr('اختر أيقونة (اختياري)'),
                     style: TextStyle(
                       color: _selectedIcon != null
-                          ? AppColors.textPrimary
-                          : AppColors.textMuted,
+                          ? context.picposText
+                          : context.picposMuted,
                     ),
                   ),
                 ),
@@ -145,7 +146,7 @@ class _CategoryIconPickerState extends State<CategoryIconPicker> {
                       ? PhosphorIconsBold.caretUp
                       : PhosphorIconsBold.caretDown,
                   size: 18,
-                  color: AppColors.textMuted,
+                  color: context.picposMuted,
                 ),
               ],
             ),
@@ -159,9 +160,9 @@ class _CategoryIconPickerState extends State<CategoryIconPicker> {
             margin: const EdgeInsets.only(top: 8),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: context.picposField,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: context.picposHairline),
             ),
             child: Column(
               children: [
@@ -273,7 +274,7 @@ class _IconButtonState extends State<_IconButton> {
                     ? AppColors.primary
                     : _isHovered
                     ? AppColors.primary.withValues(alpha: 0.5)
-                    : AppColors.border,
+                    : context.picposHairline,
                 width: widget.isSelected ? 2 : 1,
               ),
               boxShadow: widget.isSelected
@@ -292,7 +293,7 @@ class _IconButtonState extends State<_IconButton> {
                   ? AppColors.primary
                   : _isHovered
                   ? AppColors.primary
-                  : AppColors.textMuted,
+                  : context.picposMuted,
               size: 22,
             ),
           ),

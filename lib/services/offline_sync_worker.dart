@@ -57,6 +57,15 @@ bool isTerminalBusinessConflict(String error) =>
     error.contains(kSalesVoidHasReturnMessage) ||
     error.contains(kSalesVoidReturnDocMessage);
 
+/// Rejections that must remain visible for operator correction, never folded
+/// into duplicate success or retried as transient server failures.
+bool isPermanentSalesRejection(String error) =>
+    error.contains('INSUFFICIENT_STOCK') ||
+    error.contains('ZERO_COST_BLOCKED') ||
+    error.contains('PAYMENT_EXCEEDS_REMAINING') ||
+    error.contains('PAYMENT_NOT_POSITIVE') ||
+    error.contains('الكمية المتوفرة حالياً');
+
 Map<String, dynamic>? _serverPayloadFromConflict(String error) {
   final separator = error.indexOf('): ');
   if (separator < 0) return null;

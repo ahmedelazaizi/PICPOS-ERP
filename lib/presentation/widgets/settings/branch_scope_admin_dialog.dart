@@ -208,7 +208,7 @@ class _BranchScopeAdminDialogState
             const SizedBox(height: 6),
              Text(
               tr('فحص الصفوف التابعة لفروع أخرى التي بقيت محلياً قبل تفعيل الحصر من السيرفر. التنظيف الفعلي اختياري ويتم بعد عرض الأعداد لكل جدول.'),
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+              style: TextStyle(color: context.picposMuted, fontSize: 12),
             ),
             const SizedBox(height: 12),
             Row(
@@ -390,7 +390,7 @@ class _BranchScopeAdminDialogState
             const SizedBox(height: 6),
              Text(
               tr('فحص قيود غير متوازنة أو سطور تشير لحسابات غير موجودة. إجراء قراءة فقط — لا يعدّل أي بيانات.'),
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+              style: TextStyle(color: context.picposMuted, fontSize: 12),
             ),
             const SizedBox(height: 12),
             ElevatedButton.icon(
@@ -431,8 +431,8 @@ class _BranchScopeAdminDialogState
                           )),
                       if (orphans.length > 20)
                         Text(tr('  … و {p0} مشكلة أخرى', {'p0': orphans.length - 20}),
-                            style: const TextStyle(
-                                fontSize: 12, color: AppColors.textMuted)),
+                            style: TextStyle(
+                                fontSize: 12, color: context.picposMuted)),
                     ],
                   ),
                 ),
@@ -491,7 +491,7 @@ class _BranchScopeAdminDialogState
             const SizedBox(height: 6),
              Text(
               tr('البحث عن التصنيفات التي تشترك في نفس الاسم بعد إزالة الفراغات وتوحيد حالة الأحرف. الدمج يبقي أقدم صف ويُعيد ربط المنتجات والفروع به ثم يحذف المكرَّر.'),
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+              style: TextStyle(color: context.picposMuted, fontSize: 12),
             ),
             const SizedBox(height: 12),
             Row(
@@ -560,8 +560,8 @@ class _BranchScopeAdminDialogState
                       }),
                       if (groups.length > 20)
                         Text(tr('  … و {p0} مجموعة أخرى', {'p0': groups.length - 20}),
-                            style: const TextStyle(
-                                fontSize: 12, color: AppColors.textMuted)),
+                            style: TextStyle(
+                                fontSize: 12, color: context.picposMuted)),
                     ],
                   ),
                 ),
@@ -679,7 +679,7 @@ class _BranchScopeAdminDialogState
             const SizedBox(height: 6),
              Text(
               tr('فحص ودمج الفروع التي لها نفس الاسم على السيرفر. الدمج يُعيد ربط صلاحيات المستخدمين بالفرع الأساسي (الأكثر استخدامًا) ثم يُلغي تفعيل المكرر. الفروع التي لها فواتير أو ورديات يتم تجاوزها — استخدم نافذة حذف الفرع لدمج بياناتها يدويًا أولاً.'),
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+              style: TextStyle(color: context.picposMuted, fontSize: 12),
             ),
             const SizedBox(height: 12),
             Row(
@@ -765,7 +765,7 @@ class _BranchScopeAdminDialogState
                                       style: TextStyle(
                                           fontSize: 12,
                                           color: d.attachedTxnRefs > 0
-                                              ? AppColors.textMuted
+                                              ? context.picposMuted
                                               : AppColors.error),
                                     ),
                                   )),
@@ -938,7 +938,7 @@ class _BranchScopeAdminDialogState
             const SizedBox(height: 6),
              Text(
               tr('فحص ودمج العملاء أو الموردين الذين يتشاركون نفس الاسم على السيرفر. يتم إلغاء تفعيل المكررات الفارغة (التي لا تملك أي فواتير/سندات/أوراق تجارية). المكررات التي لها معاملات يتم تخطيها — استخدم أداة دمج الطرف يدويًا قبل الإصلاح.'),
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+              style: TextStyle(color: context.picposMuted, fontSize: 12),
             ),
             const SizedBox(height: 12),
             Row(
@@ -1030,7 +1030,7 @@ class _BranchScopeAdminDialogState
                                       style: TextStyle(
                                           fontSize: 12,
                                           color: d.attachedTxnRefs > 0
-                                              ? AppColors.textMuted
+                                              ? context.picposMuted
                                               : AppColors.error),
                                     ),
                                   )),
@@ -1182,7 +1182,7 @@ class _BranchScopeAdminDialogState
             const SizedBox(height: 6),
              Text(
               tr('إنشاء حساب فرعي في دليل الحسابات لكل مورد/عميل تنقصه ربط. يتم تشغيلها مرة واحدة عند ظهور خطأ "حساب رئيسي" في القيود.'),
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+              style: TextStyle(color: context.picposMuted, fontSize: 12),
             ),
             const SizedBox(height: 12),
             ElevatedButton.icon(
@@ -1278,7 +1278,7 @@ class _BranchScopeAdminDialogState
             const SizedBox(height: 6),
              Text(
               tr('إعادة ترحيل القيود المحاسبية لكل فاتورة (مبيعات / مشتريات) لم يتم ترحيلها سابقاً. شغّل أداة إصلاح الحسابات أولاً.'),
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+              style: TextStyle(color: context.picposMuted, fontSize: 12),
             ),
             const SizedBox(height: 12),
             ElevatedButton.icon(
@@ -1320,8 +1320,8 @@ class _BranchScopeAdminDialogState
                     const SizedBox(height: 4),
                     Text(
                       tr('الإجمالي المفحوص: {p0}', {'p0': r['totalScanned']}),
-                      style: const TextStyle(
-                          fontSize: 12, color: AppColors.textMuted),
+                      style: TextStyle(
+                          fontSize: 12, color: context.picposMuted),
                     ),
                   ],
                 ),
@@ -1361,7 +1361,7 @@ class _BranchScopeAdminDialogState
             const SizedBox(height: 6),
              Text(
               tr('بعد إنشاء الحسابات الفرعية للأطراف، تُنقَل القيود التاريخية من حسابات الذمم الرئيسية (1121 / 2111) إلى الحسابات الفرعية المُنشأة. يجعل كشف دفتر الأستاذ لكل طرف يعرض حركاته الفعلية.'),
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+              style: TextStyle(color: context.picposMuted, fontSize: 12),
             ),
             const SizedBox(height: 12),
             ElevatedButton.icon(
@@ -1451,7 +1451,7 @@ class _BranchScopeAdminDialogState
             const SizedBox(height: 6),
              Text(
               tr('إذا تم تحويل جهاز عميل سابق إلى مستقل/سيرفر بعد كتابات لم تُرسل، تبقى تلك الصفوف عالقة في outbox ولن تُرسل أبداً. هذه الأداة تحصرها ثم تختمها (mark as synced) لإسكات تحذير SYNC-WARN.'),
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+              style: TextStyle(color: context.picposMuted, fontSize: 12),
             ),
             const SizedBox(height: 12),
             Row(

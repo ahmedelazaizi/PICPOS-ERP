@@ -11,6 +11,7 @@ import '../../data/providers/providers.dart';
 import '../../data/providers/feature_settings_providers.dart';
 import '../../domain/models/whatsapp_message.dart';
 import '../widgets/permission_guard.dart';
+import 'package:picpos_erp/presentation/picpos_shell/picpos_surface.dart';
 
 /// حوارُ إرسالِ رسالةٍ للعميل على واتساب.
 ///
@@ -147,7 +148,7 @@ class _WhatsAppSendDialogState extends ConsumerState<WhatsAppSendDialog> {
                   fontWeight: FontWeight.bold,
                   color: normalized == null
                       ? AppColors.error
-                      : AppColors.textMuted,
+                      : context.picposMuted,
                 ),
               ),
               const SizedBox(height: 12),
