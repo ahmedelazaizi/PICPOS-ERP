@@ -32,5 +32,15 @@ extension Epoch3V196ToV205Migrations on AppDatabase {
         );
       });
     }
+
+    // v198 — INT-03: SQLite AFTER INSERT / AFTER UPDATE sync-stamp triggers on
+    // every sync table (sqlite_sync_triggers.dart). DDL only, no table/column
+    // change; `IF NOT EXISTS` keeps the v129…v173 update triggers as they are.
+    if (from < 198) {
+      await _safeMigrate(
+        'v198 sqlite sync stamp triggers',
+        ensureSqliteSyncStampTriggers,
+      );
+    }
   }
 }

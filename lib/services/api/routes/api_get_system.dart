@@ -59,6 +59,8 @@ extension ApiHandlerSystemGets on ApiHandler {
         // FLEET-6: the main's failed-login counters name the accounts under
         // attack — host-local, never served.
         if (s.key == ServerLoginThrottle.settingKey) continue;
+        // INT-13: revoked session ids / users — host-local, never served.
+        if (s.key == ApiSessionRevocationStore.settingKey) continue;
         settingsMap[s.key] = s.value!;
       }
 

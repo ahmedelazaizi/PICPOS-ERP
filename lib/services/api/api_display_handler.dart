@@ -63,15 +63,22 @@ class ApiDisplayHandler {
 
   // ── CFD Display & Stream ──
 
+  /// INT-02 (2026-11-04): shelf يقبل جسماً من نوع `Stream<List<int>>` فقط —
+  /// `Stream<String>` كان يُقبَل وقت البناء ثم ينكسر عند أوّل حدثٍ بـ
+  /// `String is not a subtype of List<int>`. فالأحداثُ تُرمَّز UTF-8 هنا،
+  /// و`shelf.io.buffer_output: false` يجعل كلَّ حدثٍ يصل المتصفّحَ فورَ
+  /// كتابته بدل أن يبقى في مخزن الاستجابة (شرطٌ لأيّ SSE).
   Future<Response> cfdStream(Request request) async {
     final stream = CfdService.instance.connect();
     return Response.ok(
-      stream,
+      stream.transform(utf8.encoder),
       headers: {
-        'Content-Type': 'text/event-stream',
+        'Content-Type': 'text/event-stream; charset=utf-8',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no',
       },
+      context: {'shelf.io.buffer_output': false},
     );
   }
 

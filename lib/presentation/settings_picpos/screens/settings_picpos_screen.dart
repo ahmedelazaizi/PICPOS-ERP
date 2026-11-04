@@ -117,6 +117,7 @@ import '../../widgets/permission_guard.dart';
 import '../../widgets/settings/settings_permission_tiles.dart';
 import '../widgets/table_bill_qr_launcher_row.dart';
 import '../widgets/web_access_settings_panel.dart';
+import '../widgets/cfd_auto_connect_switch.dart';
 import 'linked_devices_section.dart';
 import '../../widgets/settings/backup_restore_widget.dart';
 import '../../widgets/settings/company_info_widget.dart';

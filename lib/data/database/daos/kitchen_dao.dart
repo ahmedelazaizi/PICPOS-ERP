@@ -382,16 +382,22 @@ extension KitchenDao on AppDatabase {
   }
 
   /// Set a category → station mapping (upsert)
+  ///
+  /// INT-04 (2026-11-04): `customStatement` binds its arguments as RAW values
+  /// (unlike `customSelect(variables:)`), so these pass plain ints. The drift
+  /// `Variable.withInt(...)` objects that were here made sqlite3 reject them
+  /// ("Allowed parameters must either be null or bool, int, num, String or
+  /// a byte list"), so the KDS settings mapping never saved on SQLite.
   Future<void> setCategoryStationMapping(int categoryId, int stationId) async {
     // Remove existing mapping for this category
     await customStatement(
       'DELETE FROM category_station_mappings WHERE category_id = ?',
-      [Variable.withInt(categoryId)],
+      [categoryId],
     );
     // Insert new mapping
     await customStatement(
       'INSERT INTO category_station_mappings (category_id, station_id) VALUES (?, ?)',
-      [Variable.withInt(categoryId), Variable.withInt(stationId)],
+      [categoryId, stationId],
     );
   }
 
@@ -399,7 +405,7 @@ extension KitchenDao on AppDatabase {
   Future<void> removeCategoryStationMapping(int categoryId) async {
     await customStatement(
       'DELETE FROM category_station_mappings WHERE category_id = ?',
-      [Variable.withInt(categoryId)],
+      [categoryId],
     );
   }
 

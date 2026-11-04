@@ -81,6 +81,12 @@ part of 'database.dart';
 // Schema v177: sale reposts after an authorized edit may legitimately
 // produce multiple auto-posted JEs for one invoice reference.
 //
+// Schema v198: INT-03 — SQLite gets the PostgreSQL `fn_bump_row_version`
+// behaviour as triggers on every `_syncHardenedTables` table: AFTER INSERT
+// stamps a NULL `last_modified_at`, AFTER UPDATE is the v129 bump. Created in
+// onCreate, in this upgrade and on every boot (sqlite_sync_triggers.dart).
+// Trigger DDL only — no table/column change, no generated-code change.
+//
 // Schema v197: printers gain nullable paper_width_mm; SQLite adds it in
 // epoch_3_v196_v205.dart, while PostgreSQL's Drift parity pass adds it.
 //

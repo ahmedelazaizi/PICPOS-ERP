@@ -9,8 +9,9 @@ extension ApiHandlerSyncPull on ApiHandler {
 
   /// GET /api/sync/pull?table=X&since=Y[&branch_id=Z]
   ///
-  /// Returns all rows from [table] whose `last_modified_at > since` (epoch
-  /// seconds). Omitting `since` performs a full table dump (first-time sync).
+  /// Returns all rows from [table] whose `last_modified_at >= since` (epoch
+  /// seconds; inclusive since INT-05). Omitting `since` performs a full table
+  /// dump (first-time sync).
   /// Rows are scoped to the caller's EFFECTIVE branch scope
   /// ([_resolveBranchScope]) when the table appears in
   /// [_syncPullBranchColumn] — plus any rows where the column is NULL
@@ -156,8 +157,15 @@ extension ApiHandlerSyncPull on ApiHandler {
       final conditions = <String>[];
       final vars = <Variable>[];
 
+      // INT-05 (2026-11-04): `>=`, not `>`. The watermark is a whole epoch
+      // SECOND, so a row stamped later in the very second the previous pull
+      // answered had `last_modified_at == since` and a strict `>` skipped it
+      // until a full pull. Inclusive means the rows of that one boundary
+      // second can arrive twice; the client's apply is an idempotent upsert
+      // by id / global_id (DeltaPullService._upsertRow), so a repeat rewrites
+      // the same values. Same SQL on SQLite and PostgreSQL.
       if (since != null) {
-        conditions.add('last_modified_at IS NOT NULL AND last_modified_at > ?');
+        conditions.add('last_modified_at IS NOT NULL AND last_modified_at >= ?');
         vars.add(Variable.withInt(since));
       }
       if (branchFilterActive) {
@@ -202,6 +210,12 @@ extension ApiHandlerSyncPull on ApiHandler {
       final sql = 'SELECT * FROM $table $whereClause'
           'ORDER BY COALESCE(last_modified_at, 0) ASC, id ASC LIMIT ?';
 
+      // INT-05: the clock is read BEFORE the query. Read after it (as it was),
+      // a row committed between the SELECT and `now()` in an earlier second
+      // fell below the next `since` and was never served by a delta.
+      // On PostgreSQL the watermark is also floored at the oldest open
+      // transaction — see [_syncPullWatermarkSec].
+      final serverTime = await _syncPullWatermarkSec();
       // Fetch one extra row to detect another page without COUNT(*).
       final fetched = await _db.customSelect(sql, variables: vars).get();
       final bool hasMore = fetched.length > limit;
@@ -372,12 +386,51 @@ extension ApiHandlerSyncPull on ApiHandler {
         // table, and the next poll picks up from the same watermark.
         'hasMore': hasMore,
         'limit': limit,
-        'serverTime':
-            tokenlessParties ? null : DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        'serverTime': tokenlessParties ? null : serverTime,
       });
     } catch (e, st) {
       debugPrint('[API] /api/sync/pull failed: $e\n$st');
       return ApiErrors.fail(e, 'Failed to fetch delta');
+    }
+  }
+
+  /// The `serverTime` handed back as the reader's next `since` (epoch s).
+  ///
+  /// INT-05 (round 2), PostgreSQL: `fn_bump_row_version` stamps
+  /// `EXTRACT(EPOCH FROM NOW())`, and `NOW()` is the START of the writing
+  /// transaction. A transaction that began before this pull and commits after
+  /// its SELECT stamps a value below a wall-clock watermark: its row is
+  /// invisible to this pull and older than the next `since`, so `>=` never
+  /// serves it. Floor the watermark at the oldest transaction still open in
+  /// this database: every row this pull cannot see yet belongs to such a
+  /// transaction (or to one that starts later), so its stamp is `>=` the
+  /// returned value. Both ends read the PostgreSQL clock — the clock the
+  /// stamps come from — so host/database clock skew cannot open a gap either.
+  ///
+  /// Cost: a long-open transaction holds the watermark back; the rows since
+  /// then are re-served on each pull until it ends, and the client apply is
+  /// an idempotent upsert that skips identical rows (`delta_upsert_sql.dart`).
+  /// Limit: `pg_stat_activity` hides `xact_start` of sessions of OTHER roles
+  /// unless the app role has `pg_read_all_stats`; the app writes with one role.
+  ///
+  /// SQLite: the wall clock, read before the query. drift serialises a
+  /// transaction against every other statement on the connection, so the
+  /// SELECT waits for an open writer to commit and sees its rows.
+  Future<int> _syncPullWatermarkSec() async {
+    final wall = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    if (!_db.isPostgres) return wall;
+    try {
+      final r = await _db.customSelect(
+        'SELECT FLOOR(EXTRACT(EPOCH FROM LEAST(clock_timestamp(), COALESCE(('
+        'SELECT MIN(xact_start) FROM pg_stat_activity '
+        'WHERE datname = current_database() AND pid <> pg_backend_pid() '
+        "AND backend_type = 'client backend' AND xact_start IS NOT NULL"
+        '), clock_timestamp()))))::bigint AS t',
+      ).getSingle();
+      return (r.data['t'] as num).toInt();
+    } catch (e) {
+      debugPrint('[API] /api/sync/pull watermark floor unavailable: $e');
+      return wall;
     }
   }
 }

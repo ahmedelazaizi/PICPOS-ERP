@@ -12,6 +12,7 @@ import 'services/network_service.dart';
 import 'services/deployment/commit_result.dart';
 import 'services/deployment/mode_activator.dart';
 import 'services/mirror_state.dart';
+import 'services/cfd_service.dart';
 import 'services/mirror_heartbeat_service.dart';
 import 'services/delta_pull_service.dart';
 import 'services/server_proxy.dart';
@@ -41,6 +42,11 @@ Future<void> initPlatform() async {
   // Load saved network mode (standalone/server/client/mirror)
   await NetworkService.instance.loadSettings();
   await MirrorState.instance.loadSettings();
+  // INT-09: the saved CFD settings (display fields) load at start; the saved
+  // serial/USB/HDMI transport reconnects only when the owner opted in
+  // (`cfd_auto_connect_on_startup`, off by default). Not awaited: a display
+  // must never delay the boot.
+  unawaited(CfdService.instance.restoreAtStartup());
 
   // NOTE: Client mode now intentionally uses local SQLite for fast reads,
   // with HTTP sync to keep data in sync with the server.

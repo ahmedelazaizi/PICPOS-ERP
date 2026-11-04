@@ -34,6 +34,17 @@ const _notInvoices = {
   'a4_report_generic.json',
 };
 
+/// Ready-made templates authored directly at v2; these are print cases, not
+/// legacy migration cases.
+const _nativeV2Templates = {
+  'thermal58_sales_return.json',
+  'thermal58_kitchen.json',
+  'thermal58_shift_closing.json',
+  'thermal58_purchase_invoice.json',
+  'a5_sales_return.json',
+  'a5_purchase_invoice.json',
+};
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -104,10 +115,39 @@ void main() {
         .listSync()
         .whereType<File>()
         .map((f) => f.uri.pathSegments.last)
-        .where((n) => n.endsWith('.json') && !_notInvoices.contains(n))
+        .where((n) =>
+            n.endsWith('.json') &&
+            !_notInvoices.contains(n) &&
+            !_nativeV2Templates.contains(n))
         .toList()
       ..sort();
+    // The six assets added in e7e2fb57 are authored at layoutVersion 2.
+    // migrate() may still apply its narrow band repair, but they are not v1→v2
+    // cases; keep this count scoped to actual legacy-layout comparisons.
     expect(files, hasLength(16));
+
+    // The v2 assets still have to print text; they are excluded only from the
+    // v1→v2 delta, while the following checks cover any v2 band repair.
+    for (final name in _nativeV2Templates) {
+      final id = await _import(db, name);
+      final template = (await db.getTemplateById(id))!;
+      expect(template.layoutVersion, 2, reason: name);
+      final before = probePdf(await _render(db, id));
+      // A v2 asset can still need the mapper's narrow band repair; this is
+      // not a v1→v2 migration comparison, but printed text must survive it.
+      await TemplateMigration.migrate(db, id);
+      final after = probePdf(await _render(db, id));
+      expect(
+        before.allTexts,
+        isNotEmpty,
+        reason: '$name must print text before repair',
+      );
+      expect(
+        _words(before).difference(_words(after)),
+        isEmpty,
+        reason: '$name lost printed text during its v2 repair',
+      );
+    }
 
     final report = StringBuffer();
     final losses = <String>[];

@@ -112,6 +112,7 @@ class _CFDSettingsCardState extends State<_CFDSettingsCard> {
               setState(() {});
             },
           ),
+          const CfdAutoConnectSwitch(), // INT-09
           const Divider(height: 24),
 
           // ── Connection Type Selector ──

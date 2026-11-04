@@ -1,14 +1,29 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:picpos_erp/domain/entities/product_entity.dart';
+import 'package:picpos_erp/presentation/pos/services/scale_barcode_config.dart';
 import 'package:picpos_erp/presentation/pos/services/scale_barcode_encoder.dart';
 import 'package:picpos_erp/presentation/pos/services/scale_barcode_handler.dart';
 
+// INT-06 (owner decision 2026-11-04): the enable flags govern parsing.
+// A missing `scale_*_enabled` key means "enabled" ONLY when that mode's prefix
+// was saved; an explicit 'false' always disables it (scale_barcode_config.dart,
+// ScaleBarcodeConfig.fromSettings). This source used to answer null for every
+// key, i.e. a fresh install with both modes OFF, so the round-trip below could
+// not parse anything. It now models a till where the cashier switched both
+// modes on; [settings] can be overridden per test.
 class _Source implements ScaleBarcodeDataSource {
   final ProductEntity product;
-  _Source(this.product);
+  final Map<String, String> settings;
+  _Source(
+    this.product, {
+    this.settings = const {
+      ScaleBarcodeConfig.weightEnabledKey: 'true',
+      ScaleBarcodeConfig.priceEnabledKey: 'true',
+    },
+  });
 
   @override
-  Future<String?> getSettingValue(String key) async => null;
+  Future<String?> getSettingValue(String key) async => settings[key];
   @override
   Future<ProductEntity?> getProductByScalePlu(int pluNumber) async =>
       pluNumber == product.scalePluNumber ? product : null;
@@ -46,6 +61,42 @@ void main() {
       expect(parsed?.product.id, product.id);
       expect(parsed!.quantity, closeTo(sample.$4, 0.000001));
     }
+  });
+
+  test('owner decision 2026-11-04: no saved settings = both modes off; a saved '
+      'prefix without a flag = on; an explicit false = off', () async {
+    final product = ProductEntity(
+      id: 1,
+      code: 'PEAR',
+      name: 'Pear',
+      salePrice: 2.5,
+      costPrice: 1,
+      currentStock: 100,
+      minStock: 0,
+      scalePluNumber: 123,
+    );
+    final weight = ScaleBarcodeEncoder.encode(
+      plu: '123',
+      value: 1.5,
+      kind: ScaleBarcodeValueKind.weight,
+    );
+    Future<ScaleBarcodeResult?> parseWith(Map<String, String> s) =>
+        ScaleBarcodeHandler.tryParse(_Source(product, settings: s), weight);
+
+    expect(await parseWith(const {}), isNull);
+    expect(
+      (await parseWith(const {ScaleBarcodeConfig.weightPrefixKey: '21'}))
+          ?.product
+          .id,
+      product.id,
+    );
+    expect(
+      await parseWith(const {
+        ScaleBarcodeConfig.weightPrefixKey: '21',
+        ScaleBarcodeConfig.weightEnabledKey: 'false',
+      }),
+      isNull,
+    );
   });
 
   test('emits valid 13-digit EAN-13 weight and price payloads', () {

@@ -58,8 +58,17 @@ class CloudMasterExporter {
   }
 
   Future<Map<String, Object?>> build({DateTime? since}) async {
+    // INT-05 class (round 2): every "changed since" test is INCLUSIVE and at
+    // whole-second precision. `last_modified_at` is stored in epoch seconds,
+    // so a row stamped in the watermark's own second has `t == floor(since)`
+    // and the strict `>` / `isAfter` skipped it until the next full push.
+    // Re-sending a boundary row is harmless: `/desktop/master` upserts every
+    // entity by `global_id` (server/lib/src/service/desktop_service.dart).
     final sinceSec =
         since == null ? null : since.millisecondsSinceEpoch ~/ 1000;
+    final sinceFloor = sinceSec == null
+        ? null
+        : DateTime.fromMillisecondsSinceEpoch(sinceSec * 1000);
 
     // ── distribution scope (raw tables, v185) ──
     final repRes = (await db.customSelect(
@@ -78,7 +87,7 @@ class CloudMasterExporter {
     final routeCustomers = (await db.customSelect(
       'SELECT * FROM route_customers WHERE deleted_at IS NULL AND '
       '(effective_to IS NULL OR effective_to >= ?'
-      '${sinceSec == null ? ' OR 1 = 1' : ' OR last_modified_at > ?'}) ORDER BY id',
+      '${sinceSec == null ? ' OR 1 = 1' : ' OR last_modified_at >= ?'}) ORDER BY id',
       variables: [
         Variable<int>(todaySec - 86400),
         if (sinceSec != null) Variable<int>(sinceSec),
@@ -195,9 +204,9 @@ class CloudMasterExporter {
     final productQuery = db.select(db.products)
       ..where((p) {
         final stockIds = stock.map((b) => b.productId).toSet();
-        final changed = since == null
+        final changed = sinceFloor == null
             ? const Constant(true)
-            : p.lastModifiedAt.isBiggerThanValue(since);
+            : p.lastModifiedAt.isBiggerOrEqualValue(sinceFloor);
         return stockIds.isEmpty ? changed : (changed | p.id.isIn(stockIds));
       });
     final products = await productQuery.get();
@@ -241,7 +250,7 @@ class CloudMasterExporter {
     for (final l in lists) {
       final items = allItems.where((i) => i.priceListId == l.id).toList();
       bool changedAfter(DateTime? t) =>
-          since == null || (t != null && t.isAfter(since));
+          sinceFloor == null || (t != null && !t.isBefore(sinceFloor));
       if (!changedAfter(l.lastModifiedAt) &&
           !items.any((i) => changedAfter(i.lastModifiedAt))) {
         continue;

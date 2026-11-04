@@ -273,6 +273,7 @@ part 'database_sql_constants.dart';
 part 'database_pg_create.dart';
 part 'database_pg_source_sql.dart';
 part 'database_pg_sync_infra.dart';
+part 'sqlite_sync_triggers.dart';
 part 'database_pg_parity.dart';
 part 'database_numbering.dart';
 part 'database_misc_dao_methods.dart';
@@ -660,7 +661,7 @@ class AppDatabase extends _$AppDatabase with PgSourceSqlTranslation {
   /// Current schema version. The per-version history (what each bump changed)
   /// lives in `database_schema_history.dart`; the migrations are in `migrations/`.
   @override
-  int get schemaVersion => 197;
+  int get schemaVersion => 198;
 
   /// Canonical list of sync-hardening tables (mirrors the list in
   /// `migrations/epoch_3.dart` v129). Used by the Postgres infrastructure
@@ -837,6 +838,7 @@ class AppDatabase extends _$AppDatabase with PgSourceSqlTranslation {
         await ensureHrPayrollSchema();
         await ensureFieldExpenseSchema();
         await ensureWarehouseLocationsSchema(backfill: false);
+        await ensureSqliteSyncStampTriggers(); // INT-03 v198
         // seedInitialData + syncDefaultAccounts moved to beforeOpen
         // (after defensive v110 column additions)
       },
@@ -855,6 +857,7 @@ class AppDatabase extends _$AppDatabase with PgSourceSqlTranslation {
       },
       beforeOpen: (details) async {
         await runBeforeOpen(details);
+        await ensureSqliteSyncStampTriggers(); // self-heal, fast path
       },
     );
   }

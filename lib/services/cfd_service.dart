@@ -27,6 +27,7 @@ class CfdService {
   static const _prefMonitorIndex = 'cfd_monitor_index';
   static const _prefEnabled = 'cfd_enabled';
   static const _prefDisplayConfig = 'cfd_display_config';
+  static const _prefAutoConnect = 'cfd_auto_connect_on_startup';
 
   // Active transport
   CfdTransport? _activeTransport;
@@ -76,6 +77,7 @@ class CfdService {
     _savedPort = prefs.getString(_prefPort);
     _savedBaudRate = prefs.getInt(_prefBaudRate) ?? 9600;
     _savedMonitorIndex = prefs.getInt(_prefMonitorIndex) ?? 1;
+    _autoConnectOnStartup = prefs.getBool(_prefAutoConnect) ?? false;
     final configStr = prefs.getString(_prefDisplayConfig);
     if (configStr != null) {
       try {
@@ -85,6 +87,47 @@ class CfdService {
       } catch (_) {
         _displayConfig = CfdDisplayConfig.defaultConfig;
       }
+    }
+  }
+
+  // ── INT-09: start-up restore ──────────────────────────────────────────
+  //
+  // Before this, the saved CFD settings were read only when a settings card
+  // opened (its `initState` → [loadSettings]). After every restart:
+  //   • the network display (`/cfd`, SSE) was fed with
+  //     [CfdDisplayConfig.defaultConfig] — fields the owner had hidden
+  //     (customer name, prices…) were shown again — until someone opened the
+  //     settings screen; and
+  //   • an enabled serial / USB / HDMI display stayed disconnected.
+  // Loading the settings has no side effect, so it now always runs at start.
+  // Re-connecting the saved transport DOES (HDMI starts a local server and
+  // launches a browser window; serial/USB opens a COM port), so it only runs
+  // when the owner opted in: [autoConnectOnStartup], OFF by default — an
+  // install that never touches the switch behaves exactly as before.
+
+  bool _autoConnectOnStartup = false;
+
+  /// Whether [restoreAtStartup] re-connects the saved transport (opt-in).
+  bool get autoConnectOnStartup => _autoConnectOnStartup;
+
+  /// Persists the opt-in for [restoreAtStartup].
+  Future<void> setAutoConnectOnStartup(bool value) async {
+    _autoConnectOnStartup = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefAutoConnect, value);
+  }
+
+  /// Called once at desktop start-up. Always loads the saved settings;
+  /// connects the saved transport only if the CFD is enabled AND the owner
+  /// opted in. Returns whether a transport was connected. Never throws.
+  Future<bool> restoreAtStartup() async {
+    try {
+      await loadSettings();
+      if (!_enabled || !_autoConnectOnStartup) return false;
+      return await connectTransport();
+    } catch (e) {
+      debugPrint('[CFD] start-up restore skipped: $e');
+      return false;
     }
   }
 

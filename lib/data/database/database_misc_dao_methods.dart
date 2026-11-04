@@ -85,6 +85,9 @@ extension AppDatabaseMiscDaoMethods on AppDatabase {
     }
 
     await _ensureModifierSyncColumns();
+    // INT-03 v198: these tables are created lazily (not by onCreate), so they
+    // get their SQLite sync-stamp triggers here, not only at the next boot.
+    await ensureSqliteSyncStampTriggers();
   }
 
   /// أعمدةُ المزامنة الخمسةُ على جداول المعدِّلات — 2026-09-21.

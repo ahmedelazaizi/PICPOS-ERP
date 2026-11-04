@@ -1,4 +1,6 @@
 {
+  "إعادة الاتصال بشاشة العميل تلقائياً عند التشغيل": "Reconnect the customer display automatically at startup",
+  "عند التفعيل يفتح البرنامج منفذ COM أو نافذة المتصفح للشاشة المحفوظة عند كل تشغيل. معطّل افتراضياً.": "When on, the app opens the saved display's COM port or browser window at every start. Off by default.",
   "امسح باركود صنفٍ من الفاتورة أو اضغط بطاقته لزيادة كميّة إرجاعه": "Scan an item from the invoice or tap its card to increase its return quantity",
   "حفظ PDF": "Save PDF",
   "تم حفظ PDF في: {path}": "PDF saved to: {path}",

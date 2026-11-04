@@ -41,6 +41,7 @@ import 'api_password_change_handler.dart';
 import 'api_approval_handler.dart';
 import 'mirror_console_guard.dart';
 import 'server_login_throttle.dart';
+import 'api_session_revocation_store.dart';
 import 'api_web_session_handler.dart';
 import 'm1_wh/wh_apis.dart';
 import 'web_static_handler.dart';
@@ -119,6 +120,7 @@ class ApiHandler {
     _approvals = ApiApprovalHandler(_db, _wsClients);
     MirrorConsole.configure(_db);
     ServerLoginThrottle.configure(_db); // FLEET-6: lockouts survive a restart
+    ApiSessionRevocationStore.configure(_db); // INT-13: so do revocations
     _webSession = ApiWebSessionHandler(_db);
     WebSessionGuard.configure(_db);
     _webRead = WebReadChannelHost(_db);

@@ -169,8 +169,8 @@ class ScaleBarcodeHandler {
         dataSource,
         barcode,
         pricePfx,
-        'scale_price_item_code_len',
-        'scale_price_divider',
+        config.priceCodeLen,
+        config.priceDivider,
         5,
         100.0,
         isPriceMode: true,
@@ -183,8 +183,8 @@ class ScaleBarcodeHandler {
         dataSource,
         barcode,
         prefix,
-        'scale_weight_item_code_len',
-        'scale_weight_divider',
+        config.weightCodeLen,
+        config.weightDivider,
         5,
         1000.0,
       );
@@ -201,29 +201,32 @@ class ScaleBarcodeHandler {
       dataSource,
       barcode,
       autoPrefix,
-      'scale_weight_item_code_len',
-      'scale_weight_divider',
+      config.weightCodeLen,
+      config.weightDivider,
       5,
       1000.0,
     );
   }
 
+  /// INT-07 (2026-11-04): PLU length and divider come from the SAME resolved
+  /// [ScaleBarcodeConfig] that decided the mode. This used to re-read only
+  /// the canonical `scale_*_item_code_len` / `scale_*_divider` keys, so an
+  /// install that only has the legacy keys (`scale_barcode_code_length`…,
+  /// [ScaleBarcodeConfig.legacyFallbacks]) was parsed with PLU = 5 whatever
+  /// it had saved. An unparsable value still falls back to the defaults.
   static Future<ScaleBarcodeResult?> _extractScaleProduct(
     ScaleBarcodeDataSource dataSource,
     String barcode,
     String prefix,
-    String codeLenKey,
-    String dividerKey,
+    String codeLenStr,
+    String dividerStr,
     int defaultCodeLen,
     double defaultDivider, {
     bool isPriceMode = false,
   }) async {
     try {
-      final codeLenStr = await dataSource.getSettingValue(codeLenKey);
-      final dividerStr = await dataSource.getSettingValue(dividerKey);
-
-      final codeLen = int.tryParse(codeLenStr ?? '') ?? defaultCodeLen;
-      final divider = double.tryParse(dividerStr ?? '') ?? defaultDivider;
+      final codeLen = int.tryParse(codeLenStr) ?? defaultCodeLen;
+      final divider = double.tryParse(dividerStr) ?? defaultDivider;
 
       final productCode = barcode.substring(
         prefix.length,

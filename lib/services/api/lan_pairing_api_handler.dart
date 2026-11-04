@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:shelf/shelf.dart';
 
+import 'client_address.dart';
 import 'lan_pairing_authz.dart' show kPairableDeviceKinds;
 import 'lan_pairing_service.dart';
 
@@ -160,9 +160,11 @@ class LanPairingApiHandler {
     headers: {'content-type': 'application/json'},
   );
 
-  static String _clientIp(Request request) =>
-      (request.context['shelf.io.connection_info'] as HttpConnectionInfo?)
-          ?.remoteAddress
-          .address ??
-      'unknown';
+  /// INT-11 (2026-11-04): the same attribution as the API rate limiter and
+  /// the auth middleware ([ClientAddress.of]): the raw connection address,
+  /// unless it is an explicitly trusted reverse proxy. This read the raw
+  /// address only, so behind a configured proxy every device shared ONE
+  /// 5-attempt pairing budget (one wrong guesser locked pairing for all).
+  /// With no trusted proxy (the default) the result is unchanged.
+  static String _clientIp(Request request) => ClientAddress.of(request);
 }

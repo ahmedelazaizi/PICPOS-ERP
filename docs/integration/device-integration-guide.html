@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>دليل ربط الأجهزة والتطبيقات — PicPos ERP</title>
+<style>
+:root{
+  --bg:#f6f7f9;--fg:#16191f;--muted:#454c5a;--card:#ffffff;--line:#cfd5de;--accent:#0a539c;--accent-fg:#ffffff;
+  --code-bg:#eceff4;--mark:#ffe58a;--mark-fg:#16191f;--warn-bg:#fff4d6;--warn-line:#c98a00;--note-bg:#e7f0fb;--note-line:#0a539c;
+  --ok-bg:#d6f2df;--ok-fg:#0b4f24;--cond-bg:#fff0c4;--cond-fg:#5c3f00;--exp-bg:#e5defc;--exp-fg:#35237d;--inc-bg:#fbdcdc;--inc-fg:#7d1515;--na-bg:#e3e6eb;--na-fg:#2d333d;
+  --e-lan:#0a539c;--e-ws:#7b2fa8;--e-sse:#b35400;--e-usb:#4a5361;--e-cloud:#137a3a;--e-local:#8a5a00;
+  --font:"Segoe UI","Tahoma","Noto Naskh Arabic","Noto Sans Arabic","Arial",sans-serif;
+  --mono:"Cascadia Mono","Consolas","Courier New",monospace;
+}
+html[data-theme="dark"]{
+  --bg:#111419;--fg:#e9ecf1;--muted:#b9c0cc;--card:#1a1e25;--line:#3a414e;--accent:#8cc2ff;--accent-fg:#0b1a2b;
+  --code-bg:#262c36;--mark:#8a6d00;--mark-fg:#ffffff;--warn-bg:#3a2f12;--warn-line:#e0a92a;--note-bg:#16283d;--note-line:#8cc2ff;
+  --ok-bg:#143d24;--ok-fg:#b4f2c9;--cond-bg:#43350d;--cond-fg:#ffe39a;--exp-bg:#2e2552;--exp-fg:#d9cfff;--inc-bg:#4a1c1c;--inc-fg:#ffc9c9;--na-bg:#2c323c;--na-fg:#dde1e7;
+  --e-lan:#8cc2ff;--e-ws:#d39cf5;--e-sse:#ffab5e;--e-usb:#aeb6c3;--e-cloud:#6fdc98;--e-local:#e5b95c;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:12px}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.75}
+a{color:var(--accent)}
+a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+code,kbd,pre{font-family:var(--mono);font-size:.88em;direction:ltr;unicode-bidi:isolate}
+code{background:var(--code-bg);padding:.05em .35em;border-radius:4px;overflow-wrap:anywhere}
+pre{background:var(--code-bg);padding:.8em 1em;border-radius:8px;overflow-x:auto;text-align:left;line-height:1.5;white-space:pre}
+pre code{background:none;padding:0}
+.skip{position:absolute;right:-9999px;top:0;background:var(--accent);color:var(--accent-fg);padding:.5em 1em;z-index:10}
+.skip:focus{right:8px}
+/* layout */
+#sidebar{position:fixed;top:0;right:0;bottom:0;width:290px;overflow-y:auto;background:var(--card);border-left:1px solid var(--line);padding:16px 16px 40px}
+main{margin-right:290px;padding:24px 40px 80px;max-width:1180px}
+#sidebar .brand{font-weight:700;font-size:1.05rem;margin:0 0 10px}
+#sidebar label{display:block;font-weight:600;font-size:.92rem;margin-bottom:4px}
+#q{width:100%;padding:8px 10px;font:inherit;font-size:.95rem;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+#qstat{font-size:.85rem;color:var(--muted);min-height:1.4em;margin:4px 0 8px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.tools button{font:inherit;font-size:.9rem;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+.tools button:hover{border-color:var(--accent)}
+#toc ol{list-style:none;margin:0;padding:0}
+#toc ol ol{padding-right:14px;margin:2px 0 6px}
+#toc a{display:block;padding:3px 6px;border-radius:6px;text-decoration:none;color:var(--fg);font-size:.92rem;line-height:1.5}
+#toc a:hover,#toc a.active{background:var(--note-bg);color:var(--accent)}
+header.top{border-bottom:2px solid var(--line);margin-bottom:24px;padding-bottom:12px}
+header.top h1{margin:0 0 4px;font-size:1.9rem;line-height:1.35}
+.meta{color:var(--muted);font-size:.92rem;margin:0}
+h2{font-size:1.5rem;margin:2.2em 0 .6em;padding-top:.3em;border-top:1px solid var(--line)}
+h3{font-size:1.22rem;margin:1.6em 0 .4em}
+h4{font-size:1.02rem;margin:1.2em 0 .3em;color:var(--accent)}
+p,li{max-width:78ch}
+section.dev{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 22px 18px;margin:20px 0}
+section.dev > h3{margin-top:.8em}
+.lead{color:var(--muted);margin-top:0}
+table{border-collapse:collapse;width:100%;margin:.8em 0 1.2em;background:var(--card);font-size:.93rem}
+th,td{border:1px solid var(--line);padding:7px 9px;text-align:right;vertical-align:top}
+th{background:var(--code-bg);font-weight:700}
+.tbl{overflow-x:auto}
+caption{caption-side:top;text-align:right;font-weight:700;padding:4px 0;color:var(--muted)}
+.badge{display:inline-block;padding:.08em .6em;border-radius:999px;font-size:.84rem;font-weight:700;white-space:nowrap;border:1px solid transparent}
+.b-ok{background:var(--ok-bg);color:var(--ok-fg)}
+.b-cond{background:var(--cond-bg);color:var(--cond-fg)}
+.b-exp{background:var(--exp-bg);color:var(--exp-fg)}
+.b-inc{background:var(--inc-bg);color:var(--inc-fg)}
+.b-na{background:var(--na-bg);color:var(--na-fg)}
+.callout{border-right:4px solid var(--note-line);background:var(--note-bg);padding:.6em 1em;border-radius:6px;margin:1em 0}
+.callout.warn{border-right-color:var(--warn-line);background:var(--warn-bg)}
+.ui{font-weight:700}
+.ui::before{content:"«"}.ui::after{content:"»"}
+ul.check{list-style:none;padding-right:0}
+ul.check li{padding-right:1.7em;position:relative}
+ul.check li::before{content:"☐";position:absolute;right:0;top:0;font-size:1.05em}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin:12px 0}
+.summary-grid div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.summary-grid h3{font-size:1.02rem;margin:0 0 4px}
+.summary-grid p{margin:0;font-size:.95rem}
+figure{margin:1em 0}
+.svgwrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px}
+.svgwrap svg{display:block;min-width:760px;width:100%;height:auto}
+figcaption{color:var(--muted);font-size:.9rem;margin-top:6px}
+svg .node rect{fill:var(--card);stroke:var(--fg);stroke-width:1.4}
+svg .node.hub rect{stroke:var(--accent);stroke-width:2.6}
+svg .node text{fill:var(--fg);font-family:var(--font);font-size:14px}
+svg .node text.t{font-weight:700;font-size:15px}
+svg .node text.s{font-size:12.5px;fill:var(--muted)}
+svg .edge{fill:none;stroke-width:2.2}
+svg .lbl{font-family:var(--font);font-size:12px;paint-order:stroke;stroke:var(--card);stroke-width:5px;stroke-linejoin:round}
+svg .e-lan{stroke:var(--e-lan)} svg .l-lan{fill:var(--e-lan)}
+svg .e-ws{stroke:var(--e-ws);stroke-dasharray:9 5} svg .l-ws{fill:var(--e-ws)}
+svg .e-sse{stroke:var(--e-sse);stroke-dasharray:2 5;stroke-linecap:round;stroke-width:3} svg .l-sse{fill:var(--e-sse)}
+svg .e-usb{stroke:var(--e-usb);stroke-dasharray:5 4} svg .l-usb{fill:var(--e-usb)}
+svg .e-cloud{stroke:var(--e-cloud);stroke-width:3} svg .l-cloud{fill:var(--e-cloud)}
+svg .e-local{stroke:var(--e-local);stroke-dasharray:12 4 2 4} svg .l-local{fill:var(--e-local)}
+svg .ltr{direction:ltr}
+svg .legend text{fill:var(--fg);font-family:var(--font);font-size:13px}
+mark{background:var(--mark);color:var(--mark-fg);padding:0 1px;border-radius:2px}
+.hidden-by-search{display:none !important}
+footer{margin-top:3em;color:var(--muted);font-size:.88rem;border-top:1px solid var(--line);padding-top:1em}
+@media (max-width:960px){
+  #sidebar{position:static;width:auto;border-left:0;border-bottom:1px solid var(--line);max-height:none}
+  #toc{max-height:40vh;overflow-y:auto;border:1px solid var(--line);border-radius:8px;padding:4px}
+  main{margin-right:0;padding:16px 14px 60px}
+  header.top h1{font-size:1.45rem}
+  section.dev{padding:4px 12px 14px}
+  th,td{padding:5px 6px}
+  .tbl > table{min-width:620px}
+}
+@media print{
+  @page{size:A4;margin:16mm 14mm 16mm 14mm}
+  html,html[data-theme="dark"]{
+    --bg:#fff;--fg:#000;--muted:#333;--card:#fff;--line:#999;--accent:#0a3f7a;--code-bg:#f0f0f0;--note-bg:#f3f6fa;--warn-bg:#fff8e6;
+    --ok-bg:#d6f2df;--ok-fg:#0b4f24;--cond-bg:#fff0c4;--cond-fg:#5c3f00;--exp-bg:#e5defc;--exp-fg:#35237d;--inc-bg:#fbdcdc;--inc-fg:#7d1515;--na-bg:#e3e6eb;--na-fg:#2d333d;
+    --e-lan:#0a539c;--e-ws:#7b2fa8;--e-sse:#b35400;--e-usb:#4a5361;--e-cloud:#137a3a;--e-local:#8a5a00;
+  }
+  body{font-size:10.5pt;line-height:1.55;background:#fff}
+  #sidebar,.skip,.tools{display:none !important}
+  main{margin:0;padding:0;max-width:none}
+  .hidden-by-search{display:block !important}
+  section.dev{border:1px solid #999;break-inside:auto;padding:2mm 4mm}
+  h2{break-before:page;border-top:0}
+  #summary h2{break-before:auto}
+  h2,h3,h4{break-after:avoid}
+  table,figure,pre,.callout,tr{break-inside:avoid}
+  .badge{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .svgwrap{border:0;padding:0;overflow:visible}
+  .svgwrap svg{min-width:0}
+  a{color:#000;text-decoration:none}
+  mark{background:none;color:inherit}
+  p,li{max-width:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#content">تخطَّ إلى المحتوى</a>
+
+<nav id="sidebar" aria-label="فهرس الدليل">
+  <p class="brand">PicPos ERP — دليل الربط</p>
+  <div role="search">
+    <label for="q">ابحث في الدليل</label>
+    <input id="q" type="search" autocomplete="off" placeholder="مثال: 8080 أو الميزان" aria-describedby="qstat">
+    <p id="qstat" aria-live="polite"></p>
+  </div>
+  <div class="tools">
+    <button type="button" id="themeBtn" aria-pressed="false">الوضع الداكن</button>
+    <button type="button" id="printBtn">طباعة</button>
+  </div>
+  <div id="toc">
+  <ol>
+    <li><a href="#summary">1. الملخص وجدول الحالة</a>
+      <ol><li><a href="#status">جدول الحالة السريع</a></li></ol></li>
+    <li><a href="#topology">2. مخطط الطوبولوجيا</a></li>
+    <li><a href="#devices">3. الأجهزة والتطبيقات</a>
+      <ol>
+        <li><a href="#d-server">الجهاز الرئيسي (الخادم)</a></li>
+        <li><a href="#d-pairing">إقران الأجهزة</a></li>
+        <li><a href="#d-branch">سطح مكتب فرع / مرآة</a></li>
+        <li><a href="#d-warehouse">PicPos مخازن</a></li>
+        <li><a href="#d-pos">PicPos كاشير</a></li>
+        <li><a href="#d-van">PicPos Van</a></li>
+        <li><a href="#d-admin">PicPos إدارة</a></li>
+        <li><a href="#d-web">الويب (المتصفح)</a></li>
+        <li><a href="#d-cfd">شاشة العميل CFD</a></li>
+        <li><a href="#d-kds">شاشة المطبخ KDS</a></li>
+        <li><a href="#d-printers">الطابعات ودرج النقد</a></li>
+        <li><a href="#d-scale">الميزان</a></li>
+        <li><a href="#d-barcode">قارئ الباركود</a></li>
+        <li><a href="#d-cloud">الربط السحابي</a></li>
+      </ol></li>
+    <li><a href="#sync">4. كيف يتزامن النظام</a></li>
+    <li><a href="#tests">5. الاختبارات</a></li>
+    <li><a href="#real-device">6. يلزم تجربته على جهاز حقيقي</a>
+      <ol><li><a href="#checklist">قائمة فحص قبل التسليم</a></li></ol></li>
+    <li><a href="#sources">المصادر والمصطلحات</a></li>
+  </ol>
+  </div>
+</nav>
+
+<main id="content" tabindex="-1">
+<header class="top">
+  <h1>دليل ربط الأجهزة والتطبيقات في PicPos ERP</h1>
+  <p class="meta">مبنيّ من التقرير المراجَع <code>docs/integration/2026-11-04-device-app-integration-review.md</code> (ومنه القسمان 8 و9: حالتا الإصلاح والحدود المعروفة)، مع التحقق من أسماء الشاشات والأزرار والمنافذ والمسارات في كود الشجرة عند HEAD <code>3b1ab254</code> (آخر commit عند إعداد هذا التحديث). النصوص بين «» منقولة كما تظهر في الواجهة، و«…» داخلها مكان قيمة متغيّرة (رقم أو اسم أو نص خطأ). وفي العناوين: <code>&lt;server-ip&gt;</code> عنوان الجهاز الرئيسي، و<code>&lt;port&gt;</code> منفذه (8080 افتراضاً)، و<code>&lt;table&gt;</code> اسم الجدول.</p>
+</header>
+
+<!-- ================= 1. SUMMARY ================= -->
+<section id="summary" class="searchable">
+<h2>1. الملخص التنفيذي</h2>
+<div class="summary-grid">
+  <div><h3>الخادم والاقتران</h3><p>جهاز سطح المكتب الرئيسي يشغّل خادم HTTPS مضمَّناً على المنفذ 8080 افتراضياً، بشهادة ذاتية التوقيع وتثبيت بصمة. الأجهزة تقترن برمز من 8 أحرف صالح 10 دقائق ولمرة واحدة، وكل نوع جهاز يُقيَّد بمسارات محددة. <span class="badge b-ok">جاهز للإنتاج</span></p></div>
+  <div><h3>أجهزة سطح المكتب الفرعية</h3><p>جهاز «فرع» أو «مرآة» يقرأ من الخادم بسحب الدلتا بعلامة مائية، ويطابِر كتاباته عند انقطاع الخادم ثم يرسلها. على SQLite تُختم الإدراجات والتعديلات بمُشغّلات لجميع مسارات الكتابة (schema 198)، وعلى PostgreSQL تراعي العلامة المائية المعاملات الطويلة؛ وتطبيق صف الحدّ المتكرر idempotent. <span class="badge b-ok">جاهز للإنتاج للمزامنة بالدلتا</span></p></div>
+  <div><h3>تطبيقات الجوال</h3><p>المخازن يعمل على الشبكة المحلية <span class="badge b-cond">بشروط</span>، وVan سحابي <span class="badge b-cond">بشروط</span>. الإدارة سحابية <span class="badge b-exp">تجريبي</span>، والكاشير يقترن ويسجّل الدخول فقط ولا يبيع بعد <span class="badge b-inc">غير مكتمل</span>.</p></div>
+  <div><h3>الويب</h3><p>قراءة فقط من المتصفح عبر جلسة ويب وقناة WebSocket مشفّرة <code>/webdb</code>. الميزة مطفأة افتراضاً وتحتاج إعادة تشغيل الخادم بعد تفعيلها. <span class="badge b-cond">جاهز بشروط</span></p></div>
+  <div><h3>شاشات العرض (CFD وKDS)</h3><p>شاشة العميل عبر الشبكة تعمل الآن بعد إصلاح INT-01 وINT-02، مع قبول تحذير الشهادة مرة لكل جهاز <span class="badge b-cond">بشروط</span>. شاشة المطبخ تعمل حسب المحطة، لكن لا زرّ لـ«قُدِّم» أو «أُلغي» (INT-10) <span class="badge b-cond">بشروط</span>.</p></div>
+  <div><h3>الأجهزة الطرفية</h3><p>باركود الميزان <span class="badge b-ok">جاهز للإنتاج</span>، والقارئ بلوحة المفاتيح <span class="badge b-ok">جاهز للإنتاج</span>. الطباعة عبر طابور Windows والدرج عبر الطابعة <span class="badge b-cond">بشروط</span>. الميزان الحيّ ورفع PLU <span class="badge b-na">لم يُتحقَّق منه</span>.</p></div>
+  <div><h3>السحابة والفوترة الإلكترونية</h3><p>الربط السحابي مطفأ افتراضاً ويحتاج خادماً سحابياً منشوراً <span class="badge b-cond">بشروط</span>. الفوترة الإلكترونية (ETA مصر، JoFotara الأردن) <span class="badge b-exp">تجريبي</span>، ولا يغطيها هذا الدليل بخطوات.</p></div>
+</div>
+
+<h3 id="status">جدول الحالة السريع</h3>
+<p>دلالة الشارات: <span class="badge b-ok">جاهز للإنتاج</span> <span class="badge b-cond">جاهز بشروط</span> <span class="badge b-exp">تجريبي</span> <span class="badge b-inc">غير مكتمل</span> <span class="badge b-na">لم يُتحقَّق منه</span>. عمود «الدليل» يذكر قسم التقرير والاختبار. نتائج «شُغِّل هنا» تاريخية ومأخوذة من التشغيل الموثق على HEAD <code>d814cbc0</code>؛ و«من التقرير» تعني أن النتيجة منقولة من التقرير ولم أُعِد تشغيلها لهذا الدليل.</p>
+<div class="tbl">
+<table>
+<caption>أحكام المراجعة بعد المرحلة الثانية (الإصلاح)</caption>
+<thead><tr><th>#</th><th>العنصر</th><th>نوع الربط</th><th>الحكم</th><th>الدليل</th></tr></thead>
+<tbody>
+<tr><td>E1</td><td>الجهاز الرئيسي: خادم LAN والـAPI</td><td>HTTPS ذاتي التوقيع مع تثبيت بصمة، المنفذ 8080</td><td><span class="badge b-ok">جاهز للإنتاج</span><br><small>كان «بشروط» قبل الإصلاح</small></td><td>التقرير §2 E1، §8.1 (INT-03، INT-05)؛ <code>device_to_device_sync_test.dart</code> 7/7 (شُغِّل هنا)</td></tr>
+<tr><td>E2</td><td>الاقتران وسياسة المسارات حسب نوع الجهاز</td><td><code>POST /api/pair</code> برمز 8 أحرف</td><td><span class="badge b-ok">جاهز للإنتاج</span></td><td>§2 E2؛ <code>lan_device_pairing_and_scope_test.dart</code> 21/21 (شُغِّل هنا)</td></tr>
+<tr><td>E3</td><td>سطح مكتب فرع / مرآة</td><td>REST + <code>GET /api/sync/pull</code> + طابور كتابة</td><td><span class="badge b-ok">جاهز للإنتاج للمزامنة بالدلتا</span></td><td>§2 E3، §9.1؛ <code>device_to_device_sync_test.dart</code> (شُغِّل هنا)؛ <code>sync_delta_watermark_pg_test.dart</code> 4/4 (من التقرير)</td></tr>
+<tr><td>E4</td><td>PicPos كاشير (<code>mobile_pos</code>)</td><td>LAN، HTTPS مثبّت البصمة</td><td><span class="badge b-inc">غير مكتمل</span><br><small>الاقتران والدخول فقط</small></td><td>§2 E4؛ <code>mobile_pos/test/pairing_test.dart</code> 14/14 (من التقرير)</td></tr>
+<tr><td>E5</td><td>PicPos مخازن (<code>mobile_warehouse</code>)</td><td>LAN، HTTPS مثبّت البصمة، <code>/api/m1/wh/*</code></td><td><span class="badge b-cond">جاهز بشروط</span></td><td>§2 E5؛ اختبارات التطبيق 47/47 (من التقرير)؛ مختبر الأجهزة 107 ناجح / 4 فاشل / 2 غير منطبق</td></tr>
+<tr><td>E6</td><td>PicPos إدارة (<code>mobile_admin</code>)</td><td>سحابة <code>/manage/*</code></td><td><span class="badge b-exp">تجريبي</span></td><td>§2 E6؛ 20/20 (من التقرير)</td></tr>
+<tr><td>E7</td><td>PicPos Van (<code>mobile</code>)</td><td>سحابة <code>/mobile/*</code></td><td><span class="badge b-cond">جاهز بشروط</span></td><td>§2 E7؛ 36/36 (من التقرير)</td></tr>
+<tr><td>E8</td><td>الويب</td><td><code>POST /api/web/session</code> + WebSocket <code>/webdb</code></td><td><span class="badge b-cond">جاهز بشروط</span><br><small>مطفأ افتراضاً، قراءة فقط</small></td><td>§2 E8؛ <code>web_read_policy_interceptor_test</code> 22/22، <code>api_web_session_test</code> 25/25 (من التقرير)</td></tr>
+<tr><td>E9</td><td>شاشة العميل CFD</td><td>SSE (<code>/cfd</code> + <code>/api/cfd/stream</code>)؛ HDMI؛ تسلسلي</td><td>الشبكة: <span class="badge b-cond">جاهز بشروط</span><br>HDMI/تسلسلي: <span class="badge b-na">لم يُتحقَّق منه</span></td><td>§2 E9، §8.1 (INT-01، INT-02 مُصلَحان)؛ <code>cfd_customer_display_flow_test.dart</code> 8/8 (شُغِّل هنا)</td></tr>
+<tr><td>E10</td><td>شاشة المطبخ KDS</td><td>القاعدة نفسها؛ وعلى جهاز آخر سحب <code>work_orders</code></td><td><span class="badge b-cond">جاهز بشروط</span><br><small>INT-10</small></td><td>§2 E10، §8.1 (INT-04 مُصلَح)؛ <code>kds_kitchen_order_flow_test.dart</code> 3/3 (شُغِّل هنا)</td></tr>
+<tr><td>E11</td><td>الميزان</td><td>باركود EAN-13 مدمج؛ ميزان حيّ COM/TCP</td><td>الباركود: <span class="badge b-ok">جاهز للإنتاج</span><br>الحيّ/رفع PLU: <span class="badge b-na">لم يُتحقَّق منه</span></td><td>§2 E11، §8.1 (INT-07 مُصلَح)؛ <code>scale_barcode_sqlite_test.dart</code> 6/6 (شُغِّل هنا)</td></tr>
+<tr><td>E12</td><td>الطابعات ودرج النقد</td><td>طابور طباعة Windows (PDF)؛ الدرج ESC p عبر الطابعة</td><td><span class="badge b-cond">جاهز بشروط</span></td><td>§2 E12؛ <code>print_escpos_test</code> 23/23، <code>print_kitchen_label_test</code> 12/12 (من التقرير)</td></tr>
+<tr><td>E13</td><td>قارئ الباركود</td><td>لوحة مفاتيح (Keyboard-wedge)</td><td><span class="badge b-ok">جاهز للإنتاج</span><br><small>سطح المكتب، بلا اختبار مباشر</small></td><td>§2 E13؛ قراءة كود <code>pos_barcode_input.dart</code></td></tr>
+<tr><td>E14</td><td>الربط السحابي</td><td>HTTPS/JSON، <code>Bearer</code> + <code>x-desktop-link</code></td><td><span class="badge b-cond">جاهز بشروط</span></td><td>§2 E14؛ <code>cloud_sync_i3_test</code> 7 (1 متجاوز) و<code>cloud_sync_mobile_k_test</code> 3 (من التقرير)</td></tr>
+<tr><td>E15</td><td>الفوترة الإلكترونية (ETA، JoFotara)</td><td>REST/OAuth إلى بوابات حكومية</td><td><span class="badge b-exp">تجريبي</span></td><td>§2 E15 (الإصدار الافتراضي <code>'0.9'</code> بلا توقيع)</td></tr>
+</tbody>
+</table>
+</div>
+<p class="callout">تطبيق <code>web_app/</code> (UralCash على Supabase) حكمه في التقرير «غير مكتمل وخارج النظام»، ولا يغطيه هذا الدليل.</p>
+</section>
+
+<!-- ================= 2. TOPOLOGY ================= -->
+<section id="topology" class="searchable">
+<h2>2. مخطط الطوبولوجيا العام</h2>
+<p>الجهاز الرئيسي هو المركز. الأجهزة على الشبكة المحلية تتصل به مباشرة. تطبيقا Van والإدارة لا يتصلان به محلياً، بل عبر الخادم السحابي. الأجهزة الطرفية موصولة بجهاز سطح المكتب الذي يشغّل نقطة البيع. المنافذ والمسارات في المخطط مأخوذة من الكود (المراجع في <a href="#sources">المصادر</a>).</p>
+<figure>
+<div class="svgwrap">
+<svg viewBox="0 0 1000 760" role="img" aria-labelledby="topoTitle topoDesc" xmlns="http://www.w3.org/2000/svg">
+  <title id="topoTitle">طوبولوجيا ربط الأجهزة في PicPos ERP</title>
+  <desc id="topoDesc">الجهاز الرئيسي في الوسط على المنفذ 8080. فوقه السحابة ويتصل بها تطبيقا Van والإدارة. يمينه أجهزة سطح المكتب الفرعية وتطبيقا المخازن والكاشير عبر HTTPS. يساره المتصفح وشاشة العميل وشاشة المطبخ. أسفله الطابعات ودرج النقد والميزان وقارئ الباركود وشاشة العميل المحلية.</desc>
+  <!-- edges -->
+  <path class="edge e-cloud" d="M500 270 L500 86"/>
+  <text class="lbl l-cloud" x="590" y="160" text-anchor="middle">HTTPS سحابي</text>
+  <text class="lbl l-cloud ltr" x="590" y="178" text-anchor="middle">Bearer + x-desktop-link</text>
+  <text class="lbl l-cloud" x="590" y="196" text-anchor="middle">(مطفأ افتراضاً)</text>
+  <path class="edge e-cloud" d="M600 42 L760 42"/>
+  <text class="lbl l-cloud ltr" x="680" y="34" text-anchor="middle">HTTPS /mobile/*</text>
+  <path class="edge e-cloud" d="M600 70 L760 120"/>
+  <text class="lbl l-cloud ltr" x="690" y="112" text-anchor="middle">/manage/*</text>
+
+  <path class="edge e-lan" d="M620 296 L760 222"/>
+  <text class="lbl l-lan ltr" x="690" y="240" text-anchor="middle">REST + /api/sync/pull</text>
+  <path class="edge e-ws" d="M620 306 L760 240"/>
+  <text class="lbl l-ws ltr" x="700" y="282" text-anchor="middle">WSS /ws</text>
+  <path class="edge e-lan" d="M620 330 L760 330"/>
+  <text class="lbl l-lan ltr" x="690" y="322" text-anchor="middle">/api/m1/wh/*</text>
+  <path class="edge e-lan" d="M620 360 L760 418"/>
+  <text class="lbl l-lan ltr" x="688" y="410" text-anchor="middle">HTTPS :8080</text>
+
+  <path class="edge e-lan" d="M380 296 L240 214"/>
+  <text class="lbl l-lan ltr" x="310" y="236" text-anchor="middle">/api/web/session</text>
+  <path class="edge e-ws" d="M380 306 L240 228"/>
+  <text class="lbl l-ws ltr" x="300" y="282" text-anchor="middle">WSS /webdb</text>
+  <path class="edge e-sse" d="M380 336 L240 330"/>
+  <text class="lbl l-sse ltr" x="310" y="324" text-anchor="middle">SSE /api/cfd/stream</text>
+  <path class="edge e-local" d="M380 362 L240 432"/>
+  <text class="lbl l-local" x="282" y="452" text-anchor="middle">محلي أو سحب</text>
+  
+
+  <path class="edge e-usb" d="M430 384 L105 590"/>
+  <text class="lbl l-usb" x="320" y="490" text-anchor="middle">طابور Windows</text>
+  <text class="lbl l-usb" x="310" y="508" text-anchor="middle">USB / COM / شبكة</text>
+  <path class="edge e-usb" d="M190 622 L215 622"/>
+  <path class="edge e-usb" d="M480 384 L300 590"/>
+  <text class="lbl l-usb" x="408" y="566" text-anchor="middle">ESC p عبر الطابعة</text>
+  <path class="edge e-usb" d="M500 384 L490 590"/>
+  <text class="lbl l-usb ltr" x="529" y="416" text-anchor="middle">COM / TCP</text><text class="lbl l-usb ltr" x="529" y="432" text-anchor="middle">4001</text>
+  <path class="edge e-usb" d="M540 384 L680 590"/>
+  <text class="lbl l-usb" x="700" y="530" text-anchor="middle">USB (لوحة مفاتيح)</text>
+  <path class="edge e-usb" d="M600 384 L880 590"/>
+  <text class="lbl l-usb ltr" x="866" y="496" text-anchor="middle">HDMI 127.0.0.1:52847</text>
+  <text class="lbl l-usb" x="880" y="514" text-anchor="middle">أو Serial/USB (VFD)</text>
+
+  <!-- nodes -->
+  <g class="node"><rect x="400" y="20" width="200" height="66" rx="10"/><text class="t" x="500" y="46" text-anchor="middle">السحابة</text><text class="s" x="500" y="68" text-anchor="middle">خادم server/ الخاص بالمشروع</text></g>
+  <g class="node"><rect x="760" y="14" width="220" height="56" rx="10"/><text class="t" x="870" y="38" text-anchor="middle">PicPos Van</text><text class="s" x="870" y="58" text-anchor="middle">جوال المندوب</text></g>
+  <g class="node"><rect x="760" y="94" width="220" height="56" rx="10"/><text class="t" x="870" y="118" text-anchor="middle">PicPos إدارة</text><text class="s" x="870" y="138" text-anchor="middle">جوال الإدارة (تجريبي)</text></g>
+
+  <g class="node hub"><rect x="380" y="270" width="240" height="114" rx="12"/><text class="t" x="500" y="300" text-anchor="middle">الجهاز الرئيسي (سيرفر)</text><text class="s" x="500" y="324" text-anchor="middle">خادم HTTPS مضمَّن</text><text class="s ltr" x="500" y="344" text-anchor="middle">0.0.0.0:8080</text><text class="s" x="500" y="366" text-anchor="middle">قاعدة البيانات + نقطة البيع</text></g>
+
+  <g class="node"><rect x="760" y="186" width="220" height="64" rx="10"/><text class="t" x="870" y="212" text-anchor="middle">سطح مكتب فرع / مرآة</text><text class="s" x="870" y="234" text-anchor="middle">عميل LAN (طابور غير متصل)</text></g>
+  <g class="node"><rect x="760" y="302" width="220" height="56" rx="10"/><text class="t" x="870" y="326" text-anchor="middle">PicPos مخازن</text><text class="s" x="870" y="346" text-anchor="middle">هاتف — بصمة مثبّتة</text></g>
+  <g class="node"><rect x="760" y="390" width="220" height="56" rx="10"/><text class="t" x="870" y="414" text-anchor="middle">PicPos كاشير</text><text class="s" x="870" y="434" text-anchor="middle">تابلت — غير مكتمل</text></g>
+
+  <g class="node"><rect x="20" y="186" width="220" height="56" rx="10"/><text class="t" x="130" y="210" text-anchor="middle">المتصفح (الويب)</text><text class="s" x="130" y="230" text-anchor="middle">قراءة فقط — مطفأ افتراضاً</text></g>
+  <g class="node"><rect x="20" y="300" width="220" height="60" rx="10"/><text class="t" x="130" y="324" text-anchor="middle">شاشة العميل CFD</text><text class="s" x="130" y="346" text-anchor="middle">متصفح تابلت: ‎/cfd</text></g>
+  <g class="node"><rect x="20" y="404" width="220" height="60" rx="10"/><text class="t" x="130" y="428" text-anchor="middle">شاشة المطبخ KDS</text><text class="s" x="130" y="450" text-anchor="middle">شاشة «المطبخ» في البرنامج</text></g>
+
+  <g class="node"><rect x="20" y="590" width="170" height="64" rx="10"/><text class="t" x="105" y="616" text-anchor="middle">الطابعات</text><text class="s" x="105" y="638" text-anchor="middle">مثبَّتة في Windows</text></g>
+  <g class="node"><rect x="215" y="590" width="170" height="64" rx="10"/><text class="t" x="300" y="616" text-anchor="middle">درج النقد</text><text class="s" x="300" y="638" text-anchor="middle">موصول بطابعة الإيصال</text></g>
+  <g class="node"><rect x="410" y="590" width="170" height="64" rx="10"/><text class="t" x="495" y="616" text-anchor="middle">الميزان</text><text class="s" x="495" y="638" text-anchor="middle">ملصق باركود / ميزان حيّ</text></g>
+  <g class="node"><rect x="605" y="590" width="170" height="64" rx="10"/><text class="t" x="690" y="616" text-anchor="middle">قارئ الباركود</text><text class="s" x="690" y="638" text-anchor="middle">لاحقة Enter</text></g>
+  <g class="node"><rect x="800" y="590" width="180" height="64" rx="10"/><text class="t" x="890" y="616" text-anchor="middle">CFD محلية</text><text class="s" x="890" y="638" text-anchor="middle">شاشة ثانية / VFD 2×20</text></g>
+
+  <!-- legend -->
+  <g class="legend">
+    <path class="edge e-lan" d="M940 700 L980 700"/><text x="932" y="705" text-anchor="start">LAN — HTTPS</text>
+    <path class="edge e-ws" d="M780 700 L820 700"/><text x="772" y="705" text-anchor="start">WebSocket</text>
+    <path class="edge e-sse" d="M640 700 L680 700"/><text x="632" y="705" text-anchor="start">SSE</text>
+    <path class="edge e-cloud" d="M940 735 L980 735"/><text x="932" y="740" text-anchor="start">سحابة (Cloud)</text>
+    <path class="edge e-usb" d="M780 735 L820 735"/><text x="772" y="740" text-anchor="start">USB / Serial / طابور الطباعة</text>
+    <path class="edge e-local" d="M500 700 L540 700"/><text x="492" y="705" text-anchor="start">محلي (القاعدة نفسها)</text>
+  </g>
+</svg>
+</div>
+<figcaption>الشكل 1: الروابط ونوعها والمنافذ الفعلية. المنفذ 8080 هو افتراضي الخادم ويمكن أن يختلف في تنصيبك. على الكاشير اكتب المنفذ صراحة (انظر INT-14).</figcaption>
+</figure>
+<div class="tbl">
+<table>
+<caption>ملخص الروابط</caption>
+<thead><tr><th>من ← إلى</th><th>النوع</th><th>المنفذ / المسار</th><th>المصادقة</th></tr></thead>
+<tbody>
+<tr><td>كل أجهزة LAN ← الخادم</td><td>HTTPS (shelf)</td><td>8080 افتراضاً، الربط على كل عناوين IPv4</td><td><code>Authorization: Bearer</code> رمز الجهاز + <code>x-device-id</code>، و<code>x-session-token</code> لجلسة المستخدم</td></tr>
+<tr><td>سطح مكتب فرع ← الخادم</td><td>REST + سحب + WebSocket</td><td><code>GET /api/sync/pull</code>، <code>/ws</code></td><td>رمز الجهاز + جلسة المستخدم</td></tr>
+<tr><td>هاتف المخازن ← الخادم</td><td>HTTPS مثبّت البصمة</td><td><code>/api/m1/info</code>، <code>/api/auth/session</code>، <code>/api/m1/wh/*</code></td><td>رمز جهاز من نوع <code>warehouse</code></td></tr>
+<tr><td>تابلت الكاشير ← الخادم</td><td>HTTPS مثبّت البصمة</td><td><code>/api/m1/info</code>، <code>/api/pair</code>، <code>/api/auth/session</code></td><td>رمز جهاز من نوع <code>pos</code></td></tr>
+<tr><td>المتصفح ← الخادم</td><td>HTTPS + WebSocket</td><td><code>POST /api/web/session</code>، <code>POST /api/web/ws-ticket</code> (30 ثانية)، <code>/webdb</code></td><td>جلسة ويب</td></tr>
+<tr><td>شاشة العميل (متصفح) ← الخادم</td><td>SSE</td><td><code>GET /cfd</code> ثم <code>GET /api/cfd/stream</code></td><td>بلا اعتماد، عمداً (شاشة عرض)</td></tr>
+<tr><td>شاشة العميل HDMI ← البرنامج</td><td>خادم محلي</td><td><code>127.0.0.1:52847</code> ونافذة Chrome/Edge بـ<code>--app</code></td><td>محلي فقط</td></tr>
+<tr><td>الميزان الحيّ ← البرنامج</td><td>COM أو TCP</td><td>TCP 4001 افتراضاً</td><td>—</td></tr>
+<tr><td>البرنامج ← السحابة</td><td>HTTPS/JSON</td><td>مسارات <code>/desktop/*</code></td><td><code>Authorization: Bearer</code> + <code>x-desktop-link</code></td></tr>
+<tr><td>Van ← السحابة</td><td>HTTP(S)</td><td><code>/mobile/pair</code>، <code>/mobile/login</code>، <code>/mobile/bootstrap</code>، <code>/mobile/sync/push</code>، <code>/mobile/sync/pull</code></td><td>PIN المندوب</td></tr>
+<tr><td>الإدارة ← السحابة</td><td>HTTPS</td><td><code>/manage/pair</code>، <code>/manage/login</code>، <code>/manage/snapshots</code></td><td>لقطات موقّعة بمفتاح سطح المكتب</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<!-- ================= 3. DEVICES ================= -->
+<section id="devices">
+<h2>3. الأجهزة والتطبيقات</h2>
+<p class="lead">كل قسم بالقالب نفسه: ما هو ومتى تستعمله، المتطلبات، الإعداد، التحقق، الأعطال، الأمان، الحدود المعروفة.</p>
+
+<!-- ---------- server ---------- -->
+<section id="d-server" class="dev searchable">
+<h3>3.1 الجهاز الرئيسي (الخادم) <span class="badge b-ok">جاهز للإنتاج</span></h3>
+<h4>ما هو ومتى تستعمله</h4>
+<p>جهاز سطح المكتب الذي يعمل في وضع «سيرفر». يحمل قاعدة البيانات ويشغّل خادم HTTPS مضمَّناً في البرنامج نفسه، فلا يحتاج برنامج خادم منفصلاً. تتصل به أجهزة الفروع والمرآة وتطبيقا المخازن والكاشير والمتصفح وشاشة العميل. استعمله حين يعمل في المحل أو الشركة أكثر من جهاز واحد.</p>
+<h4>المتطلبات</h4>
+<ul>
+<li>وضع تشغيل الجهاز «سيرفر». يُختار في معالج التشغيل الأول بالبطاقة «سيرفر رئيسي لشركة وفروع».</li>
+<li>شبكة محلية تصل إليها الأجهزة الأخرى. الخادم يستمع على كل عناوين IPv4 للجهاز.</li>
+<li>المنفذ: 8080 افتراضياً، ويُحفظ في الإعداد <code>network_server_port</code>.</li>
+<li>صلاحية ربط وإقران الأجهزة (<code>devices_pair_manage</code>) لمن سيُصدر رموز الاقتران. من لا يملكها يرى القسم «للعرض فقط».</li>
+</ul>
+<h4>الإعداد خطوة بخطوة</h4>
+<ol>
+<li>في معالج التشغيل الأول اختر <span class="ui">سيرفر رئيسي لشركة وفروع</span>. إن كان الجهاز مثبّتاً بوضع آخر، فالوضع لا يُغيَّر إلا بزر <span class="ui">إعادة توفير هذا الجهاز</span> ثم إعادة تشغيل البرنامج ليعود الإعداد الأول. شرائح <span class="ui">مستقل</span> و<span class="ui">سيرفر</span> و<span class="ui">عميل</span> في نافذة الوضع للعرض فقط ولا تغيّر شيئاً.</li>
+<li>افتح الإعدادات ← قسم <span class="ui">ربط التطبيقات والأجهزة</span> (في مجموعة <span class="ui">الربط</span>) ← كتلة <span class="ui">الشبكة المحلية</span> ← الصف <span class="ui">وضع هذا الجهاز</span>. القيمة يجب أن تكون <span class="ui">سيرفر رئيسي</span>.</li>
+<li>في نافذة <span class="ui">وضع التشغيل</span> اضغط <span class="ui">تشغيل</span>. يتحوّل الزر إلى <span class="ui">إيقاف</span> وتظهر <span class="ui">السيرفر يعمل</span> مع عنوان الخادم و<span class="ui">العملاء المتصلين: …</span>.</li>
+<li>تأكد من ظهور <span class="ui">🔒 السيرفر يعمل عبر HTTPS (TLS مفعَّل)</span>.</li>
+<li>عند الإقلاع التالي يبدأ الخادم تلقائياً في كل الأوضاع عدا «مستقل».</li>
+</ol>
+<h4>كيف تتحقق أن الربط يعمل</h4>
+<ul class="check">
+<li>الصف <span class="ui">وضع هذا الجهاز</span> يعرض عنوان الخادم، لا <span class="ui">السيرفر متوقف — المنفذ …</span>.</li>
+<li>تظهر رسالة HTTPS بالقفل 🔒، لا <span class="ui">السيرفر قيد التشغيل (HTTP — غير مشفَّر)</span>.</li>
+<li>زر <span class="ui">اقتران جهاز جديد</span> مفعَّل (يتعطّل إن لم يكن الجهاز سيرفراً يعمل).</li>
+<li>بعد اقتران جهاز يظهر في قائمة <span class="ui">الأجهزة المقترنة</span> مع <span class="ui">آخر ظهور: …</span>.</li>
+</ul>
+<h4>الأعطال الشائعة وحلولها</h4>
+<table>
+<thead><tr><th>ما تراه</th><th>السبب</th><th>الحل</th></tr></thead>
+<tbody>
+<tr><td><span class="ui">السيرفر قيد التشغيل (HTTP — غير مشفَّر)</span></td><td>خيار <span class="ui">السماح بـ HTTP غير مشفَّر (خيار قديم — غير موصى به)</span> مفعَّل.</td><td>أطفئه من نافذة <span class="ui">إقران جهاز</span>. الخيار <span class="ui">يسري عند إعادة تشغيل الخادم</span>، فأوقف الخادم وشغّله.</td></tr>
+<tr><td>الخادم لا يبدأ</td><td>تعذّر تجهيز الشهادة المُدارة. الخادم يرفض البدء ولا ينزل إلى HTTP.</td><td>إن كانت شهادة مخصّصة فراجع لوحة <span class="ui">أمان TLS / HTTPS</span>: <span class="ui">اختر ملف الشهادة (cert.pem)</span> و<span class="ui">اختر ملف المفتاح (key.pem)</span> (متاحة والخادم متوقف).</td></tr>
+<tr><td><span class="ui">الاقتران متاح حين يعمل هذا الجهاز سيرفراً — شغّله من إعدادات الشبكة والربط.</span></td><td>الجهاز ليس سيرفراً أو الخادم متوقف.</td><td>شغّل الخادم (الخطوة 3).</td></tr>
+<tr><td>الأجهزة الأخرى لا تصل</td><td>جدار حماية أو شبكة مختلفة.</td><td>اسمح بالمنفذ في جدار الحماية. لم يُتحقَّق من ذلك في المثبّت؛ انظر <a href="#real-device">القسم 6</a>.</td></tr>
+</tbody>
+</table>
+<h4>الأمان</h4>
+<ul>
+<li>النقل HTTPS افتراضياً بشهادة ذاتية التوقيع، وبصمتها SHA-256 تظهر تحت <span class="ui">بصمة شهادة الخادم (SHA-256)</span> في نافذة <span class="ui">إقران جهاز</span>. التطبيقات تثبّت هذه البصمة.</li>
+<li>لأن الشهادة ذاتية التوقيع، يعرض أي متصفح يفتح الخادم (الويب، شاشة العميل) تحذيراً أمنياً. اقبله مرة لكل جهاز بعد التأكد أنك تفتح عنوان خادمك.</li>
+<li><span class="ui">تدوير الشهادة (يتطلب إعادة إقران كل الأجهزة)</span> يصدر شهادة جديدة. بعده تظهر <span class="ui">تم تدوير الشهادة. أعد تشغيل الخادم ثم أعد إقران الأجهزة.</span></li>
+<li>المحدِّد يحصي الطلبات لكل عنوان في نافذة 60 ثانية: 300 للعمليات الحرجة، و600 للقراءة، و600 للقياس، و300 لبقية الكتابة، و120 للفئة الافتراضية. عند التجاوز يرجع <code>429</code> مع <code>retry-after: 60</code>.</li>
+</ul>
+<h4>الحدود المعروفة</h4>
+<ul>
+<li>لا حقل منفذ في لوحة الخادم؛ المنفذ المحفوظ هو المستعمل (8080 افتراضياً).</li>
+<li>قوائم إبطال جلسات المستخدم والويب تُحفظ في مفتاح محلي ضمن جدول <code>settings</code> وتُحمَّل عند بدء الخادم (INT-13 مُصلَح). الكتابة خلف الذاكرة غير متزامنة؛ إبطال يقع قبل انقطاع الطاقة مباشرة قد لا يكون قد حُفظ (§9.3).</li>
+<li>مساران (<code>/api/pair</code> و<code>/api/m1/info</code>) على الفئة الافتراضية للمحدِّد (120/دقيقة). لا أثر لذلك على الاستعمال العادي (INT-11، مُصلَح جزئياً).</li>
+</ul>
+</section>
+
+<!-- ---------- pairing ---------- -->
+<section id="d-pairing" class="dev searchable">
+<h3>3.2 إقران الأجهزة (مشترك بين أجهزة الشبكة المحلية) <span class="badge b-ok">جاهز للإنتاج</span></h3>
+<h4>ما هو ومتى تستعمله</h4>
+<p>كل جهاز على الشبكة المحلية (فرع، مرآة، كاشير، مخازن) يحتاج إقراناً مرة واحدة برمز يُصدره الخادم. الرمز يحدّد نوع الجهاز، ولجهاز الفرع والكاشير يحدّد الفرع أيضاً. بعد الإقران يحمل الجهاز رمزاً دائماً حتى تُلغي ربطه.</p>
+<h4>المتطلبات</h4>
+<ul>
+<li>الخادم يعمل في وضع «سيرفر» (<a href="#d-server">3.1</a>).</li>
+<li>لجهاز الكاشير: فرع نشط <em>له رمز</em>.</li>
+<li>لهاتف المخازن: الخادم يعمل بـTLS.</li>
+</ul>
+<h4>الإعداد خطوة بخطوة</h4>
+<ol>
+<li>على الخادم: <span class="ui">ربط التطبيقات والأجهزة</span> ← <span class="ui">الشبكة المحلية</span> ← <span class="ui">اقتران جهاز جديد</span>. أو من نافذة <span class="ui">وضع التشغيل</span> بزر <span class="ui">إقران جهاز</span>.</li>
+<li>في نافذة <span class="ui">نوع الجهاز المراد إقرانه</span> اختر:
+  <ul>
+  <li><span class="ui">جهاز فرع (محاسب / مخزني / إداري)</span>: سطح مكتب فرع.</li>
+  <li><span class="ui">نقطة بيع (كاشير / مندوب)</span>: تطبيق PicPos كاشير.</li>
+  <li><span class="ui">كونسول مدير الفروع (المرآة)</span>: سطح مكتب مرآة.</li>
+  <li><span class="ui">تطبيق الإدارة على الهاتف</span>.</li>
+  </ul>
+  لجهاز الفرع ونقطة البيع اختر <span class="ui">الفرع</span>.</li>
+<li>تظهر نافذة <span class="ui">إقران جهاز</span> بالرمز (8 أحرف) وعبارة <span class="ui">صالح لمدة … دقائق ولمرة واحدة</span>. أدخل الرمز في الجهاز الجديد خلال المدة.</li>
+<li>زر <span class="ui">نسخ بيانات QR</span> ينسخ نص بيانات الإقران فقط، ولا تعرض الشاشة صورة QR.</li>
+<li>لهاتف المخازن استعمل البطاقة المخصّصة في <a href="#d-warehouse">3.4</a>.</li>
+<li>لإلغاء ربط جهاز: قائمة <span class="ui">الأجهزة المقترنة</span> ← <span class="ui">إلغاء الربط</span> ← تأكيد. تظهر <span class="ui">تم إلغاء ربط الجهاز</span>.</li>
+</ol>
+<h4>كيف تتحقق أن الربط يعمل</h4>
+<ul class="check">
+<li>الجهاز الجديد يظهر في <span class="ui">الأجهزة المقترنة</span> بتاريخ <span class="ui">اقترن: …</span>.</li>
+<li>محاولة إعادة استعمال الرمز نفسه على جهاز ثانٍ تُرفض (رمز لمرة واحدة).</li>
+</ul>
+<h4>الأعطال الشائعة وحلولها (رسائل الخادم)</h4>
+<table>
+<thead><tr><th>الرسالة</th><th>الرمز</th><th>المعنى والحل</th></tr></thead>
+<tbody>
+<tr><td><span class="ui">رمز الإقران غير صحيح أو منتهي</span></td><td>401</td><td>الرمز خاطئ، أو انتهت دقائقه العشر، أو استُعمل، أو أُصدر بعده رمز جديد. أصدر رمزاً جديداً.</td></tr>
+<tr><td><span class="ui">رمز الإقران لا يخصّ هذا النوع من الأجهزة</span></td><td>401</td><td>نوع الرمز لا يطابق التطبيق. أصدر رمزاً بالنوع الصحيح.</td></tr>
+<tr><td><span class="ui">تم تجاوز محاولات الإقران؛ أعد المحاولة بعد 10 دقائق</span></td><td>429</td><td>5 محاولات من العنوان نفسه خلال 10 دقائق. انتظر حتى تمرّ النافذة.</td></tr>
+<tr><td><span class="ui">لا يمكن إقران جهاز POS بفرع دون رمز</span></td><td>409</td><td>أعطِ الفرع رمزاً ثم أصدر رمز الإقران من جديد.</td></tr>
+<tr><td><span class="ui">معرّف الفرع مطلوب لإقران جهاز POS</span></td><td>400</td><td>اختر <span class="ui">الفرع</span> عند إصدار رمز «نقطة بيع».</td></tr>
+<tr><td><span class="ui">الفرع غير موجود أو غير نشط</span></td><td>404</td><td>فعّل الفرع أو اختر فرعاً آخر.</td></tr>
+<tr><td><span class="ui">إقران الأجهزة غير متاح على هذا الخادم</span></td><td>503</td><td>خدمة الإقران غير مهيّأة على هذا الجهاز.</td></tr>
+<tr><td><span class="ui">شغّل السيرفر أولاً</span></td><td>—</td><td>تظهر على الخادم نفسه عند إصدار رمز والخادم متوقف.</td></tr>
+</tbody>
+</table>
+<h4>الأمان</h4>
+<ul>
+<li>الرمز 8 أحرف من الأبجدية <code>ABCDEFGHJKLMNPQRSTUVWXYZ23456789</code> (بلا الأحرف الملتبسة O و0 وI و1)، يولَّد بمولّد آمن، ويُطابَق بلا حساسية لحالة الأحرف وبمقارنة ثابتة الزمن.</li>
+<li>رمز معلَّق واحد فقط في كل مرة؛ إصدار رمز جديد يُبطل السابق. والرمز يُستهلك عند النجاح فقط، فالمحاولة الخاطئة لا تحرق الرمز الصحيح.</li>
+<li>بعد الإقران يحمل الجهاز رمزاً دائماً (HMAC-SHA256 لمعرّف الجهاز) لا ينتهي حتى <span class="ui">إلغاء الربط</span>. الجهاز الملغى يأخذ <code>401 device_revoked</code>.</li>
+<li>كل نوع جهاز مقيَّد بمسارات: المخازن بقائمة سماح فقط، والمرآة والكاشير بقائمة منع. المخالفة تُرجع <code>403 {"error":"device_scope"}</code>.</li>
+<li>المفتاح المشترك القديم مطفأ على الخوادم الجديدة (<code>401 legacy_token_disabled</code>). لإيقافه على خادم قديم: <span class="ui">إنهاء فترة المفتاح القديم الآن</span> في نافذة <span class="ui">إقران جهاز</span>. الإيقاف يُرفض ما دام جهاز يستعمله (<span class="ui">أجهزة تعمل بالمفتاح القديم: …</span>).</li>
+</ul>
+<h4>الحدود المعروفة</h4>
+<ul>
+<li>لا يمكن إقران جهازين في الوقت نفسه؛ أقرن الأجهزة واحداً بعد الآخر.</li>
+<li>عدّاد المحاولات في الذاكرة، فإعادة تشغيل الخادم تصفّره.</li>
+<li>INT-12 لم يتغير: سباق فرع جهاز المخازن غير قابل للحدوث في المسار الحالي لأن قراءة العرض المطابَق متزامنة قبل أي <code>await</code>؛ ربط الفرع من الطلب تحسين تقوية مقترح (§9.1).</li>
+<li>لا صورة QR على سطح المكتب، والمسح بالكاميرا لم يُجرَّب (<a href="#real-device">القسم 6</a>).</li>
+</ul>
+</section>
+
+<!-- ---------- branch / mirror ---------- -->
+<section id="d-branch" class="dev searchable">
+<h3>3.3 سطح مكتب فرع / مرآة <span class="badge b-ok">جاهز للإنتاج</span></h3>
+<h4>ما هو ومتى تستعمله</h4>
+<p>جهاز سطح مكتب ثانٍ مرتبط بالخادم. «فرع» يعمل لفرع محدد (محاسب، مخزني، إداري). «مرآة» كونسول لمدير الفروع. يقرأ البيانات من الخادم بالسحب، ويرسل كتاباته إليه، ويطابِرها عند انقطاع الخادم ثم يعيد إرسالها.</p>
+<h4>المتطلبات</h4>
+<ul>
+<li>خادم يعمل (<a href="#d-server">3.1</a>) ورمز إقران من نوع <span class="ui">جهاز فرع (محاسب / مخزني / إداري)</span> أو <span class="ui">كونسول مدير الفروع (المرآة)</span>.</li>
+<li>مستخدم موجود على الخادم. أول دخول يُتحقَّق منه على الخادم، ويُرفض الدخول إن كان المستخدم مطالَباً بتغيير كلمة المرور.</li>
+</ul>
+<h4>الإعداد خطوة بخطوة (معالج التشغيل الأول)</h4>
+<ol>
+<li>اختر <span class="ui">فرع تابع للسيرفر الرئيسي</span>. المرآة تحت <span class="ui">خيارات متقدمة</span> بالبطاقة <span class="ui">نسخة مرآة للسيرفر الرئيسي</span>.</li>
+<li>في خطوة الربط املأ <span class="ui">عنوان السيرفر الرئيسي</span> و<span class="ui">المنفذ</span> و<span class="ui">اسم هذا الجهاز</span> و<span class="ui">رمز الإقران (8 أحرف من السيرفر الرئيسي)</span>.</li>
+<li>اضغط <span class="ui">إقران واعتماد الربط</span>. النتيجة المتوقعة <span class="ui">تم الربط</span>.</li>
+<li>سجّل الدخول بمستخدم الخادم.</li>
+</ol>
+<h4>بديل لجهاز عميل قائم (من الإعدادات)</h4>
+<ol>
+<li><span class="ui">ربط التطبيقات والأجهزة</span> ← <span class="ui">وضع هذا الجهاز</span> (القيمة <span class="ui">عميل مرتبط</span>).</li>
+<li>اكتب <span class="ui">عنوان السيرفر: </span> (عنوان IP ثم المنفذ في الحقل المجاور، 8080 افتراضاً؛ أو عنوان URL كامل) ثم <span class="ui">رمز إقران الجهاز</span>.</li>
+<li><span class="ui">إقران الجهاز بالرمز</span> ← تظهر <span class="ui">✅ تم إقران الجهاز بنجاح</span>.</li>
+<li><span class="ui">اختبار الاتصال</span> ← <span class="ui">✅ تم الاتصال بنجاح</span>.</li>
+<li><span class="ui">حفظ وربط</span>: يحفظ ويختبر ثم يُجري مزامنة كاملة. النتيجة <span class="ui">✅ تمت المزامنة — … عنصر</span>.</li>
+</ol>
+<h4>كيف تتحقق أن الربط يعمل</h4>
+<ul class="check">
+<li>الجهاز يظهر في <span class="ui">الأجهزة المقترنة</span> على الخادم.</li>
+<li>أنشئ صنفاً على جهاز وتأكد من ظهوره على الآخر بعد دورة السحب التالية.</li>
+<li>أوقف الخادم، ونفّذ عملية على الفرع، ثم أعد تشغيل الخادم وتأكد من وصولها.</li>
+</ul>
+<h4>الأعطال الشائعة وحلولها</h4>
+<table>
+<thead><tr><th>الرسالة</th><th>الحل</th></tr></thead>
+<tbody>
+<tr><td><span class="ui">❌ فشل: …</span> أو <span class="ui">❌ فشل الاتصال: …</span></td><td>تحقق من العنوان والمنفذ وأن الخادم يعمل وأن الجهازين على الشبكة نفسها.</td></tr>
+<tr><td><span class="ui">❌ فشل الاتصال بالسيرفر: …</span> (المعالج)</td><td>السبب نفسه؛ راجع العنوان والمنفذ.</td></tr>
+<tr><td><span class="ui">أدخل رمز الإقران الذي أصدره السيرفر الرئيسي.</span></td><td>الحقل فارغ؛ أصدر رمزاً من الخادم (<a href="#d-pairing">3.2</a>).</td></tr>
+<tr><td>رسائل الخادم مثل <span class="ui">رمز الإقران غير صحيح أو منتهي</span></td><td>انظر جدول <a href="#d-pairing">3.2</a>.</td></tr>
+<tr><td><span class="ui">❌ فشلت المزامنة: …</span></td><td>أعد <span class="ui">حفظ وربط</span> بعد التحقق من الاتصال.</td></tr>
+<tr><td>رمز HTTP 426 (<code>client_upgrade_required</code>)</td><td>نسخة البرنامج على الجهاز الفرعي أقدم مما يقبله الخادم؛ حدّثها.</td></tr>
+</tbody>
+</table>
+<h4>الأمان</h4>
+<ul>
+<li>الطلبات تحمل رمز الجهاز ورمز جلسة المستخدم (<code>x-session-token</code>، صالح 12 ساعة).</li>
+<li>العزل بين الفروع على الخادم: الجهاز يأخذ بيانات فرع مستخدمه فقط، والطلب بلا جلسة صالحة لا يأخذ صفوفاً معاملاتية. وأعمدة الاعتماد مثل <code>password_hash</code> و<code>pin</code> لا تخرج في السحب.</li>
+<li>جهاز المرآة ممنوع من مسارات نقطة البيع والمعلّقات وطلبات الطاولات ومسارات المخازن (<code>403 device_scope</code>).</li>
+</ul>
+<h4>الحدود المعروفة</h4>
+<ul>
+<li>إعادة تسليم صف الحدّ في الدلتا ممكنة عمداً؛ upsert العادي لا يكتب مجدداً إذا كانت القيم مطابقة. مسار اختلاف المعرّف المحلي عن معرّف الخادم ما زال قد يرفع نسخة القارئ عند التكرار (§9.3).</li>
+<li>على PostgreSQL قد تُبقي معاملة مفتوحة العلامة المائية عند بدايتها، فتُعاد الصفوف منذ ذلك الوقت حتى تنتهي المعاملة؛ هذا ثمن للسلامة لا فقدٌ للصف. حارس idempotence يمنع الأثر المتكرر في upsert العادي (§9.3).</li>
+<li>لم تُختبر التغييرات على قاعدة PostgreSQL حية للمالك أو قاعدة SQLite إنتاجية، ولم يُقَس الأداء تحت حمل (§9.3).</li>
+</ul>
+</section>
+
+<!-- ---------- warehouse ---------- -->
+<section id="d-warehouse" class="dev searchable">
+<h3>3.4 تطبيق PicPos مخازن (هاتف) <span class="badge b-cond">جاهز بشروط</span></h3>
+<h4>ما هو ومتى تستعمله</h4>
+<p>تطبيق هاتف للمخزن: مستندات، واستلام، وجرد، وتحويلات، وموافقات، وملصقات، و<span class="ui">قائمة الإرسال</span>. يتصل بالخادم على الشبكة المحلية، ويعمل دون اتصال: <span class="ui">تُحفظ العمليات مشفّرةً على الهاتف وتُرسل إلى المكتب بالترتيب بنفس المعرّف، فلا تتكرر إن انقطع الاتصال. المرفوضة نهائية وتظهر مع سببها.</span></p>
+<h4>المتطلبات</h4>
+<ul>
+<li>الخادم يعمل بـTLS (HTTPS)، وإلا رُفض الإقران.</li>
+<li>مستخدم يملك صلاحية <code>warehouse_mobile_access</code>.</li>
+<li>الهاتف على الشبكة نفسها.</li>
+</ul>
+<h4>الإعداد خطوة بخطوة</h4>
+<ol>
+<li>على الخادم: <span class="ui">ربط التطبيقات والأجهزة</span> ← كتلة <span class="ui">التطبيقات</span> ← بطاقة <span class="ui">PicPos مخازن</span> ← <span class="ui">إقران هاتف مخازن</span> ← <span class="ui">اختر فرع الهاتف</span>.</li>
+<li>في التطبيق: <span class="ui">مسح رمز QR</span>، أو يدوياً: <span class="ui">عنوان المكتب (مثال 192.168.1.10:8080)</span> و<span class="ui">رمز الإقران</span> و<span class="ui">بصمة الشهادة (SHA-256)</span>، ثم <span class="ui">ربط</span>.</li>
+<li>اكتب العنوان <strong>مع المنفذ</strong>؛ بدونه يفترض التطبيق 443 والخادم على 8080 افتراضاً.</li>
+<li>سجّل الدخول (<span class="ui">دخول</span>) بمستخدم المخازن، ثم اضبط الرمز المحلي (PIN من 4 إلى 6 أرقام).</li>
+<li>العمليات دون اتصال تظهر في <span class="ui">قائمة الإرسال</span> وتُرسل عند فتح التطبيق أو بزر <span class="ui">أرسل الآن</span>.</li>
+</ol>
+<h4>كيف تتحقق أن الربط يعمل</h4>
+<ul class="check">
+<li>الهاتف يظهر في قائمة أجهزة بطاقة <span class="ui">PicPos مخازن</span> على الخادم.</li>
+<li>الدخول ينجح ويظهر مستند أو صنف من المكتب.</li>
+<li><span class="ui">قائمة الإرسال</span> تُفرغ بعد عودة الاتصال (<span class="ui">لا توجد عمليات بانتظار الإرسال.</span>).</li>
+</ul>
+<h4>الأعطال الشائعة وحلولها</h4>
+<table>
+<thead><tr><th>الرسالة</th><th>الحل</th></tr></thead>
+<tbody>
+<tr><td>على الخادم: <span class="ui">تطبيق المخازن يتطلب اتصالاً مشفّراً (TLS) على السيرفر — فعّله من إعدادات الشبكة</span></td><td>أطفئ خيار HTTP القديم وأعد تشغيل الخادم.</td></tr>
+<tr><td><span class="ui">تعذّر الاتصال بالمكتب أو لم تتطابق بصمة الشهادة.</span></td><td>تحقق من العنوان والمنفذ والشبكة، ومن أن البصمة هي بصمة الخادم الحالية (تتغير بعد تدوير الشهادة).</td></tr>
+<tr><td><span class="ui">الخادم لا يستعمل اتصالاً مشفّراً.</span></td><td>فعّل HTTPS على الخادم.</td></tr>
+<tr><td><span class="ui">انتهت صلاحية الرمز؛ اطلب رمزاً جديداً.</span></td><td>أصدر رمزاً جديداً (10 دقائق).</td></tr>
+<tr><td><span class="ui">هذا الرمز ليس لتطبيق المخازن.</span></td><td>أصدر الرمز من بطاقة <span class="ui">PicPos مخازن</span> لا من <span class="ui">اقتران جهاز جديد</span>.</td></tr>
+<tr><td><span class="ui">حسابك لا يملك صلاحية تطبيق المخازن.</span></td><td>امنح المستخدم <code>warehouse_mobile_access</code>.</td></tr>
+<tr><td><span class="ui">أُلغي ربط هذا الهاتف؛ أُعيد إلى شاشة الربط.</span></td><td>أُلغي الربط من المكتب؛ أعد الإقران.</td></tr>
+<tr><td><span class="ui">تكرّر فشل هذه العملية في المكتب فأُوقف إرسالها وتحتاج مراجعة المدير.</span></td><td>العملية فشلت 5 مرات فتوقف إرسالها؛ راجعها في المكتب.</td></tr>
+<tr><td><span class="ui">محاولات كثيرة؛ انتظر قليلاً.</span></td><td>تجاوز حد المحاولات؛ انتظر.</td></tr>
+</tbody>
+</table>
+<h4>الأمان</h4>
+<ul>
+<li>تثبيت البصمة إلزامي؛ الإقران بلا TLS مرفوض.</li>
+<li>جهاز المخازن بقائمة سماح فقط: <code>/api/m1/info</code> و<code>/api/auth/session</code> و<code>/api/m1/wh/*</code>. أي مسار آخر (مثل <code>/api/products</code> أو <code>/api/sync/pull</code>) يرجع <code>403 device_scope</code>، وثبت ذلك بالاختبار.</li>
+<li>الصندوق الصادر مشفّر على الهاتف (SQLCipher).</li>
+</ul>
+<h4>الحدود المعروفة</h4>
+<ul>
+<li>بند مفتوح في خطة التطبيق: رموز الجلسة لا تُبطَل عند تسجيل الخروج.</li>
+<li>في مختبر الأجهزة بقي فشل واحد مفتوح (W14.4b)، وإعادة المختبر على commit مسجَّل شرط للحكم «جاهز».</li>
+<li>لم يُنفَّذ بعد: صندوق المحاسب على سطح المكتب، وFEFO، وإنشاء جرد من الهاتف، ودعم قارئات الهواتف المدمجة (<code>ScanIntentPlugin</code>).</li>
+</ul>
+</section>
+
+<!-- ---------- pos ---------- -->
+<section id="d-pos" class="dev searchable">
+<h3>3.5 تطبيق PicPos كاشير (تابلت) <span class="badge b-inc">غير مكتمل</span></h3>
+<h4>ما هو ومتى تستعمله</h4>
+<p>تطبيق كاشير على التابلت يتصل بالخادم على الشبكة المحلية. المرحلة الحالية (M-0) تكمل الإقران وتسجيل الدخول وإلغاء الربط فقط. شاشات البيع والمعلّقات والوردية والمرتجعات هياكل بلا وظيفة، فلا تسلّمه لعميل للبيع. بطاقة <span class="ui">PicPos كاشير</span> في الإعدادات تعرض <span class="ui">قريباً</span>.</p>
+<h4>المتطلبات</h4>
+<ul>
+<li>خادم يعمل بـHTTPS (يرفض التطبيق خادماً بلا TLS).</li>
+<li>فرع نشط له رمز، ومستخدم يملك <code>pos_access</code>.</li>
+</ul>
+<h4>الإعداد خطوة بخطوة (للعرض والتجربة)</h4>
+<ol>
+<li>على الخادم: <span class="ui">اقتران جهاز جديد</span> ← <span class="ui">نقطة بيع (كاشير / مندوب)</span> ← <span class="ui">الفرع</span>.</li>
+<li>في التطبيق: <span class="ui">مسح رمز QR</span>، أو يدوياً: <span class="ui">عنوان جهاز المكتب</span> <strong>مع المنفذ صراحةً</strong> (مثل <code>192.168.1.10:8080</code>)، و<span class="ui">رمز الربط</span>، و<span class="ui">بصمة شهادة جهاز المكتب (SHA-256)</span>، ثم <span class="ui">ربط</span>.</li>
+<li>سجّل الدخول (<span class="ui">دخول</span>).</li>
+</ol>
+<h4>كيف تتحقق أن الربط يعمل</h4>
+<ul class="check">
+<li>التابلت يظهر في <span class="ui">الأجهزة المقترنة</span>.</li>
+<li>الدخول ينجح بمستخدم الفرع.</li>
+</ul>
+<h4>الأعطال الشائعة وحلولها</h4>
+<table>
+<thead><tr><th>الرسالة</th><th>الحل</th></tr></thead>
+<tbody>
+<tr><td><span class="ui">تعذّر الوصول إلى جهاز المكتب. تحقّق من الشبكة والعنوان والبصمة.</span></td><td>من الأسباب الشائعة أن المنفذ غير مكتوب فافترض التطبيق 443. اكتب <code>:8080</code> أو منفذ خادمك.</td></tr>
+<tr><td><span class="ui">جهاز المكتب لا يستعمل اتصالاً مشفّراً؛ رُفض الربط.</span></td><td>فعّل HTTPS على الخادم.</td></tr>
+<tr><td><span class="ui">بصمة الشهادة مطلوبة؛ الربط بلا بصمة غير آمن.</span></td><td>انسخ البصمة من نافذة <span class="ui">إقران جهاز</span>.</td></tr>
+<tr><td><span class="ui">هذا الرمز لنوع جهاز آخر. اطلب رمز «نقطة بيع» من المكتب.</span></td><td>أصدر رمزاً من النوع <span class="ui">نقطة بيع (كاشير / مندوب)</span>.</td></tr>
+<tr><td><span class="ui">انتهت صلاحية الرمز. اطلب رمزاً جديداً من المكتب.</span></td><td>أصدر رمزاً جديداً.</td></tr>
+<tr><td><span class="ui">هذا المستخدم لا يملك صلاحية نقطة البيع على جهاز الكاشير.</span></td><td>امنحه <code>pos_access</code>.</td></tr>
+<tr><td><span class="ui">هذا المستخدم ليس من فرع هذا الجهاز.</span></td><td>سجّل الدخول بمستخدم من فرع التابلت.</td></tr>
+<tr><td><span class="ui">يجب تغيير كلمة المرور على جهاز المكتب أولاً.</span></td><td>غيّرها على سطح المكتب ثم أعد المحاولة.</td></tr>
+<tr><td><span class="ui">أُلغي ربط هذا الجهاز من المكتب.</span></td><td>أعد الإقران.</td></tr>
+</tbody>
+</table>
+<h4>الأمان</h4>
+<ul>
+<li>تثبيت البصمة إلزامي، وأسرار الجهاز في مخزن المفاتيح الآمن للنظام.</li>
+<li>سياسة المسارات تمنع الكاشير من <code>/api/m1/wh</code> و<code>/api/mirror</code> (مسموح فقط <code>/api/m1/wh/desk</code>).</li>
+</ul>
+<h4>الحدود المعروفة</h4>
+<ul>
+<li>البيع غير متاح في هذه المرحلة.</li>
+<li>المنفذ الافتراضي 443 إن لم يُكتب، والخادم على 8080 (INT-14، غير مُصلَح). اكتب المنفذ دائماً.</li>
+</ul>
+</section>
+
+<!-- ---------- van ---------- -->
+<section id="d-van" class="dev searchable">
+<h3>3.6 تطبيق PicPos Van (المندوب) <span class="badge b-cond">جاهز بشروط</span></h3>
+<h4>ما هو ومتى تستعمله</h4>
+<p>تطبيق جوال للمندوب المتنقل. لا يتصل بالجهاز الرئيسي على الشبكة المحلية، بل بالخادم السحابي (<code>server/</code>). يخزّن بياناته مشفّرة (SQLCipher) ويرسل عملياته عبر صندوق صادر.</p>
+<h4>المتطلبات</h4>
+<ul>
+<li>الربط السحابي مفعَّل ومضبوط على سطح المكتب (<a href="#d-cloud">3.14</a>). بطاقة <span class="ui">PicPos Van — تطبيق المندوب</span> تعرض <span class="ui">يتطلب السحابة</span>، وتظهر <span class="ui">الاتصال غير مهيأ — افتح الإعدادات</span> إن لم تُضبط السحابة.</li>
+<li>خادم سحابي منشور بـHTTPS. الإصدار النهائي من التطبيق يقبل HTTPS فقط.</li>
+</ul>
+<h4>الإعداد خطوة بخطوة</h4>
+<ol>
+<li>على سطح المكتب: بطاقة <span class="ui">PicPos Van — تطبيق المندوب</span> ← <span class="ui">إصدار رمز اقتران لمندوب</span> ← اختر <span class="ui">المندوب</span> ← <span class="ui">متابعة</span>.</li>
+<li>في التطبيق، شاشة <span class="ui">ربط الجهاز</span>: <span class="ui">عنوان الخادم</span> و<span class="ui">رمز الربط</span> ثم <span class="ui">ربط</span>. القيمة المبدئية في حقل العنوان <code>http://10.0.2.2:18080</code> عنوان محاكي تطوير؛ استبدلها بعنوان خادمك السحابي.</li>
+<li>شاشة <span class="ui">دخول المندوب</span>: أدخل <span class="ui">الرمز السري</span> ثم <span class="ui">دخول</span>.</li>
+</ol>
+<h4>كيف تتحقق أن الربط يعمل</h4>
+<ul class="check">
+<li>الهاتف يظهر في <span class="ui">هواتف المناديب المقترنة</span> على سطح المكتب.</li>
+<li>عملية من الجوال تصل سطح المكتب بعد دورة المزامنة. التطبيق يزامن كل 5 دقائق، ومع الفشل يتباعد من 5 ثوانٍ حتى 15 دقيقة.</li>
+</ul>
+<h4>الأعطال الشائعة وحلولها</h4>
+<table>
+<thead><tr><th>الرسالة</th><th>الحل</th></tr></thead>
+<tbody>
+<tr><td><span class="ui">تعذّر جلب هواتف المناديب من السحابة: …</span> (سطح المكتب)</td><td>راجع إعدادات الربط السحابي و<span class="ui">اختبار الاتصال</span> فيها.</td></tr>
+<tr><td><span class="ui">محاولات خاطئة كثيرة — الإدخال مقفل مؤقتاً، حاول لاحقاً</span></td><td>انتظر ثم أدخل الرمز السري الصحيح.</td></tr>
+</tbody>
+</table>
+<h4>الأمان</h4>
+<ul>
+<li>الإصدار النهائي يرفض العناوين غير HTTPS (اختبار <code>cloud_api_policy_test</code> ناجح وفق التقرير).</li>
+<li>لا تثبيت شهادة في هذا التطبيق؛ الثقة على شهادة الخادم السحابي العامة.</li>
+</ul>
+<h4>الحدود المعروفة</h4>
+<ul>
+<li>يحتاج خادماً سحابياً منشوراً، ولم يُتحقَّق من هذا الخادم في المراجعة. مختبر الأجهزة غطّى التطبيق بفحص دخان فقط.</li>
+</ul>
+</section>
+
+<!-- ---------- admin ---------- -->
+<section id="d-admin" class="dev searchable">
+<h3>3.7 تطبيق PicPos إدارة <span class="badge b-exp">تجريبي</span></h3>
+<h4>ما هو ومتى تستعمله</h4>
+<p>تطبيق جوال للإدارة يقرأ لقطات موقّعة من سطح المكتب عبر الخادم السحابي (<code>/manage/*</code>). ثلاثة من تبويباته هياكل بلا وظيفة، وأوامر الاستعلام والتأكيد الإضافي غير متاحة بعد. لا تسلّمه لعميل.</p>
+<h4>المتطلبات</h4>
+<ul><li>الربط السحابي مفعَّل (<a href="#d-cloud">3.14</a>)، ومستخدم إدارة.</li></ul>
+<h4>الإعداد خطوة بخطوة (سطح المكتب)</h4>
+<ol>
+<li>بطاقة <span class="ui">PicPos إدارة — تطبيق الإدارة</span> ← اختر <span class="ui">مستخدم تطبيق الإدارة</span> ← <span class="ui">تفعيل تطبيق الإدارة</span>.</li>
+<li>أدخل <span class="ui">كلمة مرور الجوال (٨ أحرف على الأقل)</span> ← <span class="ui">تفعيل</span>. تظهر <span class="ui">تم تفعيل تطبيق الإدارة</span>.</li>
+<li><span class="ui">ربط جوال</span> يعرض بيانات الربط لإدخالها في التطبيق. لم أتحقق من نصوص شاشات التطبيق نفسه، فاتبعها كما تظهر (<a href="#real-device">القسم 6</a>).</li>
+</ol>
+<h4>كيف تتحقق</h4>
+<ul class="check"><li>الهاتف يظهر في <span class="ui">هواتف الإدارة المقترنة</span>.</li></ul>
+<h4>الأعطال الشائعة</h4>
+<ul><li><span class="ui">كلمة مرور الجوال يجب ألا تقل عن ٨ أحرف</span>: أطِل كلمة المرور.</li></ul>
+<h4>الأمان</h4>
+<ul><li>الثقة عبر توقيع اللقطات بمفتاح سطح المكتب المثبّت، مع تأكيد البصمة يدوياً في التطبيق (وفق التقرير). للإيقاف: <span class="ui">إلغاء التفعيل</span>، أو <span class="ui">إلغاء الربط</span> لهاتف بعينه.</li></ul>
+<h4>الحدود المعروفة</h4>
+<ul><li>تجريبي؛ أغلب الشاشات غير منفّذة.</li></ul>
+</section>
+
+<!-- ---------- web ---------- -->
+<section id="d-web" class="dev searchable">
+<h3>3.8 الويب (الوصول من المتصفح) <span class="badge b-cond">جاهز بشروط</span></h3>
+<h4>ما هو ومتى تستعمله</h4>
+<p>نسخة الويب من البرنامج يقدّمها الخادم نفسه، لعرض البيانات من متصفح على الشبكة. القراءة فقط افتراضياً.</p>
+<h4>المتطلبات</h4>
+<ul><li>خادم يعمل، ومجلد بناء ويب فيه <code>index.html</code>.</li></ul>
+<h4>الإعداد خطوة بخطوة</h4>
+<ol>
+<li>في نافذة <span class="ui">وضع التشغيل</span> (أسفل لوحة الخادم) فعّل <span class="ui">تفعيل الوصول من المتصفح</span>.</li>
+<li>حدّد <span class="ui">مجلد ملفات الويب (build/web)</span> ثم <span class="ui">حفظ إعدادات الويب</span>. تظهر <span class="ui">تم حفظ إعدادات الويب — أعد تشغيل السيرفر لتطبيقها</span>.</li>
+<li>أوقف الخادم وشغّله، ثم افتح <code>https://&lt;server-ip&gt;:&lt;port&gt;/</code> واقبل تحذير الشهادة الذاتية مرة.</li>
+</ol>
+<h4>كيف تتحقق</h4>
+<ul class="check">
+<li>الصفحة تفتح وتطلب الدخول، والبيانات تظهر بعده.</li>
+<li>قبل التفعيل يرجع الخادم 404 لمسارات الويب، وهذا متوقَّع.</li>
+</ul>
+<h4>الأعطال الشائعة</h4>
+<ul>
+<li>404 (<code>Web access disabled</code>): الميزة مطفأة، أو لم يُعَد تشغيل الخادم بعد الحفظ.</li>
+<li>تحذير «الاتصال غير آمن» في المتصفح: متوقَّع مع الشهادة الذاتية.</li>
+</ul>
+<h4>الأمان</h4>
+<ul>
+<li>الدخول <code>POST /api/web/session</code>، ثم تذكرة <code>POST /api/web/ws-ticket</code> صالحة 30 ثانية، ثم قناة <code>wss://…/webdb</code>.</li>
+<li>الخادم يقبل استعلام SELECT واحداً على جداول مسموحة، والأعمدة الحساسة مُفرَّغة.</li>
+<li>جلسة الويب 12 ساعة؛ قائمة الإبطال محفوظة في <code>settings</code> وتُحمَّل عند بدء الخادم (INT-13).</li>
+</ul>
+<h4>الحدود المعروفة</h4>
+<ul><li>قراءة فقط؛ الكتابة من الويب تحتاج إعداداً غير مفعَّل افتراضاً (<code>enableWebSessionWrites</code>).</li></ul>
+</section>
+
+<!-- ---------- cfd ---------- -->
+<section id="d-cfd" class="dev searchable">
+<h3>3.9 شاشة العميل CFD <span class="badge b-cond">الشبكة: جاهز بشروط</span> <span class="badge b-na">HDMI/تسلسلي: لم يُتحقَّق منه</span></h3>
+<h4>ما هو ومتى تستعمله</h4>
+<p>شاشة تعرض للعميل أصناف السلة والمجموع أثناء البيع. أنواع الاتصال أربعة: <span class="ui">شبكة (Network/WiFi)</span> لتابلت أو شاشة بمتصفح، و<span class="ui">HDMI / شاشة ثانية</span>، و<span class="ui">Serial / COM Port (VFD)</span> لشاشة VFD من سطرين بعشرين حرفاً، و<span class="ui">USB (Virtual COM)</span>.</p>
+<h4>المتطلبات</h4>
+<ul>
+<li>نمط الشبكة: الخادم يعمل، وجهاز عرض بمتصفح على الشبكة نفسها.</li>
+<li>نمط HDMI: شاشة ثانية وChrome أو Edge على الجهاز.</li>
+<li>النمط التسلسلي: شاشة VFD على منفذ COM.</li>
+</ul>
+<h4>الإعداد خطوة بخطوة</h4>
+<ol>
+<li>الإعدادات ← <span class="ui">التكاملات والخدمات</span> ← كتلة <span class="ui">شاشة العميل</span> ← بطاقة <span class="ui">شاشة العميل والمنيو</span>.</li>
+<li>فعّل <span class="ui">تفعيل شاشة العميل</span> واختر <span class="ui">نوع الاتصال</span>.</li>
+<li>للتسلسلي: <span class="ui">تحديث المنافذ</span> ثم اختر المنفذ.</li>
+<li><span class="ui">اختبار الاتصال</span> ← نافذة <span class="ui">اتصال ناجح</span> أو <span class="ui">فشل الاتصال</span>.</li>
+<li><span class="ui">حفظ وتطبيق</span> ← <span class="ui">تم الحفظ والاتصال بنجاح ✓</span>.</li>
+<li>نمط الشبكة: على جهاز العرض افتح <code>https://&lt;server-ip&gt;:&lt;port&gt;/cfd</code> واقبل تحذير الشهادة مرة واحدة لكل جهاز.</li>
+</ol>
+<h4>كيف تتحقق أن الربط يعمل</h4>
+<ul class="check">
+<li>الصفحة تعرض <span class="ui">شاشة العميل</span> وحالة <span class="ui">متصل</span>.</li>
+<li>أضف صنفاً للسلة في نقطة البيع، فيظهر على الشاشة بأعمدة <span class="ui">الصنف</span> و<span class="ui">الكمية</span> و<span class="ui">السعر</span> و<span class="ui">الإجمالي</span>.</li>
+<li>أفرغ السلة، فتعود الشاشة إلى <span class="ui">مرحباً بكم</span> / <span class="ui">في انتظار الطلبات</span>.</li>
+</ul>
+<h4>الأعطال الشائعة وحلولها</h4>
+<table>
+<thead><tr><th>ما تراه</th><th>الحل</th></tr></thead>
+<tbody>
+<tr><td><span class="ui">السيرفر غير مشغل. شغّل السيرفر من "وضع الشبكة" لتفعيل شاشة العميل عبر الشبكة.</span></td><td>شغّل الخادم (<a href="#d-server">3.1</a>).</td></tr>
+<tr><td><span class="ui">تم الحفظ لكن فشل الاتصال</span></td><td>راجع المنفذ أو الشاشة أو المتصفح حسب النوع، ثم <span class="ui">اختبار الاتصال</span>.</td></tr>
+<tr><td>الشاشة مفتوحة لكنها تبقى بلا محتوى</td><td>الصفحة لا تتلقى حالة أولية عند الاتصال، بل تتحدّث مع أول تغيير في السلة. أضف صنفاً.</td></tr>
+<tr><td>إعدادات الشاشة بعد إعادة تشغيل البرنامج</td><td>تُحمَّل عند الإقلاع تلقائياً. عودة اتصال COM أو فتح نافذة HDMI تلقائياً خلف مفتاح <span class="ui">إعادة الاتصال بشاشة العميل تلقائياً عند التشغيل</span> في بطاقة PicPos، وهو معطّل افتراضياً (INT-09).</td></tr>
+<tr><td>تحذير الشهادة في المتصفح</td><td>متوقَّع مع الشهادة الذاتية؛ اقبله مرة.</td></tr>
+</tbody>
+</table>
+<h4>الأمان</h4>
+<ul>
+<li>الصفحة <code>/cfd</code> ومسار التدفق <code>GET /api/cfd/stream</code> عامّان عمداً، لأن المتصفح لا يحمل رمز جهاز. الإعفاء لمسارين بعينهما، بطلب GET فقط، وبلا ترويسة Authorization. ما يخرج هو ما تعرضه الشاشة: السلة بعد ترشيح إعدادات العرض، والحقول المخفية لا تخرج (اختبار ناجح).</li>
+<li>المسارات المجاورة (<code>/api/cfd/*</code> والكتابة) تبقى محمية، وجهاز المخازن يأخذ <code>403 device_scope</code> عليها.</li>
+<li>نمط HDMI يستمع على <code>127.0.0.1:52847</code> فقط (محلي).</li>
+</ul>
+<h4>الحدود المعروفة</h4>
+<ul>
+<li>إعدادات شاشة العميل تُحمَّل دائماً عند الإقلاع. إعادة وصل COM أو تشغيل نافذة HDMI تلقائياً خيار مستقل في بطاقة PicPos، معطّل افتراضياً (INT-09).</li>
+<li>نمطا HDMI والتسلسلي لم يُجرَّبا على جهاز (<a href="#real-device">القسم 6</a>).</li>
+</ul>
+</section>
+
+<!-- ---------- kds ---------- -->
+<section id="d-kds" class="dev searchable">
+<h3>3.10 شاشة المطبخ KDS <span class="badge b-cond">جاهز بشروط</span></h3>
+<h4>ما هو ومتى تستعمله</h4>
+<p>شاشة <span class="ui">المطبخ</span> في البرنامج تعرض طلبات المطبخ حسب المحطة والأولوية. الطلبات تُنشأ من شاشة الطاولات فقط بزر <span class="ui">إرسال للمطبخ</span>. لا يوجد نوع جهاز KDS ولا مسار شبكي خاص: الشاشة تقرأ قاعدة بيانات الجهاز. على جهاز فرعي تصل الطلبات بسحب جدول <code>work_orders</code>، وتحتاج جلسة مستخدم.</p>
+<h4>المتطلبات</h4>
+<ul>
+<li>ميزة المطبخ مفعّلة في البرنامج (كتلة <span class="ui">شاشة المطبخ</span> لا تظهر إلا عندها).</li>
+<li>صلاحية إعدادات شاشة المطبخ (<code>kdsSettings</code>)، أو موافقة مدير.</li>
+</ul>
+<h4>الإعداد خطوة بخطوة</h4>
+<ol>
+<li>الإعدادات ← <span class="ui">التكاملات والخدمات</span> ← <span class="ui">شاشة المطبخ</span> ← <span class="ui">إضافة محطة</span> ← <span class="ui">اسم المحطة</span> و<span class="ui">رمز المحطة</span>.</li>
+<li><span class="ui">ربط التصنيف بالمحطة</span> لتوجيه أصناف كل تصنيف إلى محطتها (أُصلح INT-04).</li>
+<li>افتح الشاشة من القائمة الرئيسية ← <span class="ui">المطبخ</span>، واختر المحطة أو <span class="ui">جميع المحطات</span>.</li>
+<li>على الطلب: <span class="ui">تحضير</span> ثم <span class="ui">جاهز</span> (تظهر <span class="ui">تم تجهيز الطلب!</span>)، و<span class="ui">استرجاع</span> لإعادته للتحضير.</li>
+</ol>
+<h4>كيف تتحقق أن الربط يعمل</h4>
+<ul class="check">
+<li>من شاشة الطاولات <span class="ui">إرسال للمطبخ</span> ← <span class="ui">✅ تم إرسال الطلب للمطبخ</span>.</li>
+<li>الطلب يظهر على محطته وعلى <span class="ui">جميع المحطات</span>، لا على محطة أخرى. الطلب العاجل أولاً.</li>
+<li>بعد <span class="ui">جاهز</span> يخرج الطلب من الطابور ويظهر في قائمة الجاهز لنقطة البيع.</li>
+</ul>
+<h4>الأعطال الشائعة</h4>
+<ul>
+<li><span class="ui">فشل الإرسال: …</span>: أعد المحاولة وتحقق من الطاولة والأصناف.</li>
+<li>كل الطلبات تذهب لمحطة «kitchen» الافتراضية: هذا كان INT-04 على SQLite وأُصلح. إن ظهر فأعد <span class="ui">ربط التصنيف بالمحطة</span>.</li>
+</ul>
+<h4>الأمان</h4>
+<ul><li>الإعدادات محمية بصلاحية <code>kdsSettings</code>. على جهاز بعيد، <code>work_orders</code> جدول معاملاتي لا يُسحب بلا جلسة.</li></ul>
+<h4>الحدود المعروفة</h4>
+<ul>
+<li>INT-10 لم يُنفَّذ: لا إجراء في الواجهة لتحويل الطلب إلى «قُدِّم» أو «أُلغي». كما أن الطلب بحالة <code>ready</code> لا يظهر في KDS الذي يرشّح <code>pending/preparing</code>، وعدّاد «جاهز» فيه غير قابل للوصول؛ موضع إجراء التقديم وسياسة إلغاء طلب مرتبط بفاتورة الطاولة يحتاجان قراراً وظيفياً (§9.1).</li>
+</ul>
+</section>
+
+<!-- ---------- printers & drawer ---------- -->
+<section id="d-printers" class="dev searchable">
+<h3>3.11 الطابعات ودرج النقد <span class="badge b-cond">جاهز بشروط</span></h3>
+<h4>ما هو ومتى تستعمله</h4>
+<p>كل مستند يتحوّل PDF ويُرسَل إلى طابور طباعة Windows، فيجب أن تكون الطابعة مثبّتة في Windows أولاً. درج النقد يُفتح بإرسال أمر ESC p عبر طابعة الإيصال الموصول بها.</p>
+<h4>المتطلبات</h4>
+<ul>
+<li>الطابعة مثبّتة في Windows، واسمها معروف كما يظهر في إعدادات الطابعات.</li>
+<li>الدرج موصول بطابعة الإيصال.</li>
+<li>صلاحية إعدادات الطابعات (<code>settingsPrinter</code>) لفتح الشاشات.</li>
+</ul>
+<h4>الإعداد خطوة بخطوة</h4>
+<ol>
+<li>الإعدادات ← <span class="ui">الأجهزة والطباعة</span> ← كتلة <span class="ui">إدارة الأجهزة</span> ← <span class="ui">إدارة الطابعات</span>.</li>
+<li><span class="ui">طابعة جديدة</span> ← نافذة <span class="ui">إضافة طابعة جديدة</span>: <span class="ui">اسم الطابعة *</span>، و<span class="ui">الغرض من الطابعة</span> (<span class="ui">إيصال البيع السريع</span>، <span class="ui">طابعة المطبخ</span>، <span class="ui">طابعة الطاولات</span>، <span class="ui">طابعة الباركود</span>)، و<span class="ui">نوع الاتصال</span> (<span class="ui">USB</span>، <span class="ui">COM</span>، <span class="ui">شبكة</span>)، و<span class="ui">اسم الطابعة في النظام</span>.</li>
+<li>للنوع <span class="ui">شبكة</span> أدخل <span class="ui">عنوان IP</span> (المنفذ 9100 افتراضاً). هذه القيم تُستعمل فقط لمطابقة طابعة مثبّتة في Windows، لا لاتصال مباشر.</li>
+<li>الدرج: <span class="ui">الأجهزة والطباعة</span> ← <span class="ui">إعدادات الأجهزة</span> ← <span class="ui">درج النقد</span> ← <span class="ui">اسم الطابعة (للدرج)</span> ← <span class="ui">اختبار فتح الدرج</span>.</li>
+<li>زر الدرج في نقطة البيع يُفعَّل من إعدادات نقطة البيع: <span class="ui">زر الدرج</span>.</li>
+</ol>
+<h4>كيف تتحقق أن الربط يعمل</h4>
+<ul class="check">
+<li>اطبع إيصال بيع، فيخرج من الطابعة المحددة لغرضه.</li>
+<li><span class="ui">اختبار فتح الدرج</span> يفتح الدرج فعلياً. لا تعتمد على لون الرسالة (انظر الحدود).</li>
+<li>بعد الدفع يفتح الدرج تلقائياً، أو يدوياً من نقطة البيع بصلاحية <code>pos_open_drawer</code>. بلا الصلاحية يُطلب اعتماد مدير لـ<span class="ui">فتح درج النقدية</span>.</li>
+</ul>
+<h4>الأعطال الشائعة وحلولها</h4>
+<table>
+<thead><tr><th>الرسالة</th><th>الحل</th></tr></thead>
+<tbody>
+<tr><td><span class="ui">فشل فتح الدرج - تأكد من اسم الطابعة</span></td><td>اكتب اسم الطابعة كما في Windows تماماً.</td></tr>
+<tr><td><span class="ui">تعذّر فتح الدرج: …</span> (نقطة البيع)</td><td>تحقق من الطابعة والكابل والاسم.</td></tr>
+<tr><td>لا شيء يُطبع</td><td>الطابعة غير مثبّتة في Windows أو الاسم غير مطابق. البرنامج لا يطبع بـTCP 9100 مباشرة، ولا بـBluetooth على سطح المكتب.</td></tr>
+</tbody>
+</table>
+<h4>الأمان</h4>
+<ul><li>أسماء الطابعات تمرّ بحارس قبل أوامر النظام البديلة (<code>copy /b</code> و<code>print /d:</code>) لمنع حقن الأوامر (SEC-015). فتح الدرج اليدوي محكوم بصلاحية.</li></ul>
+<h4>الحدود المعروفة</h4>
+<ul>
+<li>رسالة اختبار الدرج تظهر بنمط «خطأ» دائماً حتى عند النجاح؛ اقرأ نصّها، فـ<span class="ui">تم فتح الدرج بنجاح</span> تعني النجاح.</li>
+<li>عنوان شاشة الطابعات وحقل بحثها غير مترجمين (يظهران بالعربية في كل اللغات).</li>
+<li>لا اختبار آلي لفتح الدرج غير حارس الاسم. حجم الورق ومحاذاة العربية يلزم تجربتهما (<a href="#real-device">القسم 6</a>).</li>
+</ul>
+</section>
+
+<!-- ---------- scale ---------- -->
+<section id="d-scale" class="dev searchable">
+<h3>3.12 الميزان <span class="badge b-ok">باركود الميزان: جاهز للإنتاج</span> <span class="badge b-na">الميزان الحيّ ورفع PLU: لم يُتحقَّق منه</span></h3>
+<h4>ما هو ومتى تستعمله</h4>
+<p>طريقتان: (1) <strong>باركود الميزان</strong>: الميزان يطبع ملصق EAN-13 يحمل رقم الصنف (PLU) والوزن أو السعر، وتقرؤه نقطة البيع بقارئ الباركود. (2) <strong>الميزان الحيّ</strong>: قراءة الوزن مباشرة عبر COM أو TCP، ورفع الأصناف (PLU) لثماني علامات: CAS، DIGI، Rongta، ACLAS، Mettler Toledo، TEM، Dibal، NVK/TMA.</p>
+<h4>المتطلبات</h4>
+<ul>
+<li>رقم PLU في بطاقة الصنف (<span class="ui">رقم PLU</span>).</li>
+<li>صيغة ملصق الميزان معروفة: البادئة وعدد خانات PLU والقاسم.</li>
+</ul>
+<h4>الإعداد خطوة بخطوة (باركود الميزان)</h4>
+<ol>
+<li>الإعدادات ← <span class="ui">الأجهزة والطباعة</span> ← كتلة <span class="ui">باركود الميزان</span>.</li>
+<li>فعّل <span class="ui">تفعيل باركود الوزن</span> و/أو <span class="ui">تفعيل باركود السعر (المجموع)</span>. <strong>الوضعان مطفآن افتراضاً.</strong></li>
+<li>اضبط <span class="ui">البادئة (Prefix)</span> و<span class="ui">خانات PLU</span> و<span class="ui">معامل القسمة</span> لتطابق الميزان، ثم <span class="ui">حفظ</span>. القيم الافتراضية: بادئة الوزن 21، والسعر 20، والوزن البديلة 22، وPLU من 5 خانات، والقاسم 1000 للوزن و100 للسعر.</li>
+<li>أدخل <span class="ui">رقم PLU</span> في بطاقة كل صنف.</li>
+</ol>
+<h4>الإعداد (الميزان الحيّ — لم يُجرَّب بجهاز)</h4>
+<ol>
+<li><span class="ui">إعدادات الأجهزة</span> ← <span class="ui">الميزان الرقمي</span> ← <span class="ui">طريقة الاتصال</span>: <span class="ui">COM Port (USB/RS232)</span> أو <span class="ui">شبكة (TCP/IP)</span>.</li>
+<li>للشبكة تظهر: <span class="ui">أدخل عنوان IP الميزان فقط. المنافذ الشائعة: 4001, 8000, 9100. لا حاجة لـ COM Port.</span> والافتراضي في الخدمة 4001.</li>
+<li><span class="ui">اتصال</span> ثم <span class="ui">اختبار</span>.</li>
+</ol>
+<h4>كيف تتحقق أن الربط يعمل</h4>
+<ul class="check">
+<li>امسح ملصق وزن، فيُضاف الصنف بالكمية بالكيلوغرام وتظهر <span class="ui">وزن ميزان: … kg</span>.</li>
+<li>امسح ملصق سعر، فتُحسب الكمية من سعر البيع وتظهر <span class="ui">سعر ميزان: …</span>.</li>
+<li>ملصق ليس ببادئة ميزان يُقرأ باركوداً عادياً.</li>
+</ul>
+<h4>الأعطال الشائعة وحلولها</h4>
+<ul>
+<li>الملصق يُقرأ كباركود عادي أو لا يجد صنفاً. الأسباب: الوضع مطفأ، أو البادئة أو خانات PLU لا تطابق الميزان، أو PLU غير مسجّل في الصنف، أو رقم التحقق خاطئ. النظام لا يعرض رسالة خاصة هنا؛ الملصق ببساطة لا يُعامَل كملصق ميزان.</li>
+<li>ملصق سعر لصنف سعر بيعه صفر يُرفض.</li>
+<li>البحث بالترتيب: PLU، ثم الكود، ثم الكود بلا أصفار، ثم الباركود.</li>
+</ul>
+<h4>الأمان</h4>
+<ul><li>لا جانب شبكي لباركود الميزان. الميزان الحيّ عبر TCP يتصل بعنوان داخلي تحدده أنت.</li></ul>
+<h4>الحدود المعروفة</h4>
+<ul>
+<li>التنصيبات القديمة بمفاتيح الإعداد القديمة تُقرأ الآن بطول PLU والقاسم المحفوظين (INT-07 مُصلَح).</li>
+<li>الميزان الحيّ ورفع PLU وترميز CP1256 لم تُجرَّب على جهاز (<a href="#real-device">القسم 6</a>).</li>
+</ul>
+</section>
+
+<!-- ---------- barcode ---------- -->
+<section id="d-barcode" class="dev searchable">
+<h3>3.13 قارئ الباركود <span class="badge b-ok">جاهز للإنتاج (سطح المكتب)</span></h3>
+<h4>ما هو ومتى تستعمله</h4>
+<p>قارئ USB يعمل كلوحة مفاتيح: يكتب الرقم في حقل الباركود المركّز في نقطة البيع ثم يرسل Enter.</p>
+<h4>المتطلبات</h4>
+<ul><li>القارئ مضبوط على لاحقة Enter (CR).</li></ul>
+<h4>الإعداد خطوة بخطوة</h4>
+<ol>
+<li>اضبط القارئ على لاحقة Enter من دليل الشركة المصنعة.</li>
+<li>في نقطة البيع ضع المؤشر في حقل الباركود: <span class="ui">امسح الباركود أو اكتب الرقم واضغط Enter...</span> (أو <span class="ui">امسح الباركود الآن...</span> في وضع السوبرماركت)، ثم امسح.</li>
+</ol>
+<h4>كيف تتحقق</h4>
+<ul class="check"><li>مسحة واحدة تضيف الصنف مرة واحدة، بلا أحرف زائدة.</li></ul>
+<h4>الأعطال الشائعة</h4>
+<ul>
+<li>لا شيء يحدث: الحقل غير مركّز، أو القارئ بلا لاحقة. الحقل يقبل Enter، ويقبل أيضاً CR أو LF أو Tab في نهاية النص.</li>
+<li>الأرقام العربية والفارسية تُحوَّل تلقائياً إلى أرقام لاتينية، وتُحذف المسافات ومحارف التحكم.</li>
+</ul>
+<h4>الأمان</h4>
+<ul><li>لا جانب شبكي.</li></ul>
+<h4>الحدود المعروفة</h4>
+<ul>
+<li>INT-15 (غير مُصلَح، مقصود): مسحتان خلال 150 مللي ثانية تُحسبان مسحة واحدة لمنع التكرار. إن لم تُضَف القطعة الثانية فامسحها مرة أخرى.</li>
+<li>لا اختبار آلي مباشر للقارئ على سطح المكتب.</li>
+</ul>
+</section>
+
+<!-- ---------- cloud ---------- -->
+<section id="d-cloud" class="dev searchable">
+<h3>3.14 الربط السحابي <span class="badge b-cond">جاهز بشروط</span></h3>
+<h4>ما هو ومتى تستعمله</h4>
+<p>ربط سطح المكتب بخادم المشروع السحابي (<code>server/</code>) عبر HTTPS/JSON. يلزم لتطبيقي Van والإدارة. مطفأ افتراضاً، ولا يعمل على أجهزة العميل (الفرعية) في الشبكة المحلية.</p>
+<h4>المتطلبات</h4>
+<ul><li>خادم سحابي منشور، ومعرّف ربط ومفتاح ربط منه.</li></ul>
+<h4>الإعداد خطوة بخطوة</h4>
+<ol>
+<li><span class="ui">ربط التطبيقات والأجهزة</span> ← كتلة <span class="ui">الاتصال بالسحابة</span> ← <span class="ui">إعدادات الربط السحابي</span>.</li>
+<li>فعّل <span class="ui">تفعيل الربط</span>.</li>
+<li>املأ <span class="ui">عنوان السيرفر السحابي</span> و<span class="ui">معرّف الربط</span> و<span class="ui">مفتاح الربط</span>.</li>
+<li>اضبط <span class="ui">الفاصل الزمني للمزامنة (دقائق)</span> (5 افتراضياً، من 1 إلى 1440).</li>
+<li><span class="ui">حفظ</span> ثم <span class="ui">اختبار الاتصال</span>.</li>
+</ol>
+<h4>كيف تتحقق</h4>
+<ul class="check">
+<li><span class="ui">اختبار الاتصال</span> ينجح.</li>
+<li>بطاقتا Van والإدارة تعرضان <span class="ui">مفعّل</span> بدل <span class="ui">غير مفعّل</span>.</li>
+</ul>
+<h4>الأعطال الشائعة</h4>
+<ul>
+<li>فشل الاختبار: تحقق من العنوان والمعرّف والمفتاح والإنترنت.</li>
+<li>المستند الذي يفشل رفعه يصبح «تعارضاً» محلياً، ويُعاد بطلب المشغّل من شاشة التعارضات. لا إعادة تلقائية متباعدة.</li>
+</ul>
+<h4>الأمان</h4>
+<ul><li>كل طلب يحمل <code>Authorization: Bearer &lt;link-key&gt;</code> و<code>x-desktop-link: &lt;link-id&gt;</code>.</li></ul>
+<h4>الحدود المعروفة</h4>
+<ul>
+<li>الاختبار الحيّ مع خادم سحابي لم يُشغَّل في المراجعة.</li>
+<li>التصدير السحابي شامل لحدّ الثانية (<code>&gt;=</code>)، والمستقبِل يطبّق upsert idempotent فلا يكرر أثر الصف المعاد (§9.1).</li>
+</ul>
+</section>
+
+</section>
+
+<!-- ================= 4. SYNC ================= -->
+<section id="sync" class="searchable">
+<h2>4. كيف يتزامن النظام</h2>
+<h3 id="sync-pull">القراءة: السحب الكامل مقابل الدلتا</h3>
+<ul>
+<li><strong>السحب الكامل:</strong> أول سحب لجدول يُرسَل بلا <code>since</code>، فيعيد الخادم كل صفوف الجدول المسموحة. وثبت بالاختبار أن الصف المكتوب من جهاز آخر يصل بالسحب الكامل.</li>
+<li><strong>سحب الدلتا:</strong> بعد ذلك يطلب الجهاز <code>GET /api/sync/pull?table=&lt;table&gt;&amp;since=&lt;epoch-seconds&gt;</code>، فيعيد الخادم الصفوف التي <code>last_modified_at &gt;= since</code> فقط.</li>
+<li><strong>الصفحات:</strong> حجم الصفحة 500 افتراضاً وحدّه الأعلى 2000. الخادم يجلب صفاً زائداً ليعرف <code>hasMore</code>.</li>
+<li><strong>الختم:</strong> على SQLite، مُشغّلا إدراج وتعديل لكل جداول المزامنة يضمنان <code>last_modified_at</code> لكل مسارات الكتابة (schema 198؛ INT-03). على PostgreSQL يختم المُشغِّل الصفوف.</li>
+</ul>
+<h3 id="sync-watermark">العلامة المائية</h3>
+<ul>
+<li>لكل جدول علامة تُحفظ في الإعداد <code>_watermark__&lt;table&gt;</code>، وقيمتها <code>serverTime</code> الذي يعيده الخادم (بالثواني).</li>
+<li>الفلتر <code>&gt;=</code> شامل. على SQLite تُقرأ الساعة قبل الاستعلام، إذ تُسلسل المعاملات؛ وعلى PostgreSQL تُحسب العلامة من ساعة قاعدة البيانات وتُخفض إلى أقدم <code>xact_start</code> مفتوح، لتغطي المعاملات الطويلة (INT-05). قد تتكرر صفوف الحدّ؛ upsert العادي لا يكتب الصف المطابق مجدداً. على PostgreSQL قد تبقى العلامة عند بداية معاملة مفتوحة حتى تنتهي.</li>
+<li>مسح العلامات يجبر السحب التالي على أن يكون كاملاً.</li>
+</ul>
+<h3 id="sync-write">الكتابة والعمل دون اتصال</h3>
+<table>
+<thead><tr><th>الجهاز</th><th>عند انقطاع الاتصال</th><th>إعادة المحاولة</th></tr></thead>
+<tbody>
+<tr><td>سطح مكتب فرع / مرآة</td><td>الكتابة تُطابَر محلياً (<code>SyncOutbox</code>) ويستمر العمل.</td><td>تباعد أُسّي من 3 إلى 60 ثانية، وبعد 10 محاولات تُنقل العملية إلى «dead-letter» للمراجعة. الإعادة بنفس <code>globalId</code> متطابقة النتيجة، فلا تتكرر.</td></tr>
+<tr><td>PicPos مخازن</td><td>صندوق صادر مشفّر على الهاتف، بترتيب صارم وبالمعرّف نفسه.</td><td>عند فتح التطبيق أو بزر <span class="ui">أرسل الآن</span>. بعد 5 إخفاقات من المكتب تتوقف العملية (<code>dead_letter</code>).</td></tr>
+<tr><td>PicPos Van</td><td>صندوق صادر على الهاتف.</td><td>كل 5 دقائق، ومع الفشل يتباعد من 5 ثوانٍ حتى 15 دقيقة.</td></tr>
+<tr><td>الربط السحابي (سطح المكتب)</td><td>—</td><td>دورة كل 5 دقائق (قابلة للضبط). المستند الفاشل يصبح تعارضاً محلياً يُعاد بطلب المشغّل، بلا تباعد تلقائي.</td></tr>
+</tbody>
+</table>
+<p>الشبكة المحلية لا تحتاج إنترنت. الجهاز الفرعي يعمل والخادم منقطع، لكنه يحتاج الخادم ليتزامن. تطبيقا Van والإدارة يحتاجان الخادم السحابي. أجهزة سطح المكتب الفرعية تتلقى أيضاً إشعارات عبر WebSocket على <code>/ws</code>.</p>
+<h3 id="sync-isolation">العزل بين الفروع</h3>
+<ul>
+<li>الخادم يحدّد نطاق الفرع من هوية المستخدم. طلب بفرع غريب يُقصّ إلى فرع المستخدم.</li>
+<li>طلب بلا جلسة صالحة (منتهية أو مزوّرة) يُعامَل كمجهول: الجداول المعاملاتية تعود فارغة وبلا <code>serverTime</code> (اختبار ناجح).</li>
+<li>أعمدة الاعتماد لا تخرج في السحب: <code>users.pin</code> دائماً، و<code>password_hash</code> و<code>password_salt</code> و<code>card_code</code> إلا لمن يُسمح له. وسحب <code>parties</code> بلا رمز يُسقط أعمدة الرصيد.</li>
+</ul>
+<h3 id="sync-conflict">ماذا يحدث عند التعارض أو الانقطاع</h3>
+<table>
+<thead><tr><th>الحالة</th><th>ما يحدث</th></tr></thead>
+<tbody>
+<tr><td>انقطع الخادم أثناء عمل جهاز فرعي</td><td>الكتابات تُطابَر وتُرسل لاحقاً. القراءة الجديدة تنتظر عودة الخادم.</td></tr>
+<tr><td>أُعيد إرسال الكتابة نفسها</td><td>تُخزَّن مرة واحدة (بنفس <code>globalId</code>).</td></tr>
+<tr><td>عملية فشلت مراراً</td><td>فرع/مرآة: dead-letter بعد 10 محاولات. مخازن: <span class="ui">تكرّر فشل هذه العملية في المكتب فأُوقف إرسالها وتحتاج مراجعة المدير.</span></td></tr>
+<tr><td>مستند المخازن تغيّر في المكتب بعد قراءته</td><td><span class="ui">تغيّر المستند منذ آخر قراءة؛ حدّث الصفحة.</span></td></tr>
+<tr><td>نسخة العميل أقدم من الخادم</td><td>الخادم يرد 426 <code>client_upgrade_required</code>.</td></tr>
+<tr><td>مستند سحابي فشل رفعه</td><td>يصبح تعارضاً محلياً يُعاد بطلب المشغّل.</td></tr>
+<tr><td>إعادة تشغيل الخادم</td><td>عدّاد محاولات الاقتران في الذاكرة يُصفَّر؛ قوائم إبطال الجلسات تُحمَّل من <code>settings</code> عند بدء الخادم (INT-13).</td></tr>
+</tbody>
+</table>
+<p class="callout">الجولة الثانية رفعت schema إلى 198 وأصلحت ختم SQLite لجميع مسارات الإدراج والتعديل، وعلامة PostgreSQL للمعاملات الطويلة، وإعادة تسليم الحدّ في upsert العادي. لا يُدّعى اختبار ذلك على قواعد إنتاجية؛ كما يبقى مسار اختلاف المعرّف المحلي عن معرّف الخادم استثناءً لحارس التكرار (§9.3).</p>
+</section>
+
+<!-- ================= 5. TESTS ================= -->
+<section id="tests" class="searchable">
+<h2>5. الاختبارات</h2>
+<h3 id="tests-run">ما شُغِّل عند إعداد هذا الدليل</h3>
+<p>شغّلتُ مجموعة <code>test/integration_devices</code> على HEAD <code>d814cbc0</code>، فكانت النتيجة <code>02:50 +45: All tests passed!</code>. تعمل هذه الاختبارات على خادم LAN حقيقي داخل العملية فوق SQLite في الذاكرة، عبر السلسلة الفعلية (المحدِّد ← المصادقة ← المعالج) ومقبس loopback. لا تستعمل أجهزة حقيقية ولا TLS.</p>
+<div class="tbl">
+<table>
+<thead><tr><th>الملف</th><th>الحالات</th><th>ما يثبته</th></tr></thead>
+<tbody>
+<tr><td><code>test/integration_devices/lan_device_pairing_and_scope_test.dart</code></td><td>21/21</td><td>رمز صحيح يقرن مرة واحدة ثم يُرفض؛ رمز خاطئ يُرفض 401 ولا يحرق الصحيح؛ رمز منتهٍ بعد 10 دقائق؛ رمز المخازن لا يقرن إلا جهاز مخازن؛ المحاولة السادسة خلال 10 دقائق 429؛ INT-11 خلف وكيل موثوق؛ مصفوفة <code>device_scope</code> (12 حالة، منها مخازن على <code>/api/menu</code> و<code>/api/cfd/stream</code>)؛ بلا bearer 401 والجهاز الملغى <code>device_revoked</code>؛ جلسة منتهية أو مزوّرة = مجهول؛ المحدِّد 429 مع <code>retry-after</code> دون التأثير على الفئات الأخرى</td></tr>
+<tr><td><code>test/integration_devices/device_to_device_sync_test.dart</code></td><td>7/7</td><td>منتج من الجهاز أ يُخزَّن مرة واحدة ويصل ب بالسحب الكامل ثم بالدلتا؛ صف في ثانية العلامة نفسها يصل؛ العلامة الشاملة (صف الحدّ يُعاد وتطبيقه مرتين يترك نسخة)؛ عقد ختم الإدراج على SQLite؛ طلب مطبخ يصل جهازاً بعيداً بالسحب الكامل وبالدلتا</td></tr>
+<tr><td><code>test/integration_devices/cfd_customer_display_flow_test.dart</code></td><td>8/8</td><td>السلة تصل كل شاشة كحدث SSE ثم شاشة الترحيب؛ الحقول المخفية لا تخرج؛ <code>/cfd</code> بلا اعتماد؛ التدفق يفتح بلا bearer؛ حدود الإعفاء (المسارات المجاورة والأفعال الأخرى وbearer خاطئ تبقى محمية)؛ الحدث يصل عبر مقبس حقيقي بلا تخزين مؤقت؛ الشاشة المنقطعة تُزال من القائمة</td></tr>
+<tr><td><code>test/integration_devices/kds_kitchen_order_flow_test.dart</code></td><td>3/3</td><td>طلب المحطة يظهر عليها وعلى «كل المحطات» لا على غيرها؛ ربط التصنيف بالمحطة يوجّه الطلبات؛ العاجل أولاً والجاهز يخرج إلى قائمة نقطة البيع</td></tr>
+<tr><td><code>test/integration_devices/scale_barcode_sqlite_test.dart</code></td><td>6/6</td><td>ملصق وزن (21، PLU 5، قاسم 1000)؛ ملصق سعر (20، قاسم 100)؛ ملف مخصّص (27، PLU 4)؛ المفاتيح القديمة للوزن والسعر (INT-07)؛ ملصقات يجب ألا تُقرأ كملصق ميزان</td></tr>
+</tbody>
+</table>
+</div>
+<h4>أمر إعادة التشغيل (من جذر المشروع)</h4>
+<pre><code>flutter test --concurrency=1 --dart-define=APP_BRAND=picpos --reporter expanded test/integration_devices</code></pre>
+<p>التقرير يشغّل الأوامر بعد تهيئة بيئته: <code>. D:\qa\luna_tools.ps1; Clear-SqliteLock</code>. شغّلتُ الأمر أعلاه بدونها ونجح.</p>
+
+<h3 id="tests-report">نتائج منقولة من التقرير (لم أُعِد تشغيلها)</h3>
+<div class="tbl">
+<table>
+<thead><tr><th>الاختبار</th><th>النتيجة</th><th>ما يثبته</th><th>الأمر</th></tr></thead>
+<tbody>
+<tr><td><code>test/integration_pg/sync_delta_watermark_pg_test.dart</code></td><td>+4</td><td>INT-03 وINT-04 وINT-05 على PostgreSQL</td><td>يحتاج حاوية PostgreSQL خاصة (التقرير: <code>postgres:16-alpine</code> على المنفذ 58432)، لا قاعدة المالك:<br><code>$env:PG_TEST_DSN='postgres://postgres:postgres@127.0.0.1:58432/postgres'</code><br><code>flutter test --concurrency=1 --dart-define=APP_BRAND=picpos --tags pg --run-skipped test/integration_pg/sync_delta_watermark_pg_test.dart</code></td></tr>
+<tr><td>الحراس الستة (<code>file_size_ratchet</code>، <code>i18n_coverage</code>، <code>i18n_runtime_safety</code>، <code>dark_mode_guard</code>، <code>analytics_parity</code>، <code>presentation_db_import_guard</code>)</td><td>+14</td><td>حراس بنية المشروع</td><td><code>flutter test --concurrency=1 --dart-define=APP_BRAND=picpos test/structural/file_size_ratchet_test.dart test/structural/i18n_coverage_test.dart test/structural/i18n_runtime_safety_test.dart test/structural/dark_mode_guard_test.dart test/structural/analytics_parity_test.dart test/unit/presentation_db_import_guard_test.dart</code></td></tr>
+<tr><td>195 ملفاً قائماً متعلقاً (sync، pair، lan، kitchen، scale، cfd، api…) على 6 دفعات</td><td>كلها ناجحة</td><td>لا تراجع في المجموعات القائمة</td><td>التقرير لا يذكر قائمة الملفات حرفياً</td></tr>
+<tr><td><code>test/unit/print_escpos_test.dart</code>، <code>test/unit/print_kitchen_label_test.dart</code></td><td>23 + 12</td><td>PDF الإيصال وملصق المطبخ (لا ESC/POS خامّ)</td><td><code>flutter test --concurrency=1 --dart-define=APP_BRAND=picpos test/unit/print_escpos_test.dart test/unit/print_kitchen_label_test.dart</code></td></tr>
+<tr><td><code>test/services/web_read/web_read_policy_interceptor_test.dart</code>، <code>test/unit/api_web_session_test.dart</code></td><td>22 + 25</td><td>قراءة الويب وجلساته</td><td><code>flutter test --concurrency=1 --dart-define=APP_BRAND=picpos test/services/web_read/web_read_policy_interceptor_test.dart test/unit/api_web_session_test.dart</code></td></tr>
+<tr><td><code>test/integration/cloud_sync_i3_test.dart</code>، <code>test/integration/cloud_sync_mobile_k_test.dart</code></td><td>7 (1 متجاوز) + 3</td><td>الربط السحابي (المتجاوز يحتاج <code>CLOUD_URL</code>)</td><td><code>flutter test --concurrency=1 --dart-define=APP_BRAND=picpos test/integration/cloud_sync_i3_test.dart test/integration/cloud_sync_mobile_k_test.dart</code></td></tr>
+<tr><td><code>packages/picpos_api_client</code> (8 ملفات)</td><td>+90 ~1</td><td>عميل API، التثبيت، حمولة الإقران، عملاء المخازن والإدارة</td><td>من مجلد الحزمة: <code>dart test test/api_client_test.dart test/device_lan_client_test.dart test/fingerprint_test.dart test/lan_pinning_test.dart test/manage_client_test.dart test/pairing_payload_test.dart test/wh_client_test.dart test/wh_doc_client_test.dart</code></td></tr>
+<tr><td><code>packages/picpos_device</code></td><td>+26</td><td>تمييز مسح القارئ على الهاتف</td><td><code>flutter test test/scan_event_test.dart test/device_test.dart</code></td></tr>
+<tr><td><code>mobile</code> (Van)</td><td>+36</td><td>سياسة العنوان (HTTPS في الإصدار)، المزامنة، المتحكم</td><td><code>flutter test test/cloud_api_policy_test.dart test/sync_test.dart test/controller_test.dart test/scanner_pricing_test.dart</code></td></tr>
+<tr><td><code>mobile_admin</code></td><td>+20</td><td>تدفق الإدارة والقفل</td><td><code>flutter test test/admin_flow_test.dart test/security_and_lock_test.dart</code></td></tr>
+<tr><td><code>mobile_pos</code></td><td>+14</td><td>الإقران</td><td><code>flutter test test/pairing_test.dart</code></td></tr>
+<tr><td><code>mobile_warehouse</code></td><td>+47</td><td>الجلسة، تفريغ الصادر، أخطاء المجال</td><td><code>flutter test test/session_test.dart test/outbox_drain_test.dart test/domain_errors_test.dart</code></td></tr>
+<tr><td><code>test/security/lan_pairing_tls_pin_test.dart</code></td><td>7/7</td><td>الإقران عبر TLS مع تثبيت البصمة</td><td><code>flutter test --concurrency=1 --dart-define=APP_BRAND=picpos test/security/lan_pairing_tls_pin_test.dart</code></td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="tests-not">ما لم يُختبر</h3>
+<ul>
+<li>اختبارات <code>e2e/</code> وgolden و<code>live_cloud_test</code> (تحتاج محاكياً أو خادماً سحابياً)، والمجموعة الكاملة لـ<code>test/integration_pg/</code> وللمشروع.</li>
+<li>اختبارات الميزان الحيّ الوحدوية (<code>test/services/scale_protocols_test.dart</code> وغيرها) لم تدخل تشغيل المراجعة.</li>
+<li>فتح الدرج كهربائياً، والطباعة الفعلية، وTLS على Wi-Fi حقيقية، ونمطا CFD HDMI والتسلسلي، وقارئ الباركود الفعلي.</li>
+<li>لا معيار أداء في المستودع لعدد العملاء المتزامنين.</li>
+</ul>
+</section>
+
+<!-- ================= 6. REAL DEVICE ================= -->
+<section id="real-device" class="searchable">
+<h2>6. يلزم تجربته على جهاز حقيقي</h2>
+<p>البنود التالية لم يتحقق منها التقرير ولا هذا الدليل، لأنها تحتاج عتاداً أو شبكة أو خدمة خارجية. لا تَعِد بها عميلاً قبل تجربتها.</p>
+<div class="tbl">
+<table>
+<thead><tr><th>البند</th><th>ما يجب تجربته</th></tr></thead>
+<tbody>
+<tr><td>الشبكة الحقيقية</td><td>TLS على Wi-Fi حقيقية، وفتح المنفذ في جدار حماية Windows، والأجهزة ذات أكثر من بطاقة شبكة. اختبارات المراجعة على loopback بلا TLS، واختبار TLS المثبّت القائم يعمل على loopback أيضاً.</td></tr>
+<tr><td>QR والكاميرا</td><td>مسح QR على الهواتف. سطح المكتب لا يعرض صورة QR أصلاً، فيلزم ناقل للنص أو الإدخال اليدوي.</td></tr>
+<tr><td>تحذير الشهادة في المتصفحات</td><td>قبول الشهادة الذاتية على متصفح تابلت شاشة العميل وعلى متصفح الويب، وسلوكه بعد إعادة التشغيل وبعد تدوير الشهادة.</td></tr>
+<tr><td>الطباعة</td><td>حجم الورق، ومحاذاة العربية، وطابعة كل غرض، وطابعات Bluetooth و9100 في تطبيق المخازن.</td></tr>
+<tr><td>درج النقد</td><td>الفتح الكهربائي فعلياً عبر الطابعة، وبعد الدفع تلقائياً.</td></tr>
+<tr><td>الميزان الحيّ</td><td>COM وTCP (4001)، ووضع ADC، ورفع PLU لكل علامة من الثماني، وترميز CP1256.</td></tr>
+<tr><td>شاشة العميل HDMI/تسلسلي</td><td>نافذة Chrome/Edge بـ<code>--app</code> على الشاشة الثانية (اختيار الشاشة غير مستعمل في الكود)، وشاشة VFD وترميز العربية عليها، وسلوكها بعد إعادة التشغيل (INT-09).</td></tr>
+<tr><td>قارئ الباركود</td><td>لاحقة Enter، وسرعة المسح المتتالي (حدّ 150 مللي ثانية)، وقارئات الهواتف المدمجة (Zebra/Honeywell، غير مدعومة بعد).</td></tr>
+<tr><td>خادم PostgreSQL للإنتاج</td><td>سلوك المُشغِّل والمعاملات الطويلة على قاعدة الإنتاج (اختُبر في التقرير على حاوية مؤقتة فقط).</td></tr>
+<tr><td>السحابة والبوابات</td><td>خادم <code>server/</code> المنشور، وتطبيقا Van والإدارة عليه، وبوابات ETA وJoFotara الحكومية.</td></tr>
+<tr><td>تطبيق الإدارة</td><td>شاشات الربط في التطبيق وتأكيد البصمة (لم أتحقق من نصوصها).</td></tr>
+<tr><td>التشغيل الطويل</td><td>انقطاع الكهرباء أثناء المزامنة، والعودة بعد أيام دون اتصال، وعشرات أو مئات العملاء المتزامنين.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="checklist">قائمة فحص قبل التسليم لعميل</h3>
+<ul class="check">
+<li>الجهاز الرئيسي في وضع «سيرفر رئيسي»، والخادم يبدأ تلقائياً بعد إعادة تشغيل الجهاز.</li>
+<li>الرسالة <span class="ui">🔒 السيرفر يعمل عبر HTTPS (TLS مفعَّل)</span> ظاهرة، وخيار HTTP القديم مطفأ.</li>
+<li>بصمة الشهادة مسجّلة عند المسؤول، والأجهزة كلها مقترنة بعد آخر <span class="ui">تدوير الشهادة (يتطلب إعادة إقران كل الأجهزة)</span>.</li>
+<li>المنفذ مفتوح في جدار حماية Windows، وكل جهاز فرعي يصل (<span class="ui">اختبار الاتصال</span> ← <span class="ui">✅ تم الاتصال بنجاح</span>).</li>
+<li>قائمة <span class="ui">الأجهزة المقترنة</span> لا تحوي جهازاً غير معروف، والأجهزة القديمة <span class="ui">إلغاء الربط</span>.</li>
+<li>المفتاح المشترك القديم موقوف (<span class="ui">أجهزة تعمل بالمفتاح القديم: …</span> = 0).</li>
+<li>صنف جديد على الخادم يظهر على كل جهاز فرعي بالدلتا، وعملية على الفرع أثناء انقطاع الخادم تصل بعد عودته.</li>
+<li>كل مستخدم لجهاز فرعي يرى فرعه فقط.</li>
+<li>هاتف المخازن: الإقران بالعنوان مع المنفذ، والدخول، وعملية دون اتصال تُفرغ من <span class="ui">قائمة الإرسال</span>.</li>
+<li>تطبيق الكاشير والإدارة <strong>غير مسلَّمين</strong> للعميل للاستعمال الإنتاجي (غير مكتمل / تجريبي).</li>
+<li>Van: الخادم السحابي بـHTTPS، و<span class="ui">اختبار الاتصال</span> في الربط السحابي ينجح، وعملية من الجوال تصل.</li>
+<li>شاشة العميل: الصفحة <code>/cfd</code> مفتوحة ومقبولة الشهادة، تتحدّث مع السلة، وتعود بعد إعادة تشغيل البرنامج (افتح بطاقة الإعدادات مرة إن لزم).</li>
+<li>شاشة المطبخ: المحطات مضافة والتصنيفات مربوطة، وطلب من الطاولات يظهر على المحطة الصحيحة. العميل يعلم أن «قُدِّم/أُلغي» غير متاحين.</li>
+<li>الطابعات مثبّتة في Windows بأسماء مطابقة، وإيصال تجريبي مطبوع لكل غرض.</li>
+<li>الدرج يفتح فعلياً بـ<span class="ui">اختبار فتح الدرج</span> وبعد الدفع (العميل يعلم أن رسالة الاختبار تظهر بلون الخطأ حتى عند النجاح).</li>
+<li>باركود الميزان: الوضع المطلوب مفعَّل، والبادئة والخانات والقاسم تطابق الميزان، وملصق وزن وملصق سعر حقيقيان يُقرآن صحيحاً.</li>
+<li>قارئ الباركود مضبوط على Enter، ومسحة واحدة تضيف قطعة واحدة.</li>
+<li>الوصول من المتصفح مطفأ إن لم يُطلب، أو مفعَّل ومجرَّب بعد إعادة تشغيل الخادم.</li>
+<li>نسخة احتياطية من قاعدة البيانات قبل التسليم.</li>
+</ul>
+</section>
+
+<!-- ================= SOURCES ================= -->
+<section id="sources" class="searchable">
+<h2>المصادر والمصطلحات</h2>
+<h3 id="glossary">مصطلحات</h3>
+<ul>
+<li><strong>الاقتران/الإقران:</strong> ربط جهاز بالخادم مرة واحدة برمز قصير العمر.</li>
+<li><strong>البصمة (SHA-256):</strong> بصمة شهادة الخادم؛ التطبيق يقبل الخادم الذي يطابقها فقط.</li>
+<li><strong>الدلتا:</strong> سحب ما تغيّر بعد العلامة المائية فقط.</li>
+<li><strong>SSE:</strong> تدفّق أحداث من الخادم إلى المتصفح عبر اتصال HTTP مفتوح.</li>
+<li><strong>dead-letter:</strong> عملية توقف إرسالها بعد تكرار الفشل وتحتاج مراجعة.</li>
+</ul>
+<h3 id="code-refs">مراجع الكود (ما تحققتُ منه)</h3>
+<div class="tbl">
+<table>
+<thead><tr><th>الحقيقة</th><th>المرجع</th></tr></thead>
+<tbody>
+<tr><td>المنفذ 8080، الربط على كل IPv4، مفتاح المنفذ</td><td><code>lib/services/network_service.dart:61</code>، <code>:823-828</code>، <code>:89</code></td></tr>
+<tr><td>بوابة الويب 404 حين تطفأ</td><td><code>lib/services/network_service.dart:173-175</code></td></tr>
+<tr><td>WebSocket <code>/ws</code> و<code>/webdb</code></td><td><code>lib/services/network_service.dart:988-994</code>؛ <code>lib/services/api/routes/api_routes_read.dart:12</code>؛ <code>lib/services/api/routes/api_routes_auth_public.dart:27</code></td></tr>
+<tr><td>أوضاع النقل والافتراضي والرفض عند فشل الشهادة</td><td><code>lib/services/lan_tls/lan_tls_manager.dart:26-32</code>، <code>:60</code>، <code>:212-213</code></td></tr>
+<tr><td>الرمز 8 أحرف، 10 دقائق، 5 محاولات، HMAC</td><td><code>lib/services/api/lan_pairing_service.dart:30-32</code>، <code>:79-82</code>، <code>:468-483</code></td></tr>
+<tr><td>رسائل أخطاء الإقران</td><td><code>lib/services/api/lan_pairing_api_handler.dart:21-133</code></td></tr>
+<tr><td>جلسة 12 ساعة وقوائم الإبطال المحفوظة في settings عند إعادة التشغيل</td><td><code>lib/services/api/api_session_token.dart</code>؛ تفاصيل الجولة الثانية في التقرير §9.1</td></tr>
+<tr><td>سياسة المسارات حسب النوع</td><td><code>lib/services/api/lan_device_route_policy.dart</code></td></tr>
+<tr><td><code>device_scope</code>، <code>device_revoked</code>، <code>legacy_token_disabled</code>، إعفاء شاشتي العرض</td><td><code>lib/services/api/api_auth_middleware.dart:343</code>، <code>:373</code>، <code>:399-402</code>، <code>:76-81</code></td></tr>
+<tr><td>حدود المحدِّد و<code>retry-after</code></td><td><code>lib/services/api/api_rate_limiter.dart:88-97</code>، <code>:355</code></td></tr>
+<tr><td>السحب: الفلتر الشامل، <code>serverTime</code> قبل الاستعلام، 426، الصفحات</td><td><code>lib/services/api/routes/api_get_sync_pull.dart:50-60</code>، <code>:168</code>، <code>:213-219</code>؛ <code>lib/services/api/routes/api_sync_pull_tables.dart:273-277</code></td></tr>
+<tr><td>العلامة المائية</td><td><code>lib/services/delta_pull_service.dart:1358-1367</code></td></tr>
+<tr><td>إعادة المحاولة 3–60 ثانية و10 محاولات</td><td><code>lib/services/offline_sync_worker.dart:160</code>، <code>:167-168</code></td></tr>
+<tr><td>SSE وترويساته، أنواع CFD، HDMI 52847، VFD 2×20</td><td><code>lib/services/api/api_display_handler.dart:76</code>؛ <code>lib/services/cfd/cfd_transport.dart:6-31</code>؛ <code>lib/services/cfd/cfd_hdmi_transport.dart:31</code>، <code>:69</code>، <code>:176-179</code>؛ <code>lib/services/cfd/cfd_serial_transport.dart:22-23</code></td></tr>
+<tr><td>الميزان: COM/TCP و4001 والعلامات الثماني</td><td><code>lib/services/scale_service_io.dart:23-28</code>، <code>:54</code>؛ <code>lib/services/label_scale_service.dart:74-83</code></td></tr>
+<tr><td>الطباعة PDF، مطابقة الطابعة، بايتات الدرج</td><td><code>lib/services/printing/pdf_compute_helper.dart:78</code>؛ <code>lib/services/printer_resolver.dart:81-90</code>؛ <code>lib/services/cash_drawer_service_io.dart:15-16</code>، <code>:89-107</code>، <code>:159-173</code></td></tr>
+<tr><td>السحابة: الترويسات، مطفأ افتراضاً، لا يعمل على العميل، 5 دقائق</td><td><code>lib/services/cloud_sync/cloud_link_api.dart:56-57</code>؛ <code>lib/services/cloud_sync/cloud_sync_service.dart:71</code>، <code>:82</code>، <code>:311</code></td></tr>
+<tr><td>الويب: الجلسة والتذكرة و<code>/webdb</code></td><td><code>lib/web/web_session.dart:66-67</code>، <code>:122</code>، <code>:190-196</code></td></tr>
+<tr><td>شاشات الإعداد (سطح المكتب)</td><td><code>lib/presentation/settings_picpos/screens/linked_devices_section.dart</code>؛ <code>network_mode_settings_picpos.dart</code>؛ <code>device_reprovision_tile.dart</code>؛ <code>lib/presentation/widgets/settings/lan_pairing_dialog.dart</code>، <code>lan_pairing_kind_dialog.dart</code>، <code>lan_transport_section.dart</code>؛ <code>settings_picpos/widgets/warehouse_devices_body.dart</code>، <code>web_access_settings_panel.dart</code>، <code>cloud_link_settings_block.dart</code>؛ <code>screens/cloud_link_settings_screen.dart</code>؛ <code>lib/presentation/screens/first_run/</code></td></tr>
+<tr><td>CFD وKDS والطابعات والميزان والقارئ (سطح المكتب)</td><td><code>settings_picpos/screens/cfd_settings_card_picpos.dart</code>؛ <code>settings_picpos_sections_services.dart</code>؛ <code>lib/presentation/widgets/settings/kds_settings_widget.dart</code>؛ <code>lib/presentation/kitchen/screens/kitchen_display_screen.dart</code>؛ <code>lib/presentation/screens/printers_screen.dart</code>؛ <code>settings_picpos/screens/printers_picpos_screen.dart</code>؛ <code>widgets/settings/hardware_settings_widget.dart</code>، <code>hardware/hardware_scale.dart</code>، <code>scale_barcode_settings_panel.dart</code>؛ <code>lib/presentation/pos/widgets/pos_barcode_input.dart</code>؛ <code>lib/presentation/pos/services/scale_barcode_config.dart:103-111</code></td></tr>
+<tr><td>نصوص تطبيقات الجوال</td><td><code>mobile_warehouse/lib/l10n/strings.dart</code>؛ <code>mobile_pos/lib/l10n/strings.dart</code>؛ <code>mobile/lib/l10n/strings.dart</code>؛ <code>mobile/lib/screens/pairing_screen.dart:13</code>؛ <code>mobile_pos/lib/screens/onboarding_screen.dart:75</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>نصوص الواجهة على سطح المكتب تمرّ عبر <code>tr()</code> ومفتاحها النص العربي نفسه. ملفات الترجمة في <code>assets/i18n/</code> هي <code>en.json</code> و<code>catalog_ar.json</code>؛ لا يوجد <code>ar.json</code>.</p>
+</section>
+
+<footer>
+<p>يصف هذا الدليل شجرة المشروع عند آخر commit <code>3b1ab254</code>، ويستند إلى تقرير <code>docs/integration/2026-11-04-device-app-integration-review.md</code>. ملف مستقل بلا موارد خارجية.</p>
+</footer>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  var root=document.documentElement;
+  var btn=document.getElementById("themeBtn");
+  function applyTheme(t){
+    root.setAttribute("data-theme",t);
+    var dark=t==="dark";
+    btn.setAttribute("aria-pressed",dark?"true":"false");
+    btn.textContent=dark?"الوضع الفاتح":"الوضع الداكن";
+  }
+  var initial=null;
+  var m=/[?&]theme=(dark|light)/.exec(location.search);
+  if(m){initial=m[1];}
+  if(!initial){try{initial=localStorage.getItem("picpos-guide-theme");}catch(e){}}
+  if(!initial){initial=(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light";}
+  applyTheme(initial);
+  btn.addEventListener("click",function(){
+    var t=root.getAttribute("data-theme")==="dark"?"light":"dark";
+    applyTheme(t);
+    try{localStorage.setItem("picpos-guide-theme",t);}catch(e){}
+  });
+  document.getElementById("printBtn").addEventListener("click",function(){window.print();});
+
+  /* ---- search ---- */
+  var q=document.getElementById("q"),stat=document.getElementById("qstat");
+  var blocks=Array.prototype.slice.call(document.querySelectorAll(".searchable"));
+  function clearMarks(){
+    var marks=document.querySelectorAll("main mark.hit");
+    for(var i=0;i<marks.length;i++){
+      var mk=marks[i],p=mk.parentNode;
+      p.replaceChild(document.createTextNode(mk.textContent),mk);
+      p.normalize();
+    }
+  }
+  function norm(s){return s.toLowerCase().replace(/[\u064B-\u0652\u0640]/g,"");}
+  function markIn(el,term){
+    var walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT,{acceptNode:function(n){
+      var p=n.parentNode;
+      while(p&&p!==el){if(p.nodeName==="SCRIPT"||p.nodeName==="STYLE"||p.namespaceURI==="http://www.w3.org/2000/svg"){return NodeFilter.FILTER_REJECT;}p=p.parentNode;}
+      return norm(n.nodeValue).indexOf(term)>-1?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_REJECT;}});
+    var nodes=[],n,count=0;
+    while((n=walker.nextNode())){nodes.push(n);}
+    nodes.forEach(function(node){
+      var text=node.nodeValue,low=norm(text);
+      if(low.length!==text.length){count++;return;}
+      var idx=low.indexOf(term);
+      if(idx<0)return;
+      var frag=document.createDocumentFragment(),pos=0;
+      while(idx>-1){
+        frag.appendChild(document.createTextNode(text.slice(pos,idx)));
+        var mk=document.createElement("mark");mk.className="hit";mk.textContent=text.slice(idx,idx+term.length);
+        frag.appendChild(mk);count++;
+        pos=idx+term.length;idx=low.indexOf(term,pos);
+      }
+      frag.appendChild(document.createTextNode(text.slice(pos)));
+      node.parentNode.replaceChild(frag,node);
+    });
+    return count;
+  }
+  var timer=null;
+  function run(){
+    clearMarks();
+    var term=norm(q.value.trim());
+    if(term.length<2){
+      blocks.forEach(function(b){b.classList.remove("hidden-by-search");});
+      stat.textContent=term.length?"اكتب حرفين على الأقل":"";
+      return;
+    }
+    var total=0,shown=0;
+    blocks.forEach(function(b){
+      var hit=norm(b.textContent).indexOf(term)>-1;
+      b.classList.toggle("hidden-by-search",!hit);
+      if(hit){shown++;total+=markIn(b,term);}
+    });
+    stat.textContent=shown?("نتائج في "+shown+" قسم ("+total+" تطابق)"):"لا نتائج";
+  }
+  /* ?section=<id> shows a single section (shareable link to one part) */
+  var sm=/[?&]section=([A-Za-z0-9_-]+)/.exec(location.search);
+  if(sm){
+    var target=document.getElementById(sm[1]);
+    if(target){
+      blocks.forEach(function(b){if(b!==target&&!b.contains(target)){b.classList.add("hidden-by-search");}});
+      stat.textContent="يُعرض قسم واحد؛ اضغط Esc في حقل البحث لعرض الكل";
+    }
+  }
+  q.addEventListener("input",function(){clearTimeout(timer);timer=setTimeout(run,180);});
+  q.addEventListener("keydown",function(e){
+    if(e.key==="Escape"){q.value="";run();}
+    if(e.key==="Enter"){var f=document.querySelector("main mark.hit");if(f){f.scrollIntoView({block:"center"});}}
+  });
+
+  /* ---- active TOC link ---- */
+  var links=Array.prototype.slice.call(document.querySelectorAll("#toc a"));
+  if("IntersectionObserver" in window){
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting){
+          links.forEach(function(a){
+            var on=a.getAttribute("href")==="#"+en.target.id;
+            a.classList.toggle("active",on);
+            if(on){a.setAttribute("aria-current","true");}else{a.removeAttribute("aria-current");}
+          });
+        }
+      });
+    },{rootMargin:"0px 0px -70% 0px"});
+    links.forEach(function(a){var t=document.getElementById(a.getAttribute("href").slice(1));if(t)io.observe(t);});
+  }
+})();
+</script>
+</body>
+</html>

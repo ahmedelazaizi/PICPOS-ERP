@@ -4,4 +4,4 @@
 // fails the moment they diverge, so bumping the schema forces a bump here.
 // Kept separate from `database.dart` (file-size ratchet) and dependency-free so
 // `PendingRestore` can use it without importing the database library.
-const int kMaxSupportedSchemaVersion = 197;
+const int kMaxSupportedSchemaVersion = 198;

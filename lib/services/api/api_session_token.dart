@@ -158,8 +158,9 @@ class ApiSessionToken {
   //
   // رمزٌ منفصل (ud:'web') لمتصفّح الويب: مدّته 12 ساعة، ويحمل معرّف جلسة
   // sid عشوائياً يمكن إلغاؤه (تسجيل خروج/تعطيل) قبل انتهاء المدّة. الإلغاءُ
-  // في ذاكرة العملية فقط (إعادة تشغيل المضيف تُفرغ القائمة، والرمز يبقى
-  // صالحاً حتى exp) — القناة تفحص المستخدم دورياً فتُغلق عند التعطيل.
+  // يُقرأ من الذاكرة، ومنذ INT-13 يُكتب خلفها في جدول `settings` للمضيف
+  // (`ApiSessionRevocationStore`) ويُعاد تحميله عند بدء الخادم، فإعادةُ تشغيل
+  // المضيف لم تعد تُعيد صلاحيةَ رمزٍ أُبطل — والقناة تفحص المستخدم دورياً.
 
   /// الجمهور الذي يحمله رمز الويب.
   static const String webAudience = 'web';
@@ -175,12 +176,18 @@ class ApiSessionToken {
   /// userId → لحظة الإبطال: كلُّ رمزٍ أُصدر (iat) عندها أو قبلها يفشل.
   static final Map<int, int> _userRevokedAtMs = <int, int>{};
 
+  /// INT-13: called after every revocation so a durable store
+  /// (`ApiSessionRevocationStore`) can write the lists behind. Null = memory
+  /// only (tests, or before the server binds its database).
+  static void Function()? onRevocationsChanged;
+
   /// أيقِف الجلسة [sid]: كلُّ رمزٍ بها يفشل في [verifyWeb] من الآن.
   /// [expiresAtMs] انتهاء الرمز (افتراضه الآن + مدّة الجلسة) لتنظيف القائمة.
   static void revokeSid(String sid, {int? expiresAtMs, int? nowMs}) {
     final now = nowMs ?? DateTime.now().millisecondsSinceEpoch;
     _revokedSids.removeWhere((_, exp) => now >= exp);
     _revokedSids[sid] = expiresAtMs ?? now + _webTtl.inMilliseconds;
+    onRevocationsChanged?.call();
   }
 
   /// هل أُلغيت الجلسة [sid]؟
@@ -189,6 +196,39 @@ class ApiSessionToken {
   /// يُبطل كلَّ جلسات ويب [userId] المُصدَرة حتى الآن (تعطيل/كلمة مرور).
   static void revokeUser(int userId, {int? nowMs}) {
     _userRevokedAtMs[userId] = nowMs ?? DateTime.now().millisecondsSinceEpoch;
+    onRevocationsChanged?.call();
+  }
+
+  /// INT-13: the live revocation lists, without entries that can no longer
+  /// match a valid token — a sid past its token's `exp`, and a user
+  /// revocation older than the longest token lifetime ([_legacyTtl]: a token
+  /// issued at or before `revokedAt` expires by `revokedAt + _legacyTtl`).
+  static Map<String, Map<String, int>> revocationSnapshot({int? nowMs}) {
+    final now = nowMs ?? DateTime.now().millisecondsSinceEpoch;
+    _revokedSids.removeWhere((_, exp) => now >= exp);
+    _userRevokedAtMs
+        .removeWhere((_, at) => now >= at + _legacyTtl.inMilliseconds);
+    return {
+      'sids': Map.of(_revokedSids),
+      'users': {for (final e in _userRevokedAtMs.entries) '${e.key}': e.value},
+    };
+  }
+
+  /// INT-13: merges lists persisted by a previous run (the later instant
+  /// wins per user). Does not fire [onRevocationsChanged].
+  static void restoreRevocations(
+    Map<String, int> sids,
+    Map<int, int> users, {
+    int? nowMs,
+  }) {
+    final now = nowMs ?? DateTime.now().millisecondsSinceEpoch;
+    sids.forEach((sid, exp) {
+      if (now < exp) _revokedSids[sid] = exp;
+    });
+    users.forEach((uid, at) {
+      final mem = _userRevokedAtMs[uid];
+      if (mem == null || mem < at) _userRevokedAtMs[uid] = at;
+    });
   }
 
   /// Test hook — تفريغ قوائم الإلغاء.

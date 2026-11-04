@@ -27,7 +27,8 @@ import 'web_session_guard.dart';
 /// 3. Client stores its HMAC-derived token and sends it with its device id
 /// 4. Middleware validates the paired device, or the legacy token in-window
 ///
-/// **Exempt paths:** `/api/health`, `/cfd`, `/menu`, `/ws`
+/// **Exempt paths:** `/api/health`, `/cfd`, `/menu`, `/ws`, plus credential-less
+/// `GET /api/cfd/stream` and `GET /api/menu` (INT-01: the display pages' feeds)
 /// (and the web paths `/api/web/*` / `/webdb`, authenticated by web session/ticket)
 class ApiAuthMiddleware {
   ApiAuthMiddleware._();
@@ -58,6 +59,26 @@ class ApiAuthMiddleware {
     '/ws',
     '/api/table-bill',
   ];
+
+  /// INT-01 (2026-11-04): مصادرُ بيانات شاشتَي العرض العامّتين `/cfd` و`/menu`.
+  ///
+  /// الصفحتان معفاتان عمداً (شاشةُ زبونٍ وقائمةُ أصنافٍ يفتحهما متصفّحُ
+  /// تابلت/هاتف لا يحمل bearer)، لكنّهما تجلبان بياناتهما من `/api/...`، وكان
+  /// الإعفاءُ لا يطابقهما فيرجع 401 والشاشةُ فارغة. ولا رمزَ عرضٍ ولا اقترانَ
+  /// لشاشة العميل في النظام يمكن اشتراطُه بدلاً من ذلك.
+  ///
+  /// والقاعدةُ أضيقُ ما يكفي: **مساران بعينهما (مطابقةٌ تامّة) وبـGET فقط،
+  /// ولطلبٍ بلا ترويسة Authorization**. فلا يُعفى `/api/cfd/*` ولا
+  /// `/api/menu/*` ولا أيُّ فعلِ كتابة؛ وطلبٌ يحمل bearer يمرّ بالمصادقة
+  /// وبـ[LanDeviceRoutePolicy] كما كان (جهازُ المخازن يبقى 403). وما يخرج
+  /// منهما هو ما تعرضه الشاشتان أصلاً: السلةُ بعد ترشيح إعدادات العرض،
+  /// والأصنافُ النشطةُ بأسعار البيع. ويبقيان تحت محدِّد المعدّل.
+  static const _publicDisplayReads = {'/api/cfd/stream', '/api/menu'};
+
+  static bool _isPublicDisplayRead(Request request, String path) =>
+      request.method == 'GET' &&
+      _publicDisplayReads.contains(path) &&
+      !request.headers.containsKey('authorization');
 
   /// مسارات /api/* (غير /api/web/*) التي تقبل **رمز جلسة ويب** في
   /// X-Session-Token بدل bearer الجهاز (م3-7: الكتابة عبر HTTP تُسجَّل هنا).
@@ -292,7 +313,8 @@ class ApiAuthMiddleware {
             ApiWebCtx.claimsKey: claims,
           }));
         }
-        if (matchesAnyPathPrefix(path, _exemptPrefixes)) {
+        if (matchesAnyPathPrefix(path, _exemptPrefixes) ||
+            _isPublicDisplayRead(request, path)) {
           return innerHandler(request);
         }
         if (!path.startsWith('/api/')) return innerHandler(request);

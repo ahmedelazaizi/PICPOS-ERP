@@ -158,6 +158,9 @@ const kDeviceLocalSettingKeys = <String>[
       // FLEET-6: the MAIN's own failed-login counters (ServerLoginThrottle) —
       // host-local, must never travel to a client nor be overwritten by one.
       'server_login_throttle_v1',
+      // INT-13: the MAIN's revoked session ids / users (ApiSessionRevocationStore)
+      // — host-local like the throttle above.
+      'api_session_revocations_v1',
       // A0 (ADP-013): the DeploymentModeCommitter's own keys. A client that
       // received the host's server_setup_completed / last_committed_mode
       // would believe it was provisioned as a server.
